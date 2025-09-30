@@ -1,0 +1,16 @@
+.env*
+go.work
+go.work.sum
+
+*.test
+*.out
+
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# macOS
+.DS_Store
+.fseventsd
