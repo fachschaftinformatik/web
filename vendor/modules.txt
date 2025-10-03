@@ -1,0 +1,500 @@
+# cel.dev/expr v0.24.0
+## explicit; go 1.22.0
+cel.dev/expr
+# filippo.io/edwards25519 v1.1.0
+## explicit; go 1.20
+filippo.io/edwards25519
+filippo.io/edwards25519/field
+# github.com/antlr4-go/antlr/v4 v4.13.1
+## explicit; go 1.22
+github.com/antlr4-go/antlr/v4
+# github.com/cubicdaiya/gonp v1.0.4
+## explicit; go 1.18
+github.com/cubicdaiya/gonp
+# github.com/davecgh/go-spew v1.1.1
+## explicit
+github.com/davecgh/go-spew/spew
+# github.com/dustin/go-humanize v1.0.1
+## explicit; go 1.16
+github.com/dustin/go-humanize
+# github.com/fatih/structtag v1.2.0
+## explicit; go 1.12
+github.com/fatih/structtag
+# github.com/go-sql-driver/mysql v1.9.3
+## explicit; go 1.21.0
+github.com/go-sql-driver/mysql
+# github.com/google/cel-go v0.26.1
+## explicit; go 1.22.0
+github.com/google/cel-go/cel
+github.com/google/cel-go/checker
+github.com/google/cel-go/checker/decls
+github.com/google/cel-go/common
+github.com/google/cel-go/common/ast
+github.com/google/cel-go/common/containers
+github.com/google/cel-go/common/debug
+github.com/google/cel-go/common/decls
+github.com/google/cel-go/common/env
+github.com/google/cel-go/common/functions
+github.com/google/cel-go/common/operators
+github.com/google/cel-go/common/overloads
+github.com/google/cel-go/common/runes
+github.com/google/cel-go/common/stdlib
+github.com/google/cel-go/common/types
+github.com/google/cel-go/common/types/pb
+github.com/google/cel-go/common/types/ref
+github.com/google/cel-go/common/types/traits
+github.com/google/cel-go/ext
+github.com/google/cel-go/interpreter
+github.com/google/cel-go/parser
+github.com/google/cel-go/parser/gen
+# github.com/google/uuid v1.6.0
+## explicit
+github.com/google/uuid
+# github.com/inconshreveable/mousetrap v1.1.0
+## explicit; go 1.18
+github.com/inconshreveable/mousetrap
+# github.com/jackc/pgpassfile v1.0.0
+## explicit; go 1.12
+github.com/jackc/pgpassfile
+# github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761
+## explicit; go 1.14
+github.com/jackc/pgservicefile
+# github.com/jackc/pgx/v5 v5.7.5
+## explicit; go 1.23.0
+github.com/jackc/pgx/v5
+github.com/jackc/pgx/v5/internal/iobufpool
+github.com/jackc/pgx/v5/internal/pgio
+github.com/jackc/pgx/v5/internal/sanitize
+github.com/jackc/pgx/v5/internal/stmtcache
+github.com/jackc/pgx/v5/pgconn
+github.com/jackc/pgx/v5/pgconn/ctxwatch
+github.com/jackc/pgx/v5/pgconn/internal/bgreader
+github.com/jackc/pgx/v5/pgproto3
+github.com/jackc/pgx/v5/pgtype
+github.com/jackc/pgx/v5/pgxpool
+github.com/jackc/pgx/v5/stdlib
+# github.com/jackc/puddle/v2 v2.2.2
+## explicit; go 1.19
+github.com/jackc/puddle/v2
+github.com/jackc/puddle/v2/internal/genstack
+# github.com/jinzhu/inflection v1.0.0
+## explicit
+github.com/jinzhu/inflection
+# github.com/mattn/go-isatty v0.0.20
+## explicit; go 1.15
+github.com/mattn/go-isatty
+# github.com/ncruces/go-strftime v0.1.9
+## explicit; go 1.17
+github.com/ncruces/go-strftime
+# github.com/pganalyze/pg_query_go/v6 v6.1.0
+## explicit; go 1.14
+github.com/pganalyze/pg_query_go/v6
+github.com/pganalyze/pg_query_go/v6/parser
+github.com/pganalyze/pg_query_go/v6/parser/include
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/access
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/archive
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/catalog
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/commands
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/common
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/datatype
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/executor
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/foreign
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/jit
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/lib
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/libpq
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/mb
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/nodes
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/optimizer
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/parser
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/partitioning
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/port
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/port/atomics
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/port/win32
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/port/win32/arpa
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/port/win32/netinet
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/port/win32/sys
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/port/win32_msvc
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/port/win32_msvc/sys
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/portability
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/postmaster
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/regex
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/replication
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/rewrite
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/storage
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/tcop
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/tsearch
+github.com/pganalyze/pg_query_go/v6/parser/include/postgres/utils
+github.com/pganalyze/pg_query_go/v6/parser/include/protobuf
+github.com/pganalyze/pg_query_go/v6/parser/include/protobuf-c
+github.com/pganalyze/pg_query_go/v6/parser/include/xxhash
+# github.com/pingcap/errors v0.11.5-0.20240311024730-e056997136bb
+## explicit; go 1.14
+github.com/pingcap/errors
+# github.com/pingcap/failpoint v0.0.0-20240528011301-b51a646c7c86
+## explicit; go 1.18
+github.com/pingcap/failpoint
+# github.com/pingcap/log v1.1.0
+## explicit; go 1.16
+github.com/pingcap/log
+# github.com/pingcap/tidb/pkg/parser v0.0.0-20250324122243-d51e00e5bbf0
+## explicit; go 1.23
+github.com/pingcap/tidb/pkg/parser
+github.com/pingcap/tidb/pkg/parser/ast
+github.com/pingcap/tidb/pkg/parser/auth
+github.com/pingcap/tidb/pkg/parser/charset
+github.com/pingcap/tidb/pkg/parser/duration
+github.com/pingcap/tidb/pkg/parser/format
+github.com/pingcap/tidb/pkg/parser/mysql
+github.com/pingcap/tidb/pkg/parser/opcode
+github.com/pingcap/tidb/pkg/parser/terror
+github.com/pingcap/tidb/pkg/parser/test_driver
+github.com/pingcap/tidb/pkg/parser/tidb
+github.com/pingcap/tidb/pkg/parser/types
+# github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec
+## explicit; go 1.12
+github.com/remyoudompheng/bigfft
+# github.com/riza-io/grpc-go v0.2.0
+## explicit; go 1.17
+github.com/riza-io/grpc-go/credentials/basic
+# github.com/spf13/cobra v1.9.1
+## explicit; go 1.15
+github.com/spf13/cobra
+# github.com/spf13/pflag v1.0.7
+## explicit; go 1.12
+github.com/spf13/pflag
+# github.com/sqlc-dev/sqlc v1.30.0
+## explicit; go 1.23.0
+github.com/sqlc-dev/sqlc/cmd/sqlc
+github.com/sqlc-dev/sqlc/internal/analysis
+github.com/sqlc-dev/sqlc/internal/analyzer
+github.com/sqlc-dev/sqlc/internal/bundler
+github.com/sqlc-dev/sqlc/internal/cache
+github.com/sqlc-dev/sqlc/internal/cmd
+github.com/sqlc-dev/sqlc/internal/codegen/golang
+github.com/sqlc-dev/sqlc/internal/codegen/golang/opts
+github.com/sqlc-dev/sqlc/internal/codegen/json
+github.com/sqlc-dev/sqlc/internal/codegen/sdk
+github.com/sqlc-dev/sqlc/internal/compiler
+github.com/sqlc-dev/sqlc/internal/config
+github.com/sqlc-dev/sqlc/internal/config/convert
+github.com/sqlc-dev/sqlc/internal/constants
+github.com/sqlc-dev/sqlc/internal/dbmanager
+github.com/sqlc-dev/sqlc/internal/debug
+github.com/sqlc-dev/sqlc/internal/engine/dolphin
+github.com/sqlc-dev/sqlc/internal/engine/postgresql
+github.com/sqlc-dev/sqlc/internal/engine/postgresql/analyzer
+github.com/sqlc-dev/sqlc/internal/engine/postgresql/contrib
+github.com/sqlc-dev/sqlc/internal/engine/postgresql/parser
+github.com/sqlc-dev/sqlc/internal/engine/sqlite
+github.com/sqlc-dev/sqlc/internal/engine/sqlite/parser
+github.com/sqlc-dev/sqlc/internal/ext
+github.com/sqlc-dev/sqlc/internal/ext/process
+github.com/sqlc-dev/sqlc/internal/ext/wasm
+github.com/sqlc-dev/sqlc/internal/inflection
+github.com/sqlc-dev/sqlc/internal/info
+github.com/sqlc-dev/sqlc/internal/metadata
+github.com/sqlc-dev/sqlc/internal/migrations
+github.com/sqlc-dev/sqlc/internal/multierr
+github.com/sqlc-dev/sqlc/internal/opts
+github.com/sqlc-dev/sqlc/internal/pattern
+github.com/sqlc-dev/sqlc/internal/pgx/poolcache
+github.com/sqlc-dev/sqlc/internal/plugin
+github.com/sqlc-dev/sqlc/internal/quickdb
+github.com/sqlc-dev/sqlc/internal/quickdb/v1
+github.com/sqlc-dev/sqlc/internal/remote
+github.com/sqlc-dev/sqlc/internal/rpc
+github.com/sqlc-dev/sqlc/internal/shfmt
+github.com/sqlc-dev/sqlc/internal/source
+github.com/sqlc-dev/sqlc/internal/sql/ast
+github.com/sqlc-dev/sqlc/internal/sql/astutils
+github.com/sqlc-dev/sqlc/internal/sql/catalog
+github.com/sqlc-dev/sqlc/internal/sql/lang
+github.com/sqlc-dev/sqlc/internal/sql/named
+github.com/sqlc-dev/sqlc/internal/sql/rewrite
+github.com/sqlc-dev/sqlc/internal/sql/sqlerr
+github.com/sqlc-dev/sqlc/internal/sql/sqlpath
+github.com/sqlc-dev/sqlc/internal/sql/validate
+github.com/sqlc-dev/sqlc/internal/tracer
+github.com/sqlc-dev/sqlc/internal/vet
+# github.com/stoewer/go-strcase v1.2.0
+## explicit; go 1.11
+github.com/stoewer/go-strcase
+# github.com/tetratelabs/wazero v1.9.0
+## explicit; go 1.22.0
+github.com/tetratelabs/wazero
+github.com/tetratelabs/wazero/api
+github.com/tetratelabs/wazero/experimental
+github.com/tetratelabs/wazero/experimental/sys
+github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1
+github.com/tetratelabs/wazero/internal/descriptor
+github.com/tetratelabs/wazero/internal/engine/interpreter
+github.com/tetratelabs/wazero/internal/engine/wazevo
+github.com/tetratelabs/wazero/internal/engine/wazevo/backend
+github.com/tetratelabs/wazero/internal/engine/wazevo/backend/isa/amd64
+github.com/tetratelabs/wazero/internal/engine/wazevo/backend/isa/arm64
+github.com/tetratelabs/wazero/internal/engine/wazevo/backend/regalloc
+github.com/tetratelabs/wazero/internal/engine/wazevo/frontend
+github.com/tetratelabs/wazero/internal/engine/wazevo/ssa
+github.com/tetratelabs/wazero/internal/engine/wazevo/wazevoapi
+github.com/tetratelabs/wazero/internal/expctxkeys
+github.com/tetratelabs/wazero/internal/filecache
+github.com/tetratelabs/wazero/internal/fsapi
+github.com/tetratelabs/wazero/internal/ieee754
+github.com/tetratelabs/wazero/internal/internalapi
+github.com/tetratelabs/wazero/internal/leb128
+github.com/tetratelabs/wazero/internal/moremath
+github.com/tetratelabs/wazero/internal/platform
+github.com/tetratelabs/wazero/internal/sock
+github.com/tetratelabs/wazero/internal/sys
+github.com/tetratelabs/wazero/internal/sysfs
+github.com/tetratelabs/wazero/internal/u32
+github.com/tetratelabs/wazero/internal/u64
+github.com/tetratelabs/wazero/internal/version
+github.com/tetratelabs/wazero/internal/wasip1
+github.com/tetratelabs/wazero/internal/wasm
+github.com/tetratelabs/wazero/internal/wasm/binary
+github.com/tetratelabs/wazero/internal/wasmdebug
+github.com/tetratelabs/wazero/internal/wasmruntime
+github.com/tetratelabs/wazero/sys
+# github.com/wasilibs/go-pgquery v0.0.0-20250409022910-10ac41983c07
+## explicit; go 1.22.0
+github.com/wasilibs/go-pgquery
+github.com/wasilibs/go-pgquery/internal/errors
+github.com/wasilibs/go-pgquery/internal/wasix_32v1
+github.com/wasilibs/go-pgquery/internal/wasm
+github.com/wasilibs/go-pgquery/parser
+# github.com/wasilibs/wazero-helpers v0.0.0-20240620070341-3dff1577cd52
+## explicit; go 1.20
+github.com/wasilibs/wazero-helpers/allocator
+# go.uber.org/atomic v1.11.0
+## explicit; go 1.18
+go.uber.org/atomic
+# go.uber.org/multierr v1.11.0
+## explicit; go 1.19
+go.uber.org/multierr
+# go.uber.org/zap v1.27.0
+## explicit; go 1.19
+go.uber.org/zap
+go.uber.org/zap/buffer
+go.uber.org/zap/internal
+go.uber.org/zap/internal/bufferpool
+go.uber.org/zap/internal/color
+go.uber.org/zap/internal/exit
+go.uber.org/zap/internal/pool
+go.uber.org/zap/internal/stacktrace
+go.uber.org/zap/internal/ztest
+go.uber.org/zap/zapcore
+go.uber.org/zap/zaptest
+# golang.org/x/crypto v0.39.0
+## explicit; go 1.23.0
+golang.org/x/crypto/pbkdf2
+# golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
+## explicit; go 1.23.0
+golang.org/x/exp/constraints
+golang.org/x/exp/slices
+# golang.org/x/net v0.41.0
+## explicit; go 1.23.0
+golang.org/x/net/http/httpguts
+golang.org/x/net/http2
+golang.org/x/net/http2/hpack
+golang.org/x/net/idna
+golang.org/x/net/internal/httpcommon
+golang.org/x/net/internal/timeseries
+golang.org/x/net/trace
+# golang.org/x/sync v0.16.0
+## explicit; go 1.23.0
+golang.org/x/sync/errgroup
+golang.org/x/sync/semaphore
+golang.org/x/sync/singleflight
+# golang.org/x/sys v0.34.0
+## explicit; go 1.23.0
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# golang.org/x/text v0.26.0
+## explicit; go 1.23.0
+golang.org/x/text/cases
+golang.org/x/text/encoding
+golang.org/x/text/encoding/charmap
+golang.org/x/text/encoding/internal
+golang.org/x/text/encoding/internal/identifier
+golang.org/x/text/encoding/japanese
+golang.org/x/text/encoding/korean
+golang.org/x/text/encoding/simplifiedchinese
+golang.org/x/text/encoding/traditionalchinese
+golang.org/x/text/encoding/unicode
+golang.org/x/text/feature/plural
+golang.org/x/text/internal
+golang.org/x/text/internal/catmsg
+golang.org/x/text/internal/format
+golang.org/x/text/internal/language
+golang.org/x/text/internal/language/compact
+golang.org/x/text/internal/number
+golang.org/x/text/internal/stringset
+golang.org/x/text/internal/tag
+golang.org/x/text/internal/utf8internal
+golang.org/x/text/language
+golang.org/x/text/message
+golang.org/x/text/message/catalog
+golang.org/x/text/runes
+golang.org/x/text/secure/bidirule
+golang.org/x/text/secure/precis
+golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
+golang.org/x/text/width
+# google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7
+## explicit; go 1.23.0
+google.golang.org/genproto/googleapis/api/expr/v1alpha1
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7
+## explicit; go 1.23.0
+google.golang.org/genproto/googleapis/rpc/status
+# google.golang.org/grpc v1.75.0
+## explicit; go 1.23.0
+google.golang.org/grpc
+google.golang.org/grpc/attributes
+google.golang.org/grpc/backoff
+google.golang.org/grpc/balancer
+google.golang.org/grpc/balancer/base
+google.golang.org/grpc/balancer/endpointsharding
+google.golang.org/grpc/balancer/grpclb/state
+google.golang.org/grpc/balancer/pickfirst
+google.golang.org/grpc/balancer/pickfirst/internal
+google.golang.org/grpc/balancer/pickfirst/pickfirstleaf
+google.golang.org/grpc/balancer/roundrobin
+google.golang.org/grpc/binarylog/grpc_binarylog_v1
+google.golang.org/grpc/channelz
+google.golang.org/grpc/codes
+google.golang.org/grpc/connectivity
+google.golang.org/grpc/credentials
+google.golang.org/grpc/credentials/insecure
+google.golang.org/grpc/encoding
+google.golang.org/grpc/encoding/proto
+google.golang.org/grpc/experimental/stats
+google.golang.org/grpc/grpclog
+google.golang.org/grpc/grpclog/internal
+google.golang.org/grpc/internal
+google.golang.org/grpc/internal/backoff
+google.golang.org/grpc/internal/balancer/gracefulswitch
+google.golang.org/grpc/internal/balancerload
+google.golang.org/grpc/internal/binarylog
+google.golang.org/grpc/internal/buffer
+google.golang.org/grpc/internal/channelz
+google.golang.org/grpc/internal/credentials
+google.golang.org/grpc/internal/envconfig
+google.golang.org/grpc/internal/grpclog
+google.golang.org/grpc/internal/grpcsync
+google.golang.org/grpc/internal/grpcutil
+google.golang.org/grpc/internal/idle
+google.golang.org/grpc/internal/metadata
+google.golang.org/grpc/internal/pretty
+google.golang.org/grpc/internal/proxyattributes
+google.golang.org/grpc/internal/resolver
+google.golang.org/grpc/internal/resolver/delegatingresolver
+google.golang.org/grpc/internal/resolver/dns
+google.golang.org/grpc/internal/resolver/dns/internal
+google.golang.org/grpc/internal/resolver/passthrough
+google.golang.org/grpc/internal/resolver/unix
+google.golang.org/grpc/internal/serviceconfig
+google.golang.org/grpc/internal/stats
+google.golang.org/grpc/internal/status
+google.golang.org/grpc/internal/syscall
+google.golang.org/grpc/internal/transport
+google.golang.org/grpc/internal/transport/networktype
+google.golang.org/grpc/keepalive
+google.golang.org/grpc/mem
+google.golang.org/grpc/metadata
+google.golang.org/grpc/peer
+google.golang.org/grpc/resolver
+google.golang.org/grpc/resolver/dns
+google.golang.org/grpc/serviceconfig
+google.golang.org/grpc/stats
+google.golang.org/grpc/status
+google.golang.org/grpc/tap
+# google.golang.org/protobuf v1.36.8
+## explicit; go 1.23
+google.golang.org/protobuf/encoding/protojson
+google.golang.org/protobuf/encoding/prototext
+google.golang.org/protobuf/encoding/protowire
+google.golang.org/protobuf/internal/descfmt
+google.golang.org/protobuf/internal/descopts
+google.golang.org/protobuf/internal/detrand
+google.golang.org/protobuf/internal/editiondefaults
+google.golang.org/protobuf/internal/editionssupport
+google.golang.org/protobuf/internal/encoding/defval
+google.golang.org/protobuf/internal/encoding/json
+google.golang.org/protobuf/internal/encoding/messageset
+google.golang.org/protobuf/internal/encoding/tag
+google.golang.org/protobuf/internal/encoding/text
+google.golang.org/protobuf/internal/errors
+google.golang.org/protobuf/internal/filedesc
+google.golang.org/protobuf/internal/filetype
+google.golang.org/protobuf/internal/flags
+google.golang.org/protobuf/internal/genid
+google.golang.org/protobuf/internal/impl
+google.golang.org/protobuf/internal/order
+google.golang.org/protobuf/internal/pragma
+google.golang.org/protobuf/internal/protolazy
+google.golang.org/protobuf/internal/set
+google.golang.org/protobuf/internal/strs
+google.golang.org/protobuf/internal/version
+google.golang.org/protobuf/proto
+google.golang.org/protobuf/protoadapt
+google.golang.org/protobuf/reflect/protodesc
+google.golang.org/protobuf/reflect/protoreflect
+google.golang.org/protobuf/reflect/protoregistry
+google.golang.org/protobuf/runtime/protoiface
+google.golang.org/protobuf/runtime/protoimpl
+google.golang.org/protobuf/types/descriptorpb
+google.golang.org/protobuf/types/dynamicpb
+google.golang.org/protobuf/types/gofeaturespb
+google.golang.org/protobuf/types/known/anypb
+google.golang.org/protobuf/types/known/durationpb
+google.golang.org/protobuf/types/known/emptypb
+google.golang.org/protobuf/types/known/structpb
+google.golang.org/protobuf/types/known/timestamppb
+google.golang.org/protobuf/types/known/wrapperspb
+# gopkg.in/natefinch/lumberjack.v2 v2.2.1
+## explicit; go 1.13
+gopkg.in/natefinch/lumberjack.v2
+# gopkg.in/yaml.v3 v3.0.1
+## explicit
+gopkg.in/yaml.v3
+# modernc.org/libc v1.66.3
+## explicit; go 1.23.0
+modernc.org/libc
+modernc.org/libc/errno
+modernc.org/libc/fcntl
+modernc.org/libc/fts
+modernc.org/libc/grp
+modernc.org/libc/honnef.co/go/netdb
+modernc.org/libc/langinfo
+modernc.org/libc/limits
+modernc.org/libc/netdb
+modernc.org/libc/netinet/in
+modernc.org/libc/poll
+modernc.org/libc/pthread
+modernc.org/libc/pwd
+modernc.org/libc/signal
+modernc.org/libc/stdio
+modernc.org/libc/stdlib
+modernc.org/libc/sys/socket
+modernc.org/libc/sys/stat
+modernc.org/libc/sys/types
+modernc.org/libc/termios
+modernc.org/libc/time
+modernc.org/libc/unistd
+modernc.org/libc/utime
+modernc.org/libc/uuid
+modernc.org/libc/uuid/uuid
+modernc.org/libc/wctype
+# modernc.org/mathutil v1.7.1
+## explicit; go 1.21
+modernc.org/mathutil
+# modernc.org/memory v1.11.0
+## explicit; go 1.23.0
+modernc.org/memory
+# modernc.org/sqlite v1.38.2
+## explicit; go 1.23.0
+modernc.org/sqlite
+modernc.org/sqlite/lib
