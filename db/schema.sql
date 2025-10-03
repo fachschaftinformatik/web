@@ -1,4 +1,4 @@
-PRAGMA user_version = 1;
+PRAGMA user_version = 2;
 
 PRAGMA foreign_keys = ON;
 PRAGMA recursive_triggers = OFF;
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS campuses (
   name     TEXT NOT NULL UNIQUE,
   location TEXT,
   created  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS disciplines (
   id      INTEGER PRIMARY KEY,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS disciplines (
   degree  TEXT NOT NULL,
   created TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   UNIQUE(degree, name)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS users (
   id           TEXT PRIMARY KEY,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS users (
                  ON DELETE RESTRICT ON UPDATE CASCADE,
   created      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-);
+) STRICT;
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users(lower(email));
 CREATE INDEX IF NOT EXISTS idx_users_campus          ON users(campusid);
@@ -59,7 +59,8 @@ CREATE TABLE IF NOT EXISTS posts (
   created TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   deleted TEXT
-);
+) STRICT;
+
 CREATE INDEX IF NOT EXISTS idx_forum_posts_user     ON forum_posts(userid);
 CREATE INDEX IF NOT EXISTS idx_forum_posts_created  ON forum_posts(created DESC);
 
@@ -84,7 +85,7 @@ CREATE TABLE IF NOT EXISTS comments (
   created TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   deleted TEXT
-);
+) STRICT;
 
 CREATE INDEX IF NOT EXISTS idx_forum_comments_post    ON forum_comments(postid);
 CREATE INDEX IF NOT EXISTS idx_forum_comments_user    ON forum_comments(userid);
@@ -116,7 +117,7 @@ CREATE TABLE IF NOT EXISTS exams (
   mimetype         TEXT NOT NULL CHECK (mimetype IN ('application/pdf')),
   sz               INTEGER,
   checksum         TEXT
-);
+) STRICT;
 
 CREATE INDEX IF NOT EXISTS idx_exams_date ON exams(disciplineid, examdate DESC);
 CREATE INDEX IF NOT EXISTS idx_exams_user ON exams(userid);
@@ -139,7 +140,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   created  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   lastseen TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   expires  TEXT NOT NULL
-);
+) STRICT;
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user    ON sessions(userid);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires);
