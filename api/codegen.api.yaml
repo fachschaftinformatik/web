@@ -1,0 +1,10 @@
+package: api
+output: ../internal/api/api.gen.go
+generate:
+  std-http-server: true
+  models: true
+  embedded-spec: true
+output-options:
+  overlay:
+    path: openapi.compat.yaml
+
