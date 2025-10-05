@@ -1,0 +1,9 @@
+package: api
+output: ../internal/api/client.gen.go
+generate:
+  models: true
+  std-http-client: true
+output-options:
+  overlay:
+    path: openapi.compat.yaml
+
