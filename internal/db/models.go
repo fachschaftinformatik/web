@@ -9,69 +9,71 @@ import (
 )
 
 type Campuse struct {
-	ID       int64          `json:"id"`
-	Name     string         `json:"name"`
-	Location sql.NullString `json:"location"`
-	Created  string         `json:"created"`
+	ID        int64          `json:"id"`
+	Name      string         `json:"name"`
+	Location  sql.NullString `json:"location"`
+	CreatedAt string         `json:"created_at"`
 }
 
 type Comment struct {
-	ID      string         `json:"id"`
-	Postid  string         `json:"postid"`
-	Userid  string         `json:"userid"`
-	Body    string         `json:"body"`
-	Created string         `json:"created"`
-	Updated string         `json:"updated"`
-	Deleted sql.NullString `json:"deleted"`
+	ID        string `json:"id"`
+	Postid    string `json:"postid"`
+	Userid    string `json:"userid"`
+	Body      string `json:"body"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 type Discipline struct {
-	ID      int64  `json:"id"`
-	Name    string `json:"name"`
-	Degree  string `json:"degree"`
-	Created string `json:"created"`
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	Degree    string `json:"degree"`
+	CreatedAt string `json:"created_at"`
 }
 
 type Exam struct {
-	ID           string         `json:"id"`
-	Userid       string         `json:"userid"`
-	Disciplineid int64          `json:"disciplineid"`
-	Campusid     sql.NullInt64  `json:"campusid"`
-	Examdate     string         `json:"examdate"`
-	Uploaded     string         `json:"uploaded"`
-	Accesskey    string         `json:"accesskey"`
-	Mimetype     string         `json:"mimetype"`
-	Sz           sql.NullInt64  `json:"sz"`
-	Checksum     sql.NullString `json:"checksum"`
+	ID           string        `json:"id"`
+	Userid       string        `json:"userid"`
+	Disciplineid int64         `json:"disciplineid"`
+	Campusid     sql.NullInt64 `json:"campusid"`
+	ExamDate     string        `json:"exam_date"`
+	UploadedAt   string        `json:"uploaded_at"`
+	Accesskey    string        `json:"accesskey"`
+	MimeType     string        `json:"mime_type"`
+	Nbytes       int64         `json:"nbytes"`
+	Checksum     string        `json:"checksum"`
 }
 
 type Post struct {
-	ID      string         `json:"id"`
-	Userid  string         `json:"userid"`
-	Title   string         `json:"title"`
-	Body    string         `json:"body"`
-	Created string         `json:"created"`
-	Updated string         `json:"updated"`
-	Deleted sql.NullString `json:"deleted"`
+	ID        string         `json:"id"`
+	Userid    string         `json:"userid"`
+	Title     string         `json:"title"`
+	Body      string         `json:"body"`
+	CreatedAt string         `json:"created_at"`
+	UpdatedAt string         `json:"updated_at"`
+	Deleted   sql.NullString `json:"deleted"`
 }
 
 type Session struct {
-	ID       string `json:"id"`
-	Userid   string `json:"userid"`
-	Created  string `json:"created"`
-	Lastseen string `json:"lastseen"`
-	Expires  string `json:"expires"`
+	ID        string `json:"id"`
+	Userid    string `json:"userid"`
+	CreatedAt string `json:"created_at"`
+	LastSeen  string `json:"last_seen"`
+	ExpiresAt string `json:"expires_at"`
 }
 
 type User struct {
-	ID           string `json:"id"`
-	Email        string `json:"email"`
-	Password     string `json:"password"`
-	Name         string `json:"name"`
-	Role         string `json:"role"`
-	Active       int64  `json:"active"`
-	Campusid     int64  `json:"campusid"`
-	Disciplineid int64  `json:"disciplineid"`
-	Created      string `json:"created"`
-	Updated      string `json:"updated"`
+	ID            string         `json:"id"`
+	Email         string         `json:"email"`
+	Name          string         `json:"name"`
+	Password      string         `json:"password"`
+	Role          string         `json:"role"`
+	Active        int64          `json:"active"`
+	Verified      int64          `json:"verified"`
+	VerifiedAt    sql.NullString `json:"verified_at"`
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	Campusid      int64          `json:"campusid"`
+	Disciplineid  int64          `json:"disciplineid"`
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
 }
