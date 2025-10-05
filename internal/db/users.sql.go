@@ -7,45 +7,56 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-  id, email, password, name, role, active, campusid, disciplineid
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  id, email, name, password, role, active, verified, campusid, disciplineid
+) VALUES (
+  ?1, ?2, ?3, ?4,
+  COALESCE(?5, 'user'),
+  COALESCE(?6, 0),
+  0,
+  ?7, ?8
+)
 RETURNING
-  id, email, name, role, active, campusid, disciplineid, created, updated
+  id, email, name, role, active, verified, verified_at, verified_until,
+  campusid, disciplineid, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	ID           string `json:"id"`
-	Email        string `json:"email"`
-	Password     string `json:"password"`
-	Name         string `json:"name"`
-	Role         string `json:"role"`
-	Active       int64  `json:"active"`
-	Campusid     int64  `json:"campusid"`
-	Disciplineid int64  `json:"disciplineid"`
+	ID           string      `json:"id"`
+	Email        string      `json:"email"`
+	Name         string      `json:"name"`
+	Password     string      `json:"password"`
+	Role         interface{} `json:"role"`
+	Active       interface{} `json:"active"`
+	Campusid     int64       `json:"campusid"`
+	Disciplineid int64       `json:"disciplineid"`
 }
 
 type CreateUserRow struct {
-	ID           string `json:"id"`
-	Email        string `json:"email"`
-	Name         string `json:"name"`
-	Role         string `json:"role"`
-	Active       int64  `json:"active"`
-	Campusid     int64  `json:"campusid"`
-	Disciplineid int64  `json:"disciplineid"`
-	Created      string `json:"created"`
-	Updated      string `json:"updated"`
+	ID            string         `json:"id"`
+	Email         string         `json:"email"`
+	Name          string         `json:"name"`
+	Role          string         `json:"role"`
+	Active        int64          `json:"active"`
+	Verified      int64          `json:"verified"`
+	VerifiedAt    sql.NullString `json:"verified_at"`
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	Campusid      int64          `json:"campusid"`
+	Disciplineid  int64          `json:"disciplineid"`
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
 	row := q.db.QueryRowContext(ctx, createUser,
 		arg.ID,
 		arg.Email,
-		arg.Password,
 		arg.Name,
+		arg.Password,
 		arg.Role,
 		arg.Active,
 		arg.Campusid,
@@ -58,32 +69,39 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		&i.Name,
 		&i.Role,
 		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerifiedUntil,
 		&i.Campusid,
 		&i.Disciplineid,
-		&i.Created,
-		&i.Updated,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
 SELECT
-  id, email, name, role, active, campusid, disciplineid, created, updated
+  id, email, name, role, active, verified, verified_at, verified_until,
+  campusid, disciplineid, created_at, updated_at
 FROM users
-WHERE id = ?
+WHERE id = ?1
 LIMIT 1
 `
 
 type GetUserRow struct {
-	ID           string `json:"id"`
-	Email        string `json:"email"`
-	Name         string `json:"name"`
-	Role         string `json:"role"`
-	Active       int64  `json:"active"`
-	Campusid     int64  `json:"campusid"`
-	Disciplineid int64  `json:"disciplineid"`
-	Created      string `json:"created"`
-	Updated      string `json:"updated"`
+	ID            string         `json:"id"`
+	Email         string         `json:"email"`
+	Name          string         `json:"name"`
+	Role          string         `json:"role"`
+	Active        int64          `json:"active"`
+	Verified      int64          `json:"verified"`
+	VerifiedAt    sql.NullString `json:"verified_at"`
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	Campusid      int64          `json:"campusid"`
+	Disciplineid  int64          `json:"disciplineid"`
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
 }
 
 func (q *Queries) GetUser(ctx context.Context, id string) (GetUserRow, error) {
@@ -95,19 +113,67 @@ func (q *Queries) GetUser(ctx context.Context, id string) (GetUserRow, error) {
 		&i.Name,
 		&i.Role,
 		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerifiedUntil,
 		&i.Campusid,
 		&i.Disciplineid,
-		&i.Created,
-		&i.Updated,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT
+  id, email, name, role, active, verified, verified_at, verified_until,
+  campusid, disciplineid, created_at, updated_at
+FROM users
+WHERE lower(email) = lower(?1)
+LIMIT 1
+`
+
+type GetUserByEmailRow struct {
+	ID            string         `json:"id"`
+	Email         string         `json:"email"`
+	Name          string         `json:"name"`
+	Role          string         `json:"role"`
+	Active        int64          `json:"active"`
+	Verified      int64          `json:"verified"`
+	VerifiedAt    sql.NullString `json:"verified_at"`
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	Campusid      int64          `json:"campusid"`
+	Disciplineid  int64          `json:"disciplineid"`
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i GetUserByEmailRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Role,
+		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerifiedUntil,
+		&i.Campusid,
+		&i.Disciplineid,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
 SELECT
-  id, email, name, role, active, campusid, disciplineid, created, updated
+  id, email, name, role, active, verified, verified_at, verified_until,
+  campusid, disciplineid, created_at, updated_at
 FROM users
-ORDER BY created DESC
+ORDER BY created_at DESC
 LIMIT ?2 OFFSET ?1
 `
 
@@ -117,15 +183,18 @@ type ListUsersParams struct {
 }
 
 type ListUsersRow struct {
-	ID           string `json:"id"`
-	Email        string `json:"email"`
-	Name         string `json:"name"`
-	Role         string `json:"role"`
-	Active       int64  `json:"active"`
-	Campusid     int64  `json:"campusid"`
-	Disciplineid int64  `json:"disciplineid"`
-	Created      string `json:"created"`
-	Updated      string `json:"updated"`
+	ID            string         `json:"id"`
+	Email         string         `json:"email"`
+	Name          string         `json:"name"`
+	Role          string         `json:"role"`
+	Active        int64          `json:"active"`
+	Verified      int64          `json:"verified"`
+	VerifiedAt    sql.NullString `json:"verified_at"`
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	Campusid      int64          `json:"campusid"`
+	Disciplineid  int64          `json:"disciplineid"`
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
 }
 
 func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error) {
@@ -143,10 +212,13 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUse
 			&i.Name,
 			&i.Role,
 			&i.Active,
+			&i.Verified,
+			&i.VerifiedAt,
+			&i.VerifiedUntil,
 			&i.Campusid,
 			&i.Disciplineid,
-			&i.Created,
-			&i.Updated,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -159,4 +231,259 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUse
 		return nil, err
 	}
 	return items, nil
+}
+
+const setUserActive = `-- name: SetUserActive :one
+UPDATE users
+SET active = ?1
+WHERE id = ?2
+RETURNING
+  id, email, name, role, active, verified, verified_at, verified_until,
+  campusid, disciplineid, created_at, updated_at
+`
+
+type SetUserActiveParams struct {
+	Active int64  `json:"active"`
+	ID     string `json:"id"`
+}
+
+type SetUserActiveRow struct {
+	ID            string         `json:"id"`
+	Email         string         `json:"email"`
+	Name          string         `json:"name"`
+	Role          string         `json:"role"`
+	Active        int64          `json:"active"`
+	Verified      int64          `json:"verified"`
+	VerifiedAt    sql.NullString `json:"verified_at"`
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	Campusid      int64          `json:"campusid"`
+	Disciplineid  int64          `json:"disciplineid"`
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
+}
+
+func (q *Queries) SetUserActive(ctx context.Context, arg SetUserActiveParams) (SetUserActiveRow, error) {
+	row := q.db.QueryRowContext(ctx, setUserActive, arg.Active, arg.ID)
+	var i SetUserActiveRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Role,
+		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerifiedUntil,
+		&i.Campusid,
+		&i.Disciplineid,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const setUserRole = `-- name: SetUserRole :one
+UPDATE users
+SET role = ?1
+WHERE id = ?2
+RETURNING
+  id, email, name, role, active, verified, verified_at, verified_until,
+  campusid, disciplineid, created_at, updated_at
+`
+
+type SetUserRoleParams struct {
+	Role string `json:"role"`
+	ID   string `json:"id"`
+}
+
+type SetUserRoleRow struct {
+	ID            string         `json:"id"`
+	Email         string         `json:"email"`
+	Name          string         `json:"name"`
+	Role          string         `json:"role"`
+	Active        int64          `json:"active"`
+	Verified      int64          `json:"verified"`
+	VerifiedAt    sql.NullString `json:"verified_at"`
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	Campusid      int64          `json:"campusid"`
+	Disciplineid  int64          `json:"disciplineid"`
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
+}
+
+func (q *Queries) SetUserRole(ctx context.Context, arg SetUserRoleParams) (SetUserRoleRow, error) {
+	row := q.db.QueryRowContext(ctx, setUserRole, arg.Role, arg.ID)
+	var i SetUserRoleRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Role,
+		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerifiedUntil,
+		&i.Campusid,
+		&i.Disciplineid,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const sweepExpiredVerifications = `-- name: SweepExpiredVerifications :exec
+UPDATE users
+SET verified = 0
+WHERE verified = 1
+  AND verified_until IS NOT NULL
+  AND verified_until < strftime('%Y-%m-%dT%H:%M:%fZ','now')
+`
+
+func (q *Queries) SweepExpiredVerifications(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, sweepExpiredVerifications)
+	return err
+}
+
+const unverifyUser = `-- name: UnverifyUser :one
+UPDATE users
+SET verified = 0
+WHERE id = ?1
+RETURNING
+  id, email, name, role, active, verified, verified_at, verified_until,
+  campusid, disciplineid, created_at, updated_at
+`
+
+type UnverifyUserRow struct {
+	ID            string         `json:"id"`
+	Email         string         `json:"email"`
+	Name          string         `json:"name"`
+	Role          string         `json:"role"`
+	Active        int64          `json:"active"`
+	Verified      int64          `json:"verified"`
+	VerifiedAt    sql.NullString `json:"verified_at"`
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	Campusid      int64          `json:"campusid"`
+	Disciplineid  int64          `json:"disciplineid"`
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
+}
+
+func (q *Queries) UnverifyUser(ctx context.Context, id string) (UnverifyUserRow, error) {
+	row := q.db.QueryRowContext(ctx, unverifyUser, id)
+	var i UnverifyUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Role,
+		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerifiedUntil,
+		&i.Campusid,
+		&i.Disciplineid,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateUserVerificationWindow = `-- name: UpdateUserVerificationWindow :one
+UPDATE users
+SET verified_until = ?1
+WHERE id = ?2
+RETURNING
+  id, email, name, role, active, verified, verified_at, verified_until,
+  campusid, disciplineid, created_at, updated_at
+`
+
+type UpdateUserVerificationWindowParams struct {
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	ID            string         `json:"id"`
+}
+
+type UpdateUserVerificationWindowRow struct {
+	ID            string         `json:"id"`
+	Email         string         `json:"email"`
+	Name          string         `json:"name"`
+	Role          string         `json:"role"`
+	Active        int64          `json:"active"`
+	Verified      int64          `json:"verified"`
+	VerifiedAt    sql.NullString `json:"verified_at"`
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	Campusid      int64          `json:"campusid"`
+	Disciplineid  int64          `json:"disciplineid"`
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
+}
+
+func (q *Queries) UpdateUserVerificationWindow(ctx context.Context, arg UpdateUserVerificationWindowParams) (UpdateUserVerificationWindowRow, error) {
+	row := q.db.QueryRowContext(ctx, updateUserVerificationWindow, arg.VerifiedUntil, arg.ID)
+	var i UpdateUserVerificationWindowRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Role,
+		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerifiedUntil,
+		&i.Campusid,
+		&i.Disciplineid,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const verifyUser = `-- name: VerifyUser :one
+UPDATE users
+SET verified = 1,
+    verified_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+    verified_until = ?1
+WHERE id = ?2
+RETURNING
+  id, email, name, role, active, verified, verified_at, verified_until,
+  campusid, disciplineid, created_at, updated_at
+`
+
+type VerifyUserParams struct {
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	ID            string         `json:"id"`
+}
+
+type VerifyUserRow struct {
+	ID            string         `json:"id"`
+	Email         string         `json:"email"`
+	Name          string         `json:"name"`
+	Role          string         `json:"role"`
+	Active        int64          `json:"active"`
+	Verified      int64          `json:"verified"`
+	VerifiedAt    sql.NullString `json:"verified_at"`
+	VerifiedUntil sql.NullString `json:"verified_until"`
+	Campusid      int64          `json:"campusid"`
+	Disciplineid  int64          `json:"disciplineid"`
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
+}
+
+func (q *Queries) VerifyUser(ctx context.Context, arg VerifyUserParams) (VerifyUserRow, error) {
+	row := q.db.QueryRowContext(ctx, verifyUser, arg.VerifiedUntil, arg.ID)
+	var i VerifyUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Role,
+		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerifiedUntil,
+		&i.Campusid,
+		&i.Disciplineid,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

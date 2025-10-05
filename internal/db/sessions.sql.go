@@ -9,44 +9,43 @@ import (
 	"context"
 )
 
-const cleanupExpiredSessions = `-- name: CleanupExpiredSessions :exec
-DELETE FROM sessions
-WHERE expires < strftime('%Y-%m-%dT%H:%M:%fZ','now')
-`
-
-func (q *Queries) CleanupExpiredSessions(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, cleanupExpiredSessions)
-	return err
-}
-
 const createSession = `-- name: CreateSession :one
-INSERT INTO sessions (id, userid, expires)
+INSERT INTO sessions (id, userid, expires_at)
 VALUES (?1, ?2, ?3)
-RETURNING id, userid, created, lastseen, expires
+RETURNING id, userid, created_at, last_seen, expires_at
 `
 
 type CreateSessionParams struct {
-	ID      string `json:"id"`
-	Userid  string `json:"userid"`
-	Expires string `json:"expires"`
+	ID        string `json:"id"`
+	Userid    string `json:"userid"`
+	ExpiresAt string `json:"expires_at"`
 }
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error) {
-	row := q.db.QueryRowContext(ctx, createSession, arg.ID, arg.Userid, arg.Expires)
+	row := q.db.QueryRowContext(ctx, createSession, arg.ID, arg.Userid, arg.ExpiresAt)
 	var i Session
 	err := row.Scan(
 		&i.ID,
 		&i.Userid,
-		&i.Created,
-		&i.Lastseen,
-		&i.Expires,
+		&i.CreatedAt,
+		&i.LastSeen,
+		&i.ExpiresAt,
 	)
 	return i, err
 }
 
-const deleteSession = `-- name: DeleteSession :exec
+const deleteExpiredSessions = `-- name: DeleteExpiredSessions :exec
 DELETE FROM sessions
-WHERE id = ?1
+WHERE expires_at < strftime('%Y-%m-%dT%H:%M:%fZ','now')
+`
+
+func (q *Queries) DeleteExpiredSessions(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteExpiredSessions)
+	return err
+}
+
+const deleteSession = `-- name: DeleteSession :exec
+DELETE FROM sessions WHERE id = ?1
 `
 
 func (q *Queries) DeleteSession(ctx context.Context, id string) error {
@@ -55,8 +54,7 @@ func (q *Queries) DeleteSession(ctx context.Context, id string) error {
 }
 
 const deleteUserSessions = `-- name: DeleteUserSessions :exec
-DELETE FROM sessions
-WHERE userid = ?1
+DELETE FROM sessions WHERE userid = ?1
 `
 
 func (q *Queries) DeleteUserSessions(ctx context.Context, userid string) error {
@@ -65,8 +63,7 @@ func (q *Queries) DeleteUserSessions(ctx context.Context, userid string) error {
 }
 
 const getSession = `-- name: GetSession :one
-SELECT id, userid, created, lastseen, expires
-FROM sessions
+SELECT id, userid, created_at, last_seen, expires_at FROM sessions
 WHERE id = ?1
 LIMIT 1
 `
@@ -77,44 +74,44 @@ func (q *Queries) GetSession(ctx context.Context, id string) (Session, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.Userid,
-		&i.Created,
-		&i.Lastseen,
-		&i.Expires,
+		&i.CreatedAt,
+		&i.LastSeen,
+		&i.ExpiresAt,
 	)
 	return i, err
 }
 
 const slideSession = `-- name: SlideSession :one
 UPDATE sessions
-SET lastseen = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
-    expires  = ?1
+SET last_seen = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+    expires_at = ?1
 WHERE id = ?2
-RETURNING id, userid, created, lastseen, expires
+RETURNING id, userid, created_at, last_seen, expires_at
 `
 
 type SlideSessionParams struct {
-	Expires string `json:"expires"`
-	ID      string `json:"id"`
+	ExpiresAt string `json:"expires_at"`
+	ID        string `json:"id"`
 }
 
 func (q *Queries) SlideSession(ctx context.Context, arg SlideSessionParams) (Session, error) {
-	row := q.db.QueryRowContext(ctx, slideSession, arg.Expires, arg.ID)
+	row := q.db.QueryRowContext(ctx, slideSession, arg.ExpiresAt, arg.ID)
 	var i Session
 	err := row.Scan(
 		&i.ID,
 		&i.Userid,
-		&i.Created,
-		&i.Lastseen,
-		&i.Expires,
+		&i.CreatedAt,
+		&i.LastSeen,
+		&i.ExpiresAt,
 	)
 	return i, err
 }
 
 const touchSession = `-- name: TouchSession :one
 UPDATE sessions
-SET lastseen = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+SET last_seen = strftime('%Y-%m-%dT%H:%M:%fZ','now')
 WHERE id = ?1
-RETURNING id, userid, created, lastseen, expires
+RETURNING id, userid, created_at, last_seen, expires_at
 `
 
 func (q *Queries) TouchSession(ctx context.Context, id string) (Session, error) {
@@ -123,9 +120,9 @@ func (q *Queries) TouchSession(ctx context.Context, id string) (Session, error) 
 	err := row.Scan(
 		&i.ID,
 		&i.Userid,
-		&i.Created,
-		&i.Lastseen,
-		&i.Expires,
+		&i.CreatedAt,
+		&i.LastSeen,
+		&i.ExpiresAt,
 	)
 	return i, err
 }
