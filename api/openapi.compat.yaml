@@ -1,0 +1,32 @@
+# Currently, oapi-codegen does not support OpenAPI 3.1
+# so instead we use this overlay to pretend we are running 3.0.3.
+#
+# See: https://github.com/oapi-codegen/oapi-codegen/issues/373
+overlay: 1.0.0
+info:
+  title: compat
+  version: 0.1.0
+
+actions:
+  - target: "$.openapi"
+    update: "3.0.3"
+
+  - target: "$.jsonSchemaDialect"
+    remove: true
+
+  - target: "$.components.schemas.User.properties.verified_at.oneOf"
+    remove: true
+  - target: "$.components.schemas.User.properties.verified_until.oneOf"
+    remove: true
+
+  - target: "$.components.schemas.User.properties.verified_at"
+    update:
+      type: string
+      format: date-time
+      nullable: true
+  - target: "$.components.schemas.User.properties.verified_until"
+    update:
+      type: string
+      format: date-time
+      nullable: true
+
