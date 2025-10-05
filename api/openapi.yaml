@@ -1,0 +1,266 @@
+openapi: 3.1.2
+info:
+  title: api
+  version: 0.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+
+security:
+  - cookieAuth: []
+
+paths:
+  /auth/csrf:
+    get:
+      tags: [Auth]
+      summary: Issue a CSRF token
+      security: []
+      responses:
+        '200':
+          description: CSRF token issued
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SetCookie'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [csrf]
+                properties:
+                  csrf:
+                    type: string
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        '200':
+          description: Logged in
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SetCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      responses:
+        '204':
+          description: Logged out
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SetCookie'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user by id
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users:
+    get:
+      tags: [Users]
+      summary: List users (restricted)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 256, default: 32 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: __Host-session
+
+  parameters:
+    CsrfHeader:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema:
+        type: string
+
+  headers:
+    SetCookie:
+      schema:
+        type: string
+
+  schemas:
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string }
+        message: { type: string }
+
+    User:
+      type: object
+      required:
+        [ id, email, name, role, active, verified, campusid, disciplineid, created_at, updated_at ]
+      properties:
+        id:          { type: string, description: "Version 4 UUID" }
+        email:       { type: string, format: email }
+        name:        { type: string }
+        role:
+          type: string
+          enum: [user, editor, admin]
+          default: user
+        active:      { type: integer, enum: [0,1] }
+        verified:    { type: integer, enum: [0,1] }
+        verified_at:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: "null" }
+        verified_until:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: "null" }
+        campusid:     { type: integer }
+        disciplineid: { type: integer }
+        created_at:   { type: string, format: date-time }
+        updated_at:   { type: string, format: date-time }
+
+    UserRegister:
+      type: object
+      required: [email, name, password, campusid, disciplineid]
+      properties:
+        email:        { type: string, format: email }
+        name:         { type: string, minLength: 1 }
+        password:     { type: string, minLength: 16 }
+        campusid:     { type: integer }
+        disciplineid: { type: integer }
+
+    UserLogin:
+      type: object
+      required: [email, password]
+      properties:
+        email:    { type: string, format: email }
+        password: { type: string }
+
+    Session:
+      type: object
+      required: [ id, userid, created_at, last_seen, expires_at ]
+      properties:
+        id:         { type: string, description: "opaque" }
+        userid:     { type: string }
+        created_at: { type: string, format: date-time }
+        last_seen:  { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
+
