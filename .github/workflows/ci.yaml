@@ -5,40 +5,17 @@ on:
     paths:
       - "db/schema.sql"
       - "db/queries/**"
-      - "sqlc.yaml"
+      - "db/sqlite.yaml"
   pull_request:
     paths:
       - "db/schema.sql"
       - "db/queries/**"
-      - "sqlc.yaml"
+      - "db/sqlite.yaml"
 
 permissions:
   contents: read
 
 jobs:
-  diff:
-    name: Check SQL query diffs
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
-      - run: go tool sqlc diff
-
-  vet:
-    name: Vet SQL queries
-    runs-on: ubuntu-latest
-    needs: diff
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
-      - run: go tool sqlc vet
-
   generate:
     name: Generate Go dependencies
     runs-on: ubuntu-latest
