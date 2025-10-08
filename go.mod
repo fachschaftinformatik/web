@@ -1,6 +1,6 @@
 module github.com/fachschaftinformatik/web
 
-go 1.25.1
+go 1.25.2
 
 tool (
 	github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
