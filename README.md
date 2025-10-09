@@ -13,9 +13,11 @@ For a comprehensive documentation please refer to [/docs](/docs).
 ## Contributing
 
 If you wish to contribute to the this project, thank you!
-Please refer to [CONTRIBUTING.md](https://github.com/fachschaftinformatik/web/blob/main/CONTRIBUTING.md) for guidance.
+Please refer to [CONTRIBUTING.md][1] for guidance.
 
 ## Legal
 
 Copyright 2025 FSV Informatik WH (<a href="mailto:vorstand.informatik&amp;#64;fsv-whs.de">vorstand.informatik&#64;fsv-whs.de</a>)<br>
 SPDX-License-Identifier: MPL-2.0
+
+[1]: https://github.com/fachschaftinformatik/web/tree/main?tab=contributing-ov-file
