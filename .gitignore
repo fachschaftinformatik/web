@@ -1,6 +1,7 @@
 .env*
 go.work
 go.work.sum
+vendor
 
 *.db
 *.db-shm
