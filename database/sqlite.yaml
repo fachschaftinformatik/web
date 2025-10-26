@@ -5,8 +5,8 @@ sql:
     queries: "queries"
     gen:
       go:
-        package: "db"
-        out: "../internal/db"
+        package: "database"
+        out: "../internal/database"
         sql_package: "database/sql"
         emit_json_tags: true
         emit_interface: true

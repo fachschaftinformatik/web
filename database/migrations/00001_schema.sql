@@ -1,8 +1,5 @@
 -- +goose Up
 -- +goose StatementBegin
-PRAGMA foreign_keys = ON;
-PRAGMA recursive_triggers = OFF;
-PRAGMA journal_mode = WAL;
 
 CREATE TABLE campuses (
   id         INTEGER PRIMARY KEY,
