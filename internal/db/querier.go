@@ -10,22 +10,22 @@ import (
 
 type Querier interface {
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
-	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteExpiredSessions(ctx context.Context) error
 	DeleteSession(ctx context.Context, id string) error
 	DeleteUserSessions(ctx context.Context, userid string) error
 	GetSession(ctx context.Context, id string) (Session, error)
-	GetUser(ctx context.Context, id string) (GetUserRow, error)
-	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
-	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
-	SetUserActive(ctx context.Context, arg SetUserActiveParams) (SetUserActiveRow, error)
-	SetUserRole(ctx context.Context, arg SetUserRoleParams) (SetUserRoleRow, error)
+	GetUser(ctx context.Context, id string) (User, error)
+	GetUserByEmail(ctx context.Context, email string) (User, error)
+	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
+	SetUserActive(ctx context.Context, arg SetUserActiveParams) (User, error)
+	SetUserRole(ctx context.Context, arg SetUserRoleParams) (User, error)
 	SlideSession(ctx context.Context, arg SlideSessionParams) (Session, error)
 	SweepExpiredVerifications(ctx context.Context) error
 	TouchSession(ctx context.Context, id string) (Session, error)
-	UnverifyUser(ctx context.Context, id string) (UnverifyUserRow, error)
-	UpdateUserVerificationWindow(ctx context.Context, arg UpdateUserVerificationWindowParams) (UpdateUserVerificationWindowRow, error)
-	VerifyUser(ctx context.Context, arg VerifyUserParams) (VerifyUserRow, error)
+	UnverifyUser(ctx context.Context, id string) (User, error)
+	UpdateUserVerificationWindow(ctx context.Context, arg UpdateUserVerificationWindowParams) (User, error)
+	VerifyUser(ctx context.Context, arg VerifyUserParams) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)
