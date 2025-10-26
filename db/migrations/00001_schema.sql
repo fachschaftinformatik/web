@@ -1,17 +1,17 @@
-PRAGMA user_version = 3;
-
+-- +goose Up
+-- +goose StatementBegin
 PRAGMA foreign_keys = ON;
 PRAGMA recursive_triggers = OFF;
 PRAGMA journal_mode = WAL;
 
-CREATE TABLE IF NOT EXISTS campuses (
+CREATE TABLE campuses (
   id         INTEGER PRIMARY KEY,
   name       TEXT NOT NULL UNIQUE,
   location   TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS disciplines (
+CREATE TABLE disciplines (
   id         INTEGER PRIMARY KEY,
   name       TEXT NOT NULL,
   degree     TEXT NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS disciplines (
   UNIQUE(degree, name)
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
   id             TEXT PRIMARY KEY,
   email          TEXT NOT NULL,
   name           TEXT NOT NULL,
@@ -41,12 +41,12 @@ CREATE TABLE IF NOT EXISTS users (
   CHECK (verified_at IS NULL OR verified_until IS NULL OR verified_until >= verified_at)
 ) STRICT;
 
-CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users(lower(email));
-CREATE INDEX IF NOT EXISTS idx_users_campus          ON users(campusid);
-CREATE INDEX IF NOT EXISTS idx_users_discipline      ON users(disciplineid);
-CREATE INDEX IF NOT EXISTS idx_users_verified_until  ON users(verified_until);
+CREATE UNIQUE INDEX users_email_unique ON users(lower(email));
+CREATE INDEX idx_users_campus          ON users(campusid);
+CREATE INDEX idx_users_discipline      ON users(disciplineid);
+CREATE INDEX idx_users_verified_until  ON users(verified_until);
 
-CREATE TRIGGER IF NOT EXISTS trg_users_update
+CREATE TRIGGER trg_users_update
 AFTER UPDATE ON users
 FOR EACH ROW
 BEGIN
@@ -55,7 +55,7 @@ BEGIN
    WHERE id = OLD.id;
 END;
 
-CREATE TABLE IF NOT EXISTS posts (
+CREATE TABLE posts (
   id         TEXT PRIMARY KEY,
   userid     TEXT NOT NULL
                REFERENCES users(id)
@@ -67,10 +67,10 @@ CREATE TABLE IF NOT EXISTS posts (
   deleted    TEXT
 ) STRICT;
 
-CREATE INDEX IF NOT EXISTS idx_posts_user       ON posts(userid);
-CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
+CREATE INDEX idx_posts_user       ON posts(userid);
+CREATE INDEX idx_posts_created_at ON posts(created_at DESC);
 
-CREATE TRIGGER IF NOT EXISTS trg_posts_update
+CREATE TRIGGER trg_posts_update
 AFTER UPDATE ON posts
 FOR EACH ROW
 BEGIN
@@ -79,7 +79,7 @@ BEGIN
    WHERE id = OLD.id;
 END;
 
-CREATE TABLE IF NOT EXISTS comments (
+CREATE TABLE comments (
   id         TEXT PRIMARY KEY,
   postid     TEXT NOT NULL
                REFERENCES posts(id)
@@ -89,23 +89,23 @@ CREATE TABLE IF NOT EXISTS comments (
                ON DELETE RESTRICT ON UPDATE CASCADE,
   body       TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-m-%dT%H:%M:%fZ','now'))
 ) STRICT;
 
-CREATE INDEX IF NOT EXISTS idx_comments_post        ON comments(postid);
-CREATE INDEX IF NOT EXISTS idx_comments_user        ON comments(userid);
-CREATE INDEX IF NOT EXISTS idx_comments_created_at  ON comments(created_at DESC);
+CREATE INDEX idx_comments_post        ON comments(postid);
+CREATE INDEX idx_comments_user        ON comments(userid);
+CREATE INDEX idx_comments_created_at  ON comments(created_at DESC);
 
-CREATE TRIGGER IF NOT EXISTS trg_comments_update
+CREATE TRIGGER trg_comments_update
 AFTER UPDATE ON comments
 FOR EACH ROW
 BEGIN
   UPDATE comments
-     SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+     SET updated_at = strftime('%Y-m-%dT%H:%M:%fZ','now')
    WHERE id = OLD.id;
 END;
 
-CREATE TABLE IF NOT EXISTS exams (
+CREATE TABLE exams (
   id           TEXT PRIMARY KEY,
   userid       TEXT NOT NULL
                  REFERENCES users(id)
@@ -117,17 +117,17 @@ CREATE TABLE IF NOT EXISTS exams (
                  REFERENCES campuses(id)
                  ON DELETE RESTRICT ON UPDATE CASCADE,
   exam_date    TEXT NOT NULL,
-  uploaded_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  uploaded_at  TEXT NOT NULL DEFAULT (strftime('%Y-m-%dT%H:%M:%fZ','now')),
   accesskey    TEXT NOT NULL UNIQUE,
   mime_type    TEXT NOT NULL CHECK (mime_type IN ('application/pdf')),
   nbytes       INTEGER NOT NULL,
   checksum     TEXT NOT NULL
 ) STRICT;
 
-CREATE INDEX IF NOT EXISTS idx_exams_date ON exams(disciplineid, exam_date DESC);
-CREATE INDEX IF NOT EXISTS idx_exams_user ON exams(userid);
+CREATE INDEX idx_exams_date ON exams(disciplineid, exam_date DESC);
+CREATE INDEX idx_exams_user ON exams(userid);
 
-CREATE TRIGGER IF NOT EXISTS trg_exams_set_update
+CREATE TRIGGER trg_exams_set_update
 AFTER UPDATE ON exams
 FOR EACH ROW
 BEGIN
@@ -137,16 +137,27 @@ BEGIN
    WHERE id = OLD.id;
 END;
 
-CREATE TABLE IF NOT EXISTS sessions (
+CREATE TABLE sessions (
   id         TEXT PRIMARY KEY,
   userid     TEXT NOT NULL
                REFERENCES users(id)
                ON DELETE CASCADE ON UPDATE CASCADE,
-  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-  last_seen  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-m-%dT%H:%M:%fZ','now')),
+  last_seen  TEXT NOT NULL DEFAULT (strftime('%Y-m-%dT%H:%M:%fZ','now')),
   expires_at TEXT NOT NULL
 ) STRICT;
 
-CREATE INDEX IF NOT EXISTS idx_sessions_user        ON sessions(userid);
-CREATE INDEX IF NOT EXISTS idx_sessions_expires_at  ON sessions(expires_at);
+CREATE INDEX idx_sessions_user        ON sessions(userid);
+CREATE INDEX idx_sessions_expires_at  ON sessions(expires_at);
+-- +goose StatementEnd
 
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE sessions;
+DROP TABLE exams;
+DROP TABLE comments;
+DROP TABLE posts;
+DROP TABLE users;
+DROP TABLE disciplines;
+DROP TABLE campuses;
+-- +goose StatementEnd
