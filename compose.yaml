@@ -1,0 +1,33 @@
+version: '3.9'
+
+networks:
+  api:
+
+volumes:
+  api-data:
+
+services:
+  api:
+    build:
+      context: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - api-data:/data
+    environment:
+      - DB_PATH=/data/sqlite.db
+      - HTTP_PORT=8080
+      - SECURE_COOKIES=false
+
+  web:
+    build:
+      context: website
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - api
+    environment:
+      - API_URL=http://api:8080
+
