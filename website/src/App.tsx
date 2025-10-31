@@ -1,26 +1,51 @@
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import RegistrationPage from './Registration/RegistrationPage';
 import LoginPage from './Login/LoginPage';
+import ProtectedRoute from './ProtectedRoute';
+import { AuthProvider, useAuth } from './AuthContext';
+import { Outlet } from 'react-router-dom';
 
-// NEU: Importiere das Theme und den ThemeProvider
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import theme from './theme'; // Importiere dein zentrales Theme
+import theme from './theme';
+
+const AuthRedirector: React.FC = () => {
+    const { user, isLoading } = useAuth();
+    if (isLoading)
+        return null;
+    if (user)
+        return <Navigate to="/dashboard" replace />;
+
+    return <Outlet />;
+};
 
 function App() {
   return (
-    // Der ThemeProvider umschließt jetzt die gesamte App
     <ThemeProvider theme={theme}>
-      <CssBaseline /> {/* Sorgt für konsistentes CSS */}
-      <BrowserRouter>
-        <Routes>
-          <Route path="/register" element={<RegistrationPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-      </BrowserRouter>
+      <CssBaseline />
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+
+            <Route element={<AuthRedirector />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegistrationPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute />}>
+            </Route>
+
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
 
-export default App;
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
