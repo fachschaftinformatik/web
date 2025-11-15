@@ -11,6 +11,10 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
 
+import StartseiteRekos from './Reko/StartseiteRekos';
+import Klausurrekos from './Reko/Klausurrekos';
+import KlausurrekosErweiterung from './Reko/KlausurrekosErweiterung';
+
 const AuthRedirector: React.FC = () => {
     const { user, isLoading } = useAuth();
     if (isLoading)
@@ -35,6 +39,9 @@ function App() {
             </Route>
 
             <Route element={<ProtectedRoute />}>
+                <Route path="/rekos" element={<Klausurrekos />} />
+<Route path="/rekos/erweitert" element={<KlausurrekosErweiterung />} />
+<Route path="/dashboard" element={<StartseiteRekos />} />
             </Route>
 
           </Routes>
