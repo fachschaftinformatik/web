@@ -4,16 +4,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import RegistrationPage from './Registration/RegistrationPage';
 import LoginPage from './Login/LoginPage';
 import ProtectedRoute from './ProtectedRoute';
+import DashboardPage from './Dashboard/DashboardPage';
+import ForumPostsPage from './Forum/ForumPostsPage';
 import { AuthProvider, useAuth } from './AuthContext';
 import { Outlet } from 'react-router-dom';
 
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import theme from './theme';
-
-import StartseiteRekos from './Reko/StartseiteRekos';
-import Klausurrekos from './Reko/Klausurrekos';
-import KlausurrekosErweiterung from './Reko/KlausurrekosErweiterung';
+import { ThemeModeProvider } from './ThemeModeContext';
+import ThemeModeToggle from './ThemeModeToggle';
 
 const AuthRedirector: React.FC = () => {
     const { user, isLoading } = useAuth();
@@ -27,8 +24,7 @@ const AuthRedirector: React.FC = () => {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <ThemeModeProvider>
       <AuthProvider>
         <BrowserRouter>
           <Routes>
@@ -39,15 +35,18 @@ function App() {
             </Route>
 
             <Route element={<ProtectedRoute />}>
-                <Route path="/rekos" element={<Klausurrekos />} />
-<Route path="/rekos/erweitert" element={<KlausurrekosErweiterung />} />
-<Route path="/dashboard" element={<StartseiteRekos />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/forum" element={<ForumPostsPage />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
 
+            <Route path="*" element={<Navigate to="/login" replace />} />
+
           </Routes>
+          <ThemeModeToggle />
         </BrowserRouter>
       </AuthProvider>
-    </ThemeProvider>
+    </ThemeModeProvider>
   );
 }
 
