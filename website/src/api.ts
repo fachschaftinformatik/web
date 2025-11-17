@@ -24,8 +24,10 @@ async function handleResponse<T>(response: Response): Promise<T> {
     let errorData: ApiError = { error: `http_${response.status}`, message: response.statusText };
     try {
       errorData = await response.json();
-    } catch (e) {}
-    console.error("API Error:", errorData);
+    } catch {
+      // ignore non-JSON error bodies
+    }
+    console.error('API Error:', errorData);
     throw new Error(errorData.message || `Request failed with status ${response.status}`);
   }
   if (response.status === 204) {
