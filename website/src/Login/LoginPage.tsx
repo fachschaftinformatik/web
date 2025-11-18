@@ -40,10 +40,12 @@ export default function LoginPage() {
       const user = await api.loginUser({ email, password });
       console.log('Login erfolgreich:', user);
       login(user);
-      navigate('/profile');
-    } catch (err: any) {
+      navigate('/dashboard');
+    } catch (err: unknown) {
       console.error('Login-Fehler:', err);
-      setError(err.message || 'Login fehlgeschlagen. Überprüfen Sie Ihre Anmeldedaten.');
+      const message =
+        err instanceof Error ? err.message : 'Login fehlgeschlagen. Überprüfen Sie Ihre Anmeldedaten.';
+      setError(message);
     } finally {
       setLoading(false);
     }
