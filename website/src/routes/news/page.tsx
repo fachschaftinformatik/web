@@ -1,5 +1,3 @@
-// import * as React from 'react';
-// import { styled } from '@mui/material/styles';
 import Card from '@mui/material/Card';
 import CardMedia from '@mui/material/CardMedia';
 import CardContent from '@mui/material/CardContent';
@@ -9,7 +7,6 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-
 
 import Grid from '@mui/material/Grid';
 import Container from "@mui/material/Container";
@@ -35,10 +32,6 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useEffect } from 'react';
 
-
-
-
-// Suchleiste
 function CustomizedInputBase() {
   return (
     <Paper

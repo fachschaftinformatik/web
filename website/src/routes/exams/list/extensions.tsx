@@ -11,7 +11,6 @@ import {
 import { useLocation, useSearchParams } from "react-router-dom";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
-// Datentyp für einen einzelnen Reko-Eintrag
 type Entry = {
   title: string;
   date: string;        // Datum im Format "DD.MM.YYYY"
@@ -21,7 +20,6 @@ type Entry = {
   version?: string;    // Version der Reko, z.B. v1.0, v2.0
 };
 
-// Spezielle, echte Rekos nur für "Einführung in die Programmierung"
 const EPR_ENTRIES: Entry[] = [
   {
     title: "Einführung in die Programmierung",
