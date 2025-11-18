@@ -15,9 +15,10 @@ import {
 import { alpha } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useAuth } from '../AuthContext';
-import { mockForumPosts } from '../Forum/forumData';
-import SidebarLayout from '../layouts/SidebarLayout';
+import { mockForumPosts } from '@lib/data';
+
+import { useAuth } from '@lib/auth';
+import { Sidebar } from '@components/layout';
 
 const campusLabels: Record<number, string> = {
   1: 'Campus Bocholt',
@@ -50,7 +51,7 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <SidebarLayout user={user} title="Dashboard">
+    <Sidebar user={user} title="Dashboard">
       <Stack spacing={3}>
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center">
@@ -247,7 +248,7 @@ const DashboardPage: React.FC = () => {
           </Typography>
         </Paper>
       </Stack>
-    </SidebarLayout>
+    </Sidebar>
   );
 };
 

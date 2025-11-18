@@ -12,8 +12,8 @@ import Container from '@mui/material/Container';
 import { Alert, Stack } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { useAuth } from '../AuthContext';
-import * as api from '../api';
+import * as api from '@lib/api';
+import { useAuth } from '@lib/auth';
 
 export default function LoginPage() {
   const [error, setError] = useState('');

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+import { useAuth } from '@lib/auth';
 import { CircularProgress, Box } from '@mui/material';
 
 const ProtectedRoute: React.FC = () => {

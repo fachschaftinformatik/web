@@ -15,9 +15,9 @@ import {
   Pagination,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import { mockForumPosts } from './forumData';
-import SidebarLayout from '../layouts/SidebarLayout';
-import { useAuth } from '../AuthContext';
+import { mockForumPosts } from '@lib/data';
+import { useAuth } from '@lib/auth';
+import { Sidebar } from '@components/layout';
 
 const POSTS_PER_PAGE = 5;
 
@@ -42,7 +42,7 @@ const ForumPostsPage: React.FC = () => {
   }
 
   return (
-    <SidebarLayout user={user} title="Forum">
+    <Sidebar user={user} title="Forum">
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Breadcrumbs aria-label="breadcrumb trail" sx={{ mb: 2 }}>
           <Link component={RouterLink} underline="hover" color="inherit" to="/dashboard">
@@ -112,7 +112,7 @@ const ForumPostsPage: React.FC = () => {
           </Box>
         </Paper>
       </Container>
-    </SidebarLayout>
+    </Sidebar>
   );
 };
 
