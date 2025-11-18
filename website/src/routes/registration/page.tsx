@@ -12,8 +12,8 @@ import Container from '@mui/material/Container';
 import { Alert, MenuItem, Stack } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
-import * as api from '../api';
-import { useAuth } from '../AuthContext';
+import * as api from '@lib/api';
+import { useAuth } from '@lib/auth';
 
 // TODO
 const UNI_EMAIL_DOMAIN = 'studmail.w-hs.de';

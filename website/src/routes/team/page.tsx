@@ -1,13 +1,8 @@
-// src/pages/Team.tsx
 import React from "react";
 import { Container, Typography, Card, CardMedia, CardContent, Box, Link } from "@mui/material";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
-
 export default function Team() {
-  
-  // --- PLATZHALTER-DATEN (JETZT ALLE KORREKT INITIALISIERT) ---
-
   const vorstand = [
     { id: 1, name: "Vorname Nachname", email: "mail1@fsv.de", img: null },
     { id: 2, name: "Vorname Nachname", email: "mail2@fsv.de", img: null },

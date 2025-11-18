@@ -19,3 +19,6 @@ vendor
 # macOS
 .DS_Store
 .fseventsd
+
+node_modules/
+dist/

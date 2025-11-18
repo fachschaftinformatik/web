@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
-import { newsDaten } from "./newsLayout";
 import { Box, Typography, Container, Link } from "@mui/material";
+
+import { newsDaten } from "./news";
 
 export default function NewsDetail() {
   const { id } = useParams();

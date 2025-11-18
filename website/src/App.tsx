@@ -1,16 +1,25 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import RegistrationPage from './Registration/RegistrationPage';
-import LoginPage from './Login/LoginPage';
-import ProtectedRoute from './ProtectedRoute';
-import DashboardPage from './Dashboard/DashboardPage';
-import ForumPostsPage from './Forum/ForumPostsPage';
-import { AuthProvider, useAuth } from './AuthContext';
 import { Outlet } from 'react-router-dom';
 
-import { ThemeModeProvider } from './ThemeModeContext';
-import ThemeModeToggle from './ThemeModeToggle';
+import {
+  ThemeModeProvider,
+  ThemeModeToggle
+} from '@lib/theme';
+
+import { AuthProvider, useAuth } from '@lib/auth';
+import ProtectedRoute from '@lib/routes';
+
+import LoginPage from '@routes/login/page';
+import RegistrationPage from '@routes/registration/page';
+import DashboardPage from '@routes/dashboard/page';
+import MediaPage from '@routes/media/page';
+import TeamPage from '@routes/team/page';
+import NewsPage from '@routes/news/page';
+import ExamsPage from '@routes/exams/page';
+import ExamsListPage from '@routes/exams/list/page';
+import ForumPage from '@routes/forum/page';
 
 const AuthRedirector: React.FC = () => {
     const { user, isLoading } = useAuth();
@@ -36,9 +45,16 @@ function App() {
 
             <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/forum" element={<ForumPostsPage />} />
+                <Route path="/exams" element={<ExamsPage />} />
+                <Route path="/exams/list" element={<ExamsListPage />} />
+
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
+
+            <Route path="/forum" element={<ForumPage />} />
+            <Route path="/media" element={<MediaPage />} />
+            <Route path="/team" element={<TeamPage />} />
+            <Route path="/news" element={<NewsPage />} />
 
             <Route path="*" element={<Navigate to="/login" replace />} />
 

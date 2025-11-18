@@ -1,5 +1,7 @@
+// Galerie.tsx (korrigiert)
+
 import React from "react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "@lib/auth";
 import {
   Container,
   Typography,
@@ -25,119 +27,26 @@ import {
   Alert,
   SelectChangeEvent,
   TextField,
-  alpha, // Import alpha für Transparenz
-  Theme,
-  // CircularProgress entfernt (wird nicht mehr gebraucht)
+  alpha,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
-// Typ-Definitionen bleiben gleich
-type EventItem = { id: number; title: string; src: string };
-type Bild = { id: number; title: string; thumb: string; full: string };
+// Importiere Typen und Daten aus der neuen data.ts
+import {
+  EventItem,
+  Bild,
+  IMAGES_PER_PAGE,
+  events,
+  bilderByEvent,
+  pic,
+  getImageTitle,
+  defaultTitleForFile,
+} from "@lib/data";
+
 type UploadEntry = { file: File; title: string };
-
-const getImageTitle = (image?: Bild) => {
-  if (!image) return "";
-  const trimmed = image.title?.trim();
-  if (trimmed) return trimmed;
-  const candidate = image.full || image.thumb;
-  return candidate.split("/").filter(Boolean).pop() ?? "Bild";
-};
-
-const defaultTitleForFile = (file: File) => {
-  const name = file.name;
-  const withoutExtension = name.replace(/\.[^/.]+$/, "");
-  return withoutExtension || name;
-};
-
-// --- HILFSFUNKTION FÜR BEISPIELBILDER ---
-const pic = (seed: number, w: number, h: number) =>
-  `https://picsum.photos/seed/${seed}/${w}/${h}`;
-
-// --- HIER SIND DEINE LOKALEN BILDER & BEISPIELBILDER ---
-
-const events: EventItem[] = [
-  // --- EVENT 1 (DEIN ORDNER 1) ---
-  // Ersetze DEIN_ORDNER_1 und den Dateinamen
-  { id: 1, title: "LAN-Party 2023", src: "/LAN-Party 2023/1.jpg" },
-
-  // --- EVENT 2 (DEIN ORDNER 2) ---
-  // Ersetze DEIN_ORDNER_2 und den Dateinamen
-  { id: 2, title: "LAN-Party 2024", src: "/LAN-Party 2024/2024-11-29_23.07.08-_PHI1930-klaushardt.com.jpg" },
-
-  // --- EVENTS 3-6 (BEISPIELBILDER) ---
-  { id: 3, title: "Weinprobe", src: pic(103, 400, 600) },
-  { id: 4, title: "Kulturabend", src: pic(104, 400, 600) },
-  { id: 5, title: "Weihnachtsfeier", src: pic(105, 400, 600) },
-  { id: 6, title: "Sporttag", src: pic(106, 400, 600) },
-];
-
-const IMAGES_PER_PAGE = 20;
-
-const bilderByEvent: Record<number, Bild[]> = {
-  // --- EVENT 1 (DEIN ORDNER 1) ---
-  // Ersetze DEIN_ORDNER_1 und die Dateinamen
-  1: [
-    { id: 101, title: "", thumb: "/LAN-Party 2023/1.jpg", full: "/LAN-Party 2023/1.jpg" },
-    { id: 102, title: "", thumb: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg", full: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg" },
-    { id: 103, title: "", thumb: "/LAN-Party 2023/ad23f7da-c6cd-4a96-9fce-8b5d0ccd8cf8.jpg", full: "/LAN-Party 2023/ad23f7da-c6cd-4a96-9fce-8b5d0ccd8cf8.jpg" },
-    { id: 104, title: "", thumb: "/LAN-Party 2023/b4818f1d-72e6-45ab-8f65-17e2c84b9c77.jpg", full: "/LAN-Party 2023/b4818f1d-72e6-45ab-8f65-17e2c84b9c77.jpg" },
-    { id: 105, title: "", thumb: "/LAN-Party 2023/c7cdd3e2-6b75-4d06-805d-1f761b359dd7.jpg", full: "/LAN-Party 2023/c7cdd3e2-6b75-4d06-805d-1f761b359dd7.jpg" },
-    { id: 106, title: "", thumb: "/LAN-Party 2023/DSC00061.jpg", full: "/LAN-Party 2023/DSC00061.jpg" },
-    { id: 107, title: "", thumb: "/LAN-Party 2023/DSC00097.jpg", full: "/LAN-Party 2023/DSC00097.jpg" },
-    { id: 108, title: "", thumb: "/LAN-Party 2023/DSC00114.jpg", full: "/LAN-Party 2023/DSC00114.jpg" },
-    { id: 109, title: "", thumb: "/LAN-Party 2023/DSC00132.jpg", full: "/LAN-Party 2023/DSC00132.jpg" },
-    { id: 110, title: "", thumb: "/LAN-Party 2023/DSC00140.jpg", full: "/LAN-Party 2023/DSC00140.jpg" },
-    { id: 111, title: "", thumb: "/LAN-Party 2023/DSC00146.jpg", full: "/LAN-Party 2023/DSC00146.jpg" },
-    { id: 112, title: "", thumb: "/LAN-Party 2023/DSC00170.jpg", full: "/LAN-Party 2023/DSC00170.jpg" },
-    { id: 113, title: "", thumb: "/LAN-Party 2023/DSC00173.jpg", full: "/LAN-Party 2023/DSC00173.jpg" },
-
-    // ...
-  ],
-  
-  // --- EVENT 2 (DEIN ORDNER 2) ---
-  // Ersetze DEIN_ORDNER_2 und die Dateinamen
-  2: [
-    { id: 201, title: "", thumb: "/LAN-Party 2024/1.jpg", full: "/LAN-Party 2024/1.jpg" },
-    { id: 202, title: "", thumb: "/LAN-Party 2024/2.jpg", full: "/LAN-Party 2024/2.jpg" },
-    { id: 203, title: "", thumb: "/LAN-Party 2024/3.jpg", full: "/LAN-Party 2024/3.jpg" },
-    { id: 204, title: "", thumb: "/LAN-Party 2024/4.jpg", full: "/LAN-Party 2024/4.jpg" },
-    { id: 205, title: "", thumb: "/LAN-Party 2024/5.jpg", full: "/LAN-Party 2024/5.jpg" },
-    { id: 206, title: "", thumb: "/LAN-Party 2024/6.jpg", full: "/LAN-Party 2024/6.jpg" },
-    { id: 207, title: "", thumb: "/LAN-Party 2024/7.jpg", full: "/LAN-Party 2024/7.jpg" },
-    { id: 208, title: "", thumb: "/LAN-Party 2024/8.jpg", full: "/LAN-Party 2024/8.jpg" },
-    { id: 209, title: "", thumb: "/LAN-Party 2024/9.jpg", full: "/LAN-Party 2024/9.jpg" },
-    { id: 210, title: "", thumb: "/LAN-Party 2024/10.jpg", full: "/LAN-Party 2024/10.jpg" },
-    { id: 211, title: "", thumb: "/LAN-Party 2024/11.jpg", full: "/LAN-Party 2024/11.jpg" },
-    { id: 212, title: "", thumb: "/LAN-Party 2024/12.jpg", full: "/LAN-Party 2024/12.jpg" },
-    { id: 213, title: "", thumb: "/LAN-Party 2024/13.jpg", full: "/LAN-Party 2024/13.jpg" },
-    { id: 214, title: "", thumb: "/LAN-Party 2024/14.jpg", full: "/LAN-Party 2024/14.jpg" },
-    // ...
-  ],
-
-  // Die restlichen Events werden automatisch mit Beispielbildern befüllt
-};
-
-// --- EVENTS 3-6 (BEISPIELBILDER) ---
-// Füllt `bilderByEvent` für alle Events > 2 automatisch mit picsum-Bildern
-events.forEach(event => {
-  if (event.id > 2) { // <-- Geändert auf 2
-    bilderByEvent[event.id] = Array.from({ length: 30 }).map((_, i) => {
-      const seed = event.id * 100 + i;
-      return {
-        id: seed,
-        title: `${event.title} Bild ${i + 1}`,
-        thumb: pic(seed, 600, 400),
-        full: pic(seed, 1600, 1066),
-      };
-    });
-  }
-});
-// --- ENDE BILDER ---
-
 
 export default function Galerie() {
   // --- State (vereinfacht) ---
@@ -273,7 +182,7 @@ export default function Galerie() {
         setCustomEvents((prev) => [newEvent, ...prev]);
         createdTitle = title;
       } else {
-        eventId = selectedUploadEventId;
+        eventId = selectedUploadEventId as number;
       }
       const filesArray = await Promise.all(
         uploadEntries.map(async (entry, idx) => {
@@ -394,7 +303,7 @@ export default function Galerie() {
   }, [thumbs.length, index]);
 
   return (
-    <Container sx={theme => ({
+    <Container sx={(theme) => ({
       py: theme.spacing(4)
     })}>
       <Typography variant="h4" align="center" gutterBottom>
@@ -402,7 +311,7 @@ export default function Galerie() {
       </Typography>
       {canUpload && (
         <Box
-          sx={theme => ({
+          sx={(theme) => ({
             display: "flex",
             justifyContent: "flex-end",
             mb: theme.spacing(2)
@@ -419,7 +328,7 @@ export default function Galerie() {
       )}
       {/* --- Event-Auswahl als horizontale ImageList --- */}
       <Box
-        sx={(theme: Theme) => ({
+        sx={(theme) => ({
           mb: theme.spacing(4),
           mx: theme.spacing(-2),
           display: "flex",
@@ -428,7 +337,7 @@ export default function Galerie() {
         })}
       >
         <ImageList
-          sx={(theme: Theme) => ({
+          sx={(theme) => ({
             display: "flex",
             flexDirection: "row",
             flexWrap: "nowrap",
@@ -452,13 +361,21 @@ export default function Galerie() {
                   setIndex(0);
                   setPage(1);
                 }}
-                sx={[(theme: Theme) => ({
+                // KORREKTUR: Alle Theme-abhängigen und bedingten Styles in der Theme-Funktion zusammengefasst
+                sx={[(theme) => ({ 
                   cursor: "pointer",
                   width: theme.spacing(18.75),
                   flexShrink: 0,
                   borderRadius: theme.shape.borderRadius,
                   overflow: "hidden",
+                  
+                  // Konsolidierte bedingte Styles
                   boxShadow: theme.shadows[selected ? 6 : 2],
+                  outline: selected ? "2px solid" : "none",
+                  outlineColor: selected ? theme.palette.primary.main : "transparent",
+                  zIndex: selected ? 2 : 1,
+                  transform: selected ? "scale(1.05)" : "scale(1)",
+                  
                   transition: theme.transitions.create([
                     "transform",
                     "box-shadow",
@@ -475,30 +392,14 @@ export default function Galerie() {
                     boxShadow: theme.shadows[8],
                     zIndex: 3,
                   }
-                }), selected ? {
-                  transform: "scale(1.05)"
-                } : {
-                  transform: "scale(1)"
-                }, selected ? {
-                  outline: "2px solid"
-                } : {
-                  outline: "none"
-                }, selected ? {
-                  outlineColor: theme.palette.primary.main
-                } : {
-                  outlineColor: "transparent"
-                }, selected ? {
-                  zIndex: 2
-                } : {
-                  zIndex: 1
-                }]}
+                })]}
               >
                 <Box
                   component="img"
                   src={ev.src} // Holt sich den Pfad (entweder /DEIN_ORDNER/... oder picsum)
                   alt={ev.title}
                   loading="lazy"
-                  sx={theme => ({
+                  sx={(theme) => ({
                     width: "100%",
                     height: theme.spacing(20),
                     objectFit: "contain",
@@ -508,24 +409,21 @@ export default function Galerie() {
                 <ImageListItemBar
                   title={ev.title}
                   position="below"
-                  sx={[(theme: Theme) => ({
+                  // KORREKTUR: Alle Theme-abhängigen und bedingten Styles in der Theme-Funktion zusammengefasst
+                  sx={[(theme) => ({ 
                     textAlign: "center",
                     py: theme.spacing(1),
+                    // Konsolidierte bedingte Styles
+                    bgcolor: selected ? theme.palette.primary.main : theme.palette.background.paper,
+                    color: selected ? theme.palette.primary.contrastText : theme.palette.text.primary,
+                    
                     "& .MuiImageListItemBar-title": {
                       fontSize: "0.8rem",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                     }
-                  }), selected ? {
-                    bgcolor: theme.palette.primary.main
-                  } : {
-                    bgcolor: theme.palette.background.paper
-                  }, selected ? {
-                    color: theme.palette.primary.contrastText
-                  } : {
-                    color: theme.palette.text.primary
-                  }]}
+                  })]}
                 />
               </ImageListItem>
             );
@@ -538,7 +436,7 @@ export default function Galerie() {
           variant="h5"
           component="h2"
           align="center"
-          sx={theme => ({
+          sx={(theme) => ({
             mb: theme.spacing(3)
           })}
         >
@@ -550,7 +448,7 @@ export default function Galerie() {
         <Typography
           align="center"
           color="text.secondary"
-          sx={theme => ({
+          sx={(theme) => ({
             mt: theme.spacing(6)
           })}
         >
@@ -560,7 +458,7 @@ export default function Galerie() {
         <Typography
           align="center"
           color="text.secondary"
-          sx={theme => ({
+          sx={(theme) => ({
             mt: theme.spacing(6)
           })}
         >
@@ -568,7 +466,7 @@ export default function Galerie() {
         </Typography>
       ) : (
         <Box
-          sx={theme => ({
+          sx={(theme) => ({
             display: "grid",
             gridTemplateColumns: {
               xs: "repeat(2, 1fr)",
@@ -582,7 +480,7 @@ export default function Galerie() {
             <Card
               key={b.id}
               onClick={() => openLightbox(startIndex + i)}
-              sx={(theme: Theme) => ({
+              sx={(theme) => ({
                 borderRadius: theme.shape.borderRadius,
                 overflow: "hidden",
                 cursor: "pointer",
@@ -612,7 +510,7 @@ export default function Galerie() {
       )}
       {selectedEventId && thumbs.length > IMAGES_PER_PAGE && (
         <Box
-          sx={theme => ({
+          sx={(theme) => ({
             mt: theme.spacing(4),
             display: "flex",
             justifyContent: "center"
@@ -628,7 +526,7 @@ export default function Galerie() {
             siblingCount={0}
             variant="text"
             shape="rounded"
-            sx={(theme: Theme) => ({
+            sx={(theme) => ({
               "& .MuiPaginationItem-root": {
                 borderRadius: "50%",
                 minWidth: theme.spacing(5),
@@ -805,7 +703,7 @@ export default function Galerie() {
       >
         <DialogTitle
           id="bild-dialog-title"
-          sx={theme => ({
+          sx={(theme) => ({
             pr: theme.spacing(6),
             position: "relative",
             zIndex: 1
@@ -814,7 +712,7 @@ export default function Galerie() {
           {currentImageTitle && (
             <Typography
               variant="subtitle1"
-              sx={theme => ({
+              sx={(theme) => ({
                 pr: theme.spacing(4)
               })}
             >
@@ -824,7 +722,7 @@ export default function Galerie() {
           <IconButton
             aria-label="close"
             onClick={closeLightbox}
-            sx={theme => ({
+            sx={(theme) => ({
               position: "absolute",
               right: theme.spacing(1.5),
               top: theme.spacing(1.5),
@@ -862,14 +760,14 @@ export default function Galerie() {
               <IconButton
                 aria-label="previous"
                 onClick={prev}
-                sx={(theme: Theme) => ({
+                sx={(theme) => ({
                   position: "absolute",
                   top: "50%",
                   left: theme.spacing(1.5),
                   transform: "translateY(-50%)",
                   color: theme.palette.text.primary,
                   bgcolor: alpha(theme.palette.background.default, 0.4),
-                  zIndex: 2, // <-- KORREKTUR HINZUGEFÜGT
+                  zIndex: 2,
                   "&:hover": {
                     bgcolor: alpha(theme.palette.background.default, 0.7),
                   },
@@ -880,14 +778,14 @@ export default function Galerie() {
               <IconButton
                 aria-label="next"
                 onClick={next}
-                sx={(theme: Theme) => ({
+                sx={(theme) => ({
                   position: "absolute",
                   top: "50%",
                   right: theme.spacing(1.5),
                   transform: "translateY(-50%)",
                   color: theme.palette.text.primary,
                   bgcolor: alpha(theme.palette.background.default, 0.4),
-                  zIndex: 2, // <-- KORREKTUR HINZUGEFÜGT
+                  zIndex: 2,
                   "&:hover": {
                     bgcolor: alpha(theme.palette.background.default, 0.7),
                   },
