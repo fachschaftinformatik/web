@@ -89,7 +89,11 @@ const DashboardPage: React.FC = () => {
             Account-Details
           </Typography>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <Typography variant="caption" color="text.secondary">
                 Campus
               </Typography>
@@ -97,7 +101,11 @@ const DashboardPage: React.FC = () => {
                 {getCampusLabel(user.campusid)}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <Typography variant="caption" color="text.secondary">
                 Studiengang
               </Typography>
@@ -105,7 +113,11 @@ const DashboardPage: React.FC = () => {
                 {getDisciplineLabel(user.disciplineid)}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <Typography variant="caption" color="text.secondary">
                 Erstellt am
               </Typography>
@@ -113,7 +125,11 @@ const DashboardPage: React.FC = () => {
                 {new Date(user.created_at).toLocaleString()}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <Typography variant="caption" color="text.secondary">
                 Zuletzt aktualisiert
               </Typography>
