@@ -9,7 +9,7 @@ import Box from '@mui/material/Box';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { Alert, Stack } from '@mui/material';
+import { Alert, MenuItem, Stack } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
 import * as api from '../api';
@@ -17,6 +17,17 @@ import { useAuth } from '../AuthContext';
 
 // TODO
 const UNI_EMAIL_DOMAIN = 'studmail.w-hs.de';
+
+const campusOptions = [
+  { value: 1, label: 'Campus Bocholt' },
+  { value: 2, label: 'Campus Gelsenkirchen' },
+];
+
+const disciplineOptions = [
+  { value: 1, label: 'Wirtschaftsinformatik' },
+  { value: 2, label: 'Anwendungsinformatik' },
+  { value: 3, label: 'Medieninformatik' },
+];
 
 export default function RegistrationPage() {
   const [error, setError] = useState('');
@@ -34,11 +45,13 @@ export default function RegistrationPage() {
     const name = data.get('name') as string;
     const password = data.get('password') as string;
     const confirmPassword = data.get('confirmPassword') as string;
-    // TODO
-    const campusid = 0;
-    const disciplineid = 0;
+    const campusidValue = data.get('campusid') as string;
+    const disciplineidValue = data.get('disciplineid') as string;
 
-    if (!email || !password || !name || !confirmPassword) {
+    const campusid = Number.parseInt(campusidValue, 10);
+    const disciplineid = Number.parseInt(disciplineidValue, 10);
+
+    if (!email || !password || !name || !confirmPassword || !campusidValue || !disciplineidValue) {
        setError('Bitte alle mit "*" markierten Felder ausfüllen.');
        setLoading(false);
        return;
@@ -62,6 +75,18 @@ export default function RegistrationPage() {
       return;
     }
 
+    if (Number.isNaN(campusid) || Number.isNaN(disciplineid)) {
+        setError('Campus-ID und Studiengang-ID müssen Zahlen sein.');
+        setLoading(false);
+        return;
+    }
+
+    if (campusid < 0 || disciplineid < 0) {
+        setError('Campus-ID und Studiengang-ID müssen positive Werte haben.');
+        setLoading(false);
+        return;
+    }
+
     try {
       const newUser = await api.registerUser({
           email,
@@ -75,13 +100,19 @@ export default function RegistrationPage() {
         const loggedInUser = await api.loginUser({ email, password });
         login(loggedInUser);
         navigate('/dashboard');
-      } catch (loginError: any) {
-         setError(`Registrierung erfolgreich, aber Login fehlgeschlagen: ${loginError.message}. Bitte manuell einloggen.`);
-         navigate('/login');
+      } catch (loginError: unknown) {
+        const message =
+          loginError instanceof Error
+            ? loginError.message
+            : 'Bitte manuell einloggen.';
+        setError(`Registrierung erfolgreich, aber Login fehlgeschlagen: ${message}`);
+        navigate('/login');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Registrierungsfehler:', err);
-      setError(err.message || 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+      const message =
+        err instanceof Error ? err.message : 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -142,6 +173,38 @@ export default function RegistrationPage() {
               id="confirmPassword"
               autoComplete="new-password"
             />
+            <TextField
+              select
+              required
+              fullWidth
+              name="campusid"
+              label="Campus"
+              id="campusid"
+              defaultValue=""
+              helperText="Bitte wähle deinen Campus aus."
+            >
+              {campusOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              required
+              fullWidth
+              name="disciplineid"
+              label="Studiengang"
+              id="disciplineid"
+              defaultValue=""
+              helperText="Bitte wähle deinen Studiengang aus."
+            >
+              {disciplineOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
           </Stack>
           <Button
             type="submit"
