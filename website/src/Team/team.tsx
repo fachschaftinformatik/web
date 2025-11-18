@@ -100,7 +100,6 @@ export default function Team() {
                 />
               </Box>
             )}
-
             <CardContent>
               <Typography variant="subtitle1">{m.name}</Typography>
               <Link
@@ -117,12 +116,10 @@ export default function Team() {
       </Box>
     </Box>
   );
-
   // --- RENDER-TEIL (unverändert) ---
   return (
     <Container sx={{ py: 4 }}>
       <Typography variant="h4" align="center" gutterBottom>FSV-Team</Typography>
-
       <Section title="Vorstand" members={vorstand} />
       <Section title="EDV" members={edv} />
       <Section title="Hopo" members={hopo} />

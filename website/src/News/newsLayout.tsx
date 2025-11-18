@@ -261,7 +261,6 @@ function RecipeReviewCard({ id, title, date, image, summary, isNew, isLiked, onT
             >
               {title}
             </Typography>
-
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt:1, minHeight: '3rem',}}>
               {date}
             </Typography>
@@ -274,7 +273,6 @@ function RecipeReviewCard({ id, title, date, image, summary, isNew, isLiked, onT
               <Chip label="Events" size="small" />
               <Chip label="Studium" size="small" />
             </Stack>
-
             {/* Beschreibung */}
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {summary}
@@ -282,13 +280,11 @@ function RecipeReviewCard({ id, title, date, image, summary, isNew, isLiked, onT
           </Box>
         </CardContent>
       </CardActionArea>
-
       {/* 🔹 Like (& Share) Buttons */}
       <CardActions disableSpacing>
         <IconButton onClick={() => onToggleLike(id)} aria-label="add to favorites">
           {isLiked ? <FavoriteIcon color="error" /> : <FavoriteIcon />}
         </IconButton>
-
         {isNew && (
           <Chip
             icon={<StarBorderIcon />}
@@ -298,26 +294,16 @@ function RecipeReviewCard({ id, title, date, image, summary, isNew, isLiked, onT
             sx={{ ml: 1 }}
           />
         )}
-
       </CardActions>
-
     </Card>
   );
-
 }
-
-
-
-
-
 // damit die funktion LikedIn.in liste hinzufügen funktioniert
 type FavoriteListProps = {
   likedIds: number[];
 };
-
 function FavoriteList({ likedIds }: FavoriteListProps) {
   const likedItems = newsDaten.filter((item) => likedIds.includes(item.id));
-
   return (
     <List sx={{ width: '100%', maxWidth: 350 }}>
       {likedItems.map((item) => (
@@ -404,19 +390,14 @@ function FavoriteList({ likedIds }: FavoriteListProps) {
             spacing={2}
             sx={{ mb: 2, alignItems: { xs: 'stretch', sm: 'center' } }}
           >
-
             <Box sx={{ flexShrink: 1 }}>
               {/* <ClickableChips /> */}
               <ClickableChips selectedTag={selectedTag} setSelectedTag={setSelectedTag} />
             </Box>
-
             <Box sx={{ flexGrow: 1, minWidth: { xs: '100%', sm: 280 } }}>
               <CustomizedInputBase />
             </Box>
-
-
           </Stack>
-
           {/* Cards im Grid */}
           <Grid container spacing={5}>
             {filteredNews.map((item) => (

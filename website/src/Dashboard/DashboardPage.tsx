@@ -140,21 +140,22 @@ const DashboardPage: React.FC = () => {
                 color="primary"
                 sx={(theme) => ({
                   borderColor:
-                    theme.palette.mode === 'dark'
-                      ? alpha(theme.palette.primary.light, 0.8)
-                      : theme.palette.primary.main,
+                    theme.palette.primary.main,
                   color:
-                    theme.palette.mode === 'dark'
-                      ? theme.palette.primary.light
-                      : theme.palette.primary.main,
+                    theme.palette.primary.main,
                   fontWeight: 600,
                   '&:hover': {
                     borderColor: theme.palette.primary.main,
                     bgcolor:
-                      theme.palette.mode === 'dark'
-                        ? alpha(theme.palette.primary.main, 0.2)
-                        : alpha(theme.palette.primary.main, 0.08),
+                      alpha(theme.palette.primary.main, 0.08),
+                    ...theme.applyStyles("dark", {
+                      bgcolor: alpha(theme.palette.primary.main, 0.2)
+                    })
                   },
+                  ...theme.applyStyles("dark", {
+                    borderColor: alpha(theme.palette.primary.light, 0.8),
+                    color: theme.palette.primary.light
+                  })
                 })}
               >
                 Alle anzeigen
@@ -169,9 +170,10 @@ const DashboardPage: React.FC = () => {
                     sx={(theme) => ({
                       my: 1.5,
                       borderColor:
-                        theme.palette.mode === 'dark'
-                          ? alpha(theme.palette.common.white, 0.08)
-                          : alpha(theme.palette.grey[500], 0.3),
+                        alpha(theme.palette.grey[500], 0.3),
+                      ...theme.applyStyles("dark", {
+                        borderColor: alpha(theme.palette.common.white, 0.08)
+                      })
                     })}
                   />
                 )}
@@ -184,16 +186,16 @@ const DashboardPage: React.FC = () => {
                     gap: { xs: 1, sm: 0 },
                     borderRadius: 2,
                     border: `1px solid ${
-                      theme.palette.mode === 'dark'
-                        ? alpha(theme.palette.common.white, 0.1)
-                        : alpha(theme.palette.grey[400], 0.6)
+                      alpha(theme.palette.grey[400], 0.6)
                     }`,
                     bgcolor: theme.palette.background.paper,
                     boxShadow: `0 6px 18px ${
-                      theme.palette.mode === 'dark'
-                        ? alpha(theme.palette.primary.dark, 0.45)
-                        : alpha(theme.palette.primary.main, 0.25)
+                      alpha(theme.palette.primary.main, 0.25)
                     }`,
+                    ...theme.applyStyles("dark", {
+                      border: `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
+                      boxShadow: `0 6px 18px ${alpha(theme.palette.primary.dark, 0.45)}`
+                    })
                   })}
                 >
                   <Box flex={1}>
