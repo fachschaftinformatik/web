@@ -1150,7 +1150,7 @@ export default function ForumStandalone() {
                   const active = activeProgramFilters.includes(meta.id);
                   return (
                     // @ts-ignore legacy Grid props retained for old layout
-                    <Grid item component="div" xs={6} key={meta.id}>
+                    <Grid component="div" key={meta.id} size={6}>
                       <Paper
                         role="button"
                         tabIndex={0}
