@@ -309,7 +309,6 @@ export default function Klausurrekos() {
       <Typography variant="h4" color="primary" fontWeight={600} gutterBottom>
         Klausurrekonstruktionen
       </Typography>
-
       {/* Menübereich: Studiengang, PO und Suchfeld */}
       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 4 }}>
         {/* Auswahl: Studiengang */}
@@ -393,7 +392,6 @@ export default function Klausurrekos() {
           }
         />
       </Box>
-
       {/* Anzeige der Semester und Module */}
       <Box>
         {semestersToShow ? (
@@ -469,9 +467,8 @@ export default function Klausurrekos() {
           ))
         ) : (
           // Fallback, wenn noch kein Studiengang/PO gewählt ist
-          <Typography sx={{ opacity: 0.7 }}>
-            Bitte oben passenden <strong>Studiengang</strong> und <strong>PO</strong> auswählen.
-          </Typography>
+          (<Typography sx={{ opacity: 0.7 }}>Bitte oben passenden <strong>Studiengang</strong>und <strong>PO</strong>auswählen.
+                      </Typography>)
         )}
       </Box>
     </Container>

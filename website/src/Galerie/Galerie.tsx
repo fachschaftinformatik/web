@@ -394,18 +394,19 @@ export default function Galerie() {
   }, [thumbs.length, index]);
 
   return (
-    <Container sx={{ py: (theme: Theme) => theme.spacing(4) }}>
+    <Container sx={theme => ({
+      py: theme.spacing(4)
+    })}>
       <Typography variant="h4" align="center" gutterBottom>
         Galerie
       </Typography>
-
       {canUpload && (
         <Box
-          sx={{
+          sx={theme => ({
             display: "flex",
             justifyContent: "flex-end",
-            mb: (theme: Theme) => theme.spacing(2),
-          }}
+            mb: theme.spacing(2)
+          })}
         >
           <Button
             variant="contained"
@@ -416,7 +417,6 @@ export default function Galerie() {
           </Button>
         </Box>
       )}
-
       {/* --- Event-Auswahl als horizontale ImageList --- */}
       <Box
         sx={(theme: Theme) => ({
@@ -452,26 +452,20 @@ export default function Galerie() {
                   setIndex(0);
                   setPage(1);
                 }}
-                sx={(theme: Theme) => ({
+                sx={[(theme: Theme) => ({
                   cursor: "pointer",
                   width: theme.spacing(18.75),
                   flexShrink: 0,
                   borderRadius: theme.shape.borderRadius,
                   overflow: "hidden",
                   boxShadow: theme.shadows[selected ? 6 : 2],
-                  transform: selected ? "scale(1.05)" : "scale(1)",
                   transition: theme.transitions.create([
                     "transform",
                     "box-shadow",
                     "outline",
                     "margin",
                   ]),
-                  outline: selected ? "2px solid" : "none",
                   outlineOffset: "2px",
-                  outlineColor: selected
-                    ? theme.palette.primary.main
-                    : "transparent",
-                  zIndex: selected ? 2 : 1,
                   marginLeft: theme.spacing(2),
                   "&:first-of-type": {
                     marginLeft: 0,
@@ -480,65 +474,85 @@ export default function Galerie() {
                     transform: "scale(1.08)",
                     boxShadow: theme.shadows[8],
                     zIndex: 3,
-                  },
-                })}
+                  }
+                }), selected ? {
+                  transform: "scale(1.05)"
+                } : {
+                  transform: "scale(1)"
+                }, selected ? {
+                  outline: "2px solid"
+                } : {
+                  outline: "none"
+                }, selected ? {
+                  outlineColor: theme.palette.primary.main
+                } : {
+                  outlineColor: "transparent"
+                }, selected ? {
+                  zIndex: 2
+                } : {
+                  zIndex: 1
+                }]}
               >
                 <Box
                   component="img"
                   src={ev.src} // Holt sich den Pfad (entweder /DEIN_ORDNER/... oder picsum)
                   alt={ev.title}
                   loading="lazy"
-                  sx={{
+                  sx={theme => ({
                     width: "100%",
-                    height: (theme: Theme) => theme.spacing(20),
+                    height: theme.spacing(20),
                     objectFit: "contain",
-                    display: "block",
-                  }}
+                    display: "block"
+                  })}
                 />
                 <ImageListItemBar
                   title={ev.title}
                   position="below"
-                  sx={(theme: Theme) => ({
+                  sx={[(theme: Theme) => ({
                     textAlign: "center",
-                    bgcolor: selected
-                      ? theme.palette.primary.main
-                      : theme.palette.background.paper,
-                    color: selected
-                      ? theme.palette.primary.contrastText
-                      : theme.palette.text.primary,
                     py: theme.spacing(1),
                     "& .MuiImageListItemBar-title": {
                       fontSize: "0.8rem",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
-                    },
-                  })}
+                    }
+                  }), selected ? {
+                    bgcolor: theme.palette.primary.main
+                  } : {
+                    bgcolor: theme.palette.background.paper
+                  }, selected ? {
+                    color: theme.palette.primary.contrastText
+                  } : {
+                    color: theme.palette.text.primary
+                  }]}
                 />
               </ImageListItem>
             );
           })}
         </ImageList>
       </Box>
-
       {/* --- Titel der ausgewählten Veranstaltung --- */}
       {selectedEventId && (
         <Typography
           variant="h5"
           component="h2"
           align="center"
-          sx={{ mb: (theme: Theme) => theme.spacing(3) }}
+          sx={theme => ({
+            mb: theme.spacing(3)
+          })}
         >
           {allEvents.find((ev) => ev.id === selectedEventId)?.title}
         </Typography>
       )}
-
       {/* --- Bilderbereich --- */}
       {!selectedEventId ? (
         <Typography
           align="center"
           color="text.secondary"
-          sx={{ mt: (theme: Theme) => theme.spacing(6) }}
+          sx={theme => ({
+            mt: theme.spacing(6)
+          })}
         >
           Bitte ein Event oben auswählen, um Bilder zu sehen.
         </Typography>
@@ -546,21 +560,23 @@ export default function Galerie() {
         <Typography
           align="center"
           color="text.secondary"
-          sx={{ mt: (theme: Theme) => theme.spacing(6) }}
+          sx={theme => ({
+            mt: theme.spacing(6)
+          })}
         >
           Für dieses Event sind noch keine Bilder hinterlegt. (Überprüfe die 'bilderByEvent'-Konstante)
         </Typography>
       ) : (
         <Box
-          sx={{
+          sx={theme => ({
             display: "grid",
             gridTemplateColumns: {
               xs: "repeat(2, 1fr)",
               sm: "repeat(3, 1fr)",
               md: "repeat(4, 1fr)",
             },
-            gap: (theme: Theme) => theme.spacing(2),
-          }}
+            gap: theme.spacing(2)
+          })}
         >
           {paginatedThumbs.map((b, i) => (
             <Card
@@ -596,11 +612,11 @@ export default function Galerie() {
       )}
       {selectedEventId && thumbs.length > IMAGES_PER_PAGE && (
         <Box
-          sx={{
-            mt: (theme: Theme) => theme.spacing(4),
+          sx={theme => ({
+            mt: theme.spacing(4),
             display: "flex",
-            justifyContent: "center",
-          }}
+            justifyContent: "center"
+          })}
         >
           <Pagination
             count={pageCount}
@@ -630,7 +646,6 @@ export default function Galerie() {
           />
         </Box>
       )}
-
       {canUpload && (
         <Dialog
           open={uploadOpen}
@@ -762,7 +777,6 @@ export default function Galerie() {
           </DialogActions>
         </Dialog>
       )}
-
       <Snackbar
         open={Boolean(successMessage)}
         autoHideDuration={4000}
@@ -778,7 +792,6 @@ export default function Galerie() {
           {successMessage}
         </Alert>
       </Snackbar>
-
       {/* --- Lightbox --- */}
       <Dialog
         open={open}
@@ -786,20 +799,24 @@ export default function Galerie() {
         fullWidth
         maxWidth="lg" // <-- Klassische Lightbox-Größe
         aria-labelledby="bild-dialog-title"
-        PaperProps={{ sx: { overflow: "hidden" } }}
+        slotProps={{
+          paper: { sx: { overflow: "hidden" } }
+        }}
       >
         <DialogTitle
           id="bild-dialog-title"
-          sx={{
-            pr: (theme: Theme) => theme.spacing(6),
+          sx={theme => ({
+            pr: theme.spacing(6),
             position: "relative",
-            zIndex: 1,
-          }}
+            zIndex: 1
+          })}
         >
           {currentImageTitle && (
             <Typography
               variant="subtitle1"
-              sx={{ pr: (theme: Theme) => theme.spacing(4) }}
+              sx={theme => ({
+                pr: theme.spacing(4)
+              })}
             >
               {currentImageTitle}
             </Typography>
@@ -807,12 +824,12 @@ export default function Galerie() {
           <IconButton
             aria-label="close"
             onClick={closeLightbox}
-            sx={{
+            sx={theme => ({
               position: "absolute",
-              right: (theme: Theme) => theme.spacing(1.5),
-              top: (theme: Theme) => theme.spacing(1.5),
-              zIndex: 2,
-            }}
+              right: theme.spacing(1.5),
+              top: theme.spacing(1.5),
+              zIndex: 2
+            })}
           >
             <CloseIcon />
           </IconButton>

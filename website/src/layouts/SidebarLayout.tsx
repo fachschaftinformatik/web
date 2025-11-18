@@ -76,27 +76,43 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ user, children, title = '
             to={isRoute ? href : undefined}
             href={!isRoute ? href : undefined}
             onClick={onItemClick}
-            sx={(theme) => ({
+            sx={[(theme) => ({
               minHeight: 48,
-              justifyContent: labelsVisible ? 'flex-start' : 'center',
-              px: labelsVisible ? 2 : 0,
               borderRadius: 2,
-              color: theme.palette.mode === 'dark' ? theme.palette.grey[100] : theme.palette.text.primary,
+              color: theme.palette.text.primary,
               '&:hover': {
                 bgcolor:
-                  theme.palette.mode === 'dark'
-                    ? alpha(theme.palette.primary.main, 0.15)
-                    : alpha(theme.palette.primary.main, 0.08),
+                  alpha(theme.palette.primary.main, 0.08),
+                ...theme.applyStyles("dark", {
+                  bgcolor: alpha(theme.palette.primary.main, 0.15)
+                })
               },
-            })}
+              ...theme.applyStyles("dark", {
+                color: theme.palette.grey[100]
+              })
+            }), labelsVisible ? {
+              justifyContent: 'flex-start'
+            } : {
+              justifyContent: 'center'
+            }, labelsVisible ? {
+              px: 2
+            } : {
+              px: 0
+            }]}
           >
             <ListItemIcon
-              sx={(theme) => ({
+              sx={[(theme) => ({
                 minWidth: 0,
-                mr: labelsVisible ? 1.5 : 0,
                 justifyContent: 'center',
-                color: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
-              })}
+                color: theme.palette.primary.main,
+                ...theme.applyStyles("dark", {
+                  color: theme.palette.primary.light
+                })
+              }), labelsVisible ? {
+                mr: 1.5
+              } : {
+                mr: 0
+              }]}
             >
               {icon}
             </ListItemIcon>
@@ -138,24 +154,31 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ user, children, title = '
           <IconButton
             aria-label="toggle color mode"
             onClick={toggleMode}
-            sx={(theme) => ({
+            sx={[(theme) => ({
               border: `1px solid ${alpha(theme.palette.primary.main, mode === 'dark' ? 0.5 : 0.25)}`,
-              bgcolor:
-                mode === 'dark'
-                  ? alpha(theme.palette.primary.dark, 0.35)
-                  : alpha(theme.palette.primary.main, 0.1),
-              color: mode === 'dark' ? theme.palette.primary.contrastText : theme.palette.primary.main,
               transition: theme.transitions.create(['background-color', 'border-color'], {
                 duration: theme.transitions.duration.shortest,
               }),
               '&:hover': {
-                bgcolor:
-                  mode === 'dark'
-                    ? alpha(theme.palette.primary.dark, 0.55)
-                    : alpha(theme.palette.primary.main, 0.2),
-                borderColor: alpha(theme.palette.primary.main, 0.6),
-              },
-            })}
+                borderColor: alpha(theme.palette.primary.main, 0.6)
+              }
+            }), mode === 'dark' ? {
+              bgcolor: alpha(theme.palette.primary.dark, 0.35)
+            } : {
+              bgcolor: alpha(theme.palette.primary.main, 0.1)
+            }, mode === 'dark' ? {
+              color: theme.palette.primary.contrastText
+            } : {
+              color: theme.palette.primary.main
+            }, mode === 'dark' ? {
+              '&:hover': {
+                bgcolor: alpha(theme.palette.primary.dark, 0.55)
+              }
+            } : {
+              '&:hover': {
+                bgcolor: alpha(theme.palette.primary.main, 0.2)
+              }
+            }]}
           >
             {mode === 'dark' ? <Brightness7Rounded /> : <Brightness4Rounded />}
           </IconButton>
@@ -173,15 +196,17 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ user, children, title = '
         color: 'text.primary',
       }}
     >
-      <AppBar
-        position="fixed"
-        color="primary"
-        sx={(t) => ({
-          zIndex: t.zIndex.drawer + 1,
-          width: '100%',
-          bgcolor: mode === 'dark' ? t.palette.primary.dark : t.palette.primary.main,
-        })}
-      >
+    <AppBar
+        position="fixed"
+        color="primary"
+        sx={(theme) => ({
+          zIndex: theme.zIndex.drawer + 1,
+          width: '100%',
+          bgcolor: mode === 'dark'
+            ? theme.palette.primary.dark
+            : theme.palette.primary.main,
+        })}
+      >
         <Toolbar>
           <Tooltip
             title={
@@ -230,16 +255,13 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ user, children, title = '
           </Tooltip>
         </Toolbar>
       </AppBar>
-
       <Drawer
         variant="permanent"
-        sx={(t) => ({
+        sx={[(t) => ({
           display: { xs: 'none', md: 'block' },
-          width: { md: navOpen ? drawerWidthOpen : drawerWidthClosed },
           flexShrink: 0,
           whiteSpace: 'nowrap',
           '& .MuiDrawer-paper': {
-            width: { md: navOpen ? drawerWidthOpen : drawerWidthClosed },
             boxSizing: 'border-box',
             transition: t.transitions.create('width', {
               easing: t.transitions.easing.sharp,
@@ -247,27 +269,47 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ user, children, title = '
             }),
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden',
-          },
-        })}
+            overflow: 'hidden'
+          }
+        }), navOpen ? {
+          width: {
+            md: drawerWidthOpen
+          }
+        } : {
+          width: {
+            md: drawerWidthClosed
+          }
+        }, navOpen ? {
+          '& .MuiDrawer-paper': {
+            width: {
+              md: drawerWidthOpen
+            }
+          }
+        } : {
+          '& .MuiDrawer-paper': {
+            width: {
+              md: drawerWidthClosed
+            }
+          }
+        }]}
       >
         <Toolbar />
         <Divider />
         <SidebarContent labelsVisible={isMdUp && navOpen} />
       </Drawer>
-
       {!isMdUp && (
         <Drawer
           variant="temporary"
           open={navOpen}
           onClose={() => setNavOpen(false)}
           ModalProps={{ keepMounted: true }}
-          PaperProps={{ sx: { width: mobileOverlayWidth } }}
+          slotProps={{
+            paper: { sx: { width: mobileOverlayWidth } }
+          }}
         >
           <SidebarContent labelsVisible withCloseButton onClose={() => setNavOpen(false)} />
         </Drawer>
       )}
-
       <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
         <Toolbar />
         <Container maxWidth="lg" disableGutters>
@@ -277,5 +319,4 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ user, children, title = '
     </Box>
   );
 };
-
 export default SidebarLayout;

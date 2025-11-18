@@ -342,9 +342,8 @@ function CommentThread({
 
   return (
     <Box
-      sx={{
+      sx={[{
         mt: 1.25,
-        pl: depth ? 3 : 0,
         position: "relative",
         "&::before": depth
           ? {
@@ -357,8 +356,12 @@ function CommentThread({
               bgcolor: appearance.border,
               borderRadius: 1,
             }
-          : {},
-      }}
+          : {}
+      }, depth ? {
+        pl: 3
+      } : {
+        pl: 0
+      }]}
     >
       <Paper
         variant="outlined"
@@ -410,7 +413,6 @@ function CommentThread({
           )}
         </Stack>
       </Paper>
-
       {node.children.map((child) => (
         <CommentThread
           key={child.id}
@@ -449,18 +451,20 @@ function CommentsSection({
   return (
     <Box>
       <Box
-        sx={{
+        sx={[{
           border: 1,
           borderColor: appearance.border,
           borderRadius: 2,
           backgroundColor: appearance.surface,
-          p: 1.5,
-          ...(shouldClamp && {
-            maxHeight: expanded ? 420 : 220,
-            overflowY: "auto",
-            pr: 2,
-          }),
-        }}
+          p: 1.5
+        }, expanded ? {
+          maxHeight: 420
+        } : {
+          maxHeight: 220
+        }, shouldClamp && {
+          overflowY: "auto",
+          pr: 2
+        }]}
       >
         {tree.length ? (
           <Stack spacing={1}>{renderNodes()}</Stack>
@@ -470,7 +474,6 @@ function CommentsSection({
           </Typography>
         )}
       </Box>
-
       {shouldClamp && (
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} mt={1}>
           <Button size="small" variant="text" onClick={() => setExpanded((v) => !v)}>
@@ -481,7 +484,6 @@ function CommentsSection({
           </Button>
         </Stack>
       )}
-
       <Box sx={{ mt: 1.5 }}>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
           <TextField
@@ -505,7 +507,6 @@ function CommentsSection({
           </Button>
         </Stack>
       </Box>
-
       <Dialog open={fullViewOpen} onClose={() => setFullViewOpen(false)} fullWidth maxWidth="md">
         <DialogTitle>Kommentare</DialogTitle>
         <DialogContent dividers>
@@ -941,13 +942,16 @@ export default function ForumStandalone() {
   /* UI */
   return (
     <Box
-      sx={{
+      sx={[{
         minHeight: "100vh",
         bgcolor: palette.background,
-        color: darkMode ? "common.white" : "text.primary",
         "--card-bg": palette.card,
-        "--card-border": palette.border,
-      }}
+        "--card-border": palette.border
+      }, darkMode ? {
+        color: "common.white"
+      } : {
+        color: "text.primary"
+      }]}
     >
       <AppBar
         position="sticky"
@@ -976,21 +980,32 @@ export default function ForumStandalone() {
           </Container>
         </Toolbar>
       </AppBar>
-
-      <Container maxWidth="lg" sx={{ py: 3, color: darkMode ? "common.white" : "text.primary" }}>
+      <Container maxWidth="lg" sx={[{
+        py: 3
+      }, darkMode ? {
+        color: "common.white"
+      } : {
+        color: "text.primary"
+      }]}>
         {/* Filterleiste */}
         <Paper
           elevation={0}
-          sx={{
+          sx={[{
             p: 3,
             mb: 3,
             borderRadius: 4,
             border: "1px solid",
             borderColor: palette.border,
-            bgcolor: palette.surface,
-            boxShadow: darkMode ? "0px 8px 24px rgba(0,0,0,0.35)" : "0px 8px 24px rgba(15,110,46,0.08)",
-            color: darkMode ? "common.white" : "text.primary",
-          }}
+            bgcolor: palette.surface
+          }, darkMode ? {
+            boxShadow: "0px 8px 24px rgba(0,0,0,0.35)"
+          } : {
+            boxShadow: "0px 8px 24px rgba(15,110,46,0.08)"
+          }, darkMode ? {
+            color: "common.white"
+          } : {
+            color: "text.primary"
+          }]}
         >
           <Stack spacing={2}>
             <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "stretch", md: "center" }}>
@@ -999,25 +1014,32 @@ export default function ForumStandalone() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 fullWidth
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
                 sx={inputStyles}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }
+                }}
               />
               <Select
                 size="small"
                 value={sort}
                 onChange={(e) => setSort(e.target.value as "new" | "votes")}
-                sx={{
-                  width: { xs: "100%", md: 220 },
+                sx={[{
+                  width: { xs: "100%", md: 220 }
+                }, darkMode ? {
                   "& .MuiOutlinedInput-root": {
-                    bgcolor: darkMode ? "rgba(255,255,255,0.08)" : "#fff",
-                  },
-                }}
+                    bgcolor: "rgba(255,255,255,0.08)"
+                  }
+                } : {
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: "#fff"
+                  }
+                }]}
               >
                 <MenuItem value="new">Neueste zuerst</MenuItem>
                 <MenuItem value="votes">Beste (Votes)</MenuItem>
@@ -1088,12 +1110,13 @@ export default function ForumStandalone() {
           )}
         </Stack>
       </Container>
-
       <Drawer
         anchor="right"
         open={filtersOpen}
         onClose={() => setFiltersOpen(false)}
-        PaperProps={{ sx: { bgcolor: palette.surface, color: darkMode ? "common.white" : "text.primary" } }}
+        slotProps={{
+          paper: { sx: { bgcolor: palette.surface, color: darkMode ? "common.white" : "text.primary" } }
+        }}
       >
         <Box sx={{ width: { xs: 340, sm: 420 }, p: 3 }}>
           <Stack spacing={2}>
@@ -1103,7 +1126,6 @@ export default function ForumStandalone() {
                 Zurücksetzen
               </Button>
             </Stack>
-
             <Box>
               <Typography variant="subtitle2" sx={{ color: palette.textSecondary }}>
                 Beiträge
@@ -1119,7 +1141,6 @@ export default function ForumStandalone() {
                 label="Nur Beiträge anzeigen, die alle Studiengänge adressieren"
               />
             </Box>
-
             <Box>
               <Typography variant="subtitle2" sx={{ color: palette.textSecondary }}>
                 Studiengänge
@@ -1140,11 +1161,9 @@ export default function ForumStandalone() {
                             toggleProgramFilter(meta.id);
                           }
                         }}
-                        sx={{
+                        sx={[{
                           p: 1.5,
                           border: 2,
-                          borderColor: active ? "secondary.main" : palette.border,
-                          bgcolor: active ? "rgba(15,110,46,0.12)" : palette.surface,
                           cursor: "pointer",
                           transition: "all .2s ease",
                           minHeight: 96,
@@ -1154,8 +1173,16 @@ export default function ForumStandalone() {
                           "&:hover": {
                             borderColor: "secondary.main",
                             boxShadow: 2,
-                          },
-                        }}
+                          }
+                        }, active ? {
+                          borderColor: "secondary.main"
+                        } : {
+                          borderColor: palette.border
+                        }, active ? {
+                          bgcolor: "rgba(15,110,46,0.12)"
+                        } : {
+                          bgcolor: palette.surface
+                        }]}
                       >
                         <Typography variant="body2" fontWeight={600}>
                           {meta.label}
@@ -1179,7 +1206,6 @@ export default function ForumStandalone() {
           </Stack>
         </Box>
       </Drawer>
-
       <Dialog open={!!detailPost} onClose={closeDetail} fullWidth maxWidth="md">
         {detailPost && (
           <>
@@ -1229,8 +1255,10 @@ export default function ForumStandalone() {
                     label="Link teilen"
                     value={shareUrl}
                     fullWidth
-                    InputProps={{ readOnly: true }}
                     sx={inputStyles}
+                    slotProps={{
+                      input: { readOnly: true }
+                    }}
                   />
                   <Button
                     variant="contained"
@@ -1254,7 +1282,6 @@ export default function ForumStandalone() {
           </>
         )}
       </Dialog>
-
       {/* Create Dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Beitrag erstellen</DialogTitle>
@@ -1282,7 +1309,6 @@ export default function ForumStandalone() {
               onChange={(e) => setTagsInput(e.target.value)}
               sx={inputStyles}
             />
-
             {/* Für alle + einzelne Checkboxen in einer Reihe */}
             <FormGroup row>
               <FormControlLabel
@@ -1295,7 +1321,6 @@ export default function ForumStandalone() {
                 label="Für alle Studiengänge"
                 sx={{ mr: 2 }}
               />
-
               {PROGRAMS.map((p) => (
                 <FormControlLabel
                   key={p}
@@ -1327,7 +1352,6 @@ export default function ForumStandalone() {
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* Report Dialog */}
       <Dialog open={!!reportFor} onClose={() => setReportFor(null)} maxWidth="xs" fullWidth>
         <DialogTitle>Beitrag melden</DialogTitle>
