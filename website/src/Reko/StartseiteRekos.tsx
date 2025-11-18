@@ -38,22 +38,23 @@ export default function StartseiteRekos() {
           </Typography>
 
           {/* Beschreibung der Idee hinter Rekonstruktionen */}
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1" sx={{
+            marginBottom: "16px"
+          }}>
             Eine Klausurrekonstruktion ist ein nachträglich erstellter Bericht über
             eine geschriebene Prüfung. Sie hilft anderen Studierenden, sich auf
             kommende Klausuren vorzubereiten, indem sie einen Eindruck von
             Aufgabenstellungen und Themen gibt.
           </Typography>
-
           {/* Hinweis, dass Rekos keine offiziellen Unterlagen sind */}
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1" sx={{
+            marginBottom: "16px"
+          }}>
             Die Rekos sind keine offiziellen Prüfungsunterlagen, sondern
             freiwillige Beiträge von Studierenden für Studierende.
           </Typography>
         </Box>
-
         <Divider sx={{ mb: 4 }} />
-
         {/* Abschnitt: Wie Studierende mithelfen und eigene Rekos einreichen können */}
         <Box sx={{ mb: 4 }}>
           {/* Überschrift */}
@@ -62,11 +63,12 @@ export default function StartseiteRekos() {
           </Typography>
 
           {/* Kurze Erklärung */}
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1" sx={{
+            marginBottom: "16px"
+          }}>
             Damit die Sammlung aktuell bleibt, freuen wir uns über jede neue Reko.
             Mitmachen ist ganz einfach:
           </Typography>
-
           {/* Schritt-für-Schritt Anleitung */}
           <List sx={{ pl: 2 }}>
             <ListItem>

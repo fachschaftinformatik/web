@@ -124,12 +124,10 @@ export default function KlausurrekosErweiterung() {
       <Typography variant="h4" color="primary" fontWeight={600} gutterBottom>
         Reko: {modul}
       </Typography>
-
       {/* Kurzbeschreibung oben auf der Seite */}
       <Typography variant="body1" sx={{ mb: 4 }}>
         Hier findest du die vorhandenen Rekonstruktionen für dieses Modul.
       </Typography>
-
       {/* Liste der Reko-Karten */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {entries.map((entry, i) => (
@@ -216,9 +214,7 @@ export default function KlausurrekosErweiterung() {
           </Paper>
         ))}
       </Box>
-
       <Divider sx={{ my: 4 }} />
-
       {/* Legende erklärt Haken, PO-Tags und Versionierung */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
         <Typography variant="body2" color="text.secondary">
@@ -240,7 +236,6 @@ export default function KlausurrekosErweiterung() {
           <strong>Version (z. B. v1.0, v2.0)</strong> zeigt an, wie aktuell die Rekonstruktion ist.
         </Typography>
       </Box>
-
       {/* Optional: Debug-Info, falls ich später prüfen möchte, was ankommt
       <Typography variant="caption" color="text.disabled">
         Debug: {studiengang} • {po}
