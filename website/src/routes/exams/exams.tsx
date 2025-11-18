@@ -11,14 +11,12 @@ import {
   Menu,
   MenuItem,
 } from "@mui/material";
+
 import ArrowDropDownRoundedIcon from "@mui/icons-material/ArrowDropDownRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import { Link as RouterLink } from "react-router-dom";
 
-// Typ für ein Semester: Titel + Liste der Modulnamen
 type Semester = { title: string; items: string[] };
-
-// Studienverlauf Informatik, PO16
 const piPO16Semesters: Semester[] = [
   {
     title: "1. Semester",
@@ -265,22 +263,13 @@ const electivesWI_PO23 = [
   "Software Design",
 ];
 
-// Hauptkomponente für die Klausurreko-Übersicht
-export default function Klausurrekos() {
-  // Anchor-Element für das Studiengang-Menü
+export default function Exams() {
   const [studiengangAnchor, setStudiengangAnchor] = useState<null | HTMLElement>(null);
-  // Aktuell ausgewählter Studiengang
   const [studiengang, setStudiengang] = useState("Studiengang");
-
-  // Anchor-Element für das PO-Menü
   const [poAnchor, setPoAnchor] = useState<null | HTMLElement>(null);
-  // Aktuell ausgewählte Prüfungsordnung (PO16 / PO23)
   const [selectedPo, setSelectedPo] = useState("PO16");
-
-  // Suchbegriff (noch nicht ausgewertet, nur vorbereitet)
   const [search, setSearch] = useState("");
 
-  // Ermittelt die Semesterliste, die zur aktuellen Studiengang-/PO-Kombination passt
   const semestersToShow = useMemo(() => {
     if (studiengang === "Informatik" && selectedPo === "PO16") return piPO16Semesters;
     if (studiengang === "Wirtschaftsinformatik" && selectedPo === "PO16") return wiPO16Semesters;

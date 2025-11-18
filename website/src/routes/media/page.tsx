@@ -1,5 +1,5 @@
 import React from "react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "@lib/auth";
 import {
   Container,
   Typography,
@@ -27,14 +27,12 @@ import {
   TextField,
   alpha, // Import alpha für Transparenz
   Theme,
-  // CircularProgress entfernt (wird nicht mehr gebraucht)
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
-// Typ-Definitionen bleiben gleich
 type EventItem = { id: number; title: string; src: string };
 type Bild = { id: number; title: string; thumb: string; full: string };
 type UploadEntry = { file: File; title: string };

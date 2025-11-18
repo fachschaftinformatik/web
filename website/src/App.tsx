@@ -1,16 +1,23 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import RegistrationPage from './Registration/RegistrationPage';
-import LoginPage from './Login/LoginPage';
-import ProtectedRoute from './ProtectedRoute';
-import DashboardPage from './Dashboard/DashboardPage';
-import ForumPostsPage from './Forum/ForumPostsPage';
-import { AuthProvider, useAuth } from './AuthContext';
 import { Outlet } from 'react-router-dom';
 
-import { ThemeModeProvider } from './ThemeModeContext';
-import ThemeModeToggle from './ThemeModeToggle';
+import {
+  ThemeModeProvider,
+  ThemeModeToggle
+} from '@lib/theme';
+
+import { AuthProvider, useAuth } from '@lib/auth';
+import ProtectedRoute from '@lib/routes';
+
+import LoginPage from '@routes/login/page';
+import RegistrationPage from '@routes/registration/page';
+import DashboardPage from '@routes/dashboard/page';
+import MediaPage from '@routes/media/page';
+import TeamPage from '@routes/team/page';
+import NewsPage from '@routes/news/page';
+import ForumPage from '@routes/forum/page';
 
 const AuthRedirector: React.FC = () => {
     const { user, isLoading } = useAuth();
@@ -29,6 +36,11 @@ function App() {
         <BrowserRouter>
           <Routes>
 
+            <route path="/media" element={<MediaPage />} />
+            <route path="/team" element={<TeamPage />} />
+            <route path="/news" element={<NewsPage />} />
+            <route path="/forum" element={<ForumPage />} />
+
             <Route element={<AuthRedirector />}>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegistrationPage />} />
@@ -36,7 +48,8 @@ function App() {
 
             <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/forum" element={<ForumPostsPage />} />
+                <Route path="/exams/*" element={<ForumPage />} />
+
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
 

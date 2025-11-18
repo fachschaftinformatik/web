@@ -29,8 +29,9 @@ import ArticleRounded from '@mui/icons-material/ArticleRounded';
 import PhotoLibraryRounded from '@mui/icons-material/PhotoLibraryRounded';
 import ForumRounded from '@mui/icons-material/ForumRounded';
 import { Link as RouterLink } from 'react-router-dom';
-import { User } from '../api';
-import { useThemeMode } from '../ThemeModeContext';
+
+import { User } from '@lib/api';
+import { useThemeMode } from '@lib/theme';
 
 const drawerWidthOpen = 240;
 const drawerWidthClosed = 72;
@@ -49,7 +50,7 @@ type SidebarLayoutProps = {
   title?: string;
 };
 
-const SidebarLayout: React.FC<SidebarLayoutProps> = ({ user, children, title = 'Dashboard' }) => {
+const Sidebar: React.FC<SidebarLayoutProps> = ({ user, children, title = 'Dashboard' }) => {
   const { mode, toggleMode } = useThemeMode();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
@@ -319,4 +320,5 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ user, children, title = '
     </Box>
   );
 };
-export default SidebarLayout;
+
+export { Sidebar };

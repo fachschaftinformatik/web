@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 
-export default function StartseiteRekos() {
+export default function Landing() {
   return (
     <>
       {/* Hauptcontainer der Seite (begrenzte Breite und Abstand nach oben) */}
