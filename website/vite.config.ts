@@ -1,7 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import path from "path";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@lib": path.resolve(__dirname, "./src/lib"),
+      "@components": path.resolve(__dirname, "./src/components"),
+      "@routes": path.resolve(__dirname, "./src/routes"),
+    },
+  },
   plugins: [react()],
   server: {
     proxy: {
