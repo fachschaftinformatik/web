@@ -23,11 +23,13 @@ import NotificationsNoneRounded from '@mui/icons-material/NotificationsNoneRound
 import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
 import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
 import MenuRounded from '@mui/icons-material/MenuRounded';
+import LibraryBooks from '@mui/icons-material/LibraryBooks';
 import MenuOpenRounded from '@mui/icons-material/MenuOpenRounded';
 import HomeRounded from '@mui/icons-material/HomeRounded';
 import ArticleRounded from '@mui/icons-material/ArticleRounded';
 import PhotoLibraryRounded from '@mui/icons-material/PhotoLibraryRounded';
 import ForumRounded from '@mui/icons-material/ForumRounded';
+import Groups from '@mui/icons-material/Groups';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { User } from '@lib/api';
@@ -38,10 +40,12 @@ const drawerWidthClosed = 72;
 const mobileOverlayWidth = 280;
 
 const navItems = [
-  { label: 'Dashboard', href: '#dashboard', icon: <HomeRounded /> },
-  { label: 'Beiträge', href: '#posts', icon: <ArticleRounded /> },
-  { label: 'Galerie', href: '#gallery', icon: <PhotoLibraryRounded /> },
+  { label: 'Dashboard', href: '/dashboard', icon: <HomeRounded /> },
+  { label: 'Rekos', href: '/exams', icon: <LibraryBooks /> },
+  { label: 'Beiträge', href: '/news', icon: <ArticleRounded /> },
   { label: 'Forum', href: '/forum', icon: <ForumRounded />, isRoute: true },
+  { label: 'Galerie', href: '/media', icon: <PhotoLibraryRounded /> },
+  { label: 'Team', href: '/team', icon: <Groups /> },
 ];
 
 type SidebarLayoutProps = {
