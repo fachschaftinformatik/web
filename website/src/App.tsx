@@ -17,6 +17,8 @@ import DashboardPage from '@routes/dashboard/page';
 import MediaPage from '@routes/media/page';
 import TeamPage from '@routes/team/page';
 import NewsPage from '@routes/news/page';
+import ExamsPage from '@routes/exams/page';
+import ExamsListPage from '@routes/exams/list/page';
 import ForumPage from '@routes/forum/page';
 
 const AuthRedirector: React.FC = () => {
@@ -36,11 +38,6 @@ function App() {
         <BrowserRouter>
           <Routes>
 
-            <route path="/media" element={<MediaPage />} />
-            <route path="/team" element={<TeamPage />} />
-            <route path="/news" element={<NewsPage />} />
-            <route path="/forum" element={<ForumPage />} />
-
             <Route element={<AuthRedirector />}>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegistrationPage />} />
@@ -48,10 +45,16 @@ function App() {
 
             <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/exams/*" element={<ForumPage />} />
+                <Route path="/exams" element={<ExamsPage />} />
+                <Route path="/exams/list" element={<ExamsListPage />} />
 
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
+
+            <Route path="/forum" element={<ForumPage />} />
+            <Route path="/media" element={<MediaPage />} />
+            <Route path="/team" element={<TeamPage />} />
+            <Route path="/news" element={<NewsPage />} />
 
             <Route path="*" element={<Navigate to="/login" replace />} />
 

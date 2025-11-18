@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 
-export default function Landing() {
+export default function Exams() {
   return (
     <>
       {/* Hauptcontainer der Seite (begrenzte Breite und Abstand nach oben) */}
@@ -112,7 +112,7 @@ export default function Landing() {
             variant="contained"
             size="large"
             component={RouterLink}
-            to="/rekos/klausuren"
+            to="/exams/list"
             sx={{ mb: 5 }}
           >
             Zu den Rekos →
