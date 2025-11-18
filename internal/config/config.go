@@ -18,7 +18,7 @@ func New() *Config {
 		HTTPPort:      getEnv("HTTP_PORT", "8080"),
 		SecureCookies: getEnv("SECURE_COOKIES", "true") == "true",
 		GooseDSN:      "file:" + dbPath,
-		AppDSN:        "file:" + dbPath + "?_pragma=journal_mode(WAL)&_pragma=foreign_keys(ON)&_pragma=recursive_triggers(OFF)",
+		AppDSN:        "file:" + dbPath + "?_journal_mode=WAL&_foreign_keys=on&_recursive_triggers=off",
 	}
 }
 
