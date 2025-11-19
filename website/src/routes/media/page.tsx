@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useAuth } from "@lib/auth";
+import { Sidebar } from "@components/layout";
 import {
   Container,
   Typography,
@@ -303,9 +304,12 @@ export default function Galerie() {
   }, [thumbs.length, index]);
 
   return (
-    <Container sx={(theme) => ({
-      py: theme.spacing(4)
-    })}>
+    <Sidebar user={user} title="Galerie">
+      <Container
+        sx={(theme) => ({
+          py: theme.spacing(4)
+        })}
+      >
       <Typography variant="h4" align="center" gutterBottom>
         Galerie
       </Typography>
@@ -797,6 +801,7 @@ export default function Galerie() {
           )}
         </DialogContent>
       </Dialog>
-    </Container>
+      </Container>
+    </Sidebar>
   );
 }

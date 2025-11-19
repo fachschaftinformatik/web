@@ -1,8 +1,11 @@
 import React from "react";
 import { Container, Typography, Card, CardMedia, CardContent, Box, Link } from "@mui/material";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { Sidebar } from "@components/layout";
+import { useAuth } from "@lib/auth";
 
 export default function Team() {
+  const { user } = useAuth();
   const vorstand = [
     { id: 1, name: "Vorname Nachname", email: "mail1@fsv.de", img: null },
     { id: 2, name: "Vorname Nachname", email: "mail2@fsv.de", img: null },
@@ -113,6 +116,7 @@ export default function Team() {
   );
   // --- RENDER-TEIL (unverändert) ---
   return (
+    <Sidebar user={user} title="Team">
     <Container sx={{ py: 4 }}>
       <Typography variant="h4" align="center" gutterBottom>FSV-Team</Typography>
       <Section title="Vorstand" members={vorstand} />
@@ -124,5 +128,6 @@ export default function Team() {
       <Section title="Soziales" members={soziales} />
       <Section title="Sport" members={sport} />
     </Container>
+    </Sidebar>
   );
 }
