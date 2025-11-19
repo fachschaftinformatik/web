@@ -15,6 +15,7 @@ import {
 import { alpha } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
+import SchoolIcon from '@mui/icons-material/School';
 import { mockForumPosts } from '@lib/data';
 
 import { useAuth } from '@lib/auth';
@@ -52,39 +53,63 @@ const DashboardPage: React.FC = () => {
 
   return (
     <Sidebar user={user} title="Dashboard">
+      <Box
+        sx={(theme) => ({
+          background: theme.palette.mode === 'light'
+            ? 'linear-gradient(180deg, rgba(76, 175, 80, 0.18), rgba(255,255,255,0.9))'
+            : 'linear-gradient(180deg, rgba(56, 142, 60, 0.3), rgba(11, 25, 18, 0.95))',
+          borderRadius: 3,
+          px: { xs: 1, sm: 2 },
+          py: 2,
+        })}
+      >
       <Stack spacing={3}>
-        <Paper variant="outlined" sx={{ p: 3 }}>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center">
-            <Avatar sx={{ width: 72, height: 72, bgcolor: 'primary.main', fontSize: 32 }}>
+        <Paper
+          variant="outlined"
+          sx={(theme) => ({
+            p: { xs: 3, md: 4 },
+            border: 'none',
+            background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${alpha(theme.palette.primary.dark, 0.9)})`,
+            color: theme.palette.common.white,
+            position: 'relative',
+            overflow: 'hidden',
+          })}
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              background: 'radial-gradient(circle at top right, rgba(255,255,255,0.35), transparent 45%)',
+              pointerEvents: 'none',
+            }}
+          />
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center" sx={{ position: 'relative' }}>
+            <Avatar sx={{ width: 80, height: 80, bgcolor: 'rgba(255,255,255,0.18)', fontSize: 36 }}>
               {user.name ? user.name.charAt(0).toUpperCase() : '?'}
             </Avatar>
             <Box flex={1}>
               <Typography variant="h4" fontWeight={600}>
-                Willkommen, {user.name}
+                Schön, dass du da bist, {user.name.split(' ')[0] ?? user.name}
               </Typography>
-              <Typography variant="body1" color="text.secondary">
+              <Typography variant="body1" sx={{ opacity: 0.9 }}>
                 {user.email}
               </Typography>
-              <Stack direction="row" spacing={1} mt={2}>
-                <Chip label={user.role.toUpperCase()} color="primary" variant="outlined" />
-                <Chip
-                  label={user.active ? 'Aktiv' : 'Inaktiv'}
-                  color={user.active ? 'success' : 'default'}
-                  variant="outlined"
-                />
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mt={2}>
+                <Chip label={user.role.toUpperCase()} color="default" sx={{ bgcolor: 'rgba(255,255,255,0.16)' }} />
                 <Chip
                   label={user.verified ? 'Verifiziert' : 'Nicht verifiziert'}
+                  sx={{ bgcolor: 'rgba(255,255,255,0.16)' }}
                   color={user.verified ? 'success' : 'default'}
-                  variant="outlined"
                 />
               </Stack>
             </Box>
-            <Button variant="contained" color="secondary" startIcon={<LogoutIcon />} onClick={handleLogout}>
-              Logout
-            </Button>
+            <Stack spacing={1} alignItems="flex-end">
+              <Button variant="contained" color="secondary" startIcon={<LogoutIcon />} onClick={handleLogout}>
+                Logout
+              </Button>
+            </Stack>
           </Stack>
         </Paper>
-
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
             Account-Details
@@ -209,10 +234,22 @@ const DashboardPage: React.FC = () => {
                     boxShadow: `0 6px 18px ${
                       alpha(theme.palette.primary.main, 0.25)
                     }`,
+                    transition: theme.transitions.create(['transform', 'box-shadow', 'border-color'], {
+                      duration: theme.transitions.duration.short,
+                    }),
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: `0 14px 30px ${alpha(theme.palette.primary.main, 0.35)}`,
+                      borderColor: theme.palette.primary.main,
+                    },
                     ...theme.applyStyles("dark", {
                       border: `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
-                      boxShadow: `0 6px 18px ${alpha(theme.palette.primary.dark, 0.45)}`
-                    })
+                      boxShadow: `0 6px 18px ${alpha(theme.palette.primary.dark, 0.45)}`,
+                      '&:hover': {
+                        boxShadow: `0 14px 30px ${alpha(theme.palette.primary.dark, 0.6)}`,
+                        borderColor: theme.palette.primary.light,
+                      },
+                    }),
                   })}
                 >
                   <Box flex={1}>
@@ -233,21 +270,37 @@ const DashboardPage: React.FC = () => {
               </React.Fragment>
             ))}
           </List>
-          <Typography variant="caption" color="text.secondary" display="block" mt={2}>
-            Dieser Bereich kann später mit den echten Profil-Beiträgen aus dem Forum verbunden werden.
-          </Typography>
         </Paper>
 
-        <Paper variant="outlined" sx={{ p: 3 }}>
+        <Paper
+          variant="outlined"
+          sx={(theme) => ({
+            p: { xs: 3, md: 4 },
+            borderStyle: 'dashed',
+            borderColor: alpha(theme.palette.primary.main, 0.3),
+            bgcolor: alpha(theme.palette.primary.main, 0.04),
+          })}
+        >
+          <Typography variant="subtitle2" color="text.secondary">
+            Lass uns wachsen
+          </Typography>
           <Typography variant="h6" gutterBottom>
-            Kommende Funktionen
+            Teile dein Prüfungswissen
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Hier können später News, Events oder Forenbeiträge eingebunden werden. Aktuell dient der Bereich als Platzhalter
-            für weitere Module.
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Lade neue Rekos hoch oder kommentiere vorhandene Skripte. Jede Ergänzung hilft und macht den Wissenspool stärker.
           </Typography>
+          <Button
+            variant="contained"
+            startIcon={<SchoolIcon />}
+            component={RouterLink}
+            to="/exams"
+          >
+            Jetzt beitragen
+          </Button>
         </Paper>
       </Stack>
+    </Box>
     </Sidebar>
   );
 };

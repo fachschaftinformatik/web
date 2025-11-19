@@ -58,7 +58,7 @@ export async function registerUser(userData: Omit<User, 'id' | 'role' | 'active'
   return handleResponse<User>(response);
 }
 
-export async function loginUser(credentials: { email: string; password: string }): Promise<User> {
+export async function loginUser(credentials: { email: string; password: string; rememberMe?: boolean }): Promise<User> {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: {

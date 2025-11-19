@@ -4,6 +4,7 @@ import {
   Avatar,
   Badge,
   Box,
+  Button,
   Container,
   Divider,
   Drawer,
@@ -49,7 +50,7 @@ const navItems = [
 ];
 
 type SidebarLayoutProps = {
-  user: User;
+  user?: User | null;
   children: React.ReactNode;
   title?: string;
 };
@@ -59,6 +60,7 @@ const Sidebar: React.FC<SidebarLayoutProps> = ({ user, children, title = 'Dashbo
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
   const [navOpen, setNavOpen] = React.useState<boolean>(isMdUp);
+  const isAuthenticated = Boolean(user);
 
   React.useEffect(() => {
     setNavOpen(isMdUp);
@@ -202,16 +204,18 @@ const Sidebar: React.FC<SidebarLayoutProps> = ({ user, children, title = 'Dashbo
       }}
     >
     <AppBar
-        position="fixed"
-        color="primary"
-        sx={(theme) => ({
-          zIndex: theme.zIndex.drawer + 1,
-          width: '100%',
-          bgcolor: mode === 'dark'
-            ? theme.palette.primary.dark
-            : theme.palette.primary.main,
-        })}
-      >
+        position="fixed"
+        color="primary"
+        sx={(theme) => ({
+          zIndex: theme.zIndex.drawer + 1,
+          width: '100%',
+          backgroundImage:
+            mode === 'dark'
+              ? `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${alpha(theme.palette.primary.dark, 0.2)} 35%, transparent 5%, ${alpha(theme.palette.primary.dark, 0.2)} 5%, ${theme.palette.primary.dark} 100%)`
+              : `linear-gradient(90deg, ${theme.palette.success.dark} 0%, ${alpha(theme.palette.success.main, 0.2)} 35%, transparent 5%, ${alpha(theme.palette.success.main, 0.2)} 5%, ${theme.palette.success.dark} 100%)`,
+          bgcolor: 'transparent',
+        })}
+      >
         <Toolbar>
           <Tooltip
             title={
@@ -239,25 +243,57 @@ const Sidebar: React.FC<SidebarLayoutProps> = ({ user, children, title = 'Dashbo
             {title}
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
-          <Tooltip title="Suche">
-            <IconButton aria-label="search" color="inherit">
-              <SearchRounded />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Benachrichtigungen">
-            <IconButton aria-label="notifications" sx={{ mx: 0.5 }} color="inherit">
-              <Badge badgeContent={99} color="error">
-                <NotificationsNoneRounded />
-              </Badge>
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Account">
-            <IconButton aria-label="account" color="inherit">
-              <Avatar sx={{ width: 28, height: 28 }}>
-                {user.name ? user.name.charAt(0).toUpperCase() : '?'}
-              </Avatar>
-            </IconButton>
-          </Tooltip>
+          {isAuthenticated ? (
+            <>
+              <Tooltip title="Suche">
+                <IconButton aria-label="search" color="inherit">
+                  <SearchRounded />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Benachrichtigungen">
+                <IconButton aria-label="notifications" sx={{ mx: 0.5 }} color="inherit">
+                  <Badge badgeContent={99} color="error">
+                    <NotificationsNoneRounded />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Account">
+                <IconButton aria-label="account" color="inherit">
+                  <Avatar sx={{ width: 28, height: 28 }}>
+                    {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
+                  </Avatar>
+                </IconButton>
+              </Tooltip>
+            </>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                component={RouterLink}
+                to="/login"
+                color="inherit"
+                sx={{ fontWeight: 600 }}
+              >
+                Login
+              </Button>
+              <Button
+                component={RouterLink}
+                to="/register"
+                variant="outlined"
+                color="inherit"
+                sx={(theme) => ({
+                  fontWeight: 600,
+                  borderColor: theme.palette.common.white,
+                  color: theme.palette.common.white,
+                  '&:hover': {
+                    borderColor: theme.palette.common.white,
+                    bgcolor: alpha(theme.palette.common.white, 0.16),
+                  },
+                })}
+              >
+                Registrieren
+              </Button>
+            </Box>
+          )}
         </Toolbar>
       </AppBar>
       <Drawer

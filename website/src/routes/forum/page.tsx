@@ -15,6 +15,8 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import LinkIcon from "@mui/icons-material/Link";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
+import { Sidebar } from "@components/layout";
+import { useAuth } from "@lib/auth";
 
 const PROGRAM_CATALOG = [
   { id: "inf-bsc", label: "Informatik (B.Sc.)", shortLabel: "INF B.Sc.", level: "Bachelor" },
@@ -684,6 +686,7 @@ function PostItem({
 }
 /* Hauptkomponente */
 export default function ForumStandalone() {
+  const { user } = useAuth();
   // Laden + Migration (program ? programs)
   const [posts, setPosts] = React.useState<Post[]>(() => {
     try {
@@ -941,6 +944,7 @@ export default function ForumStandalone() {
 
   /* UI */
   return (
+    <Sidebar user={user} title="Forum">
     <Box
       sx={[{
         minHeight: "100vh",
@@ -1378,6 +1382,7 @@ export default function ForumStandalone() {
         </DialogActions>
       </Dialog>
     </Box>
+    </Sidebar>
   );
 }
 
