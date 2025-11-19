@@ -9,15 +9,21 @@ import Box from '@mui/material/Box';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { Alert, Stack } from '@mui/material';
+import { Alert, Stack, FormControlLabel, Checkbox } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
 import * as api from '@lib/api';
-import { useAuth } from '@lib/auth';
+import { useAuth, REMEMBERED_FLAG_KEY } from '@lib/auth';
 
 export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    return window.localStorage.getItem(REMEMBERED_FLAG_KEY) === 'true';
+  });
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -37,9 +43,9 @@ export default function LoginPage() {
     }
 
     try {
-      const user = await api.loginUser({ email, password });
+      const user = await api.loginUser({ email, password, rememberMe });
       console.log('Login erfolgreich:', user);
-      login(user);
+      login(user, rememberMe);
       navigate('/dashboard');
     } catch (err: unknown) {
       console.error('Login-Fehler:', err);
@@ -88,6 +94,17 @@ export default function LoginPage() {
               type="password"
               id="password"
               autoComplete="current-password"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  color="primary"
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                  name="remember"
+                />
+              }
+              label="Eingeloggt bleiben"
             />
           </Stack>
           <Button
