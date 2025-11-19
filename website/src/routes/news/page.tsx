@@ -31,6 +31,8 @@ import CardActionArea from '@mui/material/CardActionArea';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Sidebar } from '@components/layout';
+import { useAuth } from '@lib/auth';
 
 function CustomizedInputBase() {
   return (
@@ -334,6 +336,7 @@ function FavoriteList({ likedIds }: FavoriteListProps) {
 
 
   export default function NewsLayout() {
+    const { user } = useAuth();
     const [selectedTag, setSelectedTag] = useState<string>("Alle");
 
     // 1. State für Likes
@@ -372,6 +375,7 @@ function FavoriteList({ likedIds }: FavoriteListProps) {
 
 
   return (
+    <Sidebar user={user} title="Beiträge">
     <Box sx={{ display: 'flex', flexDirection: 'row', px: 2, pl: 30}}>
       {/* 🔹 Hauptinhalt */}
       <Box sx={{ flex: 1, maxWidth: "1000px", pr: 8 }}>
@@ -435,5 +439,6 @@ function FavoriteList({ likedIds }: FavoriteListProps) {
       </Box>
 
     </Box>
+    </Sidebar>
   );
 }
