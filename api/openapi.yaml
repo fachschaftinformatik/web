@@ -182,6 +182,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /programs:
+    get:
+      tags: [Programs]
+      summary: List all programs and their valid POs
+      security: []
+      responses:
+        '200':
+          description: List of programs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Program'
+
 components:
   securitySchemes:
     cookieAuth:
@@ -210,10 +225,22 @@ components:
         error: { type: string }
         message: { type: string }
 
+    Program:
+      type: object
+      required: [id, name, versions]
+      properties:
+        id:   { type: integer }
+        name: { type: string }
+        versions:
+          type: array
+          items:
+            type: string
+          description: "List of valid POs for this program (e.g. PO2016, PO2023)"
+
     User:
       type: object
       required:
-        [ id, email, name, role, active, verified, campusid, disciplineid, created_at, updated_at ]
+        [ id, email, name, role, active, verified, programid, created_at, updated_at ]
       properties:
         id:          { type: string, description: "Version 4 UUID" }
         email:       { type: string, format: email }
@@ -232,20 +259,18 @@ components:
           oneOf:
             - { type: string, format: date-time }
             - { type: "null" }
-        campusid:     { type: integer }
-        disciplineid: { type: integer }
+        programid:    { type: integer }
         created_at:   { type: string, format: date-time }
         updated_at:   { type: string, format: date-time }
 
     UserRegister:
       type: object
-      required: [email, name, password, campusid, disciplineid]
+      required: [email, name, password, programid]
       properties:
         email:        { type: string, format: email }
         name:         { type: string, minLength: 1 }
         password:     { type: string, minLength: 16 }
-        campusid:     { type: integer }
-        disciplineid: { type: integer }
+        programid:    { type: integer }
 
     UserLogin:
       type: object
@@ -263,4 +288,3 @@ components:
         created_at: { type: string, format: date-time }
         last_seen:  { type: string, format: date-time }
         expires_at: { type: string, format: date-time }
-
