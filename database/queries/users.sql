@@ -1,12 +1,12 @@
 -- name: CreateUser :one
 INSERT INTO users (
-  id, email, name, password, role, active, verified, campusid, disciplineid
+  id, email, name, password, role, active, verified, programid
 ) VALUES (
   sqlc.arg(id), sqlc.arg(email), sqlc.arg(name), sqlc.arg(password),
   COALESCE(sqlc.arg(role), 'user'),
   COALESCE(sqlc.arg(active), 0),
   0,
-  sqlc.arg(campusid), sqlc.arg(disciplineid)
+  sqlc.arg(programid)
 )
 RETURNING *;
 
