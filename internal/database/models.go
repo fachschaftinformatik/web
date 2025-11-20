@@ -8,13 +8,6 @@ import (
 	"database/sql"
 )
 
-type Campuse struct {
-	ID        int64          `json:"id"`
-	Name      string         `json:"name"`
-	Location  sql.NullString `json:"location"`
-	CreatedAt string         `json:"created_at"`
-}
-
 type Comment struct {
 	ID        string `json:"id"`
 	Postid    string `json:"postid"`
@@ -24,24 +17,17 @@ type Comment struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-type Discipline struct {
-	ID        int64  `json:"id"`
-	Name      string `json:"name"`
-	Degree    string `json:"degree"`
-	CreatedAt string `json:"created_at"`
-}
-
 type Exam struct {
-	ID           string        `json:"id"`
-	Userid       string        `json:"userid"`
-	Disciplineid int64         `json:"disciplineid"`
-	Campusid     sql.NullInt64 `json:"campusid"`
-	ExamDate     string        `json:"exam_date"`
-	UploadedAt   string        `json:"uploaded_at"`
-	Accesskey    string        `json:"accesskey"`
-	MimeType     string        `json:"mime_type"`
-	Nbytes       int64         `json:"nbytes"`
-	Checksum     string        `json:"checksum"`
+	ID         string `json:"id"`
+	Userid     string `json:"userid"`
+	Programid  int64  `json:"programid"`
+	Version    string `json:"version"`
+	ExamDate   string `json:"exam_date"`
+	UploadedAt string `json:"uploaded_at"`
+	Accesskey  string `json:"accesskey"`
+	MimeType   string `json:"mime_type"`
+	Nbytes     int64  `json:"nbytes"`
+	Checksum   string `json:"checksum"`
 }
 
 type Post struct {
@@ -52,6 +38,17 @@ type Post struct {
 	CreatedAt string         `json:"created_at"`
 	UpdatedAt string         `json:"updated_at"`
 	Deleted   sql.NullString `json:"deleted"`
+}
+
+type Program struct {
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"created_at"`
+}
+
+type ProgramVersion struct {
+	Programid int64  `json:"programid"`
+	Name      string `json:"name"`
 }
 
 type Session struct {
@@ -72,8 +69,7 @@ type User struct {
 	Verified      int64          `json:"verified"`
 	VerifiedAt    sql.NullString `json:"verified_at"`
 	VerifiedUntil sql.NullString `json:"verified_until"`
-	Campusid      int64          `json:"campusid"`
-	Disciplineid  int64          `json:"disciplineid"`
+	Programid     int64          `json:"programid"`
 	CreatedAt     string         `json:"created_at"`
 	UpdatedAt     string         `json:"updated_at"`
 }

@@ -17,6 +17,7 @@ type Querier interface {
 	GetSession(ctx context.Context, id string) (Session, error)
 	GetUser(ctx context.Context, id string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
+	ListProgramsWithVersions(ctx context.Context) ([]ListProgramsWithVersionsRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	SetUserActive(ctx context.Context, arg SetUserActiveParams) (User, error)
 	SetUserRole(ctx context.Context, arg SetUserRoleParams) (User, error)
