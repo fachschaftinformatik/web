@@ -12,26 +12,25 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-  id, email, name, password, role, active, verified, campusid, disciplineid
+  id, email, name, password, role, active, verified, programid
 ) VALUES (
   ?1, ?2, ?3, ?4,
   COALESCE(?5, 'user'),
   COALESCE(?6, 0),
   0,
-  ?7, ?8
+  ?7
 )
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, campusid, disciplineid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	ID           string      `json:"id"`
-	Email        string      `json:"email"`
-	Name         string      `json:"name"`
-	Password     string      `json:"password"`
-	Role         interface{} `json:"role"`
-	Active       interface{} `json:"active"`
-	Campusid     int64       `json:"campusid"`
-	Disciplineid int64       `json:"disciplineid"`
+	ID        string      `json:"id"`
+	Email     string      `json:"email"`
+	Name      string      `json:"name"`
+	Password  string      `json:"password"`
+	Role      interface{} `json:"role"`
+	Active    interface{} `json:"active"`
+	Programid int64       `json:"programid"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -42,8 +41,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Password,
 		arg.Role,
 		arg.Active,
-		arg.Campusid,
-		arg.Disciplineid,
+		arg.Programid,
 	)
 	var i User
 	err := row.Scan(
@@ -56,8 +54,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Verified,
 		&i.VerifiedAt,
 		&i.VerifiedUntil,
-		&i.Campusid,
-		&i.Disciplineid,
+		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -65,7 +62,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, campusid, disciplineid, created_at, updated_at
+SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
 FROM users
 WHERE id = ?1
 LIMIT 1
@@ -84,8 +81,7 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 		&i.Verified,
 		&i.VerifiedAt,
 		&i.VerifiedUntil,
-		&i.Campusid,
-		&i.Disciplineid,
+		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -93,7 +89,7 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, campusid, disciplineid, created_at, updated_at
+SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
 FROM users
 WHERE lower(email) = lower(?1)
 LIMIT 1
@@ -112,8 +108,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Verified,
 		&i.VerifiedAt,
 		&i.VerifiedUntil,
-		&i.Campusid,
-		&i.Disciplineid,
+		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -121,7 +116,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, campusid, disciplineid, created_at, updated_at
+SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
 FROM users
 ORDER BY created_at DESC
 LIMIT ?2 OFFSET ?1
@@ -151,8 +146,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 			&i.Verified,
 			&i.VerifiedAt,
 			&i.VerifiedUntil,
-			&i.Campusid,
-			&i.Disciplineid,
+			&i.Programid,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -173,7 +167,7 @@ const setUserActive = `-- name: SetUserActive :one
 UPDATE users
 SET active = ?1
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, campusid, disciplineid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
 `
 
 type SetUserActiveParams struct {
@@ -194,8 +188,7 @@ func (q *Queries) SetUserActive(ctx context.Context, arg SetUserActiveParams) (U
 		&i.Verified,
 		&i.VerifiedAt,
 		&i.VerifiedUntil,
-		&i.Campusid,
-		&i.Disciplineid,
+		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -206,7 +199,7 @@ const setUserRole = `-- name: SetUserRole :one
 UPDATE users
 SET role = ?1
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, campusid, disciplineid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
 `
 
 type SetUserRoleParams struct {
@@ -227,8 +220,7 @@ func (q *Queries) SetUserRole(ctx context.Context, arg SetUserRoleParams) (User,
 		&i.Verified,
 		&i.VerifiedAt,
 		&i.VerifiedUntil,
-		&i.Campusid,
-		&i.Disciplineid,
+		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -252,7 +244,7 @@ const unverifyUser = `-- name: UnverifyUser :one
 UPDATE users
 SET verified = 0
 WHERE id = ?1
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, campusid, disciplineid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
 `
 
 func (q *Queries) UnverifyUser(ctx context.Context, id string) (User, error) {
@@ -268,8 +260,7 @@ func (q *Queries) UnverifyUser(ctx context.Context, id string) (User, error) {
 		&i.Verified,
 		&i.VerifiedAt,
 		&i.VerifiedUntil,
-		&i.Campusid,
-		&i.Disciplineid,
+		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -280,7 +271,7 @@ const updateUserVerificationWindow = `-- name: UpdateUserVerificationWindow :one
 UPDATE users
 SET verified_until = ?1
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, campusid, disciplineid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
 `
 
 type UpdateUserVerificationWindowParams struct {
@@ -301,8 +292,7 @@ func (q *Queries) UpdateUserVerificationWindow(ctx context.Context, arg UpdateUs
 		&i.Verified,
 		&i.VerifiedAt,
 		&i.VerifiedUntil,
-		&i.Campusid,
-		&i.Disciplineid,
+		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -315,7 +305,7 @@ SET verified = 1,
     verified_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
     verified_until = ?1
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, campusid, disciplineid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
 `
 
 type VerifyUserParams struct {
@@ -336,8 +326,7 @@ func (q *Queries) VerifyUser(ctx context.Context, arg VerifyUserParams) (User, e
 		&i.Verified,
 		&i.VerifiedAt,
 		&i.VerifiedUntil,
-		&i.Campusid,
-		&i.Disciplineid,
+		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
