@@ -1,19 +1,16 @@
 -- +goose Up
 -- +goose StatementBegin
 
-CREATE TABLE campuses (
+CREATE TABLE programs (
   id         INTEGER PRIMARY KEY,
   name       TEXT NOT NULL UNIQUE,
-  location   TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 ) STRICT;
 
-CREATE TABLE disciplines (
-  id         INTEGER PRIMARY KEY,
-  name       TEXT NOT NULL,
-  degree     TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-  UNIQUE(degree, name)
+CREATE TABLE program_versions (
+  programid INTEGER NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+  name      TEXT NOT NULL CHECK (name in ('PO2016','PO2023')),
+  PRIMARY KEY (programid, name)
 ) STRICT;
 
 CREATE TABLE users (
@@ -26,11 +23,8 @@ CREATE TABLE users (
   verified       INTEGER NOT NULL DEFAULT 0 CHECK (verified IN (0,1)),
   verified_at    TEXT,
   verified_until TEXT,
-  campusid       INTEGER NOT NULL
-                   REFERENCES campuses(id)
-                   ON DELETE RESTRICT ON UPDATE CASCADE,
-  disciplineid   INTEGER NOT NULL
-                   REFERENCES disciplines(id)
+  programid      INTEGER NOT NULL
+                   REFERENCES programs(id)
                    ON DELETE RESTRICT ON UPDATE CASCADE,
   created_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
@@ -39,8 +33,7 @@ CREATE TABLE users (
 ) STRICT;
 
 CREATE UNIQUE INDEX users_email_unique ON users(lower(email));
-CREATE INDEX idx_users_campus          ON users(campusid);
-CREATE INDEX idx_users_discipline      ON users(disciplineid);
+CREATE INDEX idx_users_program         ON users(programid);
 CREATE INDEX idx_users_verified_until  ON users(verified_until);
 
 CREATE TRIGGER trg_users_update
@@ -107,21 +100,19 @@ CREATE TABLE exams (
   userid       TEXT NOT NULL
                  REFERENCES users(id)
                  ON DELETE RESTRICT ON UPDATE CASCADE,
-  disciplineid INTEGER NOT NULL
-                 REFERENCES disciplines(id)
-                 ON DELETE RESTRICT ON UPDATE CASCADE,
-  campusid     INTEGER
-                 REFERENCES campuses(id)
-                 ON DELETE RESTRICT ON UPDATE CASCADE,
+  programid    INTEGER NOT NULL,
+  version      TEXT NOT NULL,
   exam_date    TEXT NOT NULL,
   uploaded_at  TEXT NOT NULL DEFAULT (strftime('%Y-m-%dT%H:%M:%fZ','now')),
   accesskey    TEXT NOT NULL UNIQUE,
   mime_type    TEXT NOT NULL CHECK (mime_type IN ('application/pdf')),
   nbytes       INTEGER NOT NULL,
-  checksum     TEXT NOT NULL
+  checksum     TEXT NOT NULL,
+  -- Enforce that the (programid, version) tuple actually exists in the valid versions table
+  FOREIGN KEY (programid, version) REFERENCES program_versions(programid, name) ON DELETE RESTRICT ON UPDATE CASCADE
 ) STRICT;
 
-CREATE INDEX idx_exams_date ON exams(disciplineid, exam_date DESC);
+CREATE INDEX idx_exams_date ON exams(programid, exam_date DESC);
 CREATE INDEX idx_exams_user ON exams(userid);
 
 CREATE TRIGGER trg_exams_set_update
@@ -146,6 +137,43 @@ CREATE TABLE sessions (
 
 CREATE INDEX idx_sessions_user        ON sessions(userid);
 CREATE INDEX idx_sessions_expires_at  ON sessions(expires_at);
+
+-- 1. Insert Programs
+INSERT OR IGNORE INTO programs (name) VALUES
+('Informatik (B. Sc.)'),
+('Informatik und Design (B. Sc.)'),
+('Wirtschaftsinformatik (B. Sc.)'),
+('Informatik (M. Sc.)'),
+('Medieninformatik (M. Sc.)'),
+('Wirtschaftsinformatik (M. Sc.)'),
+('Internetsicherheit (M. Sc.)');
+
+-- 2. Insert Versions for Programs
+-- Define standard programs getting both POs
+INSERT OR IGNORE INTO program_versions (programid, name)
+SELECT id, 'PO2016' FROM programs WHERE name IN (
+    'Informatik (B. Sc.)',
+    'Wirtschaftsinformatik (B. Sc.)',
+    'Informatik (M. Sc.)',
+    'Medieninformatik (M. Sc.)',
+    'Wirtschaftsinformatik (M. Sc.)',
+    'Internetsicherheit (M. Sc.)'
+);
+
+INSERT OR IGNORE INTO program_versions (programid, name)
+SELECT id, 'PO2023' FROM programs WHERE name IN (
+    'Informatik (B. Sc.)',
+    'Wirtschaftsinformatik (B. Sc.)',
+    'Informatik (M. Sc.)',
+    'Medieninformatik (M. Sc.)',
+    'Wirtschaftsinformatik (M. Sc.)',
+    'Internetsicherheit (M. Sc.)'
+);
+
+-- Specific case: Informatik und Design only gets PO2023
+INSERT OR IGNORE INTO program_versions (programid, name)
+SELECT id, 'PO2023' FROM programs WHERE name = 'Informatik und Design (B. Sc.)';
+
 -- +goose StatementEnd
 
 -- +goose Down
@@ -155,6 +183,6 @@ DROP TABLE exams;
 DROP TABLE comments;
 DROP TABLE posts;
 DROP TABLE users;
-DROP TABLE disciplines;
-DROP TABLE campuses;
+DROP TABLE program_versions;
+DROP TABLE programs;
 -- +goose StatementEnd

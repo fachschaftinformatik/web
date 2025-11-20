@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+// website/src/routes/registration/page.tsx
+
+import React, { useState, useEffect } from 'react'; // Added useEffect
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
@@ -18,22 +20,21 @@ import { useAuth } from '@lib/auth';
 // TODO
 const UNI_EMAIL_DOMAIN = 'studmail.w-hs.de';
 
-const campusOptions = [
-  { value: 1, label: 'Campus Bocholt' },
-  { value: 2, label: 'Campus Gelsenkirchen' },
-];
-
-const disciplineOptions = [
-  { value: 1, label: 'Wirtschaftsinformatik' },
-  { value: 2, label: 'Anwendungsinformatik' },
-  { value: 3, label: 'Medieninformatik' },
-];
-
 export default function RegistrationPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // Add state for programs
+  const [programs, setPrograms] = useState<api.Program[]>([]);
+  
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  // Fetch programs on mount
+  useEffect(() => {
+    api.getPrograms()
+      .then(setPrograms)
+      .catch((err) => console.error("Failed to fetch programs", err));
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -45,13 +46,12 @@ export default function RegistrationPage() {
     const name = data.get('name') as string;
     const password = data.get('password') as string;
     const confirmPassword = data.get('confirmPassword') as string;
-    const campusidValue = data.get('campusid') as string;
-    const disciplineidValue = data.get('disciplineid') as string;
+    // Changed inputs
+    const programidValue = data.get('programid') as string;
 
-    const campusid = Number.parseInt(campusidValue, 10);
-    const disciplineid = Number.parseInt(disciplineidValue, 10);
+    const programid = Number.parseInt(programidValue, 10);
 
-    if (!email || !password || !name || !confirmPassword || !campusidValue || !disciplineidValue) {
+    if (!email || !password || !name || !confirmPassword || !programidValue) {
        setError('Bitte alle mit "*" markierten Felder ausfüllen.');
        setLoading(false);
        return;
@@ -75,14 +75,8 @@ export default function RegistrationPage() {
       return;
     }
 
-    if (Number.isNaN(campusid) || Number.isNaN(disciplineid)) {
-        setError('Campus-ID und Studiengang-ID müssen Zahlen sein.');
-        setLoading(false);
-        return;
-    }
-
-    if (campusid < 0 || disciplineid < 0) {
-        setError('Campus-ID und Studiengang-ID müssen positive Werte haben.');
+    if (Number.isNaN(programid)) {
+        setError('Studiengang-ID muss eine Zahl sein.');
         setLoading(false);
         return;
     }
@@ -92,8 +86,7 @@ export default function RegistrationPage() {
           email,
           name,
           password,
-          campusid,
-          disciplineid
+          programid, // Send programid
       });
       console.log('Registrierung erfolgreich:', newUser);
       try {
@@ -173,35 +166,20 @@ export default function RegistrationPage() {
               id="confirmPassword"
               autoComplete="new-password"
             />
+            {/* Removed Campus Select */}
             <TextField
               select
               required
               fullWidth
-              name="campusid"
-              label="Campus"
-              id="campusid"
-              defaultValue=""
-              helperText="Bitte wähle deinen Campus aus."
-            >
-              {campusOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              required
-              fullWidth
-              name="disciplineid"
+              name="programid" // Changed name
               label="Studiengang"
-              id="disciplineid"
+              id="programid"
               defaultValue=""
               helperText="Bitte wähle deinen Studiengang aus."
             >
-              {disciplineOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
+              {programs.map((option) => (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.name}
                 </MenuItem>
               ))}
             </TextField>

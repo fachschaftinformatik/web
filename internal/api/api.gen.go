@@ -50,17 +50,25 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// Program defines model for Program.
+type Program struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+
+	// Versions List of valid POs for this program (e.g. PO2016, PO2023)
+	Versions []string `json:"versions"`
+}
+
 // User defines model for User.
 type User struct {
-	Active       UserActive          `json:"active"`
-	Campusid     int                 `json:"campusid"`
-	CreatedAt    time.Time           `json:"created_at"`
-	Disciplineid int                 `json:"disciplineid"`
-	Email        openapi_types.Email `json:"email"`
+	Active    UserActive          `json:"active"`
+	CreatedAt time.Time           `json:"created_at"`
+	Email     openapi_types.Email `json:"email"`
 
 	// Id Version 4 UUID
 	Id            string       `json:"id"`
 	Name          string       `json:"name"`
+	Programid     int          `json:"programid"`
 	Role          UserRole     `json:"role"`
 	UpdatedAt     time.Time    `json:"updated_at"`
 	Verified      UserVerified `json:"verified"`
@@ -85,11 +93,10 @@ type UserLogin struct {
 
 // UserRegister defines model for UserRegister.
 type UserRegister struct {
-	Campusid     int                 `json:"campusid"`
-	Disciplineid int                 `json:"disciplineid"`
-	Email        openapi_types.Email `json:"email"`
-	Name         string              `json:"name"`
-	Password     string              `json:"password"`
+	Email     openapi_types.Email `json:"email"`
+	Name      string              `json:"name"`
+	Password  string              `json:"password"`
+	Programid int                 `json:"programid"`
 }
 
 // CsrfHeader defines model for CsrfHeader.
@@ -129,6 +136,9 @@ type ServerInterface interface {
 	// Register a user
 	// (POST /auth/register)
 	PostAuthRegister(w http.ResponseWriter, r *http.Request)
+	// List all programs and their valid POs
+	// (GET /programs)
+	GetPrograms(w http.ResponseWriter, r *http.Request)
 	// List users (restricted)
 	// (GET /users)
 	GetUsers(w http.ResponseWriter, r *http.Request, params GetUsersParams)
@@ -168,6 +178,12 @@ func (_ Unimplemented) GetAuthMe(w http.ResponseWriter, r *http.Request) {
 // Register a user
 // (POST /auth/register)
 func (_ Unimplemented) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List all programs and their valid POs
+// (GET /programs)
+func (_ Unimplemented) GetPrograms(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -295,6 +311,20 @@ func (siw *ServerInterfaceWrapper) PostAuthRegister(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostAuthRegister(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPrograms operation middleware
+func (siw *ServerInterfaceWrapper) GetPrograms(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPrograms(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -505,6 +535,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/auth/register", wrapper.PostAuthRegister)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/programs", wrapper.GetPrograms)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/users", wrapper.GetUsers)
 	})
 	r.Group(func(r chi.Router) {
@@ -517,25 +550,27 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9RYbW/bNhD+KwS3DxugxHKSFZi+bVlfgmXD0CzDgMAIGPGkXCuRKkllFQL99+FI2ZJt",
-	"WXGapkW/WSJ5x3ue517ke57qstIKlLM8uee3ICQY//MC3KnW7xHowaa3UAr65ZoKeMKtM6hy3rZtxCth",
-	"RAmuO3dqTfbGm6EnVDzprPKIK1HS4X8PTi/evjr4W78HxSNu4EONBiRPnKkhmnYWFr2nl8Zo76QyugLj",
-	"EPxrWL7eOB3xEqwVOYxZHt7iqjPRH1hEywP65h2kjoxdWhhxLlKHd94DqLrkyVUczfvTqBzkYOh4Ksqq",
-	"tigHlxmuGhAO5LVwtJ5pU9IvLoWDA4cl8Gg7Ook2xapABbusQimwWDMY3owYCyYk2NRg5VATjf+AsagV",
-	"O2GXl2e/jZ0K/I4gb3QBwWAm6oI819YrokNp9SjReeSFLFENcO9N1ZV8NDR3YDBDkHvwstw6ZV/VRSFu",
-	"KKIg2J3+rmvlNhB/hJ0NUaLk0Yowj3SHa7RU3SDQgcA2lLEmrjU4d6n8XOeUxlt5tr+aKmHtf9rIPTKv",
-	"M7E6setSbyFH68ZScDqzPmuWLPVeojoHlbtbnswfCH+49UW0Jxod2ys7u9ndhotqJqS1QddcUO3sQPKl",
-	"/Zea7tFV6fCqr9LX12+0dQcWLGV9H76o8HdoQjVGlWmPIrqiWwsqtKFkxIfzw5gg0BUoWkz48WF8eOyD",
-	"cbf+KjNRu9tZak1GTzn4vCNCBdWdM8kT/hocXZVai+8XttLKhkCO4jjEoxwof1RUVYGpPzx7Z7Va718b",
-	"Wum8TtPgd40gS3Jaq5DU1pijtsbQ2trn4XpLPeh76vcGMp7w72Z9C551m2d9823bIYM8uVpE3NZlKUzD",
-	"E35GXphgvWPiSeSWru3ZXdDxAHGxymNtR0D+S1uPckj3gABY96uWzaMQHour69qzvpy06yBTAWyfSO1D",
-	"jscYO9d5DpL5gJ/OVMRP4vlnu3OYb0YufabuRIGSpQYkKIeisHxKJec6DxFOKEPXbi9p0L71ke9qPIp+",
-	"y2wwEraLLZJPtieNjpXg65uh5U/tGMFJlKTUVDdJWS+7V4t2i6UQ8S6aQrOZqpB/AP8KSXRaGwPKMT/E",
-	"fSNovwbH0uG9d8NuhqPGZH6shpLnq54rF3sV0Pmzc0/vWTdRBu7jL1cAK9EUWnR+f35+vy9pHmOiMCBk",
-	"w+AjWjddeZdsMTEhMlqxU5l96TdsVV0/tX2owTT90FZgiVRC+kBXn1zHRxEvxUcs6fvn6KcXEc2i4Wm+",
-	"/SXURuMOdJZZ2OEhHpiMR0wunlib0EFp9xNqP60aI5rRzo/WMZ2xgL5X0PHzK+iVNjcoJahH9ga6rL8p",
-	"+8EAjampA/njQE9BIwNBze5Rtg+q6kzu0BWN5z3r/kNj//9pFl+hCV2ums/Jl2k+ma7VJzQdIofdNMxD",
-	"usXeQ9ba/wMAAP//gOLqtLITAAA=",
+	"H4sIAAAAAAAC/9RYbW/bthP/KgT//xctoNhykhWY3m1ZH4Jla9DOw4DACBjxJLOVSJWkshqBvvtwpJ4c",
+	"yYq9LCn6KpZ0x7v7/e6JuaOxygslQVpDozu6BsZBu58fwZ4p9VkAPph4DTnDX3ZTAI2osVrIlFZVFdCC",
+	"aZaDrfXOjE7euWPwSUga1afSgEqWo/JfR2cfP7w5+kN9BkkDquFLKTRwGlldQjBtzH90ll5rrZyRQqsC",
+	"tBXgXkPz+p52QHMwhqUwdnLfi6v6iE5hFTQK6uYTxBYPu9Qq1Swf2he8Z0BICyloVPDBj7h1C9oIJZ0y",
+	"BxNrUVihELgLYSxRCbllmeDk8r0hidLEroUhhTdPXsAsnZHL98fh4lXg/h6fvKQBFRZyM2qufsG0ZptB",
+	"5II3NPX8Ggt/aWAEexZbceuiBFnmNLoKg0Wn3QMj1sAs8GtmUThROsdflDMLR1Y48wPHIWci2xL3b0ZE",
+	"PQfbYP7pwyGnZLk8/2VMaydDNdi7mNUqA28vYWWGjpXG5XsNQvvIhXV5xXguZA/WzlJZ8INxuQUtEgF8",
+	"D9gb0anzZZll7AYj8uW40951Ke09Qg44ZyzxGj7rBHS4Bk1S9QLtM7KVS1sA7krbC5ViWxr0jf3Tq2DG",
+	"/K0036OT1Ee0Gruc+gCpMHaspg7wq0ngXMgLkKld02jxgPt90VfBgam/I9iavtZM/5Rh/NjUIS61sJuP",
+	"2Nx91LGbPT+V6Fg9RvyrboxcX79Txh4ZMFjXHR6sEL/Cxo8LIRPlPBc2q791nY1GNJwtZiHGqQqQ+DGi",
+	"J7NwduLct2vnypyVdj2PjU7wKQVXOsgQw85yzmlE34JFV3H2uYFmCiWND+Q4DH080oJ0qqwoMhE75fkn",
+	"o+T2gN0mv7E6nWVOagTZKrjXA3HuEotzlwhjSldK2zP/qBv6/9eQ0Ij+b97tCPNaeN5tB1XVZ5BGV6uA",
+	"mjLPmd7QiJ6jFcJIZxh5YqlBtx27K1T3EGdtYSozAvKlMg5lX78eATD2Z8U3ByE8Fle9Vsy7/lBtg4w9",
+	"rHoktQ8ZHmPsQqUpcOICfjxTAT0NF/+Zz34BG3H6XPqNJdbAQVrBMkOnsuRCpT7CicxQpd0rNVBueye9",
+	"Go+iE5n3dtZqNSD5dGQx86x4W98NLb8rSxBOpCTGKXmflO22e7WqBiz5iHfR5KfPVIf8Deg3KKKzUmuQ",
+	"lrg97DtB+y1YEvf93g277u8Ok/XRbhlP1z1bE3s10MWTc4/vSb0ieu7D52uABdtkitV2f3x6u69xAyMs",
+	"08D4hsBXYex0523YImwiyertzUwV92Uj88jybu+tU/E3d+/hbXY4P+srdBvD5BxCYZZlrTRhkhO7BqG7",
+	"O3gPozZojxMiOAnS0gkMppPbbr+UoDfdcpuJXGCr7ZBpb5cnxwHN2VeR41Xv+IdXAS7x/mkRjOzo4wZU",
+	"khjYYSHsHRmOHLl6DpKXdbPel2GPvqu0k6evtDdK3wjOQR44Q9FZ5yl5oQHX+dgCf9nLKZ8jvYSa3wle",
+	"PZhV53xHXuE1pmPdXZj3/4fb6hsM62U7pE+fZ0gnqpT/YjgjOeRmQxykA/YeOq36JwAA//9ppv/+exUA",
+	"AA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

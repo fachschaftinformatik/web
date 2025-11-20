@@ -53,14 +53,13 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	params := database.CreateUserParams{
-		ID:           uuid.NewString(),
-		Email:        string(payload.Email),
-		Name:         payload.Name,
-		Password:     string(hashedPassword),
-		Role:         "user",
-		Active:       1,
-		Campusid:     int64(payload.Campusid),
-		Disciplineid: int64(payload.Disciplineid),
+		ID:        uuid.NewString(),
+		Email:     string(payload.Email),
+		Name:      payload.Name,
+		Password:  string(hashedPassword),
+		Role:      "user",
+		Active:    1,
+		Programid: int64(payload.Programid),
 	}
 
 	dbUser, err := s.DB.CreateUser(r.Context(), params)
@@ -248,6 +247,39 @@ func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request, id string) {
 	s.respondJSON(w, http.StatusOK, apiUser)
 }
 
+func (s *Server) GetPrograms(w http.ResponseWriter, r *http.Request) {
+	rows, err := s.DB.ListProgramsWithVersions(r.Context())
+	if err != nil {
+		s.Log.Printf("Failed to list programs: %v", err)
+		s.jsonError(w, "database_error", "Could not fetch programs", http.StatusInternalServerError)
+		return
+	}
+
+	programMap := make(map[int64]*api.Program)
+	var orderedPrograms []*api.Program
+
+	for _, row := range rows {
+		prog, exists := programMap[row.ID]
+		if !exists {
+			prog = &api.Program{
+				Id:       int(row.ID),
+				Name:     row.Name,
+				Versions: []string{},
+			}
+			programMap[row.ID] = prog
+			orderedPrograms = append(orderedPrograms, prog)
+		}
+		prog.Versions = append(prog.Versions, row.Version)
+	}
+
+	response := make([]api.Program, 0, len(orderedPrograms))
+	for _, p := range orderedPrograms {
+		response = append(response, *p)
+	}
+
+	s.respondJSON(w, http.StatusOK, response)
+}
+
 func (s *Server) jsonError(w http.ResponseWriter, err, msg string, status int) {
 	s.respondJSON(w, status, api.Error{
 		Error:   err,
@@ -341,8 +373,7 @@ func (s *Server) checkCSRF(r *http.Request) error {
 func dbUserToAPI(user database.User) (api.User, error) {
 	apiUser := api.User{
 		Active:       api.UserActive(user.Active),
-		Campusid:     int(user.Campusid),
-		Disciplineid: int(user.Disciplineid),
+		Programid:    int(user.Programid),
 		Email:        types.Email(user.Email),
 		Id:           user.ID,
 		Name:         user.Name,
