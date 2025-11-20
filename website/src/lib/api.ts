@@ -1,3 +1,5 @@
+// website/src/lib/api.ts
+
 // TODO: Handle interfaces via OpenAPI at some point
 export interface User {
   id: string;
@@ -8,10 +10,15 @@ export interface User {
   verified: 0 | 1;
   verified_at?: string | null;
   verified_until?: string | null;
-  campusid: number;
-  disciplineid: number;
+  programid: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface Program {
+  id: number;
+  name: string;
+  versions: string[];
 }
 
 interface ApiError {
@@ -86,4 +93,9 @@ export async function logoutUser(): Promise<void> {
 export async function getMe(): Promise<User> {
   const response = await fetch('/api/auth/me');
   return handleResponse<User>(response);
+}
+
+export async function getPrograms(): Promise<Program[]> {
+  const response = await fetch('/api/programs');
+  return handleResponse<Program[]>(response);
 }
