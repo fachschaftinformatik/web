@@ -12,7 +12,7 @@ import Container from '@mui/material/Container';
 import { Alert, Stack, FormControlLabel, Checkbox } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
-import * as api from '@lib/api';
+import { postAuthLogin } from '@lib/api';
 import { useAuth, REMEMBERED_FLAG_KEY } from '@lib/auth';
 
 export default function LoginPage() {
@@ -43,14 +43,22 @@ export default function LoginPage() {
     }
 
     try {
-      const user = await api.loginUser({ email, password, rememberMe });
+      const { data: user, error: apiError } = await postAuthLogin({
+        body: { email, password }
+      });
+
+      if (apiError || !user) {
+        // @ts-ignore - error structure depends on openapi-ts generation, usually .message on error obj
+        throw new Error((apiError as any)?.message || 'Login fehlgeschlagen. Überprüfen Sie Ihre Anmeldedaten.');
+      }
+
       console.log('Login erfolgreich:', user);
       login(user, rememberMe);
       navigate('/dashboard');
     } catch (err: unknown) {
       console.error('Login-Fehler:', err);
       const message =
-        err instanceof Error ? err.message : 'Login fehlgeschlagen. Überprüfen Sie Ihre Anmeldedaten.';
+        err instanceof Error ? err.message : 'Login fehlgeschlagen.';
       setError(message);
     } finally {
       setLoading(false);

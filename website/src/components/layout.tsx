@@ -33,7 +33,7 @@ import ForumRounded from '@mui/icons-material/ForumRounded';
 import Groups from '@mui/icons-material/Groups';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { User } from '@lib/api';
+import type { User } from '@lib/api/types.gen';
 import { useThemeMode } from '@lib/theme';
 
 const drawerWidthOpen = 240;
