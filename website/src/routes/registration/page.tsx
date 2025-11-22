@@ -1,6 +1,4 @@
-// website/src/routes/registration/page.tsx
-
-import React, { useState, useEffect } from 'react'; // Added useEffect
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
@@ -14,25 +12,28 @@ import Container from '@mui/material/Container';
 import { Alert, MenuItem, Stack } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
-import * as api from '@lib/api';
+import { getPrograms, postAuthRegister, postAuthLogin } from '@lib/api';
+import type { Program } from '@lib/api';
 import { useAuth } from '@lib/auth';
 
-// TODO
 const UNI_EMAIL_DOMAIN = 'studmail.w-hs.de';
 
 export default function RegistrationPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  // Add state for programs
-  const [programs, setPrograms] = useState<api.Program[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
   
   const navigate = useNavigate();
   const { login } = useAuth();
 
   // Fetch programs on mount
   useEffect(() => {
-    api.getPrograms()
-      .then(setPrograms)
+    getPrograms()
+      .then(({ data }) => {
+        if (data) {
+            setPrograms(data);
+        }
+      })
       .catch((err) => console.error("Failed to fetch programs", err));
   }, []);
 
@@ -46,7 +47,6 @@ export default function RegistrationPage() {
     const name = data.get('name') as string;
     const password = data.get('password') as string;
     const confirmPassword = data.get('confirmPassword') as string;
-    // Changed inputs
     const programidValue = data.get('programid') as string;
 
     const programid = Number.parseInt(programidValue, 10);
@@ -82,17 +82,33 @@ export default function RegistrationPage() {
     }
 
     try {
-      const newUser = await api.registerUser({
-          email,
-          name,
-          password,
-          programid, // Send programid
+      const { data: newUser, error: regError } = await postAuthRegister({
+          body: {
+            email,
+            name,
+            password,
+            programid,
+          }
       });
+
+      if (regError || !newUser) {
+         // @ts-ignore
+         throw new Error((regError as any)?.message || "Registrierung fehlgeschlagen.");
+      }
+
       console.log('Registrierung erfolgreich:', newUser);
+      
       try {
-        const loggedInUser = await api.loginUser({ email, password });
-        login(loggedInUser);
-        navigate('/dashboard');
+        const { data: loggedInUser } = await postAuthLogin({
+            body: { email, password }
+        });
+        
+        if (loggedInUser) {
+            login(loggedInUser);
+            navigate('/dashboard');
+        } else {
+            throw new Error('Auto-Login failed');
+        }
       } catch (loginError: unknown) {
         const message =
           loginError instanceof Error
@@ -166,12 +182,11 @@ export default function RegistrationPage() {
               id="confirmPassword"
               autoComplete="new-password"
             />
-            {/* Removed Campus Select */}
             <TextField
               select
               required
               fullWidth
-              name="programid" // Changed name
+              name="programid"
               label="Studiengang"
               id="programid"
               defaultValue=""
