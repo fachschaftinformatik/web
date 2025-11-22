@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 
-import { client } from '@lib/api';
+import { client } from '@lib/api/client.gen';
 
 import {
   ThemeModeProvider,
