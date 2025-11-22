@@ -14,6 +14,7 @@ import (
 	"github.com/fachschaftinformatik/web/internal/auth"
 	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/email"
 	"github.com/fachschaftinformatik/web/internal/middleware"
 
 	_ "modernc.org/sqlite"
@@ -35,7 +36,8 @@ func main() {
 	logger.Println("Database connection established.")
 
 	querier := database.New(sqlDB)
-	authServer := auth.NewServer(querier, logger, cfg.SecureCookies)
+	emailSender := email.NewSender(cfg)
+	authServer := auth.NewServer(querier, logger, cfg, emailSender)
 	handler := middleware.Logging(logger)(api.Handler(authServer))
 	httpServer := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,

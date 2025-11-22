@@ -12,20 +12,17 @@ import Container from '@mui/material/Container';
 import { Alert, MenuItem, Stack } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { getPrograms, postAuthRegister, postAuthLogin } from '@lib/api';
+import { getPrograms, postAuthRegister } from '@lib/api';
 import type { Program } from '@lib/api';
-import { useAuth } from '@lib/auth';
 
 const UNI_EMAIL_DOMAIN = 'studmail.w-hs.de';
 
 export default function RegistrationPage() {
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [programs, setPrograms] = useState<Program[]>([]);
   
-  const navigate = useNavigate();
-  const { login } = useAuth();
-
   // Fetch programs on mount
   useEffect(() => {
     getPrograms()
@@ -41,6 +38,7 @@ export default function RegistrationPage() {
     event.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     const data = new FormData(event.currentTarget);
     const email = data.get('email') as string;
@@ -69,7 +67,7 @@ export default function RegistrationPage() {
         return;
     }
 
-    if (!email.endsWith('@' + UNI_EMAIL_DOMAIN)) {
+    if (!email.endsWith('@' + UNI_EMAIL_DOMAIN) && !email.endsWith('@fachschaftinformatik.de')) {
       setError(`Die Registrierung ist nur mit einer gültigen ${UNI_EMAIL_DOMAIN} E-Mail Adresse möglich.`);
       setLoading(false);
       return;
@@ -97,26 +95,8 @@ export default function RegistrationPage() {
       }
 
       console.log('Registrierung erfolgreich:', newUser);
+      setSuccess('Nutzer wurde angelegt, bitte bestätige deine E-Mail, um dich einzuloggen.');
       
-      try {
-        const { data: loggedInUser } = await postAuthLogin({
-            body: { email, password }
-        });
-        
-        if (loggedInUser) {
-            login(loggedInUser);
-            navigate('/dashboard');
-        } else {
-            throw new Error('Auto-Login failed');
-        }
-      } catch (loginError: unknown) {
-        const message =
-          loginError instanceof Error
-            ? loginError.message
-            : 'Bitte manuell einloggen.';
-        setError(`Registrierung erfolgreich, aber Login fehlgeschlagen: ${message}`);
-        navigate('/login');
-      }
     } catch (err: unknown) {
       console.error('Registrierungsfehler:', err);
       const message =
@@ -146,6 +126,15 @@ export default function RegistrationPage() {
         </Typography>
         <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3, width: '100%' }}>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {success}
+              <br />
+              <Link component={RouterLink} to="/login" sx={{ mt: 1, display: 'block' }}>
+                Zum Login
+              </Link>
+            </Alert>
+          )}
           <Stack spacing={2}>
             <TextField
               required
@@ -155,6 +144,7 @@ export default function RegistrationPage() {
               name="name"
               autoComplete="name"
               autoFocus
+              disabled={!!success}
             />
             <TextField
               required
@@ -163,6 +153,7 @@ export default function RegistrationPage() {
               label="E-Mail Adresse"
               name="email"
               autoComplete="email"
+              disabled={!!success}
             />
             <TextField
               required
@@ -172,6 +163,7 @@ export default function RegistrationPage() {
               type="password"
               id="password"
               autoComplete="new-password"
+              disabled={!!success}
             />
             <TextField
               required
@@ -181,6 +173,7 @@ export default function RegistrationPage() {
               type="password"
               id="confirmPassword"
               autoComplete="new-password"
+              disabled={!!success}
             />
             <TextField
               select
@@ -191,6 +184,7 @@ export default function RegistrationPage() {
               id="programid"
               defaultValue=""
               helperText="Bitte wähle deinen Studiengang aus."
+              disabled={!!success}
             >
               {programs.map((option) => (
                 <MenuItem key={option.id} value={option.id}>
@@ -199,15 +193,17 @@ export default function RegistrationPage() {
               ))}
             </TextField>
           </Stack>
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            disabled={loading}
-            sx={{ mt: 3, mb: 2 }}
-          >
-            {loading ? 'Registriere...' : 'Registrieren'}
-          </Button>
+          {!success && (
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              disabled={loading}
+              sx={{ mt: 3, mb: 2 }}
+            >
+              {loading ? 'Registriere...' : 'Registrieren'}
+            </Button>
+          )}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Link component={RouterLink} to="/login" variant="body2">
               Hast du schon einen Account? Einloggen
