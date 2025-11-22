@@ -10,6 +10,7 @@ security:
 paths:
   /auth/csrf:
     get:
+      operationId: getAuthCsrf
       tags: [Auth]
       summary: Issue a CSRF token
       security: []
@@ -30,6 +31,7 @@ paths:
 
   /auth/register:
     post:
+      operationId: postAuthRegister
       tags: [Auth]
       summary: Register a user
       security: []
@@ -61,6 +63,7 @@ paths:
 
   /auth/login:
     post:
+      operationId: postAuthLogin
       tags: [Auth]
       summary: Log in
       security: []
@@ -89,6 +92,7 @@ paths:
 
   /auth/logout:
     post:
+      operationId: postAuthLogout
       tags: [Auth]
       summary: Log out
       security:
@@ -110,6 +114,7 @@ paths:
 
   /auth/me:
     get:
+      operationId: getAuthMe
       tags: [Auth]
       summary: Get current user
       security:
@@ -130,6 +135,7 @@ paths:
 
   /users/{id}:
     get:
+      operationId: getUsersId
       tags: [Users]
       summary: Get user by id
       security:
@@ -155,6 +161,7 @@ paths:
 
   /users:
     get:
+      operationId: getUsers
       tags: [Users]
       summary: List users (restricted)
       security:
@@ -184,6 +191,7 @@ paths:
 
   /programs:
     get:
+      operationId: getPrograms
       tags: [Programs]
       summary: List all programs and their valid POs
       security: []
@@ -199,6 +207,7 @@ paths:
 
   /programs/{id}:
     get:
+      operationId: getProgramsId
       tags: [Programs]
       summary: Get program by id
       security: []

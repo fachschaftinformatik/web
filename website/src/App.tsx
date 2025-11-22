@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 
+import { client } from '@lib/api';
+
 import {
   ThemeModeProvider,
   ThemeModeToggle
@@ -20,6 +22,12 @@ import NewsPage from '@routes/news/page';
 import ExamsPage from '@routes/exams/page';
 import ExamsListPage from '@routes/exams/list/page';
 import ForumPage from '@routes/forum/page';
+
+// Configure global client settings
+client.setConfig({
+  baseUrl: '/api', 
+  credentials: 'include', 
+});
 
 const AuthRedirector: React.FC = () => {
     const { user, isLoading } = useAuth();

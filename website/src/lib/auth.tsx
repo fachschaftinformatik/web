@@ -1,10 +1,12 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import * as api from './api';
+// Import directly from the generated API module
+import { getAuthMe, postAuthLogout, getAuthCsrf } from '@lib/api';
+import type { User } from '@lib/api';
 
 const REMEMBERED_USER_KEY = 'fs_remembered_user';
 export const REMEMBERED_FLAG_KEY = 'fs_remember_flag';
 
-const readRememberedUser = (): api.User | null => {
+const readRememberedUser = (): User | null => {
   if (typeof window === 'undefined') {
     return null;
   }
@@ -13,7 +15,7 @@ const readRememberedUser = (): api.User | null => {
     if (!stored) {
       return null;
     }
-    return JSON.parse(stored) as api.User;
+    return JSON.parse(stored) as User;
   } catch {
     window.localStorage.removeItem(REMEMBERED_USER_KEY);
     window.localStorage.removeItem(REMEMBERED_FLAG_KEY);
@@ -21,7 +23,7 @@ const readRememberedUser = (): api.User | null => {
   }
 };
 
-const persistRememberedUser = (userToPersist: api.User) => {
+const persistRememberedUser = (userToPersist: User) => {
   if (typeof window === 'undefined') {
     return;
   }
@@ -38,9 +40,9 @@ const clearRememberedUser = () => {
 };
 
 interface AuthContextType {
-  user: api.User | null;
+  user: User | null;
   isLoading: boolean;
-  login: (user: api.User, rememberMe?: boolean) => void;
+  login: (user: User, rememberMe?: boolean) => void;
   logout: () => void;
 }
 
@@ -51,17 +53,20 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<api.User | null>(() => readRememberedUser());
+  const [user, setUser] = useState<User | null>(() => readRememberedUser());
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkAuthStatus = async () => {
       setIsLoading(true);
       try {
-        const currentUser = await api.getMe();
-        setUser(currentUser);
+        const { data, error } = await getAuthMe();
+        if (error || !data) {
+            throw new Error('Not authenticated');
+        }
+        setUser(data);
         if (typeof window !== 'undefined' && window.localStorage.getItem(REMEMBERED_FLAG_KEY) === 'true') {
-          persistRememberedUser(currentUser);
+          persistRememberedUser(data);
         }
       } catch {
         setUser(null);
@@ -73,7 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuthStatus();
   }, []);
 
-  const login = (loggedInUser: api.User, rememberMe?: boolean) => {
+  const login = (loggedInUser: User, rememberMe?: boolean) => {
     setUser(loggedInUser);
     if (rememberMe) {
       persistRememberedUser(loggedInUser);
@@ -84,7 +89,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      await api.logoutUser();
+      // Fetch CSRF token first
+      const { data } = await getAuthCsrf();
+      const token = data?.csrf ?? '';
+
+      await postAuthLogout({
+        headers: {
+            'X-CSRF-Token': token
+        }
+      });
       setUser(null);
       clearRememberedUser();
     } catch (error) {
