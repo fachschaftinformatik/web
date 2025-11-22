@@ -197,6 +197,30 @@ paths:
                 items:
                   $ref: '#/components/schemas/Program'
 
+  /programs/{id}:
+    get:
+      tags: [Programs]
+      summary: Get program by id
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Program
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   securitySchemes:
     cookieAuth:

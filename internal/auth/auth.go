@@ -280,6 +280,34 @@ func (s *Server) GetPrograms(w http.ResponseWriter, r *http.Request) {
 	s.respondJSON(w, http.StatusOK, response)
 }
 
+func (s *Server) GetProgramsId(w http.ResponseWriter, r *http.Request, id int) {
+	rows, err := s.DB.GetProgramWithVersions(r.Context(), int64(id))
+	if err != nil {
+		s.Log.Printf("Failed to get program: %v", err)
+		s.jsonError(w, "database_error", "Could not fetch program", http.StatusInternalServerError)
+		return
+	}
+
+	if len(rows) == 0 {
+		s.jsonError(w, "not_found", "Program not found", http.StatusNotFound)
+		return
+	}
+
+	// Since we filter by ID, all rows belong to the same program.
+	// We take the first row for the main program details.
+	prog := api.Program{
+		Id:       int(rows[0].ID),
+		Name:     rows[0].Name,
+		Versions: make([]string, 0, len(rows)),
+	}
+
+	for _, row := range rows {
+		prog.Versions = append(prog.Versions, row.Version)
+	}
+
+	s.respondJSON(w, http.StatusOK, prog)
+}
+
 func (s *Server) jsonError(w http.ResponseWriter, err, msg string, status int) {
 	s.respondJSON(w, status, api.Error{
 		Error:   err,
