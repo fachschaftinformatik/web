@@ -14,6 +14,7 @@ type Querier interface {
 	DeleteExpiredSessions(ctx context.Context) error
 	DeleteSession(ctx context.Context, id string) error
 	DeleteUserSessions(ctx context.Context, userid string) error
+	GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error)
 	GetSession(ctx context.Context, id string) (Session, error)
 	GetUser(ctx context.Context, id string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)

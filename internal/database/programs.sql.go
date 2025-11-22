@@ -9,6 +9,43 @@ import (
 	"context"
 )
 
+const getProgramWithVersions = `-- name: GetProgramWithVersions :many
+SELECT p.id, p.name, pv.name as version
+FROM programs p
+JOIN program_versions pv ON p.id = pv.programid
+WHERE p.id = ?1
+ORDER BY pv.name DESC
+`
+
+type GetProgramWithVersionsRow struct {
+	ID      int64  `json:"id"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+func (q *Queries) GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getProgramWithVersions, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetProgramWithVersionsRow
+	for rows.Next() {
+		var i GetProgramWithVersionsRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Version); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listProgramsWithVersions = `-- name: ListProgramsWithVersions :many
 SELECT p.id, p.name, pv.name as version
 FROM programs p
