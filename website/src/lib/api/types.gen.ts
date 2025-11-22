@@ -107,6 +107,35 @@ export type PostAuthRegisterResponses = {
 
 export type PostAuthRegisterResponse = PostAuthRegisterResponses[keyof PostAuthRegisterResponses];
 
+export type GetAuthVerifyData = {
+    body?: never;
+    path?: never;
+    query: {
+        token: string;
+    };
+    url: '/auth/verify';
+};
+
+export type GetAuthVerifyErrors = {
+    /**
+     * Invalid token
+     */
+    400: _Error;
+};
+
+export type GetAuthVerifyError = GetAuthVerifyErrors[keyof GetAuthVerifyErrors];
+
+export type GetAuthVerifyResponses = {
+    /**
+     * Email verified successfully
+     */
+    200: {
+        message?: string;
+    };
+};
+
+export type GetAuthVerifyResponse = GetAuthVerifyResponses[keyof GetAuthVerifyResponses];
+
 export type PostAuthLoginData = {
     body: UserLogin;
     path?: never;
@@ -119,6 +148,10 @@ export type PostAuthLoginErrors = {
      * Invalid credentials
      */
     401: _Error;
+    /**
+     * Email not verified
+     */
+    403: _Error;
 };
 
 export type PostAuthLoginError = PostAuthLoginErrors[keyof PostAuthLoginErrors];

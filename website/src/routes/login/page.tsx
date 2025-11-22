@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -17,6 +17,7 @@ import { useAuth, REMEMBERED_FLAG_KEY } from '@lib/auth';
 
 export default function LoginPage() {
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => {
     if (typeof window === 'undefined') {
@@ -25,12 +26,20 @@ export default function LoginPage() {
     return window.localStorage.getItem(REMEMBERED_FLAG_KEY) === 'true';
   });
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
+
+  useEffect(() => {
+    if (searchParams.get('verified') === 'true') {
+      setSuccess('E-Mail erfolgreich bestätigt! Du kannst dich jetzt einloggen.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     const data = new FormData(event.currentTarget);
     const email = data.get('email') as string;
@@ -47,9 +56,18 @@ export default function LoginPage() {
         body: { email, password }
       });
 
-      if (apiError || !user) {
-        // @ts-ignore - error structure depends on openapi-ts generation, usually .message on error obj
-        throw new Error((apiError as any)?.message || 'Login fehlgeschlagen. Überprüfen Sie Ihre Anmeldedaten.');
+      if (apiError) {
+        // @ts-ignore
+        const msg = (apiError as any)?.message || 'Login fehlgeschlagen.';
+        // Check for specific unverified error
+        // The backend returns status 403 with message "Du musst erst deine E-Mail bestätigen..."
+        setError(msg);
+        setLoading(false);
+        return;
+      }
+
+      if (!user) {
+        throw new Error('Unbekannter Fehler beim Login.');
       }
 
       console.log('Login erfolgreich:', user);
@@ -83,6 +101,7 @@ export default function LoginPage() {
           Einloggen
         </Typography>
         <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3, width: '100%' }}>
+          {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Stack spacing={2}>
             <TextField
