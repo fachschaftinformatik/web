@@ -8,6 +8,12 @@ type Config struct {
 	SecureCookies bool
 	AppDSN        string
 	GooseDSN      string
+	PublicURL     string
+	SMTPHost      string
+	SMTPPort      string
+	SMTPUser      string
+	SMTPPass      string
+	SMTPFrom      string
 }
 
 func New() *Config {
@@ -19,6 +25,12 @@ func New() *Config {
 		SecureCookies: getEnv("SECURE_COOKIES", "true") == "true",
 		GooseDSN:      "file:" + dbPath,
 		AppDSN:        "file:" + dbPath + "?_journal_mode=WAL&_foreign_keys=on&_recursive_triggers=off",
+		PublicURL:     getEnv("PUBLIC_URL", "http://localhost:5173"),
+		SMTPHost:      getEnv("SMTP_HOST", ""),
+		SMTPPort:      getEnv("SMTP_PORT", ""),
+		SMTPUser:      getEnv("SMTP_USER", ""),
+		SMTPPass:      getEnv("SMTP_PASS", ""),
+		SMTPFrom:      getEnv("SMTP_FROM", ""),
 	}
 }
 

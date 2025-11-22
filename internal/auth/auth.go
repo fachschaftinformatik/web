@@ -11,7 +11,9 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/api"
+	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/email"
 	"github.com/google/uuid"
 	"github.com/oapi-codegen/runtime/types"
 	"golang.org/x/crypto/bcrypt"
@@ -27,14 +29,18 @@ const (
 type Server struct {
 	DB            database.Querier
 	Log           *log.Logger
+	Config        *config.Config
+	Email         *email.Sender
 	SecureCookies bool
 }
 
-func NewServer(db database.Querier, logger *log.Logger, secureCookies bool) *Server {
+func NewServer(db database.Querier, logger *log.Logger, cfg *config.Config, emailSender *email.Sender) *Server {
 	return &Server{
 		DB:            db,
 		Log:           logger,
-		SecureCookies: secureCookies,
+		Config:        cfg,
+		Email:         emailSender,
+		SecureCookies: cfg.SecureCookies,
 	}
 }
 
@@ -52,14 +58,17 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	verificationToken := uuid.NewString()
+
 	params := database.CreateUserParams{
-		ID:        uuid.NewString(),
-		Email:     string(payload.Email),
-		Name:      payload.Name,
-		Password:  string(hashedPassword),
-		Role:      "user",
-		Active:    1,
-		Programid: int64(payload.Programid),
+		ID:                uuid.NewString(),
+		Email:             string(payload.Email),
+		Name:              payload.Name,
+		Password:          string(hashedPassword),
+		Role:              "user",
+		Active:            1,
+		Programid:         int64(payload.Programid),
+		VerificationToken: sql.NullString{String: verificationToken, Valid: true},
 	}
 
 	dbUser, err := s.DB.CreateUser(r.Context(), params)
@@ -72,6 +81,13 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	// Send verification email
+	go func() {
+		if err := s.Email.SendVerificationEmail(dbUser.Email, dbUser.Name, verificationToken); err != nil {
+			s.Log.Printf("Failed to send verification email to %s: %v", dbUser.Email, err)
+		}
+	}()
 
 	apiUser, err := dbUserToAPI(dbUser)
 	if err != nil {
@@ -101,6 +117,28 @@ func (s *Server) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if dbUser.Verified == 0 {
+		// Logic to resend token if needed could go here
+		// For now, just regenerate a token and resend if one exists or if expired.
+		// Simplest approach: Always generate a new one and send it if they try to login.
+		newToken := uuid.NewString()
+		if err := s.DB.UpdateUserToken(r.Context(), database.UpdateUserTokenParams{
+			ID:                dbUser.ID,
+			VerificationToken: sql.NullString{String: newToken, Valid: true},
+		}); err != nil {
+			s.Log.Printf("Failed to update token for user %s: %v", dbUser.ID, err)
+		} else {
+			go func() {
+				if err := s.Email.SendVerificationEmail(dbUser.Email, dbUser.Name, newToken); err != nil {
+					s.Log.Printf("Failed to resend verification email to %s: %v", dbUser.Email, err)
+				}
+			}()
+		}
+
+		s.jsonError(w, "email_not_verified", "Du musst erst deine E-Mail bestätigen. Wir haben dir eine neue E-Mail gesendet.", http.StatusForbidden)
+		return
+	}
+
 	sessionID := uuid.NewString()
 	expiresAt := time.Now().Add(sessionDuration)
 
@@ -124,6 +162,64 @@ func (s *Server) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.respondJSON(w, http.StatusOK, apiUser)
+}
+
+func (s *Server) GetAuthVerify(w http.ResponseWriter, r *http.Request, params api.GetAuthVerifyParams) {
+	dbUser, err := s.DB.GetUserByVerificationToken(r.Context(), sql.NullString{String: params.Token, Valid: true})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			s.jsonError(w, "invalid_token", "Invalid verification token", http.StatusBadRequest)
+		} else {
+			s.Log.Printf("Failed to lookup token: %v", err)
+			s.jsonError(w, "server_error", "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Calculate Verified Until
+	var verifiedUntil sql.NullString
+	now := time.Now()
+
+	if strings.HasSuffix(dbUser.Email, "@studmail.w-hs.de") {
+		// Determine next March 1st or October 1st
+		year := now.Year()
+		march1 := time.Date(year, time.March, 1, 0, 0, 0, 0, time.UTC)
+		oct1 := time.Date(year, time.October, 1, 0, 0, 0, 0, time.UTC)
+
+		var nextDate time.Time
+		if now.Before(march1) {
+			nextDate = march1
+		} else if now.Before(oct1) {
+			nextDate = oct1
+		} else {
+			// After Oct 1st, next date is March 1st next year
+			nextDate = time.Date(year+1, time.March, 1, 0, 0, 0, 0, time.UTC)
+		}
+		verifiedUntil = sql.NullString{String: nextDate.Format(time.RFC3339), Valid: true}
+	} else if strings.HasSuffix(dbUser.Email, "@fachschaftinformatik.de") {
+		// Forever verified (NULL)
+		verifiedUntil = sql.NullString{Valid: false}
+	} else {
+		// Default fallback for other domains (if any allowed in future)
+		// For now, treat as students or maybe block? Assuming studmail behavior or just verified until forever for now to be safe?
+		// Prompt said "users with @studmail...". Let's assume others are external and verify once.
+		verifiedUntil = sql.NullString{Valid: false}
+	}
+
+	_, err = s.DB.VerifyUser(r.Context(), database.VerifyUserParams{
+		ID:            dbUser.ID,
+		VerifiedUntil: verifiedUntil,
+	})
+	if err != nil {
+		s.Log.Printf("Failed to verify user: %v", err)
+		s.jsonError(w, "server_error", "Verification failed", http.StatusInternalServerError)
+		return
+	}
+
+	// Instead of JSON, we should probably redirect to the frontend dashboard or a success page
+	// But the prompt asked to hook it up. The link in email points to API.
+	// We can redirect to the frontend login page with a success parameter.
+	http.Redirect(w, r, fmt.Sprintf("%s/login?verified=true", s.Config.PublicURL), http.StatusFound)
 }
 
 func (s *Server) GetAuthMe(w http.ResponseWriter, r *http.Request) {
@@ -293,8 +389,6 @@ func (s *Server) GetProgramsId(w http.ResponseWriter, r *http.Request, id int) {
 		return
 	}
 
-	// Since we filter by ID, all rows belong to the same program.
-	// We take the first row for the main program details.
 	prog := api.Program{
 		Id:       int(rows[0].ID),
 		Name:     rows[0].Name,

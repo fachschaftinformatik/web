@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeErrors, GetAuthMeResponses, GetProgramsData, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetUsersData, GetUsersErrors, GetUsersIdData, GetUsersIdErrors, GetUsersIdResponses, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses } from './types.gen';
+import type { GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeErrors, GetAuthMeResponses, GetAuthVerifyData, GetAuthVerifyErrors, GetAuthVerifyResponses, GetProgramsData, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetUsersData, GetUsersErrors, GetUsersIdData, GetUsersIdErrors, GetUsersIdResponses, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -34,6 +34,11 @@ export const postAuthRegister = <ThrowOnError extends boolean = false>(options: 
         ...options.headers
     }
 });
+
+/**
+ * Verify user email
+ */
+export const getAuthVerify = <ThrowOnError extends boolean = false>(options: Options<GetAuthVerifyData, ThrowOnError>) => (options.client ?? client).get<GetAuthVerifyResponses, GetAuthVerifyErrors, ThrowOnError>({ url: '/auth/verify', ...options });
 
 /**
  * Log in
