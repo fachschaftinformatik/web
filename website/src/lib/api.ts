@@ -1,5 +1,3 @@
-// website/src/lib/api.ts
-
 // TODO: Handle interfaces via OpenAPI at some point
 export interface User {
   id: string;
@@ -98,4 +96,9 @@ export async function getMe(): Promise<User> {
 export async function getPrograms(): Promise<Program[]> {
   const response = await fetch('/api/programs');
   return handleResponse<Program[]>(response);
+}
+
+export async function getProgramById(id: number): Promise<Program> {
+  const response = await fetch(`/api/programs/${id}`);
+  return handleResponse<Program>(response);
 }
