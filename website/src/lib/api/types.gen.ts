@@ -58,6 +58,23 @@ export type Session = {
     expires_at: string;
 };
 
+export type Event = {
+    id: number;
+    title: string;
+    cover_src?: string;
+    created_at?: string;
+};
+
+export type Media = {
+    id: string;
+    event_id: number;
+    src: string;
+    /**
+     * Optional thumbnail URL, currently same as src
+     */
+    thumb?: string;
+};
+
 export type CsrfHeader = string;
 
 export type GetAuthCsrfData = {
@@ -315,3 +332,147 @@ export type GetProgramsIdResponses = {
 };
 
 export type GetProgramsIdResponse = GetProgramsIdResponses[keyof GetProgramsIdResponses];
+
+export type GetMediaEventsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/media/events';
+};
+
+export type GetMediaEventsResponses = {
+    /**
+     * List of events
+     */
+    200: Array<Event>;
+};
+
+export type GetMediaEventsResponse = GetMediaEventsResponses[keyof GetMediaEventsResponses];
+
+export type PostMediaEventsData = {
+    body: {
+        title: string;
+    };
+    headers: {
+        'X-CSRF-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/media/events';
+};
+
+export type PostMediaEventsErrors = {
+    /**
+     * Forbidden
+     */
+    403: _Error;
+};
+
+export type PostMediaEventsError = PostMediaEventsErrors[keyof PostMediaEventsErrors];
+
+export type PostMediaEventsResponses = {
+    /**
+     * Event created
+     */
+    201: Event;
+};
+
+export type PostMediaEventsResponse = PostMediaEventsResponses[keyof PostMediaEventsResponses];
+
+export type GetMediaEventImagesData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/media/events/{id}/images';
+};
+
+export type GetMediaEventImagesResponses = {
+    /**
+     * List of images
+     */
+    200: Array<Media>;
+};
+
+export type GetMediaEventImagesResponse = GetMediaEventImagesResponses[keyof GetMediaEventImagesResponses];
+
+export type PostMediaEventImagesData = {
+    body?: {
+        images?: Array<Blob | File>;
+        /**
+         * Set the first uploaded image as event cover
+         */
+        cover?: boolean;
+    };
+    headers: {
+        'X-CSRF-Token': string;
+    };
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/media/events/{id}/images';
+};
+
+export type PostMediaEventImagesErrors = {
+    /**
+     * Forbidden
+     */
+    403: unknown;
+};
+
+export type PostMediaEventImagesResponses = {
+    /**
+     * Images uploaded
+     */
+    201: Array<Media>;
+};
+
+export type PostMediaEventImagesResponse = PostMediaEventImagesResponses[keyof PostMediaEventImagesResponses];
+
+export type GetMediaImageData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/media/images/{id}';
+};
+
+export type GetMediaImageResponses = {
+    /**
+     * Image content
+     */
+    200: Blob | File;
+};
+
+export type GetMediaImageResponse = GetMediaImageResponses[keyof GetMediaImageResponses];
+
+export type DeleteMediaImageData = {
+    body?: never;
+    headers: {
+        'X-CSRF-Token': string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/media/images/{id}/delete';
+};
+
+export type DeleteMediaImageErrors = {
+    /**
+     * Forbidden
+     */
+    403: unknown;
+};
+
+export type DeleteMediaImageResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteMediaImageResponse = DeleteMediaImageResponses[keyof DeleteMediaImageResponses];
