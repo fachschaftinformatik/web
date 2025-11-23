@@ -1,33 +1,48 @@
-version: '3.9'
-
 networks:
   api:
 
 volumes:
-  api-data:
+  buckets:
+  database:
 
 services:
   api:
     build:
       context: .
     ports:
-      - "8080:8080"
+      - 8080:80
     volumes:
-      - api-data:/data
-    environment:
-      - DB_PATH=/data/sqlite.db
-      - HTTP_PORT=8080
-      - SECURE_COOKIES=false
-
-  web:
-    build:
-      context: website
-    ports:
-      - "3000:80"
-    depends_on:
+      - database:/data
+    networks:
       - api
+    env_file: .env
+    environment:
+      - DOMAIN=http://localhost:5173
+      - SIGNUPS_VERIFY=true
+      - SIGNUPS_DOMAINS_WHITELIST=studmail.w-hs.de,fachschaftinformatik.de
+      - S3_BUCKET=production
+      - S3_ENDPOINT=minio:9000
+      - S3_ACCESS_KEY=minio
+      - S3_SECRET_KEY=minio
+      - S3_USE_SSL=false
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: always
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    volumes:
+      - buckets:/data
     networks:
       - api
     environment:
-      - API_URL=http://api:8080
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5 
 

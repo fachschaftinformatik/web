@@ -3,34 +3,38 @@ package config
 import "os"
 
 type Config struct {
-	DBPath        string
 	HTTPPort      string
 	SecureCookies bool
-	AppDSN        string
-	GooseDSN      string
-	PublicURL     string
+	DatabaseUrl   string
+	Domain	      string
 	SMTPHost      string
 	SMTPPort      string
 	SMTPUser      string
 	SMTPPass      string
 	SMTPFrom      string
+	S3Endpoint    string
+	S3Bucket      string
+	S3AccessKey   string
+	S3SecretKey   string
+	S3UseSSL      bool
 }
 
 func New() *Config {
-	dbPath := getEnv("DB_PATH", "dev.db")
-
 	return &Config{
-		DBPath:        dbPath,
-		HTTPPort:      getEnv("HTTP_PORT", "8080"),
+		HTTPPort:      getEnv("HTTP_PORT", "80"),
 		SecureCookies: getEnv("SECURE_COOKIES", "true") == "true",
-		GooseDSN:      "file:" + dbPath,
-		AppDSN:        "file:" + dbPath + "?_journal_mode=WAL&_foreign_keys=on&_recursive_triggers=off",
-		PublicURL:     getEnv("PUBLIC_URL", "http://localhost:5173"),
+		DatabaseUrl:	 getEnv("DATABASE_URL", "file:/data/sqlite.db?_journal_mode=WAL&_foreign_keys=on&_recursive_triggers=off&_busy_timeout=5000"),
+		Domain:        getEnv("DOMAIN", "http://localhost:5173"),
 		SMTPHost:      getEnv("SMTP_HOST", ""),
 		SMTPPort:      getEnv("SMTP_PORT", ""),
-		SMTPUser:      getEnv("SMTP_USER", ""),
-		SMTPPass:      getEnv("SMTP_PASS", ""),
+		SMTPUser:      getEnv("SMTP_USERNAME", ""),
+		SMTPPass:      getEnv("SMTP_PASSWORD", ""),
 		SMTPFrom:      getEnv("SMTP_FROM", ""),
+		S3Endpoint:    getEnv("S3_ENDPOINT", ""),
+		S3Bucket:      getEnv("S3_BUCKET", ""),
+		S3AccessKey:   getEnv("S3_ACCESS_KEY", ""),
+		S3SecretKey:   getEnv("S3_SECRET_KEY", ""),
+		S3UseSSL:      getEnv("S3_USE_SSL", "false") == "true",
 	}
 }
 
