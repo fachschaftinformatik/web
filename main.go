@@ -16,6 +16,7 @@ import (
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/email"
 	"github.com/fachschaftinformatik/web/internal/middleware"
+	"github.com/fachschaftinformatik/web/internal/buckets"
 
 	_ "modernc.org/sqlite"
 )
@@ -24,20 +25,32 @@ func main() {
 	logger := log.New(os.Stdout, "", log.LstdFlags)
 	cfg := config.New()
 
-	if err := database.Migrate(cfg.GooseDSN, logger); err != nil {
+	if err := database.Migrate(cfg.DatabaseUrl, logger); err != nil {
 		logger.Fatalf("Migrations failed: %v", err)
 	}
 
-	sqlDB, err := database.NewConnection(cfg.AppDSN)
+	sqlDB, err := database.NewConnection(cfg.DatabaseUrl)
 	if err != nil {
 		logger.Fatalf("Database connection failed: %v", err)
 	}
 	defer sqlDB.Close()
 	logger.Println("Database connection established.")
+	store, err := buckets.NewClient(cfg)
+	if err != nil {
+		logger.Fatalf("Storage client creation failed: %v", err)
+	}
+	
+	startupCtx, cancelStartup := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelStartup()
+	
+	if err := store.EnsureBucket(startupCtx); err != nil {
+		logger.Fatalf("Failed to ensure bucket exist: %v", err)
+	}
+	logger.Println("Connection established and buckets exist")
 
 	querier := database.New(sqlDB)
 	emailSender := email.NewSender(cfg)
-	authServer := auth.NewServer(querier, logger, cfg, emailSender)
+	authServer := auth.NewServer(querier, logger, cfg, emailSender, store)
 	handler := middleware.Logging(logger)(api.Handler(authServer))
 	httpServer := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,
