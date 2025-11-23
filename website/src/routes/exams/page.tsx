@@ -9,6 +9,7 @@ import {
   Link,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
 export default function Exams() {
   return (
@@ -38,18 +39,24 @@ export default function Exams() {
           </Typography>
 
           {/* Beschreibung der Idee hinter Rekonstruktionen */}
-          <Typography variant="body1" sx={{
-            marginBottom: "16px"
-          }}>
+          <Typography
+            variant="body1"
+            sx={{
+              marginBottom: "16px",
+            }}
+          >
             Eine Klausurrekonstruktion ist ein nachträglich erstellter Bericht über
             eine geschriebene Prüfung. Sie hilft anderen Studierenden, sich auf
             kommende Klausuren vorzubereiten, indem sie einen Eindruck von
             Aufgabenstellungen und Themen gibt.
           </Typography>
           {/* Hinweis, dass Rekos keine offiziellen Unterlagen sind */}
-          <Typography variant="body1" sx={{
-            marginBottom: "16px"
-          }}>
+          <Typography
+            variant="body1"
+            sx={{
+              marginBottom: "16px",
+            }}
+          >
             Die Rekos sind keine offiziellen Prüfungsunterlagen, sondern
             freiwillige Beiträge von Studierenden für Studierende.
           </Typography>
@@ -63,9 +70,12 @@ export default function Exams() {
           </Typography>
 
           {/* Kurze Erklärung */}
-          <Typography variant="body1" sx={{
-            marginBottom: "16px"
-          }}>
+          <Typography
+            variant="body1"
+            sx={{
+              marginBottom: "16px",
+            }}
+          >
             Damit die Sammlung aktuell bleibt, freuen wir uns über jede neue Reko.
             Mitmachen ist ganz einfach:
           </Typography>
@@ -85,6 +95,33 @@ export default function Exams() {
               senden oder persönlich abgeben.
             </ListItem>
           </List>
+
+          {/* Alternative Upload-Möglichkeit über die Webseite */}
+          <Box
+            sx={{
+              mt: 3,
+              p: 3,
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
+            }}
+          >
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Alternativ kannst du deine Reko auch direkt hier über unser Upload-Formular
+              hochladen – ganz ohne E-Mail.
+            </Typography>
+
+            <Button
+              variant="contained"
+              size="large"
+              component={RouterLink}
+              to="/exams/upload"
+              startIcon={<CloudUploadIcon />}
+            >
+              Reko hochladen
+            </Button>
+          </Box>
 
           {/* Hinweis: kleine Belohnung für eingereichte Rekos */}
           <Typography variant="body2" sx={{ mt: 2 }}>
