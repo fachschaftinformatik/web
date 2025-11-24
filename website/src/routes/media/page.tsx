@@ -1,6 +1,7 @@
 // Galerie.tsx (korrigiert)
 
 import React from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
 import {
@@ -47,6 +48,8 @@ import {
   defaultTitleForFile,
 } from "@lib/data";
 
+const ADMIN_PREVIEW_KEY = "media_admin_preview";
+
 type UploadEntry = { file: File; title: string };
 
 export default function Galerie() {
@@ -76,7 +79,34 @@ export default function Galerie() {
   const [open, setOpen] = React.useState(false);
   const [index, setIndex] = React.useState(0);
   const { user } = useAuth();
-  const canUpload = user?.role === "admin" || user?.role === "editor";
+  const location = useLocation();
+  const [adminPreview, setAdminPreview] = React.useState(false);
+
+  React.useEffect(() => {
+    // Admin-Vorschau per URL-Param (admin=1/0) oder persistentes Flag
+    const searchParams = new URLSearchParams(location.search);
+    const param = searchParams.get("admin");
+    if (param === "1") {
+      setAdminPreview(true);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(ADMIN_PREVIEW_KEY, "1");
+      }
+      return;
+    }
+    if (param === "0") {
+      setAdminPreview(false);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(ADMIN_PREVIEW_KEY);
+      }
+      return;
+    }
+    if (typeof window !== "undefined") {
+      setAdminPreview(window.localStorage.getItem(ADMIN_PREVIEW_KEY) === "1");
+    }
+  }, [location.search]);
+
+  const canUpload =
+    adminPreview || user?.role === "admin" || user?.role === "editor";
   const allEvents = React.useMemo(
     () => [...customEvents, ...events],
     [customEvents]
@@ -310,26 +340,29 @@ export default function Galerie() {
           py: theme.spacing(4)
         })}
       >
-      <Typography variant="h4" align="center" gutterBottom>
-        Galerie
-      </Typography>
       {canUpload && (
         <Box
           sx={(theme) => ({
             display: "flex",
             justifyContent: "flex-end",
-            mb: theme.spacing(2)
+            mb: theme.spacing(2),
           })}
         >
           <Button
             variant="contained"
             startIcon={<CloudUploadIcon />}
             onClick={handleOpenUploadDialog}
+            sx={(theme) => ({
+              boxShadow: theme.shadows[4],
+            })}
           >
             Bilder hochladen
           </Button>
         </Box>
       )}
+      <Typography variant="h4" align="center" gutterBottom>
+        Galerie
+      </Typography>
       {/* --- Event-Auswahl als horizontale ImageList --- */}
       <Box
         sx={(theme) => ({
@@ -338,101 +371,124 @@ export default function Galerie() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          gap: theme.spacing(2),
+          flexWrap: "wrap",
         })}
       >
-        <ImageList
+        <Box
           sx={(theme) => ({
+            flex: 1,
             display: "flex",
-            flexDirection: "row",
-            flexWrap: "nowrap",
-            transform: "translateZ(0)",
-            pb: theme.spacing(1),
-            overflowX: "auto",
-            "&::-webkit-scrollbar": { display: "none" },
-            "-ms-overflow-style": "none",
-            "scrollbar-width": "none",
-            px: theme.spacing(1),
-            width: "100%",
+            justifyContent: "center",
+            minWidth: 0,
           })}
         >
-          {allEvents.map((ev) => {
-            const selected = ev.id === selectedEventId;
-            return (
-              <ImageListItem
-                key={ev.id}
-                onClick={() => {
-                  setSelectedEventId(ev.id);
-                  setIndex(0);
-                  setPage(1);
-                }}
-                // KORREKTUR: Alle Theme-abhängigen und bedingten Styles in der Theme-Funktion zusammengefasst
-                sx={[(theme) => ({ 
-                  cursor: "pointer",
-                  width: theme.spacing(18.75),
-                  flexShrink: 0,
-                  borderRadius: theme.shape.borderRadius,
-                  overflow: "hidden",
-                  
-                  // Konsolidierte bedingte Styles
-                  boxShadow: theme.shadows[selected ? 6 : 2],
-                  outline: selected ? "2px solid" : "none",
-                  outlineColor: selected ? theme.palette.primary.main : "transparent",
-                  zIndex: selected ? 2 : 1,
-                  transform: selected ? "scale(1.05)" : "scale(1)",
-                  
-                  transition: theme.transitions.create([
-                    "transform",
-                    "box-shadow",
-                    "outline",
-                    "margin",
-                  ]),
-                  outlineOffset: "2px",
-                  marginLeft: theme.spacing(2),
-                  "&:first-of-type": {
-                    marginLeft: 0,
-                  },
-                  "&:hover": {
-                    transform: "scale(1.08)",
-                    boxShadow: theme.shadows[8],
-                    zIndex: 3,
-                  }
-                })]}
-              >
-                <Box
-                  component="img"
-                  src={ev.src} // Holt sich den Pfad (entweder /DEIN_ORDNER/... oder picsum)
-                  alt={ev.title}
-                  loading="lazy"
-                  sx={(theme) => ({
-                    width: "100%",
-                    height: theme.spacing(20),
-                    objectFit: "contain",
-                    display: "block"
-                  })}
-                />
-                <ImageListItemBar
-                  title={ev.title}
-                  position="below"
+          <ImageList
+            sx={(theme) => ({
+              display: "flex",
+              flexDirection: "row",
+              flexWrap: "nowrap",
+              justifyContent: "center",
+              transform: "translateZ(0)",
+              py: theme.spacing(2),
+              overflowX: "auto",
+              overflowY: "visible", // allow scaled items to render fully
+              "&::-webkit-scrollbar": { display: "none" },
+              "-ms-overflow-style": "none",
+              "scrollbar-width": "none",
+              px: theme.spacing(1),
+              width: "100%",
+              gap: theme.spacing(3),
+              columnGap: theme.spacing(3), // fallback for flex gap support
+              "& > li:not(:last-of-type)": {
+                marginRight: theme.spacing(3), // ensure spacing on browsers without flex gap on ImageList
+              },
+            })}
+          >
+            {allEvents.map((ev) => {
+              const selected = ev.id === selectedEventId;
+              return (
+                <ImageListItem
+                  key={ev.id}
+                  onClick={() => {
+                    setSelectedEventId(ev.id);
+                    setIndex(0);
+                    setPage(1);
+                  }}
                   // KORREKTUR: Alle Theme-abhängigen und bedingten Styles in der Theme-Funktion zusammengefasst
                   sx={[(theme) => ({ 
-                    textAlign: "center",
-                    py: theme.spacing(1),
-                    // Konsolidierte bedingte Styles
-                    bgcolor: selected ? theme.palette.primary.main : theme.palette.background.paper,
-                    color: selected ? theme.palette.primary.contrastText : theme.palette.text.primary,
+                    cursor: "pointer",
+                    width: theme.spacing(18.75),
+                    flexShrink: 0,
+                    borderRadius: theme.shape.borderRadius,
+                    overflow: "visible",
                     
-                    "& .MuiImageListItemBar-title": {
-                      fontSize: "0.8rem",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
+                    // Konsolidierte bedingte Styles
+                    boxShadow: theme.shadows[selected ? 6 : 2],
+                    outline: selected ? "2px solid" : "none",
+                    outlineColor: selected ? theme.palette.primary.main : "transparent",
+                    zIndex: selected ? 2 : 1,
+                    transform: selected ? "scale(1.05)" : "scale(1)",
+                    
+                    transition: theme.transitions.create([
+                      "transform",
+                      "box-shadow",
+                      "outline",
+                      "margin",
+                    ]),
+                    outlineOffset: "2px",
+                    "&:hover": {
+                      transform: "scale(1.08)",
+                      boxShadow: theme.shadows[8],
+                      zIndex: 3,
                     }
                   })]}
-                />
-              </ImageListItem>
-            );
-          })}
-        </ImageList>
+                >
+                  <Box
+                    sx={(theme) => ({
+                      overflow: "hidden",
+                      borderRadius: theme.shape.borderRadius,
+                      bgcolor: theme.palette.background.paper,
+                      boxShadow: theme.shadows[selected ? 6 : 1],
+                    })}
+                  >
+                    <Box
+                      component="img"
+                      src={ev.src} // Holt sich den Pfad (entweder /DEIN_ORDNER/... oder picsum)
+                      alt={ev.title}
+                      loading="lazy"
+                      sx={(theme) => ({
+                        width: "100%",
+                        height: theme.spacing(20),
+                        objectFit: "contain",
+                        display: "block",
+                      })}
+                    />
+                    <ImageListItemBar
+                      title={ev.title}
+                      position="below"
+                      // KORREKTUR: Alle Theme-abhängigen und bedingten Styles in der Theme-Funktion zusammengefasst
+                      sx={[(theme) => ({ 
+                        textAlign: "center",
+                        py: theme.spacing(1),
+                        // Konsolidierte bedingte Styles
+                        bgcolor: selected ? theme.palette.primary.main : theme.palette.background.paper,
+                        color: selected ? theme.palette.primary.contrastText : theme.palette.text.primary,
+                        
+                        "& .MuiImageListItemBar-title": {
+                          fontSize: "0.8rem",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }
+                      })]}
+                    />
+                  </Box>
+                </ImageListItem>
+              );
+            })}
+          </ImageList>
+        </Box>
       </Box>
       {/* --- Titel der ausgewählten Veranstaltung --- */}
       {selectedEventId && (
@@ -468,18 +524,18 @@ export default function Galerie() {
         >
           Für dieses Event sind noch keine Bilder hinterlegt. (Überprüfe die 'bilderByEvent'-Konstante)
         </Typography>
-      ) : (
-        <Box
-          sx={(theme) => ({
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "repeat(2, 1fr)",
-              sm: "repeat(3, 1fr)",
-              md: "repeat(4, 1fr)",
-            },
-            gap: theme.spacing(2)
-          })}
-        >
+          ) : (
+            <Box
+              sx={(theme) => ({
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "repeat(2, 1fr)",
+                  sm: "repeat(3, 1fr)",
+                  md: "repeat(4, 1fr)",
+                },
+                gap: theme.spacing(3)
+              })}
+            >
           {paginatedThumbs.map((b, i) => (
             <Card
               key={b.id}
