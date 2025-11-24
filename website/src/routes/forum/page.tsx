@@ -98,7 +98,8 @@ const createProgramFlagState = (defaults: Program[] = []): Record<Program, boole
   });
   return flags;
 };
-const LS_KEY = "forum-demo-posts";
+export const FORUM_STORAGE_KEY = "forum-demo-posts";
+const LS_KEY = FORUM_STORAGE_KEY;
 const LS_VOTES_KEY = "forum-demo-votes";
 const currentUser = "Demo User";
 
@@ -325,6 +326,7 @@ function makeExtraSeeds(n: number): Post[] {
 }
 
 const SEED_POSTS: Post[] = [...BASE_SEEDS, ...makeExtraSeeds(20)];
+export const FORUM_SEED_POSTS = SEED_POSTS;
 
 /* Kommentare (rekursiv) */
 function CommentThread({
