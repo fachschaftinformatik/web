@@ -107,6 +107,11 @@ type PostAuthLogoutParams struct {
 	XCSRFToken CsrfHeader `json:"X-CSRF-Token"`
 }
 
+// GetAuthVerifyParams defines parameters for GetAuthVerify.
+type GetAuthVerifyParams struct {
+	Token string `form:"token" json:"token"`
+}
+
 // GetUsersParams defines parameters for GetUsers.
 type GetUsersParams struct {
 	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -136,9 +141,15 @@ type ServerInterface interface {
 	// Register a user
 	// (POST /auth/register)
 	PostAuthRegister(w http.ResponseWriter, r *http.Request)
+	// Verify user email
+	// (GET /auth/verify)
+	GetAuthVerify(w http.ResponseWriter, r *http.Request, params GetAuthVerifyParams)
 	// List all programs and their valid POs
 	// (GET /programs)
 	GetPrograms(w http.ResponseWriter, r *http.Request)
+	// Get program by id
+	// (GET /programs/{id})
+	GetProgramsId(w http.ResponseWriter, r *http.Request, id int)
 	// List users (restricted)
 	// (GET /users)
 	GetUsers(w http.ResponseWriter, r *http.Request, params GetUsersParams)
@@ -181,9 +192,21 @@ func (_ Unimplemented) PostAuthRegister(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Verify user email
+// (GET /auth/verify)
+func (_ Unimplemented) GetAuthVerify(w http.ResponseWriter, r *http.Request, params GetAuthVerifyParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // List all programs and their valid POs
 // (GET /programs)
 func (_ Unimplemented) GetPrograms(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get program by id
+// (GET /programs/{id})
+func (_ Unimplemented) GetProgramsId(w http.ResponseWriter, r *http.Request, id int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -320,11 +343,70 @@ func (siw *ServerInterfaceWrapper) PostAuthRegister(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// GetAuthVerify operation middleware
+func (siw *ServerInterfaceWrapper) GetAuthVerify(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAuthVerifyParams
+
+	// ------------- Required query parameter "token" -------------
+
+	if paramValue := r.URL.Query().Get("token"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "token"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "token", r.URL.Query(), &params.Token)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAuthVerify(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetPrograms operation middleware
 func (siw *ServerInterfaceWrapper) GetPrograms(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetPrograms(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetProgramsId operation middleware
+func (siw *ServerInterfaceWrapper) GetProgramsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetProgramsId(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -535,7 +617,13 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/auth/register", wrapper.PostAuthRegister)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auth/verify", wrapper.GetAuthVerify)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/programs", wrapper.GetPrograms)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/programs/{id}", wrapper.GetProgramsId)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/users", wrapper.GetUsers)
@@ -550,27 +638,28 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9RYbW/bthP/KgT//xctoNhykhWY3m1ZH4Jla9DOw4DACBjxJLOVSJWkshqBvvtwpJ4c",
-	"yYq9LCn6KpZ0x7v7/e6JuaOxygslQVpDozu6BsZBu58fwZ4p9VkAPph4DTnDX3ZTAI2osVrIlFZVFdCC",
-	"aZaDrfXOjE7euWPwSUga1afSgEqWo/JfR2cfP7w5+kN9BkkDquFLKTRwGlldQjBtzH90ll5rrZyRQqsC",
-	"tBXgXkPz+p52QHMwhqUwdnLfi6v6iE5hFTQK6uYTxBYPu9Qq1Swf2he8Z0BICyloVPDBj7h1C9oIJZ0y",
-	"BxNrUVihELgLYSxRCbllmeDk8r0hidLEroUhhTdPXsAsnZHL98fh4lXg/h6fvKQBFRZyM2qufsG0ZptB",
-	"5II3NPX8Ggt/aWAEexZbceuiBFnmNLoKg0Wn3QMj1sAs8GtmUThROsdflDMLR1Y48wPHIWci2xL3b0ZE",
-	"PQfbYP7pwyGnZLk8/2VMaydDNdi7mNUqA28vYWWGjpXG5XsNQvvIhXV5xXguZA/WzlJZ8INxuQUtEgF8",
-	"D9gb0anzZZll7AYj8uW40951Ke09Qg44ZyzxGj7rBHS4Bk1S9QLtM7KVS1sA7krbC5ViWxr0jf3Tq2DG",
-	"/K0036OT1Ee0Gruc+gCpMHaspg7wq0ngXMgLkKld02jxgPt90VfBgam/I9iavtZM/5Rh/NjUIS61sJuP",
-	"2Nx91LGbPT+V6Fg9RvyrboxcX79Txh4ZMFjXHR6sEL/Cxo8LIRPlPBc2q791nY1GNJwtZiHGqQqQ+DGi",
-	"J7NwduLct2vnypyVdj2PjU7wKQVXOsgQw85yzmlE34JFV3H2uYFmCiWND+Q4DH080oJ0qqwoMhE75fkn",
-	"o+T2gN0mv7E6nWVOagTZKrjXA3HuEotzlwhjSldK2zP/qBv6/9eQ0Ij+b97tCPNaeN5tB1XVZ5BGV6uA",
-	"mjLPmd7QiJ6jFcJIZxh5YqlBtx27K1T3EGdtYSozAvKlMg5lX78eATD2Z8U3ByE8Fle9Vsy7/lBtg4w9",
-	"rHoktQ8ZHmPsQqUpcOICfjxTAT0NF/+Zz34BG3H6XPqNJdbAQVrBMkOnsuRCpT7CicxQpd0rNVBueye9",
-	"Go+iE5n3dtZqNSD5dGQx86x4W98NLb8rSxBOpCTGKXmflO22e7WqBiz5iHfR5KfPVIf8Deg3KKKzUmuQ",
-	"lrg97DtB+y1YEvf93g277u8Ok/XRbhlP1z1bE3s10MWTc4/vSb0ieu7D52uABdtkitV2f3x6u69xAyMs",
-	"08D4hsBXYex0523YImwiyertzUwV92Uj88jybu+tU/E3d+/hbXY4P+srdBvD5BxCYZZlrTRhkhO7BqG7",
-	"O3gPozZojxMiOAnS0gkMppPbbr+UoDfdcpuJXGCr7ZBpb5cnxwHN2VeR41Xv+IdXAS7x/mkRjOzo4wZU",
-	"khjYYSHsHRmOHLl6DpKXdbPel2GPvqu0k6evtDdK3wjOQR44Q9FZ5yl5oQHX+dgCf9nLKZ8jvYSa3wle",
-	"PZhV53xHXuE1pmPdXZj3/4fb6hsM62U7pE+fZ0gnqpT/YjgjOeRmQxykA/YeOq36JwAA//9ppv/+exUA",
-	"AA==",
+	"H4sIAAAAAAAC/9RYaW/cNhP+KwTf90MCyLta2zVQfWvdHEbdxojroICxMGhxpGUikQpJuREM/feCpE7r",
+	"2N36CPJpVxKHM/M8c5H3OBRpJjhwrXBwjzdAKEj79xL0qRBfGJgHFW4gJeafLjLAAVZaMh7jsiw9nBFJ",
+	"UtCV3KmS0Xu7jXliHAfVrtjDnKRG+O+D08uPbw/+El+AYw9L+JozCRQHWubgzStzH62mN1IKqySTIgOp",
+	"GdjXUL9+IO3hFJQiMYzt3LXiutqiFVh7tYC4/QyhNptdSBFLkg71M9pRwLiGGKQRcM6PmHUHUjHBrTAF",
+	"FUqWaSYMcOdMaSQidEcSRtHFB4UiIZHeMIUypx69gkW8QBcfDv3ViWd/D49eYw8zDakaVVe9IFKSYuA5",
+	"ozVNHbvG3L9SMII9CTW7s14Cz1McXPveqpXugBFKIBroDdFmcSRkav5hSjQcaGbVDwyHlLCkt9y9GVnq",
+	"OOiD+cm5g47R1dXZb2NSkwxVYE8xK0UCTl9E8sQYlisb7xUIzSNl2sYVoSnjHVhbTXlG98blDiSLGNAd",
+	"YK+Xzu3P8yQht8Yjl46T+m5yrh8Qssc+Y4FX81kFoMXVq4Oq42iXkV4s9QCcCttzEZuyNKgbu4dXRpT6",
+	"R0i6QyWptmgkpoz6CDFTeiyn9rCrDuCU8XPgsd7gYLXF/O7SE2/P0J9wtqKvUdPdZei/KeoQ5pLp4tIU",
+	"d+d1aHvPL7kxrGoj7lXbRm5u3gulDxQok9ctHiRjv0Ph2gXjkbCWM51U39rKhgPsL1YL3/gpMuDmY4CP",
+	"Fv7iyJqvN9aUJcn1ZhkqGZmnGGzqGIaIqSxnFAf4HWhjqul9tqGpTHDlHDn0fecP18CtKMmyhIVWePlZ",
+	"Cd5vsH3ya63zUWZXjSBbeg9qoOm7SJu+i5hSuU2lfs8/aJv+/yVEOMD/W7YzwrJavGyng7LsMoiD67WH",
+	"VZ6mRBY4wGdGCyKoVWx4IrEyZlt210bcQZw0iSnUCMgXQlmUXf46BEDpXwUt9kJ4zK9qrFi29aHsg2xq",
+	"WPlIarcpHmPsXMQxUGQdfjxTHj72V09msxvARow+425iCSVQ4JqRRGGr++j5db8xRQhxoVHTLuYC9FzE",
+	"DtyZoBS53ikqzbr+OHw97kS7ZNkZl8v1IL6OR2ZCFxBO1w8TEX8KjQycJhpC06AfktKv+NfrcsCS83iK",
+	"Jtf45orzH4C/Q/6e5lIC18iOgD8I2u9Ao7Br9zTssju2zOZHM+A8X+FuVOxUu1fPzr15j6rp1HHvv1zt",
+	"zUiRCFLp/fml6i5JJBBaIPjGlFazlbdmC5FtQWYLebEtvz+5VYMCbGfHrznIoh0d9d5XD+snHetmbyK2",
+	"TnEO6rq9IZWHISgV5UlSvHiYOSTneHa8WI5Rc3IZMl0dEdQczRf1mkeS0VyOzLleX/AMr0yGQ1p1T9P4",
+	"MDtxmMUkSZrViHCK9AaYbC96Ohg1TvdxWt4zWu4C1hmdyAlzwGlTwh6lt+ZDe/RbP2MzbaAfQt1h5diN",
+	"R8/fSiOR8/kp0nTM+kbutkAWywn+TB7MBvmVXbBTGUtYysxQ1PrYXEEdHXo4Jd9Ymqc4OPzpxDMnffe0",
+	"8kYO8uMKRBQpmNDgd7b0vacPkJ2S9Koaq3bNUIf+S51F3gp5yygdFsgt064x1lqKXkkwnSHUQF93YsrF",
+	"SCegtlYDK/GkpeDJWuN/Ha2+fw3YPkbbrvewIjTsbdut/DcAAP//T2dwMqAZAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

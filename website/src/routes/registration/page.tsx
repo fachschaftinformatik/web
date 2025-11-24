@@ -1,7 +1,7 @@
-// website/src/routes/registration/page.tsx
+import React, { useState, useEffect } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
+import { z } from 'zod';
 
-import React, { useState, useEffect } from 'react'; // Added useEffect
-import { useNavigate } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -11,101 +11,144 @@ import Box from '@mui/material/Box';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { Alert, MenuItem, Stack } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
+import MenuItem from '@mui/material/MenuItem';
+import Stack from '@mui/material/Stack';
+import IconButton from '@mui/material/IconButton';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import InputLabel from '@mui/material/InputLabel';
+import InputAdornment from '@mui/material/InputAdornment';
+import FormControl from '@mui/material/FormControl';
+import FormHelperText from '@mui/material/FormHelperText';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
-import * as api from '@lib/api';
-import { useAuth } from '@lib/auth';
+import { getPrograms, postAuthRegister } from '@lib/api';
+import type { Program } from '@lib/api';
 
-// TODO
-const UNI_EMAIL_DOMAIN = 'studmail.w-hs.de';
+const EMAIL_SUFFIX = '@studmail.w-hs.de';
+
+const registrationSchema = z.object({
+  name: z.string().min(1, "Bitte gib deinen Namen ein."),
+  emailPrefix: z.string().min(1, "Bitte gib dein E-Mail ein.").regex(/^[a-zA-Z0-9._-]+$/, "Die E-Mail enthält ungültige Zeichen."),
+  password: z.string()
+    .min(12, "Das Passwort muss mindestens 12 Zeichen lang sein.")
+    .regex(/[A-Z]/, "Das Passwort muss mindestens einen Großbuchstaben enthalten.")
+    .regex(/[a-z]/, "Das Passwort muss mindestens einen Kleinbuchstaben enthalten.")
+    .regex(/[0-9]/, "Das Passwort muss mindestens eine Zahl enthalten.")
+    .regex(/[^A-Za-z0-9]/, "Das Passwort muss mindestens ein Sonderzeichen enthalten."),
+  confirmPassword: z.string(),
+  programid: z.number({ 
+    invalid_type_error: "Bitte wähle einen Studiengang aus." 
+  })
+  .int()
+  .positive({ message: "Bitte wähle einen Studiengang aus." }),
+}).superRefine((data, ctx) => {
+  if (data.password !== data.confirmPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Die Passwörter stimmen nicht überein.",
+      path: ["confirmPassword"],
+    });
+  }
+  if (data.name && data.password.toLowerCase().includes(data.name.toLowerCase())) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Das Passwort darf deinen Namen nicht enthalten.",
+      path: ["password"],
+    });
+  }
+  if (data.emailPrefix && data.password.toLowerCase().includes(data.emailPrefix.toLowerCase())) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Das Passwort darf deine E-Mail nicht enthalten.",
+      path: ["password"],
+    });
+  }
+});
+
+type RegistrationFormData = z.infer<typeof registrationSchema>;
 
 export default function RegistrationPage() {
-  const [error, setError] = useState('');
+  const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(false);
-  // Add state for programs
-  const [programs, setPrograms] = useState<api.Program[]>([]);
-  
-  const navigate = useNavigate();
-  const { login } = useAuth();
+  const [success, setSuccess] = useState('');
+  const [errors, setErrors] = useState<Partial<Record<keyof RegistrationFormData, string>> & { global?: string }>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Fetch programs on mount
   useEffect(() => {
-    api.getPrograms()
-      .then(setPrograms)
+    getPrograms()
+      .then(({ data }) => {
+        if (data) setPrograms(data);
+      })
       .catch((err) => console.error("Failed to fetch programs", err));
   }, []);
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleClickShowConfirmPassword = () => setShowConfirmPassword((show) => !show);
+  
+  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
-    setError('');
+    setErrors({});
+    setSuccess('');
 
-    const data = new FormData(event.currentTarget);
-    const email = data.get('email') as string;
-    const name = data.get('name') as string;
-    const password = data.get('password') as string;
-    const confirmPassword = data.get('confirmPassword') as string;
-    // Changed inputs
-    const programidValue = data.get('programid') as string;
+    const formData = new FormData(event.currentTarget);
+    
+    const rawData = {
+      name: formData.get('name') as string,
+      emailPrefix: formData.get('emailPrefix') as string,
+      password: formData.get('password') as string,
+      confirmPassword: formData.get('confirmPassword') as string,
+      programid: Number(formData.get('programid')),
+    };
 
-    const programid = Number.parseInt(programidValue, 10);
+    const validationResult = registrationSchema.safeParse(rawData);
 
-    if (!email || !password || !name || !confirmPassword || !programidValue) {
-       setError('Bitte alle mit "*" markierten Felder ausfüllen.');
-       setLoading(false);
-       return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Die Passwörter stimmen nicht überein.');
+    if (!validationResult.success) {
+      const fieldErrors: typeof errors = {};
+      validationResult.error.issues.forEach((issue) => {
+        const path = issue.path[0] as keyof RegistrationFormData;
+        fieldErrors[path] = issue.message;
+      });
+      setErrors(fieldErrors);
       setLoading(false);
       return;
     }
 
-    if (password.length < 8) {
-        setError('Das Passwort muss mindestens 8 Zeichen lang sein.');
-        setLoading(false);
-        return;
-    }
-
-    if (!email.endsWith('@' + UNI_EMAIL_DOMAIN)) {
-      setError(`Die Registrierung ist nur mit einer gültigen ${UNI_EMAIL_DOMAIN} E-Mail Adresse möglich.`);
-      setLoading(false);
-      return;
-    }
-
-    if (Number.isNaN(programid)) {
-        setError('Studiengang-ID muss eine Zahl sein.');
-        setLoading(false);
-        return;
-    }
+    const validData = validationResult.data;
+    const fullEmail = `${validData.emailPrefix}${EMAIL_SUFFIX}`;
 
     try {
-      const newUser = await api.registerUser({
-          email,
-          name,
-          password,
-          programid, // Send programid
+      const { data: newUser, error: apiError } = await postAuthRegister({
+        body: {
+          email: fullEmail,
+          name: validData.name,
+          password: validData.password,
+          programid: validData.programid,
+        }
       });
-      console.log('Registrierung erfolgreich:', newUser);
-      try {
-        const loggedInUser = await api.loginUser({ email, password });
-        login(loggedInUser);
-        navigate('/dashboard');
-      } catch (loginError: unknown) {
-        const message =
-          loginError instanceof Error
-            ? loginError.message
-            : 'Bitte manuell einloggen.';
-        setError(`Registrierung erfolgreich, aber Login fehlgeschlagen: ${message}`);
-        navigate('/login');
+
+      if (apiError) {
+        // @ts-ignore
+        const msg = (apiError as any)?.message || "Die Registrierung konnte nicht abgeschlossen werden.";
+        setErrors({ global: msg });
+        return;
       }
+
+      if (newUser) {
+        console.log('Registrierung erfolgreich:', newUser);
+        setSuccess('Dein Account wurde erfolgreich erstellt! Bitte bestätige jetzt deine E-Mail-Adresse.');
+      }
+
     } catch (err: unknown) {
-      console.error('Registrierungsfehler:', err);
-      const message =
-        err instanceof Error ? err.message : 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.';
-      setError(message);
+      console.error('Network error:', err);
+      setErrors({ global: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.' });
     } finally {
       setLoading(false);
     }
@@ -128,8 +171,20 @@ export default function RegistrationPage() {
         <Typography component="h1" variant="h5">
           Account erstellen
         </Typography>
+
         <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3, width: '100%' }}>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          
+          {errors.global && <Alert severity="error" sx={{ mb: 2 }}>{errors.global}</Alert>}
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {success}
+              <br />
+              <Link component={RouterLink} to="/login" sx={{ mt: 1, display: 'block', fontWeight: 'bold' }}>
+                Zum Login
+              </Link>
+            </Alert>
+          )}
+
           <Stack spacing={2}>
             <TextField
               required
@@ -139,43 +194,39 @@ export default function RegistrationPage() {
               name="name"
               autoComplete="name"
               autoFocus
+              disabled={!!success || loading}
+              error={!!errors.name}
+              helperText={errors.name}
             />
+
             <TextField
               required
               fullWidth
-              id="email"
-              label="E-Mail Adresse"
-              name="email"
+              id="emailPrefix"
+              label="E-Mail"
+              name="emailPrefix"
               autoComplete="email"
+              disabled={!!success || loading}
+              error={!!errors.emailPrefix}
+              helperText={errors.emailPrefix}
+              slotProps={{
+                input: {
+                  endAdornment: <InputAdornment position="end">{EMAIL_SUFFIX}</InputAdornment>,
+                },
+              }}
             />
-            <TextField
-              required
-              fullWidth
-              name="password"
-              label="Passwort"
-              type="password"
-              id="password"
-              autoComplete="new-password"
-            />
-            <TextField
-              required
-              fullWidth
-              name="confirmPassword"
-              label="Passwort bestätigen"
-              type="password"
-              id="confirmPassword"
-              autoComplete="new-password"
-            />
-            {/* Removed Campus Select */}
+
             <TextField
               select
               required
               fullWidth
-              name="programid" // Changed name
+              name="programid"
               label="Studiengang"
               id="programid"
               defaultValue=""
-              helperText="Bitte wähle deinen Studiengang aus."
+              disabled={!!success || loading}
+              error={!!errors.programid}
+              helperText={errors.programid}
             >
               {programs.map((option) => (
                 <MenuItem key={option.id} value={option.id}>
@@ -183,19 +234,72 @@ export default function RegistrationPage() {
                 </MenuItem>
               ))}
             </TextField>
+
+            <FormControl variant="outlined" required error={!!errors.password} fullWidth>
+              <InputLabel htmlFor="outlined-adornment-password">Passwort</InputLabel>
+              <OutlinedInput
+                id="outlined-adornment-password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                disabled={!!success || loading}
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      onMouseDown={handleMouseDownPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+                label="Passwort"
+              />
+              {errors.password && <FormHelperText>{errors.password}</FormHelperText>}
+            </FormControl>
+
+            <FormControl variant="outlined" required error={!!errors.confirmPassword} fullWidth>
+              <InputLabel htmlFor="outlined-adornment-confirm-password">Passwort bestätigen</InputLabel>
+              <OutlinedInput
+                id="outlined-adornment-confirm-password"
+                name="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                disabled={!!success || loading}
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowConfirmPassword}
+                      onMouseDown={handleMouseDownPassword}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+                label="Passwort bestätigen"
+              />
+              {errors.confirmPassword && <FormHelperText>{errors.confirmPassword}</FormHelperText>}
+            </FormControl>
+
           </Stack>
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            disabled={loading}
-            sx={{ mt: 3, mb: 2 }}
-          >
-            {loading ? 'Registriere...' : 'Registrieren'}
-          </Button>
+
+          {!success && (
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              disabled={loading}
+              sx={{ mt: 3, mb: 2, py: 1.2 }}
+            >
+              {loading ? 'Wird registriert...' : 'Registrieren'}
+            </Button>
+          )}
+
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Link component={RouterLink} to="/login" variant="body2">
-              Hast du schon einen Account? Einloggen
+              Bereits registriert? Anmelden
             </Link>
           </Box>
         </Box>
