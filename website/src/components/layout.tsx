@@ -13,6 +13,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
   Toolbar,
   Tooltip,
   Typography,
@@ -35,18 +37,19 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { User } from '@lib/api/types.gen';
 import { useThemeMode } from '@lib/theme';
+import { useAuth } from '@lib/auth';
 
 const drawerWidthOpen = 240;
 const drawerWidthClosed = 72;
 const mobileOverlayWidth = 280;
 
 const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: <HomeRounded /> },
-  { label: 'Rekos', href: '/exams', icon: <LibraryBooks /> },
-  { label: 'Beiträge', href: '/news', icon: <ArticleRounded /> },
+  { label: 'Homepage', href: '/homepage', icon: <HomeRounded />, isRoute: true },
+  { label: 'Rekos', href: '/exams', icon: <LibraryBooks />, isRoute: true },
+  { label: 'Beiträge', href: '/news', icon: <ArticleRounded />, isRoute: true },
   { label: 'Forum', href: '/forum', icon: <ForumRounded />, isRoute: true },
-  { label: 'Galerie', href: '/media', icon: <PhotoLibraryRounded /> },
-  { label: 'Team', href: '/team', icon: <Groups /> },
+  { label: 'Galerie', href: '/media', icon: <PhotoLibraryRounded />, isRoute: true },
+  { label: 'Team', href: '/team', icon: <Groups />, isRoute: true },
 ];
 
 type SidebarLayoutProps = {
@@ -60,6 +63,9 @@ const Sidebar: React.FC<SidebarLayoutProps> = ({ user, children, title = 'Dashbo
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
   const [navOpen, setNavOpen] = React.useState<boolean>(isMdUp);
+  const [accountMenuEl, setAccountMenuEl] = React.useState<null | HTMLElement>(null);
+  const accountMenuOpen = Boolean(accountMenuEl);
+  const { logout } = useAuth();
   const isAuthenticated = Boolean(user);
 
   React.useEffect(() => {
@@ -211,9 +217,9 @@ const Sidebar: React.FC<SidebarLayoutProps> = ({ user, children, title = 'Dashbo
           width: '100%',
           backgroundImage:
             mode === 'dark'
-              ? `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${alpha(theme.palette.primary.dark, 0.2)} 35%, transparent 5%, ${alpha(theme.palette.primary.dark, 0.2)} 5%, ${theme.palette.primary.dark} 100%)`
-              : `linear-gradient(90deg, ${theme.palette.success.dark} 0%, ${alpha(theme.palette.success.main, 0.2)} 35%, transparent 5%, ${alpha(theme.palette.success.main, 0.2)} 5%, ${theme.palette.success.dark} 100%)`,
-          bgcolor: 'transparent',
+              ? `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${alpha(theme.palette.primary.dark, 0.9)} 40%, ${alpha(theme.palette.primary.dark, 0.85)} 100%)`
+              : `linear-gradient(90deg, ${theme.palette.success.dark} 0%, ${alpha(theme.palette.success.dark, 0.9)} 40%, ${alpha(theme.palette.success.dark, 0.85)} 100%)`,
+          bgcolor: mode === 'dark' ? theme.palette.primary.dark : theme.palette.success.dark,
         })}
       >
         <Toolbar>
@@ -258,12 +264,41 @@ const Sidebar: React.FC<SidebarLayoutProps> = ({ user, children, title = 'Dashbo
                 </IconButton>
               </Tooltip>
               <Tooltip title="Account">
-                <IconButton aria-label="account" color="inherit">
+                <IconButton
+                  aria-label="account"
+                  color="inherit"
+                  onClick={(e) => setAccountMenuEl(e.currentTarget)}
+                  aria-haspopup="true"
+                  aria-expanded={accountMenuOpen ? 'true' : undefined}
+                >
                   <Avatar sx={{ width: 28, height: 28 }}>
                     {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
                   </Avatar>
                 </IconButton>
               </Tooltip>
+              <Menu
+                anchorEl={accountMenuEl}
+                open={accountMenuOpen}
+                onClose={() => setAccountMenuEl(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              >
+                <MenuItem
+                  component={RouterLink}
+                  to="/dashboard"
+                  onClick={() => setAccountMenuEl(null)}
+                >
+                  Mein Profil
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    setAccountMenuEl(null);
+                    logout();
+                  }}
+                >
+                  Logout
+                </MenuItem>
+              </Menu>
             </>
           ) : (
             <Box sx={{ display: 'flex', gap: 1 }}>
@@ -351,9 +386,9 @@ const Sidebar: React.FC<SidebarLayoutProps> = ({ user, children, title = 'Dashbo
           <SidebarContent labelsVisible withCloseButton onClose={() => setNavOpen(false)} />
         </Drawer>
       )}
-      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3 } }}>
+      <Box component="main" sx={{ flexGrow: 1, p: { xs: 1, sm: 2, md: 2 } }}>
         <Toolbar />
-        <Container maxWidth="lg" disableGutters>
+        <Container maxWidth="xl" disableGutters>
           {children}
         </Container>
       </Box>
