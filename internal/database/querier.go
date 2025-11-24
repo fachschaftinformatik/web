@@ -6,6 +6,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 )
 
 type Querier interface {
@@ -14,9 +15,11 @@ type Querier interface {
 	DeleteExpiredSessions(ctx context.Context) error
 	DeleteSession(ctx context.Context, id string) error
 	DeleteUserSessions(ctx context.Context, userid string) error
+	GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error)
 	GetSession(ctx context.Context, id string) (Session, error)
 	GetUser(ctx context.Context, id string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
+	GetUserByVerificationToken(ctx context.Context, verificationToken sql.NullString) (User, error)
 	ListProgramsWithVersions(ctx context.Context) ([]ListProgramsWithVersionsRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	SetUserActive(ctx context.Context, arg SetUserActiveParams) (User, error)
@@ -25,6 +28,7 @@ type Querier interface {
 	SweepExpiredVerifications(ctx context.Context) error
 	TouchSession(ctx context.Context, id string) (Session, error)
 	UnverifyUser(ctx context.Context, id string) (User, error)
+	UpdateUserToken(ctx context.Context, arg UpdateUserTokenParams) error
 	UpdateUserVerificationWindow(ctx context.Context, arg UpdateUserVerificationWindowParams) (User, error)
 	VerifyUser(ctx context.Context, arg VerifyUserParams) (User, error)
 }

@@ -1,12 +1,13 @@
 -- name: CreateUser :one
 INSERT INTO users (
-  id, email, name, password, role, active, verified, programid
+  id, email, name, password, role, active, verified, programid, verification_token
 ) VALUES (
   sqlc.arg(id), sqlc.arg(email), sqlc.arg(name), sqlc.arg(password),
   COALESCE(sqlc.arg(role), 'user'),
   COALESCE(sqlc.arg(active), 0),
   0,
-  sqlc.arg(programid)
+  sqlc.arg(programid),
+  sqlc.arg(verification_token)
 )
 RETURNING *;
 
@@ -20,6 +21,12 @@ LIMIT 1;
 SELECT *
 FROM users
 WHERE lower(email) = lower(sqlc.arg(email))
+LIMIT 1;
+
+-- name: GetUserByVerificationToken :one
+SELECT *
+FROM users
+WHERE verification_token = sqlc.arg(verification_token)
 LIMIT 1;
 
 -- name: SetUserActive :one
@@ -38,9 +45,15 @@ RETURNING *;
 UPDATE users
 SET verified = 1,
     verified_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
-    verified_until = sqlc.arg(verified_until)
+    verified_until = sqlc.arg(verified_until),
+    verification_token = NULL
 WHERE id = sqlc.arg(id)
 RETURNING *;
+
+-- name: UpdateUserToken :exec
+UPDATE users
+SET verification_token = sqlc.arg(verification_token)
+WHERE id = sqlc.arg(id);
 
 -- name: UnverifyUser :one
 UPDATE users

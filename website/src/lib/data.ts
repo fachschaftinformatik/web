@@ -7,91 +7,223 @@ export type ForumPost = {
   category: string;
 };
 
-export const mockForumPosts: ForumPost[] = [
+export type ForumProgram = "inf-bsc" | "winf-bsc" | "med-bsc" | "inf-msc" | "winf-msc" | "med-msc";
+
+export type ForumComment = {
+  id: string;
+  author: string;
+  text: string;
+  createdAt: string;
+  parentId?: string | null;
+};
+
+export type ForumDemoPost = {
+  id: string;
+  title: string;
+  body: string;
+  tags: string[];
+  author: string;
+  createdAt: string;
+  votes: number;
+  programs: ForumProgram[];
+  comments: ForumComment[];
+};
+
+type ForumProgramMeta = {
+  id: ForumProgram;
+  label: string;
+  shortLabel: string;
+  level: "Bachelor" | "Master";
+};
+
+export const forumProgramCatalog: ForumProgramMeta[] = [
+  { id: "inf-bsc", label: "Informatik (B.Sc.)", shortLabel: "INF B.Sc.", level: "Bachelor" },
+  { id: "winf-bsc", label: "Wirtschaftsinformatik (B.Sc.)", shortLabel: "WINF B.Sc.", level: "Bachelor" },
+  { id: "med-bsc", label: "Medieninformatik (B.Sc.)", shortLabel: "MED B.Sc.", level: "Bachelor" },
+  { id: "inf-msc", label: "Informatik (M.Sc.)", shortLabel: "INF M.Sc.", level: "Master" },
+  { id: "winf-msc", label: "Wirtschaftsinformatik (M.Sc.)", shortLabel: "WINF M.Sc.", level: "Master" },
+  { id: "med-msc", label: "Medieninformatik (M.Sc.)", shortLabel: "MED M.Sc.", level: "Master" },
+];
+
+export const forumPrograms: ForumProgram[] = forumProgramCatalog.map((meta) => meta.id);
+
+const forumBaseSeeds: ForumDemoPost[] = [
   {
-    id: '1',
-    title: 'Projektideen für das Sommersemester',
-    excerpt:
-      'Ich arbeite gerade an einem Konzept für eine Event-App. Hat jemand Interesse an einer gemeinsamen Session?',
-    createdAt: '2024-02-05T09:15:00Z',
-    replies: 12,
-    category: 'Projekte',
+    id: "p1",
+    title: "Wie strukturiert ihr React-Formulare ohne libs?",
+    body: "Ich suche einen sauberen Weg für Validierung + Fehlermeldungen ohne Formik/React Hook Form. Gibt es mit MUI Best Practices?",
+    tags: ["react", "mui", "forms"],
+    author: "Lea",
+    createdAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+    votes: 7,
+    programs: ["inf-bsc", "inf-msc"],
+    comments: [
+      { id: "c1", author: "Jonas", text: "Ich nutze Zod + eigene Inputs.", createdAt: new Date(Date.now() - 32 * 3600 * 1000).toISOString() },
+      { id: "c2", author: "Mara", text: "React Hook Form ist leichtgewichtig genug.", createdAt: new Date(Date.now() - 30 * 3600 * 1000).toISOString() },
+      { id: "c3", author: "Lea", text: "Danke! Hast du ein Beispielrepo?", createdAt: new Date(Date.now() - 29 * 3600 * 1000).toISOString(), parentId: "c1" },
+      { id: "c4", author: "Noah", text: "Ich würde einen Form-Provider schreiben.", createdAt: new Date(Date.now() - 28 * 3600 * 1000).toISOString() },
+      { id: "c5", author: "Sara", text: "Oder alle Inputs als controlled Components mit Zod Resolver.", createdAt: new Date(Date.now() - 27 * 3600 * 1000).toISOString() },
+      { id: "c6", author: "Milan", text: "Ich mag react-hook-form, weil es performant ist.", createdAt: new Date(Date.now() - 26 * 3600 * 1000).toISOString() },
+      { id: "c7", author: "Nora", text: "Yup + RHF geht auch schnell.", createdAt: new Date(Date.now() - 25 * 3600 * 1000).toISOString() },
+      { id: "c8", author: "Eva", text: "Validierung nur bei Blur spart Render.", createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString() },
+      { id: "c9", author: "Timo", text: "Achte auf Accessibility, aria-describedby setzen.", createdAt: new Date(Date.now() - 23 * 3600 * 1000).toISOString() },
+      { id: "c10", author: "Luca", text: "Inline Errors lieber unter das Feld statt rechts.", createdAt: new Date(Date.now() - 22 * 3600 * 1000).toISOString() },
+      { id: "c11", author: "Lea", text: "Ich probiere mal einen FormContext.", createdAt: new Date(Date.now() - 21 * 3600 * 1000).toISOString() },
+      { id: "c12", author: "Jonas", text: "Checkout react-aria-components für Inputs.", createdAt: new Date(Date.now() - 20 * 3600 * 1000).toISOString() },
+      { id: "c13", author: "Mara", text: "Danke für die Tipps!", createdAt: new Date(Date.now() - 19 * 3600 * 1000).toISOString() },
+    ],
   },
   {
-    id: '2',
-    title: 'Vorbereitung auf die Datenbanken-Klausur',
-    excerpt:
-      'Welche Materialien nutzt ihr? Ich habe die Zusammenfassung aus dem Wiki ergänzt und suche nach weiteren Tipps.',
-    createdAt: '2024-02-03T17:42:00Z',
-    replies: 7,
-    category: 'Studium',
+    id: "p2",
+    title: "TS: Unterschied zwischen type und interface?",
+    body: "Wann würdet ihr type statt interface nutzen? Besonders im Kontext von Union-Types & Declaration-Merging.",
+    tags: ["typescript"],
+    author: "Jonas",
+    createdAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+    votes: 12,
+    programs: ["winf-bsc", "inf-msc"],
+    comments: [
+      {
+        id: "c4",
+        author: "Timo",
+        text: "Ich nehme type sobald Union/Intersection im Spiel ist.",
+        createdAt: new Date(Date.now() - 4.5 * 3600 * 1000).toISOString(),
+      },
+      {
+        id: "c5",
+        author: "Eva",
+        text: "Interfaces fürs Structural Typing in Klassen, Rest mache ich mit type.",
+        createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+      },
+      {
+        id: "c6",
+        author: "Jonas",
+        text: "Makes sense. @Timo nutzt du auch satisfies?",
+        createdAt: new Date(Date.now() - 3.5 * 3600 * 1000).toISOString(),
+        parentId: "c4",
+      },
+    ],
   },
   {
-    id: '3',
-    title: 'Aftermovie vom Campusfest',
-    excerpt: 'Die ersten Bilder sind da! Feedback willkommen, bevor das Video live geht.',
-    createdAt: '2024-02-01T11:02:00Z',
-    replies: 4,
-    category: 'Medien',
-  },
-  {
-    id: '4',
-    title: 'Neue Mentoring-Runde startet',
-    excerpt:
-      'Wir suchen Mentor:innen für Erstsemester. Wer hat Zeit für ein kurzes Briefing nächste Woche?',
-    createdAt: '2024-01-28T19:27:00Z',
-    replies: 18,
-    category: 'Community',
-  },
-  {
-    id: '5',
-    title: 'Jobangebot: Werkstudent:in Backend',
-    excerpt: 'Ein Partnerunternehmen in GE sucht Unterstützung für Go-Services. PN bei Interesse.',
-    createdAt: '2024-01-25T08:36:00Z',
-    replies: 3,
-    category: 'Jobs',
-  },
-  {
-    id: '6',
-    title: 'Workshop: UX Basics',
-    excerpt: 'Am Freitag findet ein kurzer Workshop zu UX-Research statt. Plätze sind begrenzt.',
-    createdAt: '2024-01-22T15:10:00Z',
-    replies: 9,
-    category: 'Events',
-  },
-  {
-    id: '7',
-    title: 'Suche Team für Hackathon',
-    excerpt: 'Wer möchte spontan beim RuhrHack teilnehmen? Frontend/Design wäre super.',
-    createdAt: '2024-01-20T09:48:00Z',
-    replies: 5,
-    category: 'Community',
-  },
-  {
-    id: '8',
-    title: 'Hardware-Verleih aktualisiert',
-    excerpt: 'Neue Kameras verfügbar. Bitte einmal Feedback geben, ob alles läuft.',
-    createdAt: '2024-01-18T13:55:00Z',
-    replies: 2,
-    category: 'Organisation',
-  },
-  {
-    id: '9',
-    title: 'Erfahrungen mit Go-Praktikum?',
-    excerpt: 'Ich starte bald im Backend-Team und freue mich über Tipps für den Einstieg.',
-    createdAt: '2024-01-16T08:20:00Z',
-    replies: 6,
-    category: 'Jobs',
-  },
-  {
-    id: '10',
-    title: 'Semesterplanung 2024',
-    excerpt: 'Welche Events stehen an? Lasst uns eine Übersicht sammeln.',
-    createdAt: '2024-01-12T19:05:00Z',
-    replies: 11,
-    category: 'Organisation',
+    id: "p3",
+    title: "useMemo/useCallback - Overhead vs. Nutzen?",
+    body: "Gibt es Richtlinien, wann der Overhead größer ist als der Nutzen? Beispiele willkommen.",
+    tags: ["react", "performance"],
+    author: "Mara",
+    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    votes: 3,
+    programs: ["med-bsc", "med-msc", "inf-bsc", "winf-msc"],
+    comments: [
+      {
+        id: "c7",
+        author: "Sara",
+        text: "Ich nutze useMemo fast nur um schwere Berechnungen zu cachen.",
+        createdAt: new Date(Date.now() - 1.8 * 3600 * 1000).toISOString(),
+      },
+      {
+        id: "c8",
+        author: "Luca",
+        text: "Callbacks nur wenn ich Props in tiefe Komponenten reiche.",
+        createdAt: new Date(Date.now() - 1.6 * 3600 * 1000).toISOString(),
+      },
+      {
+        id: "c9",
+        author: "Mara",
+        text: "Danke euch, ich packe das mal in unser Wiki.",
+        createdAt: new Date(Date.now() - 1.5 * 3600 * 1000).toISOString(),
+        parentId: "c7",
+      },
+    ],
   },
 ];
+
+const makeForumExtraSeeds = (n: number): ForumDemoPost[] => {
+  const authors = ["Lea", "Jonas", "Mara", "Timo", "Eva", "Noah", "Sara", "Luca", "Milan", "Nora"];
+  const topics = [
+    "State-Management mit Context",
+    "Routing mit React Router",
+    "Vite Build-Tipps",
+    "Unit-Testing mit Vitest",
+    "MUI Table vs. DataGrid",
+    "Responsive Layout mit Grid",
+    "Dark Mode mit MUI",
+    "Form-Validation Patterns",
+    "Performance messen",
+    "Code-Splitting & lazy()",
+  ];
+  const tagsPool = ["react", "typescript", "mui", "routing", "state", "hooks", "performance", "testing", "vite", "ui"];
+
+  const arr: ForumDemoPost[] = [];
+  for (let i = 0; i < n; i++) {
+    const id = `seed-${i}`;
+    const programs: ForumProgram[] =
+      i % 7 === 0
+        ? forumPrograms.slice()
+        : i % 3 === 0
+        ? ["inf-bsc", "inf-msc", "winf-bsc"]
+        : i % 2 === 0
+        ? ["med-bsc", "med-msc"]
+        : [forumPrograms[i % forumPrograms.length]];
+
+    let comments: ForumComment[] = [];
+    if (i % 5 === 0) {
+      comments = [
+        {
+          id: `${id}-c1`,
+          author: "Eva",
+          text: "Klingt spannend - hast du ein Repo?",
+          createdAt: new Date(Date.now() - (i + 2) * 3600 * 1000).toISOString(),
+        },
+        {
+          id: `${id}-c2`,
+          author: "Timo",
+          text: "Ich habe letzte Woche etwas ähnliches gebaut.",
+          createdAt: new Date(Date.now() - (i + 1.8) * 3600 * 1000).toISOString(),
+        },
+        {
+          id: `${id}-c3`,
+          author: "Eva",
+          text: "@Timo magst du den Link teilen?",
+          createdAt: new Date(Date.now() - (i + 1.6) * 3600 * 1000).toISOString(),
+          parentId: `${id}-c2`,
+        },
+      ];
+    } else if (i % 5 === 2) {
+      comments = [
+        {
+          id: `${id}-c1`,
+          author: "Jonas",
+          text: "Nutze hier unbedingt Lazy Loading.",
+          createdAt: new Date(Date.now() - (i + 2.2) * 3600 * 1000).toISOString(),
+        },
+      ];
+    }
+
+    arr.push({
+      id,
+      title: `Demo #${i + 1}: ${topics[i % topics.length]}`,
+      body: "Dies ist ein Demo-Beitrag zum Testen von Suche, Sortierung, Filter, Votes, Erstellen und verschachtelten Kommentaren.",
+      tags: [tagsPool[i % tagsPool.length], tagsPool[(i + 3) % tagsPool.length]],
+      author: authors[i % authors.length],
+      createdAt: new Date(Date.now() - (i + 4) * 2 * 3600 * 1000).toISOString(),
+      votes: (i * 7) % 25,
+      programs,
+      comments,
+    });
+  }
+  return arr;
+};
+
+export const forumDemoPosts: ForumDemoPost[] = [...forumBaseSeeds, ...makeForumExtraSeeds(20)];
+
+export const mockForumPosts: ForumPost[] = forumDemoPosts.map((post) => ({
+  id: post.id,
+  title: post.title,
+  excerpt: post.body,
+  createdAt: post.createdAt,
+  replies: post.comments.length,
+  category: post.tags[0] ?? "Allgemein",
+}));
 
 // data.ts
 
@@ -99,8 +231,7 @@ export type EventItem = { id: number; title: string; src: string };
 export type Bild = { id: number; title: string; thumb: string; full: string };
 
 // --- HILFSFUNKTION FÜR BEISPIELBILDER ---
-const pic = (seed: number, w: number, h: number) =>
-  `https://picsum.photos/seed/${seed}/${w}/${h}`;
+const pic = (seed: number, w: number, h: number) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 
 // --- HIER SIND DEINE LOKALEN BILDER & BEISPIELBILDER ---
 
@@ -142,7 +273,7 @@ export const bilderByEvent: Record<number, Bild[]> = {
 
     // ...
   ],
-  
+
   // --- EVENT 2 (DEIN ORDNER 2) ---
   // Ersetze DEIN_ORDNER_2 und die Dateinamen
   2: [
@@ -162,14 +293,12 @@ export const bilderByEvent: Record<number, Bild[]> = {
     { id: 214, title: "", thumb: "/LAN-Party 2024/14.jpg", full: "/LAN-Party 2024/14.jpg" },
     // ...
   ],
-
-  // Die restlichen Events werden automatisch mit Beispielbildern befüllt
 };
 
 // --- EVENTS 3-6 (BEISPIELBILDER) ---
 // Füllt `bilderByEvent` für alle Events > 2 automatisch mit picsum-Bildern
-events.forEach(event => {
-  if (event.id > 2) { // <-- Geändert auf 2
+events.forEach((event) => {
+  if (event.id > 2) {
     bilderByEvent[event.id] = Array.from({ length: 30 }).map((_, i) => {
       const seed = event.id * 100 + i;
       return {

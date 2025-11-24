@@ -12,25 +12,27 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-  id, email, name, password, role, active, verified, programid
+  id, email, name, password, role, active, verified, programid, verification_token
 ) VALUES (
   ?1, ?2, ?3, ?4,
   COALESCE(?5, 'user'),
   COALESCE(?6, 0),
   0,
-  ?7
+  ?7,
+  ?8
 )
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
 `
 
 type CreateUserParams struct {
-	ID        string      `json:"id"`
-	Email     string      `json:"email"`
-	Name      string      `json:"name"`
-	Password  string      `json:"password"`
-	Role      interface{} `json:"role"`
-	Active    interface{} `json:"active"`
-	Programid int64       `json:"programid"`
+	ID                string         `json:"id"`
+	Email             string         `json:"email"`
+	Name              string         `json:"name"`
+	Password          string         `json:"password"`
+	Role              interface{}    `json:"role"`
+	Active            interface{}    `json:"active"`
+	Programid         int64          `json:"programid"`
+	VerificationToken sql.NullString `json:"verification_token"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -42,6 +44,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Role,
 		arg.Active,
 		arg.Programid,
+		arg.VerificationToken,
 	)
 	var i User
 	err := row.Scan(
@@ -57,12 +60,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.VerificationToken,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
+SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
 FROM users
 WHERE id = ?1
 LIMIT 1
@@ -84,12 +88,13 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.VerificationToken,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
+SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
 FROM users
 WHERE lower(email) = lower(?1)
 LIMIT 1
@@ -111,12 +116,41 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.VerificationToken,
+	)
+	return i, err
+}
+
+const getUserByVerificationToken = `-- name: GetUserByVerificationToken :one
+SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
+FROM users
+WHERE verification_token = ?1
+LIMIT 1
+`
+
+func (q *Queries) GetUserByVerificationToken(ctx context.Context, verificationToken sql.NullString) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByVerificationToken, verificationToken)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Password,
+		&i.Role,
+		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerifiedUntil,
+		&i.Programid,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.VerificationToken,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
+SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
 FROM users
 ORDER BY created_at DESC
 LIMIT ?2 OFFSET ?1
@@ -149,6 +183,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 			&i.Programid,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.VerificationToken,
 		); err != nil {
 			return nil, err
 		}
@@ -167,7 +202,7 @@ const setUserActive = `-- name: SetUserActive :one
 UPDATE users
 SET active = ?1
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
 `
 
 type SetUserActiveParams struct {
@@ -191,6 +226,7 @@ func (q *Queries) SetUserActive(ctx context.Context, arg SetUserActiveParams) (U
 		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.VerificationToken,
 	)
 	return i, err
 }
@@ -199,7 +235,7 @@ const setUserRole = `-- name: SetUserRole :one
 UPDATE users
 SET role = ?1
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
 `
 
 type SetUserRoleParams struct {
@@ -223,6 +259,7 @@ func (q *Queries) SetUserRole(ctx context.Context, arg SetUserRoleParams) (User,
 		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.VerificationToken,
 	)
 	return i, err
 }
@@ -244,7 +281,7 @@ const unverifyUser = `-- name: UnverifyUser :one
 UPDATE users
 SET verified = 0
 WHERE id = ?1
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
 `
 
 func (q *Queries) UnverifyUser(ctx context.Context, id string) (User, error) {
@@ -263,15 +300,32 @@ func (q *Queries) UnverifyUser(ctx context.Context, id string) (User, error) {
 		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.VerificationToken,
 	)
 	return i, err
+}
+
+const updateUserToken = `-- name: UpdateUserToken :exec
+UPDATE users
+SET verification_token = ?1
+WHERE id = ?2
+`
+
+type UpdateUserTokenParams struct {
+	VerificationToken sql.NullString `json:"verification_token"`
+	ID                string         `json:"id"`
+}
+
+func (q *Queries) UpdateUserToken(ctx context.Context, arg UpdateUserTokenParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserToken, arg.VerificationToken, arg.ID)
+	return err
 }
 
 const updateUserVerificationWindow = `-- name: UpdateUserVerificationWindow :one
 UPDATE users
 SET verified_until = ?1
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
 `
 
 type UpdateUserVerificationWindowParams struct {
@@ -295,6 +349,7 @@ func (q *Queries) UpdateUserVerificationWindow(ctx context.Context, arg UpdateUs
 		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.VerificationToken,
 	)
 	return i, err
 }
@@ -303,9 +358,10 @@ const verifyUser = `-- name: VerifyUser :one
 UPDATE users
 SET verified = 1,
     verified_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
-    verified_until = ?1
+    verified_until = ?1,
+    verification_token = NULL
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
 `
 
 type VerifyUserParams struct {
@@ -329,6 +385,7 @@ func (q *Queries) VerifyUser(ctx context.Context, arg VerifyUserParams) (User, e
 		&i.Programid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.VerificationToken,
 	)
 	return i, err
 }

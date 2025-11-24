@@ -60,16 +60,17 @@ type Session struct {
 }
 
 type User struct {
-	ID            string         `json:"id"`
-	Email         string         `json:"email"`
-	Name          string         `json:"name"`
-	Password      string         `json:"password"`
-	Role          string         `json:"role"`
-	Active        int64          `json:"active"`
-	Verified      int64          `json:"verified"`
-	VerifiedAt    sql.NullString `json:"verified_at"`
-	VerifiedUntil sql.NullString `json:"verified_until"`
-	Programid     int64          `json:"programid"`
-	CreatedAt     string         `json:"created_at"`
-	UpdatedAt     string         `json:"updated_at"`
+	ID                string         `json:"id"`
+	Email             string         `json:"email"`
+	Name              string         `json:"name"`
+	Password          string         `json:"password"`
+	Role              string         `json:"role"`
+	Active            int64          `json:"active"`
+	Verified          int64          `json:"verified"`
+	VerifiedAt        sql.NullString `json:"verified_at"`
+	VerifiedUntil     sql.NullString `json:"verified_until"`
+	Programid         int64          `json:"programid"`
+	CreatedAt         string         `json:"created_at"`
+	UpdatedAt         string         `json:"updated_at"`
+	VerificationToken sql.NullString `json:"verification_token"`
 }
