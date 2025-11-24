@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Avatar,
   Box,
@@ -20,29 +20,56 @@ import { mockForumPosts } from '@lib/data';
 
 import { useAuth } from '@lib/auth';
 import { Sidebar } from '@components/layout';
-
-const campusLabels: Record<number, string> = {
-  1: 'Campus Bocholt',
-  2: 'Campus Gelsenkirchen',
-};
-
-const disciplineLabels: Record<number, string> = {
-  1: 'Wirtschaftsinformatik',
-  2: 'Anwendungsinformatik',
-  3: 'Medieninformatik',
-};
-
-const getCampusLabel = (id: number) => campusLabels[id] ?? `Campus #${id}`;
-const getDisciplineLabel = (id: number) => disciplineLabels[id] ?? `Studiengang #${id}`;
+import { getPrograms } from '@lib/api';
 
 const MAX_VISIBLE_FORUM_POSTS = 3;
 
 const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth();
+  const [programs, setPrograms] = useState<Record<number, string>>({});
+  const [programLoading, setProgramLoading] = useState(false);
 
   if (!user) {
     return null;
   }
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchPrograms = async () => {
+      setProgramLoading(true);
+      try {
+        const { data } = await getPrograms();
+        if (!isMounted) return;
+        if (data) {
+          const mapped = data.reduce<Record<number, string>>((acc, program) => {
+            acc[program.id] = program.name;
+            return acc;
+          }, {});
+          setPrograms(mapped);
+        }
+      } catch (error) {
+        console.error('Studiengänge konnten nicht geladen werden', error);
+        if (isMounted) {
+          setPrograms({});
+        }
+      } finally {
+        if (isMounted) {
+          setProgramLoading(false);
+        }
+      }
+    };
+
+    fetchPrograms();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const programLabel = programLoading
+    ? 'Studiengang wird geladen...'
+    : programs[user.programid]
+      ?? `Studiengang #${user.programid ?? 'unbekannt'}`;
 
   const visibleForumPosts = mockForumPosts.slice(0, MAX_VISIBLE_FORUM_POSTS);
   const canToggleForumPosts = mockForumPosts.length > MAX_VISIBLE_FORUM_POSTS;
@@ -121,22 +148,10 @@ const DashboardPage: React.FC = () => {
                 sm: 6
               }}>
               <Typography variant="caption" color="text.secondary">
-                Campus
-              </Typography>
-              <Typography variant="body1" fontWeight={500}>
-                {getCampusLabel(user.campusid)}
-              </Typography>
-            </Grid>
-            <Grid
-              size={{
-                xs: 12,
-                sm: 6
-              }}>
-              <Typography variant="caption" color="text.secondary">
                 Studiengang
               </Typography>
               <Typography variant="body1" fontWeight={500}>
-                {getDisciplineLabel(user.disciplineid)}
+                {programLabel}
               </Typography>
             </Grid>
             <Grid
@@ -157,10 +172,22 @@ const DashboardPage: React.FC = () => {
                 sm: 6
               }}>
               <Typography variant="caption" color="text.secondary">
-                Zuletzt aktualisiert
+                E-Mail
               </Typography>
               <Typography variant="body1" fontWeight={500}>
-                {new Date(user.updated_at).toLocaleString()}
+                {user.email}
+              </Typography>
+            </Grid>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
+              <Typography variant="caption" color="text.secondary">
+                Name
+              </Typography>
+              <Typography variant="body1" fontWeight={500}>
+                {user.name}
               </Typography>
             </Grid>
           </Grid>
