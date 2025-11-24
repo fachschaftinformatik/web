@@ -1,22 +1,21 @@
 ﻿import * as React from "react";
 import {
-  AppBar, Toolbar, Container, Box, Stack, Paper, Typography, TextField, Button,
+  Container, Box, Stack, Paper, Typography, TextField, Button,
   Card, CardContent, IconButton, Chip, Divider, Dialog, DialogTitle, DialogContent,
   DialogActions, InputAdornment, Checkbox, FormGroup, FormControlLabel, Menu, MenuItem,
-  Select, Drawer, Grid
+  Select, Drawer, Grid, Tooltip, SxProps, Pagination
 } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/Add";
 import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
-import RestoreIcon from "@mui/icons-material/Restore";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import LinkIcon from "@mui/icons-material/Link";
-import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
-import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
+import { forumDemoPosts } from "@lib/data";
 
 const PROGRAM_CATALOG = [
   { id: "inf-bsc", label: "Informatik (B.Sc.)", shortLabel: "INF B.Sc.", level: "Bachelor" },
@@ -76,7 +75,7 @@ const LEGACY_PROGRAM_MAP: Record<string, Program> = {
   "Medieninformatik (M.Sc.)": "med-msc",
 };
 
-const normalizeProgramValue = (value: any): Program | null => {
+const normalizeProgramValue = (value: unknown): Program | null => {
   if (!value) return null;
   if (PROGRAM_META_MAP[value as Program]) return value as Program;
   const alias = LEGACY_PROGRAM_MAP[String(value)];
@@ -84,7 +83,7 @@ const normalizeProgramValue = (value: any): Program | null => {
   return null;
 };
 
-const normalizeProgramList = (list: any[]): Program[] => {
+const normalizeProgramList = (list: unknown[]): Program[] => {
   const normalized = list
     .map((entry) => normalizeProgramValue(entry))
     .filter((entry): entry is Program => Boolean(entry));
@@ -101,12 +100,14 @@ const createProgramFlagState = (defaults: Program[] = []): Record<Program, boole
 export const FORUM_STORAGE_KEY = "forum-demo-posts";
 const LS_KEY = FORUM_STORAGE_KEY;
 const LS_VOTES_KEY = "forum-demo-votes";
-const currentUser = "Demo User";
 
-const uuid = () =>
-  (typeof crypto !== "undefined" && (crypto as any).randomUUID)
-    ? (crypto as any).randomUUID()
-    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+const uuid = () => {
+  const cryptoObj = typeof crypto !== "undefined" ? crypto : undefined;
+  if (cryptoObj && "randomUUID" in cryptoObj && typeof cryptoObj.randomUUID === "function") {
+    return cryptoObj.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+};
 
 function isoToShort(iso: string) {
   const d = new Date(iso);
@@ -137,6 +138,9 @@ function buildCommentTree(comments: Comment[]): CommentNode[] {
   return roots;
 }
 
+const COMMENT_COLLAPSE_LIMIT = 6;
+const POSTS_PER_PAGE = 20;
+
 function renderTextWithMentions(text: string) {
   const mentionRegex = /@[A-Za-z0-9._-]+/g;
   const nodes: React.ReactNode[] = [];
@@ -152,11 +156,11 @@ function renderTextWithMentions(text: string) {
         component="span"
         key={`${mention}-${match.index}`}
         sx={{
-          color: "secondary.main",
+          color: "primary.light",
           fontWeight: 600,
           cursor: "pointer",
           transition: "color .2s ease",
-          "&:hover": { textDecoration: "underline", color: "secondary.dark" },
+          "&:hover": { textDecoration: "underline", color: "primary.main" },
         }}
       >
         {mention}
@@ -334,11 +338,13 @@ function CommentThread({
   onReply,
   depth = 0,
   appearance,
+  canReply,
 }: {
   node: CommentNode;
   onReply: (parentId: string, text: string) => void;
   depth?: number;
   appearance: CommentAppearance;
+  canReply: boolean;
 }) {
   const [replyOpen, setReplyOpen] = React.useState(false);
   const [text, setText] = React.useState("");
@@ -386,7 +392,12 @@ function CommentThread({
           <Typography variant="body2">{renderTextWithMentions(node.text)}</Typography>
 
           <Stack direction="row" spacing={1}>
-            <Button size="small" variant="text" onClick={() => setReplyOpen((v) => !v)}>
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => setReplyOpen((v) => !v)}
+              disabled={!canReply}
+            >
               Antworten
             </Button>
           </Stack>
@@ -399,17 +410,20 @@ function CommentThread({
                 placeholder="Antwort schreiben…"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
+                disabled={!canReply}
                 sx={{ "& .MuiInputBase-root": { bgcolor: replyInputBg } }}
               />
               <Button
                 variant="contained"
                 onClick={() => {
+                  if (!canReply) return;
                   if (text.trim()) {
                     onReply(node.id, text.trim());
                     setText("");
                     setReplyOpen(false);
                   }
                 }}
+                disabled={!canReply}
               >
                 Senden
               </Button>
@@ -424,6 +438,7 @@ function CommentThread({
           onReply={onReply}
           depth={depth + 1}
           appearance={appearance}
+          canReply={canReply}
         />
       ))}
     </Box>
@@ -433,42 +448,64 @@ function CommentsSection({
   comments,
   onAdd,
   appearance,
+  canComment,
+  disabledHelper,
 }: {
   comments: Comment[];
   onAdd: (parentId: string | null, text: string) => void;
   appearance: CommentAppearance;
+  canComment: boolean;
+  disabledHelper?: string;
 }) {
-  const tree = React.useMemo(() => buildCommentTree(comments), [comments]);
-  const [text, setText] = React.useState("");
+  const totalComments = comments.length;
   const [expanded, setExpanded] = React.useState(false);
-  const [fullViewOpen, setFullViewOpen] = React.useState(false);
-  const shouldClamp = comments.length > 3;
-  const inputBg = appearance.surface === "#111a2a" ? "rgba(255,255,255,0.08)" : "#fff";
+  const visibleComments = React.useMemo(
+    () =>
+      expanded || totalComments <= COMMENT_COLLAPSE_LIMIT
+        ? comments
+        : comments.slice(0, COMMENT_COLLAPSE_LIMIT),
+    [comments, expanded, totalComments]
+  );
+  const hiddenCount = totalComments - visibleComments.length;
+  const tree = React.useMemo(() => buildCommentTree(visibleComments), [visibleComments]);
+  const [text, setText] = React.useState("");
+  const shouldScroll = visibleComments.length > 5;
+  const inputBg = appearance.surface;
+  const handleAdd = React.useCallback(
+    (parentId: string | null, t: string) => {
+      if (!expanded && (hiddenCount > 0 || totalComments >= COMMENT_COLLAPSE_LIMIT)) {
+        setExpanded(true);
+      }
+      onAdd(parentId, t);
+    },
+    [expanded, hiddenCount, totalComments, onAdd]
+  );
   const renderNodes = React.useCallback(
     () =>
       tree.map((root) => (
-        <CommentThread key={root.id} node={root} onReply={(pid, t) => onAdd(pid, t)} appearance={appearance} />
+        <CommentThread
+          key={root.id}
+          node={root}
+          onReply={(pid, t) => handleAdd(pid, t)}
+          appearance={appearance}
+          canReply={canComment}
+        />
       )),
-    [tree, onAdd, appearance]
+    [tree, handleAdd, appearance, canComment]
   );
 
   return (
-    <Box>
-      <Box
-        sx={[{
-          border: 1,
+    <Stack spacing={1.5}>
+      <Paper
+        elevation={0}
+        variant="outlined"
+        sx={{
           borderColor: appearance.border,
-          borderRadius: 2,
-          backgroundColor: appearance.surface,
-          p: 1.5
-        }, expanded ? {
-          maxHeight: 420
-        } : {
-          maxHeight: 220
-        }, shouldClamp && {
-          overflowY: "auto",
-          pr: 2
-        }]}
+          bgcolor: appearance.surface,
+          p: 1.5,
+          maxHeight: shouldScroll ? 440 : "none",
+          overflowY: shouldScroll ? "auto" : "visible",
+        }}
       >
         {tree.length ? (
           <Stack spacing={1}>{renderNodes()}</Stack>
@@ -477,50 +514,67 @@ function CommentsSection({
             Noch keine Kommentare.
           </Typography>
         )}
-      </Box>
-      {shouldClamp && (
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} mt={1}>
-          <Button size="small" variant="text" onClick={() => setExpanded((v) => !v)}>
-            {expanded ? "Weniger anzeigen" : "Mehr anzeigen"}
-          </Button>
-          <Button size="small" variant="text" onClick={() => setFullViewOpen(true)}>
-            Im Großformat öffnen
-          </Button>
-        </Stack>
-      )}
-      <Box sx={{ mt: 1.5 }}>
+        {hiddenCount > 0 && !expanded && (
+          <Box sx={{ mt: 1 }}>
+            <Button size="small" onClick={() => setExpanded(true)}>
+              Weitere Kommentare anzeigen ({hiddenCount})
+            </Button>
+          </Box>
+        )}
+      </Paper>
+      <Paper
+        elevation={0}
+        variant="outlined"
+        sx={{
+          borderColor: appearance.border,
+          bgcolor: appearance.surface,
+          p: 1.5,
+        }}
+      >
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
           <TextField
             size="small"
             fullWidth
-            placeholder="Neuen Kommentar schreiben…"
+            multiline
+            minRows={2}
+            placeholder={canComment ? "Neuen Kommentar schreiben…" : "Bitte einloggen, um zu kommentieren."}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            sx={{ "& .MuiInputBase-root": { bgcolor: inputBg } }}
+            disabled={!canComment}
+            sx={{
+              "& .MuiInputBase-root": {
+                bgcolor: inputBg,
+                borderRadius: 2,
+                borderColor: appearance.border,
+              },
+            }}
           />
           <Button
             variant="contained"
             onClick={() => {
+              if (!canComment) return;
               if (text.trim()) {
-                onAdd(null, text.trim());
+                handleAdd(null, text.trim());
                 setText("");
               }
+            }}
+            disabled={!canComment}
+            sx={{
+              alignSelf: { xs: "stretch", sm: "center" },
+              minWidth: 96,
+              height: 40,
             }}
           >
             Posten
           </Button>
         </Stack>
-      </Box>
-      <Dialog open={fullViewOpen} onClose={() => setFullViewOpen(false)} fullWidth maxWidth="md">
-        <DialogTitle>Kommentare</DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={1}>{renderNodes()}</Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setFullViewOpen(false)}>Schließen</Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+        {!canComment && disabledHelper && (
+          <Typography variant="caption" sx={{ color: appearance.textSecondary, mt: 0.75, display: "block" }}>
+            {disabledHelper}
+          </Typography>
+        )}
+      </Paper>
+    </Stack>
   );
 }
 function PostItem({
@@ -533,6 +587,10 @@ function PostItem({
   onOpenDetail,
   commentAppearance,
   mutedColor,
+  canComment,
+  commentDisabledReason,
+  currentAuthor,
+  programChipSx,
 }: {
   post: Post;
   vote: Vote;
@@ -543,11 +601,24 @@ function PostItem({
   onOpenDetail: (post: Post) => void;
   commentAppearance: CommentAppearance;
   mutedColor: string;
+  canComment: boolean;
+  commentDisabledReason?: string;
+  currentAuthor: string;
+  programChipSx: SxProps;
 }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const netVotes = post.votes + (vote as number);
   const [menuEl, setMenuEl] = React.useState<null | HTMLElement>(null);
   const openMenu = Boolean(menuEl);
   const handleOpenDetail = () => onOpenDetail(post);
+  const handleCardClick = (event: React.MouseEvent) => {
+    const target = event.target as HTMLElement;
+    if (target.closest("button, a, input, textarea, select, [role='button'], .MuiInputBase-root")) {
+      return;
+    }
+    handleOpenDetail();
+  };
 
   return (
     <Card
@@ -560,6 +631,7 @@ function PostItem({
         borderColor: "var(--card-border)",
         "&:hover": { transform: "translateY(-2px)", boxShadow: 6 },
       }}
+      onClick={handleCardClick}
     >
       <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={{ xs: 2, md: 3 }} alignItems="stretch">
@@ -577,7 +649,10 @@ function PostItem({
           >
             <IconButton
               aria-label="upvote"
-              onClick={() => onVote(post.id, vote === 1 ? 0 : 1)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onVote(post.id, vote === 1 ? 0 : 1);
+              }}
               color={vote === 1 ? "primary" : "default"}
               size="small"
             >
@@ -588,7 +663,10 @@ function PostItem({
             </Typography>
             <IconButton
               aria-label="downvote"
-              onClick={() => onVote(post.id, vote === -1 ? 0 : -1)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onVote(post.id, vote === -1 ? 0 : -1);
+              }}
               color={vote === -1 ? "primary" : "default"}
               size="small"
             >
@@ -614,7 +692,7 @@ function PostItem({
                   setMenuEl(e.currentTarget);
                 }}
               >
-                <MoreVertIcon />
+                <MoreVertIcon fontSize="small" />
               </IconButton>
             </Stack>
 
@@ -627,7 +705,17 @@ function PostItem({
               onClick={handleOpenDetail}
             >
               {post.tags.map((t) => (
-                <Chip key={t} label={t} size="small" variant="outlined" />
+                <Chip
+                  key={t}
+                  label={t}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    bgcolor: isDark ? alpha(theme.palette.primary.light, 0.12) : alpha(theme.palette.primary.main, 0.08),
+                    borderColor: isDark ? alpha(theme.palette.primary.light, 0.3) : alpha(theme.palette.primary.main, 0.25),
+                    color: theme.palette.primary.main,
+                  }}
+                />
               ))}
               <Divider flexItem orientation="vertical" sx={{ mx: 1 }} />
               {post.programs.map((p) => (
@@ -636,6 +724,7 @@ function PostItem({
                   label={PROGRAM_META_MAP[p]?.shortLabel ?? p}
                   size="small"
                   variant="outlined"
+                  sx={programChipSx}
                 />
               ))}
               <Divider flexItem orientation="vertical" sx={{ mx: 1 }} />
@@ -650,6 +739,8 @@ function PostItem({
               comments={post.comments}
               onAdd={(parentId, text) => onAddComment(post.id, parentId, text)}
               appearance={commentAppearance}
+              canComment={canComment}
+              disabledHelper={commentDisabledReason}
             />
           </Stack>
         </Stack>
@@ -672,7 +763,7 @@ function PostItem({
         >
           Beitrag melden
         </MenuItem>
-        {post.author === currentUser && (
+        {currentAuthor && post.author === currentAuthor && (
           <MenuItem
             onClick={() => {
               setMenuEl(null);
@@ -689,12 +780,18 @@ function PostItem({
 /* Hauptkomponente */
 export default function ForumStandalone() {
   const { user } = useAuth();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  const activeUserName = user?.name ?? user?.email ?? "";
+  const canComment = Boolean(user);
   // Laden + Migration (program ? programs)
   const [posts, setPosts] = React.useState<Post[]>(() => {
     try {
       const raw = typeof window !== "undefined" ? localStorage.getItem(LS_KEY) : null;
-      const data = (raw ? JSON.parse(raw) : SEED_POSTS) as any[];
-      return data.map((p) => {
+      const parsed = raw ? (JSON.parse(raw) as unknown) : SEED_POSTS;
+      const data = Array.isArray(parsed) ? parsed : SEED_POSTS;
+      type StoredPost = Partial<Post> & { program?: unknown; programs?: unknown };
+      return (data as StoredPost[]).map((p) => {
         const { program, programs: storedPrograms, ...rest } = p ?? {};
         const normalizedPrograms = Array.isArray(storedPrograms)
           ? normalizeProgramList(storedPrograms)
@@ -712,48 +809,54 @@ export default function ForumStandalone() {
   const [votes, setVotes] = React.useState<Record<string, Vote>>(() => {
     try {
       const raw = typeof window !== "undefined" ? localStorage.getItem(LS_VOTES_KEY) : null;
-      return raw ? (JSON.parse(raw) as Record<string, Vote>) : {};
+      const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+      return parsed && typeof parsed === "object" ? (parsed as Record<string, Vote>) : {};
     } catch {
       return {};
     }
   });
 
-  const [darkMode, setDarkMode] = React.useState(false);
   const palette = React.useMemo(
-    () =>
-      darkMode
-        ? {
-            background: "#05090f",
-            surface: "#0f1422",
-            card: "#161c2d",
-            border: "rgba(255,255,255,0.12)",
-            textSecondary: "rgba(255,255,255,0.6)",
-          }
-        : {
-            background: "#f5f7fb",
-            surface: "#ffffff",
-            card: "#ffffff",
-            border: "#e0e3eb",
-            textSecondary: "rgba(0,0,0,0.6)",
-          },
-    [darkMode]
+    () => ({
+      background: theme.palette.background.default,
+      surface: theme.palette.background.paper,
+      card: theme.palette.background.paper,
+      border: theme.palette.divider,
+      textSecondary: theme.palette.text.secondary,
+    }),
+    [theme]
   );
   const commentAppearance = React.useMemo<CommentAppearance>(
     () => ({
-      surface: darkMode ? "#111a2a" : "#f8fafc",
-      border: darkMode ? "rgba(255,255,255,0.15)" : "#e0e3eb",
-      accent: "#0f6e2e",
-      textSecondary: darkMode ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.6)",
+      surface: isDark ? alpha(theme.palette.common.white, 0.18) : theme.palette.grey[50],
+      border: isDark ? alpha(theme.palette.common.white, 0.45) : alpha(theme.palette.common.black, 0.12),
+      accent: theme.palette.primary.main,
+      textSecondary: isDark ? alpha(theme.palette.common.white, 0.8) : theme.palette.text.secondary,
     }),
-    [darkMode]
+    [isDark, theme]
+  );
+  const programChipSx = React.useMemo(
+    () =>
+      isDark
+        ? {
+            bgcolor: alpha(theme.palette.secondary.light, 0.2),
+            borderColor: alpha(theme.palette.secondary.light, 0.5),
+            color: theme.palette.secondary.contrastText,
+          }
+        : {
+            bgcolor: alpha(theme.palette.secondary.main, 0.1),
+            borderColor: alpha(theme.palette.secondary.main, 0.4),
+            color: theme.palette.secondary.main,
+          },
+    [isDark, theme]
   );
   const inputStyles = React.useMemo(
     () => ({
       "& .MuiInputBase-root": {
-        bgcolor: darkMode ? "rgba(255,255,255,0.08)" : "#fff",
+        bgcolor: isDark ? alpha(theme.palette.common.white, 0.08) : theme.palette.common.white,
       },
     }),
-    [darkMode]
+    [isDark, theme]
   );
 
   const [detailPost, setDetailPost] = React.useState<Post | null>(null);
@@ -819,18 +922,23 @@ export default function ForumStandalone() {
   const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [activeProgramFilters, setActiveProgramFilters] = React.useState<Program[]>([]);
   const [allProgramsOnly, setAllProgramsOnly] = React.useState(false);
+  const [page, setPage] = React.useState(1);
   const toggleProgramFilter = (program: Program) => {
     setActiveProgramFilters((prev) =>
       prev.includes(program) ? prev.filter((entry) => entry !== program) : [...prev, program]
     );
   };
-  const clearAllFilters = () => {
-    setActiveProgramFilters([]);
-    setAllProgramsOnly(false);
-    setQ("");
-    setSort("new");
-  };
-  const activeFiltersCount = activeProgramFilters.length + (allProgramsOnly ? 1 : 0);
+    const clearAllFilters = () => {
+      setActiveProgramFilters([]);
+      setAllProgramsOnly(false);
+      setQ("");
+      setSort("new");
+    };
+    const activeFiltersCount = activeProgramFilters.length + (allProgramsOnly ? 1 : 0);
+
+    React.useEffect(() => {
+      setPage(1);
+    }, [q, sort, activeProgramFilters, allProgramsOnly]);
 
   const hasAllPrograms = React.useCallback(
     (p: Post) => PROGRAMS.every((program) => p.programs.includes(program)),
@@ -860,21 +968,36 @@ export default function ForumStandalone() {
       );
     }
 
-    if (sort === "votes") {
-      return [...base].sort(
-        (a, b) => (b.votes + (votes[b.id] || 0)) - (a.votes + (votes[a.id] || 0))
-      );
-    }
-    return [...base].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
-  }, [posts, q, sort, votes, hasAllPrograms, activeProgramFilters, allProgramsOnly]);
+      if (sort === "votes") {
+        return [...base].sort(
+          (a, b) => (b.votes + (votes[b.id] || 0)) - (a.votes + (votes[a.id] || 0))
+        );
+      }
+      return [...base].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+    }, [posts, q, sort, votes, hasAllPrograms, activeProgramFilters, allProgramsOnly]);
+  
+    const pageCount = React.useMemo(
+      () => Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE)),
+      [filtered.length]
+    );
 
-  const handleVote = (id: string, v: Vote) => setVotes((prev) => ({ ...prev, [id]: v }));
+    React.useEffect(() => {
+      setPage((prev) => Math.min(prev, pageCount));
+    }, [pageCount]);
+
+    const paginatedPosts = React.useMemo(() => {
+      const startIndex = (page - 1) * POSTS_PER_PAGE;
+      return filtered.slice(startIndex, startIndex + POSTS_PER_PAGE);
+    }, [filtered, page]);
+  
+    const handleVote = (id: string, v: Vote) => setVotes((prev) => ({ ...prev, [id]: v }));
 
   // Kommentare
   const handleAddComment = (postId: string, parentId: string | null, text: string) => {
+    if (!activeUserName) return;
     const newComment: Comment = {
       id: uuid(),
-      author: currentUser,
+      author: activeUserName,
       text,
       createdAt: new Date().toISOString(),
       parentId: parentId ?? null,
@@ -901,14 +1024,19 @@ export default function ForumStandalone() {
   );
   const noProgramSelected = selectedPrograms.length === 0;
 
+  const handleOpenCreate = () => {
+    setOpen(true);
+  };
+
   const createPost = () => {
     if (!title.trim() || noProgramSelected) return;
+    const authorName = activeUserName || "Gast";
     const newPost: Post = {
       id: uuid(),
       title: title.trim(),
       body: body.trim(),
       tags: tagsInput.split(",").map((t) => t.trim()).filter(Boolean),
-      author: currentUser,
+      author: authorName,
       createdAt: new Date().toISOString(),
       votes: 0,
       programs: selectedPrograms,
@@ -929,89 +1057,63 @@ export default function ForumStandalone() {
   // Report Dialog
   const [reportFor, setReportFor] = React.useState<string | null>(null);
   const [reportReason, setReportReason] = React.useState("Spam / Werbung");
+  const [reportNote, setReportNote] = React.useState("");
   const openReport = (id: string) => setReportFor(id);
-  const sendReport = () => {
-    // hier würdest du an ein Backend schicken – wir loggen nur:
-    console.log("Report:", { postId: reportFor, reason: reportReason });
+  const closeReport = () => {
     setReportFor(null);
+    setReportNote("");
+  };
+  const sendReport = () => {
+    // hier würdest du an ein Backend schicken - wir loggen nur:
+    console.log("Report:", { postId: reportFor, reason: reportReason, note: reportNote });
+    closeReport();
   };
 
-  const resetDemo = () => {
-    setPosts(SEED_POSTS);
-    setVotes({});
-    clearAllFilters();
-    setFiltersOpen(false);
-    closeDetail();
-  };
+  const createButton = (
+    <Tooltip
+      title="Auch als Gast nutzbar."
+      disableHoverListener={false}
+    >
+      <span>
+        <Button
+          startIcon={<AddIcon fontSize="small" />}
+          variant="contained"
+          size="small"
+          onClick={handleOpenCreate}
+          sx={{ borderRadius: 999, px: 2 }}
+        >
+          Beitrag erstellen
+        </Button>
+      </span>
+    </Tooltip>
+  );
 
   /* UI */
   return (
-    <Sidebar user={user} title="Forum">
-    <Box
-      sx={[{
-        minHeight: "100vh",
-        bgcolor: palette.background,
-        "--card-bg": palette.card,
-        "--card-border": palette.border
-      }, darkMode ? {
-        color: "common.white"
-      } : {
-        color: "text.primary"
-      }]}
-    >
-      <AppBar
-        position="sticky"
-        elevation={0}
-        sx={{ backgroundColor: "#0f6e2e", color: "common.white", borderBottom: "1px solid rgba(255,255,255,0.2)" }}
+    <Sidebar user={user} title="Forum" headerActions={createButton}>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          bgcolor: palette.background,
+          "--card-bg": palette.card,
+          "--card-border": palette.border,
+          color: theme.palette.text.primary,
+        }}
       >
-        <Toolbar sx={{ minHeight: 72 }}>
-          <Container maxWidth="lg" sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
-              Campus Forum
-            </Typography>
-            <Button
-              startIcon={darkMode ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
-              variant="outlined"
-              color="inherit"
-              onClick={() => setDarkMode((prev) => !prev)}
-            >
-              {darkMode ? "Light Mode" : "Dark Mode"}
-            </Button>
-            <Button startIcon={<AddIcon />} variant="contained" onClick={() => setOpen(true)}>
-              Beitrag erstellen
-            </Button>
-            <Button startIcon={<RestoreIcon />} variant="outlined" onClick={resetDemo}>
-              Demo zurücksetzen
-            </Button>
-          </Container>
-        </Toolbar>
-      </AppBar>
-      <Container maxWidth="lg" sx={[{
-        py: 3
-      }, darkMode ? {
-        color: "common.white"
-      } : {
-        color: "text.primary"
-      }]}>
+        <Container maxWidth="lg" sx={{ py: 3 }}>
         {/* Filterleiste */}
         <Paper
           elevation={0}
-          sx={[{
+          sx={{
             p: 3,
             mb: 3,
             borderRadius: 4,
             border: "1px solid",
             borderColor: palette.border,
-            bgcolor: palette.surface
-          }, darkMode ? {
-            boxShadow: "0px 8px 24px rgba(0,0,0,0.35)"
-          } : {
-            boxShadow: "0px 8px 24px rgba(15,110,46,0.08)"
-          }, darkMode ? {
-            color: "common.white"
-          } : {
-            color: "text.primary"
-          }]}
+            bgcolor: palette.surface,
+            boxShadow: isDark ? "0px 8px 24px rgba(0,0,0,0.35)" : "0px 8px 24px rgba(15,110,46,0.08)",
+            color: theme.palette.text.primary,
+          }}
         >
           <Stack spacing={2}>
             <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "stretch", md: "center" }}>
@@ -1035,17 +1137,12 @@ export default function ForumStandalone() {
                 size="small"
                 value={sort}
                 onChange={(e) => setSort(e.target.value as "new" | "votes")}
-                sx={[{
-                  width: { xs: "100%", md: 220 }
-                }, darkMode ? {
+                sx={{
+                  width: { xs: "100%", md: 220 },
                   "& .MuiOutlinedInput-root": {
-                    bgcolor: "rgba(255,255,255,0.08)"
-                  }
-                } : {
-                  "& .MuiOutlinedInput-root": {
-                    bgcolor: "#fff"
-                  }
-                }]}
+                    bgcolor: isDark ? alpha(theme.palette.common.white, 0.08) : theme.palette.common.white,
+                  },
+                }}
               >
                 <MenuItem value="new">Neueste zuerst</MenuItem>
                 <MenuItem value="votes">Beste (Votes)</MenuItem>
@@ -1053,13 +1150,24 @@ export default function ForumStandalone() {
               <Button
                 startIcon={<FilterListIcon />}
                 variant={activeFiltersCount ? "contained" : "outlined"}
-                color="secondary"
+                color="primary"
                 onClick={() => setFiltersOpen(true)}
                 size="small"
                 sx={{
                   width: { xs: "100%", md: 220 },
                   alignSelf: { xs: "stretch", md: "center" },
                   height: 40,
+                  borderColor: isDark ? alpha(theme.palette.common.white, 0.35) : undefined,
+                  bgcolor: !activeFiltersCount && isDark ? alpha(theme.palette.common.white, 0.06) : undefined,
+                  color: !activeFiltersCount && isDark ? theme.palette.common.white : undefined,
+                  "&:hover": {
+                    bgcolor: activeFiltersCount
+                      ? undefined
+                      : isDark
+                      ? alpha(theme.palette.common.white, 0.1)
+                      : alpha(theme.palette.primary.main, 0.04),
+                    borderColor: isDark ? alpha(theme.palette.common.white, 0.5) : undefined,
+                  }
                 }}
               >
                 Filter{activeFiltersCount ? ` (${activeFiltersCount})` : ""}
@@ -1095,7 +1203,7 @@ export default function ForumStandalone() {
 
         {/* Liste */}
         <Stack spacing={2}>
-          {filtered.map((p) => (
+          {paginatedPosts.map((p) => (
             <PostItem
               key={p.id}
               post={p}
@@ -1107,21 +1215,39 @@ export default function ForumStandalone() {
               onOpenDetail={openDetail}
               commentAppearance={commentAppearance}
               mutedColor={palette.textSecondary}
+              canComment={canComment}
+              commentDisabledReason="Bitte einloggen, um zu kommentieren."
+              currentAuthor={activeUserName}
+              programChipSx={programChipSx}
             />
           ))}
           {filtered.length === 0 && (
-            <Typography variant="body2" sx={{ color: palette.textSecondary }}>
-              Keine Treffer. Suchbegriff/Filter anpassen oder Demo zurücksetzen.
-            </Typography>
+            <Stack spacing={1.5}>
+              <Typography variant="body2" sx={{ color: palette.textSecondary }}>
+                Keine Treffer. Suchbegriff oder Filter anpassen.
+              </Typography>
+            </Stack>
           )}
         </Stack>
+        {filtered.length > POSTS_PER_PAGE && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+            <Pagination
+              count={pageCount}
+              page={page}
+              onChange={(_, value) => setPage(value)}
+              color="primary"
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        )}
       </Container>
       <Drawer
         anchor="right"
         open={filtersOpen}
         onClose={() => setFiltersOpen(false)}
         slotProps={{
-          paper: { sx: { bgcolor: palette.surface, color: darkMode ? "common.white" : "text.primary" } }
+          paper: { sx: { bgcolor: palette.surface, color: theme.palette.text.primary } }
         }}
       >
         <Box sx={{ width: { xs: 340, sm: 420 }, p: 3 }}>
@@ -1155,7 +1281,6 @@ export default function ForumStandalone() {
                 {PROGRAM_CATALOG.map((meta) => {
                   const active = activeProgramFilters.includes(meta.id);
                   return (
-                    // @ts-ignore legacy Grid props retained for old layout
                     <Grid component="div" key={meta.id} size={6}>
                       <Paper
                         role="button"
@@ -1234,8 +1359,8 @@ export default function ForumStandalone() {
                       key={program}
                       label={PROGRAM_META_MAP[program]?.label ?? program}
                       size="small"
-                      color="secondary"
                       variant="outlined"
+                      sx={programChipSx}
                     />
                   ))}
                 </Stack>
@@ -1252,6 +1377,8 @@ export default function ForumStandalone() {
                   comments={detailPost.comments}
                   onAdd={(parentId, text) => handleAddComment(detailPost.id, parentId, text)}
                   appearance={commentAppearance}
+                  canComment={canComment}
+                  disabledHelper="Bitte einloggen, um zu kommentieren."
                 />
 
                 <Divider />
@@ -1359,7 +1486,7 @@ export default function ForumStandalone() {
         </DialogActions>
       </Dialog>
       {/* Report Dialog */}
-      <Dialog open={!!reportFor} onClose={() => setReportFor(null)} maxWidth="xs" fullWidth>
+      <Dialog open={!!reportFor} onClose={closeReport} maxWidth="xs" fullWidth>
         <DialogTitle>Beitrag melden</DialogTitle>
         <DialogContent dividers>
           <Typography variant="body2" sx={{ mb: 1 }}>
@@ -1377,9 +1504,18 @@ export default function ForumStandalone() {
             <MenuItem value="Urheberrechtsverletzung">Urheberrechtsverletzung</MenuItem>
             <MenuItem value="Sonstiges">Sonstiges</MenuItem>
           </Select>
+          <TextField
+            label="Zusätzliche Hinweise (optional)"
+            multiline
+            minRows={2}
+            value={reportNote}
+            onChange={(e) => setReportNote(e.target.value)}
+            fullWidth
+            sx={{ mt: 2 }}
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setReportFor(null)}>Abbrechen</Button>
+          <Button onClick={closeReport}>Abbrechen</Button>
           <Button variant="contained" onClick={sendReport}>Melden</Button>
         </DialogActions>
       </Dialog>
