@@ -97,7 +97,8 @@ const createProgramFlagState = (defaults: Program[] = []): Record<Program, boole
   });
   return flags;
 };
-const LS_KEY = "forum-demo-posts";
+export const FORUM_STORAGE_KEY = "forum-demo-posts";
+const LS_KEY = FORUM_STORAGE_KEY;
 const LS_VOTES_KEY = "forum-demo-votes";
 
 const uuid = () => {
@@ -174,7 +175,162 @@ function renderTextWithMentions(text: string) {
 }
 
 /* Seeds */
-const SEED_POSTS: Post[] = forumDemoPosts;
+const BASE_SEEDS: Post[] = [
+  {
+    id: "p1",
+    title: "Wie strukturiert ihr React-Formulare ohne libs?",
+    body: "Ich suche einen sauberen Weg für Validierung + Fehlermeldungen ohne Formik/React Hook Form. Gibt es mit MUI Best Practices?",
+    tags: ["react", "mui", "forms"],
+    author: "Lea",
+    createdAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+    votes: 7,
+    programs: ["inf-bsc", "inf-msc"],
+    comments: [
+      { id: "c1", author: "Jonas", text: "Ich nutze Zod + eigene Inputs.", createdAt: new Date(Date.now()-32*3600*1000).toISOString() },
+      { id: "c2", author: "Mara", text: "React Hook Form ist leichtgewichtig genug.", createdAt: new Date(Date.now()-30*3600*1000).toISOString() },
+      { id: "c3", author: "Lea", text: "Danke! Hast du ein Beispielrepo?", createdAt: new Date(Date.now()-29*3600*1000).toISOString(), parentId: "c1" },
+    ],
+  },
+  {
+    id: "p2",
+    title: "TS: Unterschied zwischen type und interface?",
+    body: "Wann würdet ihr type statt interface nutzen? Besonders im Kontext von Union-Types & Declaration-Merging.",
+    tags: ["typescript"],
+    author: "Jonas",
+    createdAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+    votes: 12,
+    programs: ["winf-bsc", "inf-msc"],
+    comments: [
+      {
+        id: "c4",
+        author: "Timo",
+        text: "Ich nehme type sobald Union/Intersection im Spiel ist.",
+        createdAt: new Date(Date.now() - 4.5 * 3600 * 1000).toISOString(),
+      },
+      {
+        id: "c5",
+        author: "Eva",
+        text: "Interfaces fürs Structural Typing in Klassen, Rest mache ich mit type.",
+        createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+      },
+      {
+        id: "c6",
+        author: "Jonas",
+        text: "Makes sense. @Timo nutzt du auch satisfies?",
+        createdAt: new Date(Date.now() - 3.5 * 3600 * 1000).toISOString(),
+        parentId: "c4",
+      },
+    ],
+  },
+  {
+    id: "p3",
+    title: "useMemo/useCallback – Overhead vs. Nutzen?",
+    body: "Gibt es Richtlinien, wann der Overhead größer ist als der Nutzen? Beispiele willkommen.",
+    tags: ["react", "performance"],
+    author: "Mara",
+    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    votes: 3,
+    programs: ["med-bsc", "med-msc", "inf-bsc", "winf-msc"],
+    comments: [
+      {
+        id: "c7",
+        author: "Sara",
+        text: "Ich nutze useMemo fast nur um schwere Berechnungen zu cachen.",
+        createdAt: new Date(Date.now() - 1.8 * 3600 * 1000).toISOString(),
+      },
+      {
+        id: "c8",
+        author: "Luca",
+        text: "Callbacks nur wenn ich Props in tiefe Komponenten reiche.",
+        createdAt: new Date(Date.now() - 1.6 * 3600 * 1000).toISOString(),
+      },
+      {
+        id: "c9",
+        author: "Mara",
+        text: "Danke euch, ich packe das mal in unser Wiki.",
+        createdAt: new Date(Date.now() - 1.5 * 3600 * 1000).toISOString(),
+        parentId: "c7",
+      },
+    ],
+  },
+];
+
+function makeExtraSeeds(n: number): Post[] {
+  const authors = ["Lea","Jonas","Mara","Timo","Eva","Noah","Sara","Luca","Milan","Nora"];
+  const topics = [
+    "State-Management mit Context",
+    "Routing mit React Router",
+    "Vite Build-Tipps",
+    "Unit-Testing mit Vitest",
+    "MUI Table vs. DataGrid",
+    "Responsive Layout mit Grid",
+    "Dark Mode mit MUI",
+    "Form-Validation Patterns",
+    "Performance messen",
+    "Code-Splitting & lazy()",
+  ];
+  const tagsPool = ["react","typescript","mui","routing","state","hooks","performance","testing","vite","ui"];
+
+  const arr: Post[] = [];
+  for (let i = 0; i < n; i++) {
+    const id = `seed-${i}`;
+    const programs: Program[] =
+      i % 7 === 0 ? PROGRAMS.slice()
+      : i % 3 === 0 ? ["inf-bsc", "inf-msc", "winf-bsc"]
+      : i % 2 === 0 ? ["med-bsc", "med-msc"]
+      : [PROGRAMS[i % PROGRAMS.length]];
+    let comments: Comment[] = [];
+    if (i % 5 === 0) {
+      comments = [
+        {
+          id: `${id}-c1`,
+          author: "Eva",
+          text: "Klingt spannend – hast du ein Repo?",
+          createdAt: new Date(Date.now() - (i + 2) * 3600 * 1000).toISOString(),
+        },
+        {
+          id: `${id}-c2`,
+          author: "Timo",
+          text: "Ich habe letzte Woche etwas Ähnliches gebaut.",
+          createdAt: new Date(Date.now() - (i + 1.8) * 3600 * 1000).toISOString(),
+        },
+        {
+          id: `${id}-c3`,
+          author: "Eva",
+          text: "@Timo magst du den Link teilen?",
+          createdAt: new Date(Date.now() - (i + 1.6) * 3600 * 1000).toISOString(),
+          parentId: `${id}-c2`,
+        },
+      ];
+    } else if (i % 5 === 2) {
+      comments = [
+        {
+          id: `${id}-c1`,
+          author: "Jonas",
+          text: "Nutze hier unbedingt Lazy Loading.",
+          createdAt: new Date(Date.now() - (i + 2.2) * 3600 * 1000).toISOString(),
+        },
+      ];
+    }
+
+    const base: Post = {
+      id,
+      title: `Demo #${i + 1}: ${topics[i % topics.length]}`,
+      body: "Dies ist ein Demo-Beitrag zum Testen von Suche, Sortierung, Filter, Votes, Erstellen und verschachtelten Kommentaren.",
+      tags: [tagsPool[i % tagsPool.length], tagsPool[(i + 3) % tagsPool.length]],
+      author: authors[i % authors.length],
+      createdAt: new Date(Date.now() - (i + 4) * 2 * 3600 * 1000).toISOString(),
+      votes: (i * 7) % 25,
+      programs,
+      comments,
+    };
+    arr.push(base);
+  }
+  return arr;
+}
+
+const SEED_POSTS: Post[] = [...BASE_SEEDS, ...makeExtraSeeds(20)];
+export const FORUM_SEED_POSTS = SEED_POSTS;
 
 /* Kommentare (rekursiv) */
 function CommentThread({

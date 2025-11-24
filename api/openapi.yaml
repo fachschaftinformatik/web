@@ -10,6 +10,7 @@ security:
 paths:
   /auth/csrf:
     get:
+      operationId: getAuthCsrf
       tags: [Auth]
       summary: Issue a CSRF token
       security: []
@@ -30,6 +31,7 @@ paths:
 
   /auth/register:
     post:
+      operationId: postAuthRegister
       tags: [Auth]
       summary: Register a user
       security: []
@@ -59,8 +61,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /auth/verify:
+    get:
+      operationId: getAuthVerify
+      tags: [Auth]
+      summary: Verify user email
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+        '400':
+          description: Invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /auth/login:
     post:
+      operationId: postAuthLogin
       tags: [Auth]
       summary: Log in
       security: []
@@ -86,9 +116,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '403':
+          description: Email not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /auth/logout:
     post:
+      operationId: postAuthLogout
       tags: [Auth]
       summary: Log out
       security:
@@ -110,6 +147,7 @@ paths:
 
   /auth/me:
     get:
+      operationId: getAuthMe
       tags: [Auth]
       summary: Get current user
       security:
@@ -130,6 +168,7 @@ paths:
 
   /users/{id}:
     get:
+      operationId: getUsersId
       tags: [Users]
       summary: Get user by id
       security:
@@ -155,6 +194,7 @@ paths:
 
   /users:
     get:
+      operationId: getUsers
       tags: [Users]
       summary: List users (restricted)
       security:
@@ -184,6 +224,7 @@ paths:
 
   /programs:
     get:
+      operationId: getPrograms
       tags: [Programs]
       summary: List all programs and their valid POs
       security: []
@@ -196,6 +237,31 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Program'
+
+  /programs/{id}:
+    get:
+      operationId: getProgramsId
+      tags: [Programs]
+      summary: Get program by id
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Program
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   securitySchemes:

@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 
+import { client } from '@lib/api/client.gen';
+
 import {
   ThemeModeProvider,
   ThemeModeToggle
@@ -20,13 +22,20 @@ import NewsPage from '@routes/news/page';
 import ExamsPage from '@routes/exams/page';
 import ExamsListPage from '@routes/exams/list/page';
 import ForumPage from '@routes/forum/page';
+import NewsFeedPage from '@routes/homepage/page';
+
+// Configure global client settings
+client.setConfig({
+  baseUrl: '/api', 
+  credentials: 'include', 
+});
 
 const AuthRedirector: React.FC = () => {
     const { user, isLoading } = useAuth();
     if (isLoading)
         return null;
     if (user)
-        return <Navigate to="/dashboard" replace />;
+        return <Navigate to="/homepage" replace />;
 
     return <Outlet />;
 };
@@ -47,15 +56,15 @@ function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/exams" element={<ExamsPage />} />
                 <Route path="/exams/list" element={<ExamsListPage />} />
-
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
 
+            <Route path="/homepage" element={<NewsFeedPage />} />
             <Route path="/forum" element={<ForumPage />} />
             <Route path="/media" element={<MediaPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/news" element={<NewsPage />} />
 
+            <Route path="/" element={<Navigate to="/homepage" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
 
           </Routes>
