@@ -50,6 +50,26 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// ExamListEntry defines model for ExamListEntry.
+type ExamListEntry struct {
+	Comment      *string             `json:"comment,omitempty"`
+	ExamDate     *openapi_types.Date `json:"exam_date,omitempty"`
+	Id           *string             `json:"id,omitempty"`
+	ModuleName   *string             `json:"module_name,omitempty"`
+	Moduleid     *int                `json:"moduleid,omitempty"`
+	Programid    *int                `json:"programid,omitempty"`
+	UploadedAt   *time.Time          `json:"uploaded_at,omitempty"`
+	UploaderName *string             `json:"uploader_name,omitempty"`
+	Version      *string             `json:"version,omitempty"`
+}
+
+// Module defines model for Module.
+type Module struct {
+	Id        int    `json:"id"`
+	Name      string `json:"name"`
+	Programid int    `json:"programid"`
+}
+
 // Program defines model for Program.
 type Program struct {
 	Id   int    `json:"id"`
@@ -112,6 +132,28 @@ type GetAuthVerifyParams struct {
 	Token string `form:"token" json:"token"`
 }
 
+// GetExamsParams defines parameters for GetExams.
+type GetExamsParams struct {
+	Programid *int    `form:"programid,omitempty" json:"programid,omitempty"`
+	Version   *string `form:"version,omitempty" json:"version,omitempty"`
+	Moduleid  *int    `form:"moduleid,omitempty" json:"moduleid,omitempty"`
+}
+
+// PostExamsMultipartBody defines parameters for PostExams.
+type PostExamsMultipartBody struct {
+	Comment   *string            `json:"comment,omitempty"`
+	Date      openapi_types.Date `json:"date"`
+	File      openapi_types.File `json:"file"`
+	Moduleid  int                `json:"moduleid"`
+	Programid int                `json:"programid"`
+	Version   string             `json:"version"`
+}
+
+// PostExamsParams defines parameters for PostExams.
+type PostExamsParams struct {
+	XCSRFToken CsrfHeader `json:"X-CSRF-Token"`
+}
+
 // GetUsersParams defines parameters for GetUsers.
 type GetUsersParams struct {
 	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -123,6 +165,9 @@ type PostAuthLoginJSONRequestBody = UserLogin
 
 // PostAuthRegisterJSONRequestBody defines body for PostAuthRegister for application/json ContentType.
 type PostAuthRegisterJSONRequestBody = UserRegister
+
+// PostExamsMultipartRequestBody defines body for PostExams for multipart/form-data ContentType.
+type PostExamsMultipartRequestBody PostExamsMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -144,12 +189,24 @@ type ServerInterface interface {
 	// Verify user email
 	// (GET /auth/verify)
 	GetAuthVerify(w http.ResponseWriter, r *http.Request, params GetAuthVerifyParams)
+	// List exams
+	// (GET /exams)
+	GetExams(w http.ResponseWriter, r *http.Request, params GetExamsParams)
+	// Upload an exam
+	// (POST /exams)
+	PostExams(w http.ResponseWriter, r *http.Request, params PostExamsParams)
+	// Download exam file
+	// (GET /exams/{id}/file)
+	GetExamsFile(w http.ResponseWriter, r *http.Request, id string)
 	// List all programs and their valid POs
 	// (GET /programs)
 	GetPrograms(w http.ResponseWriter, r *http.Request)
 	// Get program by id
 	// (GET /programs/{id})
 	GetProgramsId(w http.ResponseWriter, r *http.Request, id int)
+	// List modules for a program
+	// (GET /programs/{id}/modules)
+	GetProgramModules(w http.ResponseWriter, r *http.Request, id int)
 	// List users (restricted)
 	// (GET /users)
 	GetUsers(w http.ResponseWriter, r *http.Request, params GetUsersParams)
@@ -198,6 +255,24 @@ func (_ Unimplemented) GetAuthVerify(w http.ResponseWriter, r *http.Request, par
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// List exams
+// (GET /exams)
+func (_ Unimplemented) GetExams(w http.ResponseWriter, r *http.Request, params GetExamsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Upload an exam
+// (POST /exams)
+func (_ Unimplemented) PostExams(w http.ResponseWriter, r *http.Request, params PostExamsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Download exam file
+// (GET /exams/{id}/file)
+func (_ Unimplemented) GetExamsFile(w http.ResponseWriter, r *http.Request, id string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // List all programs and their valid POs
 // (GET /programs)
 func (_ Unimplemented) GetPrograms(w http.ResponseWriter, r *http.Request) {
@@ -207,6 +282,12 @@ func (_ Unimplemented) GetPrograms(w http.ResponseWriter, r *http.Request) {
 // Get program by id
 // (GET /programs/{id})
 func (_ Unimplemented) GetProgramsId(w http.ResponseWriter, r *http.Request, id int) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List modules for a program
+// (GET /programs/{id}/modules)
+func (_ Unimplemented) GetProgramModules(w http.ResponseWriter, r *http.Request, id int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -377,6 +458,136 @@ func (siw *ServerInterfaceWrapper) GetAuthVerify(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// GetExams operation middleware
+func (siw *ServerInterfaceWrapper) GetExams(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetExamsParams
+
+	// ------------- Optional query parameter "programid" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "programid", r.URL.Query(), &params.Programid)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "programid", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "version" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "version", r.URL.Query(), &params.Version)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "moduleid" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "moduleid", r.URL.Query(), &params.Moduleid)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "moduleid", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetExams(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostExams operation middleware
+func (siw *ServerInterfaceWrapper) PostExams(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostExamsParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CsrfHeader
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostExams(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetExamsFile operation middleware
+func (siw *ServerInterfaceWrapper) GetExamsFile(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetExamsFile(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetPrograms operation middleware
 func (siw *ServerInterfaceWrapper) GetPrograms(w http.ResponseWriter, r *http.Request) {
 
@@ -407,6 +618,31 @@ func (siw *ServerInterfaceWrapper) GetProgramsId(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetProgramsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetProgramModules operation middleware
+func (siw *ServerInterfaceWrapper) GetProgramModules(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetProgramModules(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -620,10 +856,22 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/auth/verify", wrapper.GetAuthVerify)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/exams", wrapper.GetExams)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/exams", wrapper.PostExams)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/exams/{id}/file", wrapper.GetExamsFile)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/programs", wrapper.GetPrograms)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/programs/{id}", wrapper.GetProgramsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/programs/{id}/modules", wrapper.GetProgramModules)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/users", wrapper.GetUsers)
@@ -638,28 +886,33 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
