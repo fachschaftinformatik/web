@@ -21,6 +21,7 @@ import TeamPage from '@routes/team/page';
 import NewsPage from '@routes/news/page';
 import ExamsPage from '@routes/exams/page';
 import ExamsListPage from '@routes/exams/list/page';
+import ExamDetailsPage from '@routes/exams/list/extensions'; // Import the details page
 import ForumPage from '@routes/forum/page';
 import NewsFeedPage from '@routes/homepage/page';
 
@@ -56,6 +57,7 @@ function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/exams" element={<ExamsPage />} />
                 <Route path="/exams/list" element={<ExamsListPage />} />
+                <Route path="/rekos/klausuren/modul" element={<ExamDetailsPage />} />
             </Route>
 
             <Route path="/forum" element={<ForumPage />} />

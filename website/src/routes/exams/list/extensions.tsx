@@ -1,244 +1,260 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Container,
   Typography,
   Divider,
-  Link,
   Paper,
-  Chip,
+  Button,
+  Stack,
+  CircularProgress,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  TextField,
+  Grid
 } from "@mui/material";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import CloudDownloadRoundedIcon from "@mui/icons-material/CloudDownloadRounded";
 
-type Entry = {
-  title: string;
-  date: string;        // Datum im Format "DD.MM.YYYY"
-  pos: string[];       // zu welchen POs die Reko gehört, z.B. ["PO16"], ["PO23"], ["PO16","PO23"]
-  href?: string;       // später Link auf PDF oder ähnliches
-  verified?: boolean;  // von der Fachschaft verifiziert oder nicht
-  version?: string;    // Version der Reko, z.B. v1.0, v2.0
-};
+import { Sidebar } from "@components/layout";
+import { useAuth } from "@lib/auth";
+import { getExams, getExamsFile } from "@lib/api";
+import type { ExamListEntry } from "@lib/api";
 
-const EPR_ENTRIES: Entry[] = [
-  {
-    title: "Einführung in die Programmierung",
-    date: "07.07.2024",
-    pos: ["PO16"],
-    verified: true,
-    version: "v1.0",
-  },
-  {
-    title: "Einführung in die Programmierung",
-    date: "24.09.2024",
-    pos: ["PO23"],
-    verified: false,
-    version: "v1.1",
-  },
-  {
-    title: "Einführung in die Programmierung",
-    date: "15.02.2025",
-    pos: ["PO16", "PO23"],
-    verified: false,
-    version: "v2.0",
-  },
-];
-
-// Mapping: Modulname → Liste von Rekos
-// aktuell nur EPR, weitere Module können später ergänzt werden
-const REKO_MAP: Record<string, Entry[]> = {
-  "Einführung in die Programmierung": EPR_ENTRIES,
-  // z.B. später:
-  // "Datenbanksysteme": [...],
-};
-
-// Fallback-Eintrag, falls es für ein Modul noch keine echten Rekos gibt
-function createDefaultEntry(modul: string, poFromState?: string | null): Entry[] {
-  const pos: string[] = [];
-
-  // Wenn PO aus dem State kommt, übernehme ich sie in den Tag
-  if (poFromState === "PO16" || poFromState === "PO23") {
-    pos.push(poFromState);
-  }
-
-  // Fallback: Standard-PO, falls nichts mitgegeben wurde
-  if (pos.length === 0) {
-    pos.push("PO16");
-  }
-
-  return [
-    {
-      title: modul,
-      date: "01.02.2024",
-      pos,
-      verified: false,
-      version: "v1.0",
-    },
-  ];
-}
-
-// Detailseite für die Rekos eines Moduls
-export default function KlausurrekosErweiterung() {
-  // Location-State (kommt von der Übersicht) + Query-Parameter als Fallback
+export default function ExamDetailsPage() {
+  const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
 
-  // Studiengang wird aktuell nur zu Info/Zukunftszwecken genutzt
-  const studiengang =
-    (location.state as any)?.studiengang ??
-    params.get("sg") ??
-    "Informatik";
+  // State passed from the previous page
+  const state = location.state as { studiengang?: string; po?: string; modul?: string; modulId?: number } || {};
+  
+  const modulName = state.modul || params.get("mod") || "Modul";
+  const modulId = state.modulId ? Number(state.modulId) : (params.get("modulId") ? Number(params.get("modulId")) : null);
+  const po = state.po || params.get("po") || "";
+  const studiengang = state.studiengang || params.get("sg") || "Allgemein";
 
-  // PO (PO16 oder PO23), nutze ich u.a. für Default-Einträge
-  const po =
-    (location.state as any)?.po ??
-    params.get("po") ??
-    "PO16";
+  const [exams, setExams] = useState<ExamListEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Modulname, ist der zentrale Schlüssel für die Darstellung
-  const modul =
-    (location.state as any)?.modul ??
-    params.get("mod") ??
-    "Einführung in die Programmierung";
+  const [selectedExam, setSelectedExam] = useState<ExamListEntry | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
-  // Rekos für das Modul holen und nach Datum sortieren (neueste zuerst)
-  const entries: Entry[] = useMemo(() => {
-    const fromMap = REKO_MAP[modul];
-    const list = fromMap ?? createDefaultEntry(modul, po);
+  useEffect(() => {
+    if (!modulId) return;
+    setLoading(true);
+    // Fetch exams for this specific module
+    getExams({ query: { moduleid: modulId } })
+      .then(({ data, error: apiError }) => {
+        if (apiError) {
+            setError("Fehler beim Laden der Klausuren.");
+        } else {
+            // Sort: Newest exam date first
+            const sorted = (data || []).sort((a, b) => {
+                const dateA = a.exam_date ? new Date(a.exam_date).getTime() : 0;
+                const dateB = b.exam_date ? new Date(b.exam_date).getTime() : 0;
+                return dateB - dateA;
+            });
+            setExams(sorted);
+        }
+      })
+      .catch(() => setError("Netzwerkfehler."))
+      .finally(() => setLoading(false));
+  }, [modulId]);
 
-    // Hilfsfunktion: Datum "DD.MM.YYYY" in eine vergleichbare Zahl umwandeln
-    const toNum = (d: string) => {
-      const [day, month, year] = d.split(".");
-      return Number(`${year}${month}${day}`);
-    };
+  const handleDownload = async () => {
+    if (!selectedExam?.id) return;
+    setDownloading(true);
+    try {
+        const { data, error } = await getExamsFile({ path: { id: selectedExam.id } });
+        
+        if (error || !data) {
+            alert("Fehler beim Herunterladen der Datei.");
+            return;
+        }
 
-    return [...list].sort((a, b) => toNum(b.date) - toNum(a.date));
-  }, [modul, po]);
+        // Create blob URL and trigger download
+        const blob = data instanceof Blob ? data : new Blob([data]);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Klausur_${modulName.replace(/\s+/g, '_')}_${selectedExam.exam_date}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    } catch (e) {
+        console.error(e);
+        alert("Ein unerwarteter Fehler ist aufgetreten.");
+    } finally {
+        setDownloading(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedExam(null);
+  };
 
   return (
-    // Container für die Detailseite (begrenzte Breite + Abstand nach oben)
-    <Container maxWidth="md" sx={{ mt: 8 }}>
-      {/* Seitentitel mit Modulnamen */}
-      <Typography variant="h4" color="primary" fontWeight={600} gutterBottom>
-        Reko: {modul}
-      </Typography>
-      {/* Kurzbeschreibung oben auf der Seite */}
-      <Typography variant="body1" sx={{ mb: 4 }}>
-        Hier findest du die vorhandenen Rekonstruktionen für dieses Modul.
-      </Typography>
-      {/* Liste der Reko-Karten */}
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {entries.map((entry, i) => (
-          <Paper
-            key={`${entry.title}-${entry.date}-${i}`}
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              transition: "0.2s",
-              "&:hover": { boxShadow: 4 },
-            }}
-          >
-            {/* Kopfbereich der Karte: Titel, PO-Tags und Verifizierungs-Haken */}
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 0.5,
-                flexWrap: "wrap",
-                gap: 1,
-              }}
-            >
-              {/* Titel + PO-Tags direkt daneben */}
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  flexWrap: "wrap",
-                }}
-              >
-                <Typography variant="h6" fontWeight={600} color="secondary">
-                  {entry.title}
-                </Typography>
-
-                <Box sx={{ display: "flex", gap: 0.5 }}>
-                  {entry.pos.map((tag) => (
-                    <Chip
-                      key={tag}
-                      label={tag}
-                      size="small"
-                      variant="outlined"
-                      color="default" // PO16 & PO23 beide neutral (schwarz)
-                    />
-                  ))}
-                </Box>
-              </Box>
-
-              {/* Haken zeigt, ob die Reko durch die Fachschaft verifiziert ist */}
-              {entry.verified && (
-                <CheckCircleIcon sx={{ color: "green", fontSize: 26 }} />
-              )}
-            </Box>
-
-            {/* Datum der Klausur / Reko */}
-            <Typography variant="body2" color="text.secondary">
-              {entry.date}
-            </Typography>
-
-            {/* Link zur eigentlichen Reko + Anzeige der Version */}
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mt: 1,
-              }}
-            >
-              <Link href={entry.href ?? "#"} color="primary">
-                Reko ansehen
-              </Link>
-
-              {entry.version && (
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ fontStyle: "italic" }}
-                >
-                  {entry.version}
-                </Typography>
-              )}
-            </Box>
-          </Paper>
-        ))}
-      </Box>
-      <Divider sx={{ my: 4 }} />
-      {/* Legende erklärt Haken, PO-Tags und Versionierung */}
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-        <Typography variant="body2" color="text.secondary">
-          <CheckCircleIcon sx={{ color: "green", fontSize: 18, mr: 1 }} />
-          = verifiziert durch die Fachschaft
-        </Typography>
-
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+    <Sidebar user={user} title={`Reko: ${modulName}`}>
+      <Container maxWidth="md" sx={{ mt: 5, mb: 10 }}>
+        
+        <Button 
+            startIcon={<ArrowBackRoundedIcon />} 
+            onClick={() => navigate(-1)} 
+            sx={{ mb: 3, color: "text.secondary" }}
         >
-          <Chip label="PO16" size="small" variant="outlined" />
-          <Chip label="PO23" size="small" variant="outlined" />
-          = Prüfungsordnung(en)
+            Zurück zur Übersicht
+        </Button>
+
+        <Typography variant="h4" fontWeight={600} gutterBottom>
+          Reko: {modulName}
         </Typography>
 
-        <Typography variant="body2" color="text.secondary">
-          <strong>Version (z. B. v1.0, v2.0)</strong> zeigt an, wie aktuell die Rekonstruktion ist.
-        </Typography>
-      </Box>
-      {/* Optional: Debug-Info, falls ich später prüfen möchte, was ankommt
-      <Typography variant="caption" color="text.disabled">
-        Debug: {studiengang} • {po}
-      </Typography>
-      */}
-    </Container>
+        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+        
+        {loading ? (
+            <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>
+        ) : exams.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: "center", borderRadius: 2, bgcolor: "background.default", border: "1px dashed", borderColor: "divider" }}>
+                <Typography color="text.secondary">Keine Rekonstruktionen für dieses Modul gefunden.</Typography>
+            </Paper>
+        ) : (
+            <Stack spacing={2}>
+                {exams.map((entry) => (
+                <Paper
+                    key={entry.id}
+                    onClick={() => setSelectedExam(entry)}
+                    sx={{
+                        p: 2.5,
+                        borderRadius: 3,
+                        transition: "all 0.2s",
+                        cursor: "pointer",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        "&:hover": { 
+                            borderColor: "primary.main",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.08)"
+                        },
+                    }}
+                >
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <Box>
+                            <Stack direction="row" alignItems="baseline" spacing={1} mb={0.5}>
+                                <Typography variant="h6" fontWeight={600}>
+                                    {modulName}
+                                </Typography>
+                                {entry.version && (
+                                    <Typography variant="body3" color="text.secondary" fontWeight={400}>
+                                        {entry.version}
+                                    </Typography>
+                                )}
+                            </Stack>
+                            
+                            <Typography variant="body2" color="text.secondary">
+                                Prüfungsdatum: {entry.exam_date ? new Date(entry.exam_date).toLocaleDateString('de-DE') : 'Unbekannt'}
+                            </Typography>
+
+                            <Typography variant="caption" color="text.disabled" display="block" mt={0.5}>
+                                Hochgeladen von {entry.uploader_name || "Unbekannt"} am {entry.uploaded_at ? new Date(entry.uploaded_at).toLocaleDateString('de-DE') : '-'}
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Paper>
+                ))}
+            </Stack>
+        )}
+
+        {/* Detail Dialog */}
+        <Dialog 
+            open={!!selectedExam} 
+            onClose={handleCloseDialog}
+            fullWidth
+            maxWidth="sm"
+            PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+            {selectedExam && (
+                <>
+                    <DialogTitle sx={{ m: 0, p: 3, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="h6" fontWeight={700}>Details zur Reko</Typography>
+                        <IconButton onClick={handleCloseDialog}><CloseRoundedIcon /></IconButton>
+                    </DialogTitle>
+                    <DialogContent sx={{ p: 3 }}>
+                        <Stack spacing={3} mt={1}>
+                            <TextField 
+                                label="Studiengang" 
+                                fullWidth 
+                                value={studiengang} 
+                                slotProps={{ input: { readOnly: true } }} 
+                                variant="filled"
+                            />
+                            <Grid container spacing={2}>
+                                <Grid item xs={6}>
+                                    <TextField 
+                                        label="Prüfungsordnung" 
+                                        fullWidth 
+                                        value={selectedExam.version} 
+                                        slotProps={{ input: { readOnly: true } }} 
+                                        variant="filled"
+                                    />
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <TextField 
+                                        label="Datum der Prüfung" 
+                                        fullWidth 
+                                        value={selectedExam.exam_date ? new Date(selectedExam.exam_date).toLocaleDateString('de-DE') : ''} 
+                                        slotProps={{ input: { readOnly: true } }} 
+                                        variant="filled"
+                                    />
+                                </Grid>
+                            </Grid>
+                            
+                            <TextField 
+                                label="Modul" 
+                                fullWidth 
+                                value={modulName} 
+                                slotProps={{ input: { readOnly: true } }} 
+                                variant="filled"
+                            />
+
+                            <TextField
+                                label="Anmerkungen"
+                                multiline
+                                minRows={3}
+                                fullWidth
+                                value={selectedExam.comment || "Keine Anmerkungen vorhanden."}
+                                slotProps={{ input: { readOnly: true } }} 
+                                variant="filled"
+                            />
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 3, pt: 0 }}>
+                        <Button onClick={handleCloseDialog} color="inherit" sx={{ mr: 1 }}>Schließen</Button>
+                        <Button 
+                            onClick={handleDownload} 
+                            variant="contained" 
+                            startIcon={downloading ? <CircularProgress size={20} color="inherit" /> : <CloudDownloadRoundedIcon />}
+                            disabled={downloading}
+                            disableElevation
+                            size="large"
+                        >
+                            {downloading ? "Lade..." : "Herunterladen"}
+                        </Button>
+                    </DialogActions>
+                </>
+            )}
+        </Dialog>
+
+      </Container>
+    </Sidebar>
   );
 }
