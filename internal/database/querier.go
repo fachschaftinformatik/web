@@ -10,16 +10,21 @@ import (
 )
 
 type Querier interface {
+	CreateExam(ctx context.Context, arg CreateExamParams) (Exam, error)
+	CreateModule(ctx context.Context, arg CreateModuleParams) (Module, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteExpiredSessions(ctx context.Context) error
 	DeleteSession(ctx context.Context, id string) error
 	DeleteUserSessions(ctx context.Context, userid string) error
+	GetExam(ctx context.Context, id string) (Exam, error)
 	GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error)
 	GetSession(ctx context.Context, id string) (Session, error)
 	GetUser(ctx context.Context, id string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByVerificationToken(ctx context.Context, verificationToken sql.NullString) (User, error)
+	ListExams(ctx context.Context, arg ListExamsParams) ([]ListExamsRow, error)
+	ListModulesByProgram(ctx context.Context, programid int64) ([]Module, error)
 	ListProgramsWithVersions(ctx context.Context) ([]ListProgramsWithVersionsRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	SetUserActive(ctx context.Context, arg SetUserActiveParams) (User, error)
