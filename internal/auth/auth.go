@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/api"
+	"github.com/fachschaftinformatik/web/internal/buckets"
 	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/email"
@@ -31,15 +32,17 @@ type Server struct {
 	Log           *log.Logger
 	Config        *config.Config
 	Email         *email.Sender
+	Store         *buckets.Client
 	SecureCookies bool
 }
 
-func NewServer(db database.Querier, logger *log.Logger, cfg *config.Config, emailSender *email.Sender) *Server {
+func NewServer(db database.Querier, logger *log.Logger, cfg *config.Config, emailSender *email.Sender, store *buckets.Client) *Server {
 	return &Server{
 		DB:            db,
 		Log:           logger,
 		Config:        cfg,
 		Email:         emailSender,
+		Store:         store,
 		SecureCookies: cfg.SecureCookies,
 	}
 }
@@ -82,12 +85,47 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Send verification email
-	go func() {
-		if err := s.Email.SendVerificationEmail(dbUser.Email, dbUser.Name, verificationToken); err != nil {
-			s.Log.Printf("Failed to send verification email to %s: %v", dbUser.Email, err)
+	if s.Config.SignupsVerify {
+		// Send verification email
+		go func() {
+			if err := s.Email.SendVerificationEmail(dbUser.Email, dbUser.Name, verificationToken); err != nil {
+				s.Log.Printf("Failed to send verification email to %s: %v", dbUser.Email, err)
+			}
+		}()
+	} else {
+		// Auto-verify
+		var verifiedUntil sql.NullString
+		now := time.Now()
+
+		if strings.HasSuffix(dbUser.Email, "@studmail.w-hs.de") {
+			year := now.Year()
+			march1 := time.Date(year, time.March, 1, 0, 0, 0, 0, time.UTC)
+			oct1 := time.Date(year, time.October, 1, 0, 0, 0, 0, time.UTC)
+
+			var nextDate time.Time
+			if now.Before(march1) {
+				nextDate = march1
+			} else if now.Before(oct1) {
+				nextDate = oct1
+			} else {
+				nextDate = time.Date(year+1, time.March, 1, 0, 0, 0, 0, time.UTC)
+			}
+			verifiedUntil = sql.NullString{String: nextDate.Format(time.RFC3339), Valid: true}
+		} else {
+			verifiedUntil = sql.NullString{Valid: false}
 		}
-	}()
+
+		updatedUser, err := s.DB.VerifyUser(r.Context(), database.VerifyUserParams{
+			ID:            dbUser.ID,
+			VerifiedUntil: verifiedUntil,
+		})
+		if err != nil {
+			s.Log.Printf("Failed to auto-verify user: %v", err)
+			s.jsonError(w, "database_error", "Could not verify user", http.StatusInternalServerError)
+			return
+		}
+		dbUser = updatedUser
+	}
 
 	apiUser, err := dbUserToAPI(dbUser)
 	if err != nil {
@@ -118,9 +156,6 @@ func (s *Server) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if dbUser.Verified == 0 {
-		// Logic to resend token if needed could go here
-		// For now, just regenerate a token and resend if one exists or if expired.
-		// Simplest approach: Always generate a new one and send it if they try to login.
 		newToken := uuid.NewString()
 		if err := s.DB.UpdateUserToken(r.Context(), database.UpdateUserTokenParams{
 			ID:                dbUser.ID,
@@ -176,12 +211,10 @@ func (s *Server) GetAuthVerify(w http.ResponseWriter, r *http.Request, params ap
 		return
 	}
 
-	// Calculate Verified Until
 	var verifiedUntil sql.NullString
 	now := time.Now()
 
 	if strings.HasSuffix(dbUser.Email, "@studmail.w-hs.de") {
-		// Determine next March 1st or October 1st
 		year := now.Year()
 		march1 := time.Date(year, time.March, 1, 0, 0, 0, 0, time.UTC)
 		oct1 := time.Date(year, time.October, 1, 0, 0, 0, 0, time.UTC)
@@ -192,17 +225,10 @@ func (s *Server) GetAuthVerify(w http.ResponseWriter, r *http.Request, params ap
 		} else if now.Before(oct1) {
 			nextDate = oct1
 		} else {
-			// After Oct 1st, next date is March 1st next year
 			nextDate = time.Date(year+1, time.March, 1, 0, 0, 0, 0, time.UTC)
 		}
 		verifiedUntil = sql.NullString{String: nextDate.Format(time.RFC3339), Valid: true}
-	} else if strings.HasSuffix(dbUser.Email, "@fachschaftinformatik.de") {
-		// Forever verified (NULL)
-		verifiedUntil = sql.NullString{Valid: false}
 	} else {
-		// Default fallback for other domains (if any allowed in future)
-		// For now, treat as students or maybe block? Assuming studmail behavior or just verified until forever for now to be safe?
-		// Prompt said "users with @studmail...". Let's assume others are external and verify once.
 		verifiedUntil = sql.NullString{Valid: false}
 	}
 
@@ -216,10 +242,7 @@ func (s *Server) GetAuthVerify(w http.ResponseWriter, r *http.Request, params ap
 		return
 	}
 
-	// Instead of JSON, we should probably redirect to the frontend dashboard or a success page
-	// But the prompt asked to hook it up. The link in email points to API.
-	// We can redirect to the frontend login page with a success parameter.
-	http.Redirect(w, r, fmt.Sprintf("%s/login?verified=true", s.Config.PublicURL), http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("%s/login?verified=true", s.Config.Domain), http.StatusFound)
 }
 
 func (s *Server) GetAuthMe(w http.ResponseWriter, r *http.Request) {
