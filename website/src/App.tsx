@@ -35,7 +35,7 @@ const AuthRedirector: React.FC = () => {
     if (isLoading)
         return null;
     if (user)
-        return <Navigate to="/homepage" replace />;
+        return <Navigate to="/" replace />;
 
     return <Outlet />;
 };
@@ -58,13 +58,12 @@ function App() {
                 <Route path="/exams/list" element={<ExamsListPage />} />
             </Route>
 
-            <Route path="/homepage" element={<NewsFeedPage />} />
             <Route path="/forum" element={<ForumPage />} />
             <Route path="/media" element={<MediaPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/news" element={<NewsPage />} />
 
-            <Route path="/" element={<Navigate to="/homepage" replace />} />
+            <Route path="/" element={<NewsFeedPage />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
 
           </Routes>
