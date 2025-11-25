@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   AppBar,
   Avatar,
@@ -20,19 +20,19 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import SearchRounded from '@mui/icons-material/SearchRounded';
 import NotificationsNoneRounded from '@mui/icons-material/NotificationsNoneRounded';
-import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
-import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
 import MenuRounded from '@mui/icons-material/MenuRounded';
-import LibraryBooks from '@mui/icons-material/LibraryBooks';
 import MenuOpenRounded from '@mui/icons-material/MenuOpenRounded';
-import HomeRounded from '@mui/icons-material/HomeRounded';
-import ArticleRounded from '@mui/icons-material/ArticleRounded';
-import PhotoLibraryRounded from '@mui/icons-material/PhotoLibraryRounded';
-import ForumRounded from '@mui/icons-material/ForumRounded';
-import Groups from '@mui/icons-material/Groups';
+import DashboardRounded from '@mui/icons-material/DashboardRounded';
+import CampaignRounded from '@mui/icons-material/CampaignRounded';
+import SchoolRounded from '@mui/icons-material/SchoolRounded';
+import QuestionAnswerRounded from '@mui/icons-material/QuestionAnswerRounded';
+import CollectionsRounded from '@mui/icons-material/CollectionsRounded';
+import PeopleRounded from '@mui/icons-material/PeopleRounded';
+import PersonRounded from '@mui/icons-material/PersonRounded';
+import LogoutRounded from '@mui/icons-material/LogoutRounded';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { User } from '@lib/api/types.gen';
@@ -41,355 +41,217 @@ import { useAuth } from '@lib/auth';
 
 const drawerWidthOpen = 240;
 const drawerWidthClosed = 72;
-const mobileOverlayWidth = 280;
 
-const navItems = [
-  { label: 'Homepage', href: '/homepage', icon: <HomeRounded />, isRoute: true },
-  { label: 'Rekos', href: '/exams', icon: <LibraryBooks />, isRoute: true },
-  { label: 'Beiträge', href: '/news', icon: <ArticleRounded />, isRoute: true },
-  { label: 'Forum', href: '/forum', icon: <ForumRounded />, isRoute: true },
-  { label: 'Galerie', href: '/media', icon: <PhotoLibraryRounded />, isRoute: true },
-  { label: 'Team', href: '/team', icon: <Groups />, isRoute: true },
+const avatarPalette = [
+  '#d32f2f',
+  '#c2185b',
+  '#7b1fa2',
+  '#512da8',
+  '#303f9f',
+  '#1976d2',
+  '#0288d1',
+  '#0097a7',
+  '#00796b',
+  '#388e3c',
+  '#e64a19',
+  '#5d4037',
+  '#455a64',
 ];
 
-type SidebarLayoutProps = {
-  user?: User | null;
-  children: React.ReactNode;
-  title?: string;
+const stringToColor = (string?: string) => {
+  if (!string) return avatarPalette[0];
+  let hash = 0;
+  for (let i = 0; i < string.length; i++) {
+    hash = string.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash % avatarPalette.length);
+  return avatarPalette[index];
 };
 
-const Sidebar: React.FC<SidebarLayoutProps> = ({ user, children, title = 'Dashboard' }) => {
-  const { mode, toggleMode } = useThemeMode();
+const navItems = [
+  { label: 'Startseite', href: '/', icon: <DashboardRounded />, isRoute: true },
+  { label: 'Ankündigungen', href: '/news', icon: <CampaignRounded />, isRoute: true },
+  { label: 'Rekos', href: '/exams', icon: <SchoolRounded />, isRoute: true },
+  { label: 'Forum', href: '/forum', icon: <QuestionAnswerRounded />, isRoute: true },
+  { label: 'Galerie', href: '/media', icon: <CollectionsRounded />, isRoute: true },
+  { label: 'Team', href: '/team', icon: <PeopleRounded />, isRoute: true },
+];
+
+const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; children: React.ReactNode; title?: string }) => {
+  const { mode } = useThemeMode();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
-  const [navOpen, setNavOpen] = React.useState<boolean>(isMdUp);
-  const [accountMenuEl, setAccountMenuEl] = React.useState<null | HTMLElement>(null);
-  const accountMenuOpen = Boolean(accountMenuEl);
+  const [navOpen, setNavOpen] = useState(isMdUp);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
   const { logout } = useAuth();
-  const isAuthenticated = Boolean(user);
 
-  React.useEffect(() => {
+  const avatarColor = useMemo(() => stringToColor(user?.name), [user?.name]);
+  const avatarLetter = user?.name ? user.name.charAt(0).toUpperCase() : '?';
+
+  useEffect(() => {
     setNavOpen(isMdUp);
   }, [isMdUp]);
 
-  const toggleNav = () => setNavOpen((o) => !o);
-
-  const NavList = ({
-    labelsVisible,
-    onItemClick,
-  }: {
-    labelsVisible: boolean;
-    onItemClick?: () => void;
-  }) => (
-    <List sx={{ py: 0 }}>
-      {navItems.map(({ label, href, icon, isRoute }) => (
-        <Tooltip key={label} title={label} placement="right" disableHoverListener={labelsVisible}>
-          <ListItemButton
-            component={isRoute ? RouterLink : 'a'}
-            to={isRoute ? href : undefined}
-            href={!isRoute ? href : undefined}
-            onClick={onItemClick}
-            sx={[(theme) => ({
-              minHeight: 48,
-              borderRadius: 2,
-              color: theme.palette.text.primary,
-              '&:hover': {
-                bgcolor:
-                  alpha(theme.palette.primary.main, 0.08),
-                ...theme.applyStyles("dark", {
-                  bgcolor: alpha(theme.palette.primary.main, 0.15)
-                })
-              },
-              ...theme.applyStyles("dark", {
-                color: theme.palette.grey[100]
-              })
-            }), labelsVisible ? {
-              justifyContent: 'flex-start'
-            } : {
-              justifyContent: 'center'
-            }, labelsVisible ? {
-              px: 2
-            } : {
-              px: 0
-            }]}
-          >
-            <ListItemIcon
-              sx={[(theme) => ({
-                minWidth: 0,
-                justifyContent: 'center',
-                color: theme.palette.primary.main,
-                ...theme.applyStyles("dark", {
-                  color: theme.palette.primary.light
-                })
-              }), labelsVisible ? {
-                mr: 1.5
-              } : {
-                mr: 0
-              }]}
-            >
-              {icon}
-            </ListItemIcon>
-            {labelsVisible && <ListItemText primary={label} />}
-          </ListItemButton>
-        </Tooltip>
-      ))}
-    </List>
-  );
-
-  const SidebarContent = ({
-    labelsVisible,
-    withCloseButton,
-    onClose,
-  }: {
-    labelsVisible: boolean;
-    withCloseButton?: boolean;
-    onClose?: () => void;
-  }) => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-      {withCloseButton && (
+  const handleMenuClose = () => setAnchorEl(null);
+  
+  const drawerContent = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {!isMdUp && (
         <>
           <Toolbar sx={{ justifyContent: 'flex-end' }}>
-            <Tooltip title="Menü schließen">
-              <IconButton aria-label="close menu" onClick={onClose}>
-                <MenuOpenRounded />
-              </IconButton>
-            </Tooltip>
+             <IconButton onClick={() => setNavOpen(false)}>
+               <MenuOpenRounded />
+             </IconButton>
           </Toolbar>
           <Divider />
         </>
       )}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
-        <NavList labelsVisible={labelsVisible} onItemClick={onClose} />
-      </Box>
-      <Divider />
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 1 }}>
-        <Tooltip title="Farbschema wechseln">
-          <IconButton
-            aria-label="toggle color mode"
-            onClick={toggleMode}
-            sx={[(theme) => ({
-              border: `1px solid ${alpha(theme.palette.primary.main, mode === 'dark' ? 0.5 : 0.25)}`,
-              transition: theme.transitions.create(['background-color', 'border-color'], {
-                duration: theme.transitions.duration.shortest,
-              }),
-              '&:hover': {
-                borderColor: alpha(theme.palette.primary.main, 0.6)
-              }
-            }), mode === 'dark' ? {
-              bgcolor: alpha(theme.palette.primary.dark, 0.35)
-            } : {
-              bgcolor: alpha(theme.palette.primary.main, 0.1)
-            }, mode === 'dark' ? {
-              color: theme.palette.primary.contrastText
-            } : {
-              color: theme.palette.primary.main
-            }, mode === 'dark' ? {
-              '&:hover': {
-                bgcolor: alpha(theme.palette.primary.dark, 0.55)
-              }
-            } : {
-              '&:hover': {
-                bgcolor: alpha(theme.palette.primary.main, 0.2)
-              }
-            }]}
-          >
-            {mode === 'dark' ? <Brightness7Rounded /> : <Brightness4Rounded />}
-          </IconButton>
-        </Tooltip>
-      </Box>
+      
+      <List sx={{ pt: 1 }}>
+        {navItems.map((item) => (
+          <Tooltip key={item.label} title={navOpen ? '' : item.label} placement="right">
+            <ListItemButton
+              component={item.isRoute ? RouterLink : 'a'}
+              to={item.isRoute ? item.href : undefined}
+              href={!item.isRoute ? item.href : undefined}
+              sx={{
+                minHeight: 48,
+                justifyContent: navOpen ? 'initial' : 'center',
+                px: 2.5,
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 0, mr: navOpen ? 3 : 'auto', justifyContent: 'center' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.label} sx={{ opacity: navOpen ? 1 : 0 }} />
+            </ListItemButton>
+          </Tooltip>
+        ))}
+      </List>
     </Box>
   );
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        minHeight: '100dvh',
-        bgcolor: 'background.default',
-        color: 'text.primary',
-      }}
-    >
-    <AppBar
-        position="fixed"
-        color="primary"
-        sx={(theme) => ({
-          zIndex: theme.zIndex.drawer + 1,
-          width: '100%',
-          backgroundImage:
-            mode === 'dark'
-              ? `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${alpha(theme.palette.primary.dark, 0.9)} 40%, ${alpha(theme.palette.primary.dark, 0.85)} 100%)`
-              : `linear-gradient(90deg, ${theme.palette.success.dark} 0%, ${alpha(theme.palette.success.dark, 0.9)} 40%, ${alpha(theme.palette.success.dark, 0.85)} 100%)`,
-          bgcolor: mode === 'dark' ? theme.palette.primary.dark : theme.palette.success.dark,
-        })}
-      >
+    <Box sx={{ display: 'flex' }}>
+      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
-          <Tooltip
-            title={
-              isMdUp
-                ? navOpen
-                  ? 'Sidebar einklappen'
-                  : 'Sidebar ausklappen'
-                : navOpen
-                  ? 'Menü schließen'
-                  : 'Menü öffnen'
-            }
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={() => setNavOpen(!navOpen)}
+            sx={{ mr: 2, display: { xs: 'block', md: 'block' } }}
           >
-            <IconButton
-              edge="start"
-              color="inherit"
-              aria-label="toggle sidebar"
-              aria-expanded={navOpen}
-              onClick={toggleNav}
-              sx={{ mr: 1 }}
-            >
-              {navOpen ? <MenuOpenRounded /> : <MenuRounded />}
-            </IconButton>
-          </Tooltip>
-          <Typography variant="h6" noWrap component="div">
+             {navOpen ? <MenuOpenRounded /> : <MenuRounded />}
+          </IconButton>
+          
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
-          <Box sx={{ flexGrow: 1 }} />
-          {isAuthenticated ? (
+
+          {user ? (
             <>
               <Tooltip title="Suche">
-                <IconButton aria-label="search" color="inherit">
+                <IconButton color="inherit" size="large">
                   <SearchRounded />
                 </IconButton>
               </Tooltip>
+
               <Tooltip title="Benachrichtigungen">
-                <IconButton aria-label="notifications" sx={{ mx: 0.5 }} color="inherit">
-                  <Badge badgeContent={99} color="error">
+                <IconButton color="inherit" size="large" sx={{ mr: 1 }}>
+                  <Badge badgeContent={4} color="error">
                     <NotificationsNoneRounded />
                   </Badge>
                 </IconButton>
               </Tooltip>
+
               <Tooltip title="Account">
-                <IconButton
-                  aria-label="account"
-                  color="inherit"
-                  onClick={(e) => setAccountMenuEl(e.currentTarget)}
+                <IconButton 
+                  onClick={(e) => setAnchorEl(e.currentTarget)} 
+                  size="small"
+                  aria-controls={open ? 'account-menu' : undefined}
                   aria-haspopup="true"
-                  aria-expanded={accountMenuOpen ? 'true' : undefined}
+                  aria-expanded={open ? 'true' : undefined}
                 >
-                  <Avatar sx={{ width: 28, height: 28 }}>
-                    {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
+                  <Avatar 
+                    sx={{ 
+                      width: 32, 
+                      height: 32,
+                      bgcolor: avatarColor,
+                      fontSize: '0.9rem',
+                      fontWeight: 600
+                    }}
+                  >
+                      {avatarLetter}
                   </Avatar>
                 </IconButton>
               </Tooltip>
+              
               <Menu
-                anchorEl={accountMenuEl}
-                open={accountMenuOpen}
-                onClose={() => setAccountMenuEl(null)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                anchorEl={anchorEl}
+                id="account-menu"
+                open={open}
+                onClose={handleMenuClose}
+                onClick={handleMenuClose}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                PaperProps={{
+                  elevation: 0,
+                  sx: {
+                    overflow: 'visible',
+                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                    mt: 1.5,
+                    minWidth: 150,
+                  },
+                }}
               >
-                <MenuItem
-                  component={RouterLink}
-                  to="/dashboard"
-                  onClick={() => setAccountMenuEl(null)}
-                >
+                <MenuItem component={RouterLink} to="/profile">
+                  <ListItemIcon>
+                    <PersonRounded fontSize="small" />
+                  </ListItemIcon>
                   Mein Profil
                 </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    setAccountMenuEl(null);
-                    logout();
-                  }}
-                >
+                <MenuItem onClick={() => { logout(); }}>
+                  <ListItemIcon>
+                    <LogoutRounded fontSize="small" />
+                  </ListItemIcon>
                   Logout
                 </MenuItem>
               </Menu>
             </>
           ) : (
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                component={RouterLink}
-                to="/login"
-                color="inherit"
-                sx={{ fontWeight: 600 }}
-              >
-                Login
-              </Button>
-              <Button
-                component={RouterLink}
-                to="/register"
-                variant="outlined"
-                color="inherit"
-                sx={(theme) => ({
-                  fontWeight: 600,
-                  borderColor: theme.palette.common.white,
-                  color: theme.palette.common.white,
-                  '&:hover': {
-                    borderColor: theme.palette.common.white,
-                    bgcolor: alpha(theme.palette.common.white, 0.16),
-                  },
-                })}
-              >
-                Registrieren
-              </Button>
-            </Box>
+            <Button color="inherit" component={RouterLink} to="/login">Login</Button>
           )}
         </Toolbar>
       </AppBar>
+
       <Drawer
-        variant="permanent"
-        sx={[(t) => ({
-          display: { xs: 'none', md: 'block' },
+        variant={isMdUp ? "permanent" : "temporary"}
+        open={navOpen}
+        onClose={() => setNavOpen(false)}
+        sx={{
+          width: navOpen ? drawerWidthOpen : drawerWidthClosed,
           flexShrink: 0,
           whiteSpace: 'nowrap',
+          boxSizing: 'border-box',
           '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            transition: t.transitions.create('width', {
-              easing: t.transitions.easing.sharp,
-              duration: navOpen ? t.transitions.duration.enteringScreen : t.transitions.duration.leavingScreen,
+            width: navOpen ? drawerWidthOpen : drawerWidthClosed,
+            transition: theme.transitions.create('width', {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
             }),
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
-          }
-        }), navOpen ? {
-          width: {
-            md: drawerWidthOpen
-          }
-        } : {
-          width: {
-            md: drawerWidthClosed
-          }
-        }, navOpen ? {
-          '& .MuiDrawer-paper': {
-            width: {
-              md: drawerWidthOpen
-            }
-          }
-        } : {
-          '& .MuiDrawer-paper': {
-            width: {
-              md: drawerWidthClosed
-            }
-          }
-        }]}
+            overflowX: 'hidden',
+          },
+        }}
       >
         <Toolbar />
-        <Divider />
-        <SidebarContent labelsVisible={isMdUp && navOpen} />
+        {drawerContent}
       </Drawer>
-      {!isMdUp && (
-        <Drawer
-          variant="temporary"
-          open={navOpen}
-          onClose={() => setNavOpen(false)}
-          ModalProps={{ keepMounted: true }}
-          slotProps={{
-            paper: { sx: { width: mobileOverlayWidth } }
-          }}
-        >
-          <SidebarContent labelsVisible withCloseButton onClose={() => setNavOpen(false)} />
-        </Drawer>
-      )}
-      <Box component="main" sx={{ flexGrow: 1, p: { xs: 1, sm: 2, md: 2 } }}>
+
+      <Box component="main" sx={{ flexGrow: 1, p: 3, width: '100%' }}>
         <Toolbar />
         <Container maxWidth="xl" disableGutters>
-          {children}
+            {children}
         </Container>
       </Box>
     </Box>
