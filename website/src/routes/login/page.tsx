@@ -28,8 +28,10 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { postAuthLogin } from '@lib/api';
 import { useAuth, REMEMBERED_FLAG_KEY } from '@lib/auth';
 
+const EMAIL_SUFFIX = '@studmail.w-hs.de';
+
 const loginSchema = z.object({
-  email: z.string().min(1, "Bitte gib deine E-Mail-Adresse ein.").email("Diese E-Mail-Adresse scheint nicht gültig zu sein."),
+  emailPrefix: z.string().min(1, "Bitte gib dein E-Mail-Kürzel ein."),
   password: z.string().min(1, "Bitte gib dein Passwort ein."),
 });
 
@@ -69,7 +71,7 @@ export default function LoginPage() {
 
     const formData = new FormData(event.currentTarget);
     const rawData = {
-      email: formData.get('email') as string,
+      emailPrefix: formData.get('emailPrefix') as string,
       password: formData.get('password') as string,
     };
 
@@ -86,11 +88,12 @@ export default function LoginPage() {
       return;
     }
 
-    const { email, password } = validationResult.data;
+    const { emailPrefix, password } = validationResult.data;
+    const fullEmail = `${emailPrefix}${EMAIL_SUFFIX}`;
 
     try {
       const { data: user, error: apiError } = await postAuthLogin({
-        body: { email, password }
+        body: { email: fullEmail, password }
       });
 
       if (apiError) {
@@ -142,14 +145,19 @@ export default function LoginPage() {
             <TextField
               required
               fullWidth
-              id="email"
-              label="E-Mail Adresse"
-              name="email"
+              id="emailPrefix"
+              label="E-Mail"
+              name="emailPrefix"
               autoComplete="email"
               autoFocus
               disabled={loading}
-              error={!!errors.email}
-              helperText={errors.email}
+              error={!!errors.emailPrefix}
+              helperText={errors.emailPrefix}
+              slotProps={{
+                input: {
+                  endAdornment: <InputAdornment position="end">{EMAIL_SUFFIX}</InputAdornment>,
+                },
+              }}
             />
             
             <FormControl variant="outlined" required error={!!errors.password} fullWidth>
