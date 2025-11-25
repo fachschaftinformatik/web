@@ -129,7 +129,7 @@ const NewsFeedPage: React.FC = () => {
     : alpha(theme.palette.success.dark, 0.25);
 
   return (
-    <Sidebar user={user} title="Neueste Neuigkeiten">
+    <Sidebar user={user} title="Startseite">
       <Box
         sx={{
           display: 'flex',
@@ -303,7 +303,7 @@ const NewsFeedPage: React.FC = () => {
           >
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
               <Typography variant="h4" fontWeight={800}>
-                Neusten Neuigkeiten
+                Neuigkeiten
               </Typography>
               <IconButton component={RouterLink} to="/news">
                 <MoreVertRounded />
