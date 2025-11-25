@@ -17,6 +17,7 @@ type Config struct {
 	S3AccessKey   string
 	S3SecretKey   string
 	S3UseSSL      bool
+	SignupsVerify bool
 }
 
 func New() *Config {
@@ -35,6 +36,7 @@ func New() *Config {
 		S3AccessKey:   getEnv("S3_ACCESS_KEY", ""),
 		S3SecretKey:   getEnv("S3_SECRET_KEY", ""),
 		S3UseSSL:      getEnv("S3_USE_SSL", "false") == "true",
+		SignupsVerify: getEnv("SIGNUPS_VERIFY", "true") == "true",
 	}
 }
 
