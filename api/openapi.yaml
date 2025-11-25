@@ -1,3 +1,4 @@
+
 openapi: 3.1.2
 info:
   title: api
@@ -263,6 +264,131 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /programs/{id}/modules:
+    get:
+      operationId: getProgramModules
+      tags: [Programs, Modules]
+      summary: List modules for a program
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: List of modules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Module'
+
+  /exams:
+    get:
+      operationId: getExams
+      tags: [Exams]
+      summary: List exams
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: programid
+          in: query
+          schema: { type: integer }
+        - name: version
+          in: query
+          schema: { type: string }
+        - name: moduleid
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: List of exams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExamListEntry'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      operationId: postExams
+      tags: [Exams]
+      summary: Upload an exam
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfHeader'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, programid, version, moduleid, date]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                programid:
+                  type: integer
+                version:
+                  type: string
+                moduleid:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+                comment:
+                  type: string
+      responses:
+        '201':
+          description: Exam uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamListEntry'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /exams/{id}/file:
+    get:
+      operationId: getExamsFile
+      tags: [Exams]
+      summary: Download exam file
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: File content
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   securitySchemes:
     cookieAuth:
@@ -302,6 +428,27 @@ components:
           items:
             type: string
           description: "List of valid POs for this program (e.g. PO2016, PO2023)"
+
+    Module:
+      type: object
+      required: [id, programid, name]
+      properties:
+        id: { type: integer }
+        programid: { type: integer }
+        name: { type: string }
+
+    ExamListEntry:
+      type: object
+      properties:
+        id: { type: string }
+        programid: { type: integer }
+        version: { type: string }
+        moduleid: { type: integer }
+        module_name: { type: string }
+        exam_date: { type: string, format: date }
+        uploaded_at: { type: string, format: date-time }
+        uploader_name: { type: string }
+        comment: { type: string }
 
     User:
       type: object
