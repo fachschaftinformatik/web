@@ -1,465 +1,341 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Container,
   Typography,
-  Button,
-  OutlinedInput,
-  InputAdornment,
-  IconButton,
-  Divider,
-  Menu,
   MenuItem,
+  TextField,
+  InputAdornment,
+  Paper,
+  Stack,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  IconButton,
+  Autocomplete
 } from "@mui/material";
 
-import ArrowDropDownRoundedIcon from "@mui/icons-material/ArrowDropDownRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
+import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
+import ArrowForwardIosRoundedIcon from '@mui/icons-material/ArrowForwardIosRounded';
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
+import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRounded';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import { Link as RouterLink } from "react-router-dom";
 
+import { useAuth } from "@lib/auth";
+import { Sidebar } from "@components/layout";
+
+const studyPrograms = [
+  { id: 1, name: "Informatik (B. Sc.)", versions: ["PO2023", "PO2016"] },
+  { id: 4, name: "Informatik (M. Sc.)", versions: ["PO2023", "PO2016"] },
+  { id: 2, name: "Informatik und Design (B. Sc.)", versions: ["PO2023"] },
+  { id: 7, name: "Internetsicherheit (M. Sc.)", versions: ["PO2023", "PO2016"] },
+  { id: 5, name: "Medieninformatik (M. Sc.)", versions: ["PO2023", "PO2016"] },
+  { id: 3, name: "Wirtschaftsinformatik (B. Sc.)", versions: ["PO2023", "PO2016"] },
+  { id: 6, name: "Wirtschaftsinformatik (M. Sc.)", versions: ["PO2023", "PO2016"] }
+];
+
 type Semester = { title: string; items: string[] };
-const piPO16Semesters: Semester[] = [
-  {
-    title: "1. Semester",
-    items: [
-      "Technisches Englisch für Informatiker",
-      "Technische Grundlagen der Informatik",
-      "Grundlagen der Mathematik für Informatiker",
-      "Einführung in die Programmierung",
-      "Logik und diskrete Strukturen",
-    ],
-  },
-  {
-    title: "2. Semester",
-    items: [
-      "Mathematik für Informatiker",
-      "Rechnernetze",
-      "Objektorientierte Programmierung",
-      "Algorithmen und Datenstrukturen",
-      "Theoretische Informatik",
-    ],
-  },
-  {
-    title: "3. Semester",
-    items: [
-      "Betriebssysteme",
-      "Internet-Sprachen",
-      "Softwaretechnik",
-      "Datenbanksysteme",
-      "Mensch-Computer-Interaktion",
-    ],
-  },
-  { title: "4. Semester", items: ["Softwareprojekt Informatik", "Internet-Datenbanken", "Internet-Protokolle"] },
-  { title: "5. Semester", items: ["Softwareprojekt Informatik", "Prozedurale Programmierung"] },
-];
 
-// Studienverlauf Wirtschaftsinformatik, PO16
-const wiPO16Semesters: Semester[] = [
-  {
-    title: "1. Semester",
-    items: [
-      "Grundlagen der Wirtschaftsinformatik",
-      "Einführung in die Betriebswirtschaftslehre",
-      "Grundlagen der Mathematik für Informatiker",
-      "Einführung in die Programmierung",
-      "Logik und diskrete Strukturen",
-    ],
-  },
-  {
-    title: "2. Semester",
-    items: [
-      "Mathematik für Wirtschaftsinformatiker",
-      "Produktion und Materialwirtschaft",
-      "Wirtschaftsenglisch für Wirtschaftsinformatiker",
-      "Objektorientierte Programmierung",
-      "Algorithmen und Datenstrukturen",
-    ],
-  },
-  {
-    title: "3. Semester",
-    items: [
-      "Projektmanagement",
-      "Betriebssysteme und Netzwerke",
-      "Mensch-Computer-Interaktion",
-      "Softwaretechnik",
-      "Datenbanksysteme",
-    ],
-  },
-  {
-    title: "4. Semester",
-    items: [
-      "Softwareprojekt Wirtschaftsinformatik",
-      "Betriebliches Rechnungswesen",
-      "Betriebliche Informationssysteme 1",
-      "Geschäftsprozessmanagement",
-    ],
-  },
-  {
-    title: "5. Semester",
-    items: ["Softwareprojekt Wirtschaftsinformatik", "IT-Recht", "Betriebliche Informationssysteme 2", "Digitales Marketing"],
-  },
-];
+const getModulesForProgram = (programId: number, po: string): Semester[] => {
+  if (programId === 1 && po === "PO2023") {
+    return [
+      { title: "1. Semester", items: ["Logik und diskrete Strukturen", "Einführung in die Programmierung", "Mathematische Grundlagen", "Technische Grundlagen der Informatik", "Technisches Englisch für Informatiker"] },
+      { title: "2. Semester", items: ["Algorithmen und Datenstrukturen", "Objektorientierte Programmierung", "Statistik und Lineare Algebra", "Theoretische Informatik", "Betriebssysteme"] },
+      { title: "3. Semester", items: ["Datenbanksysteme", "Softwaretechnik", "Mensch-Computer-Interaktion", "Rechnernetze", "Internetsprachen"] },
+    ];
+  }
+  return [{ title: "Semester 1", items: ["Beispielmodul A", "Beispielmodul B"] }];
+};
 
-// Studienverlauf Informatik, PO23
-const piPO23Semesters: Semester[] = [
-  {
-    title: "1. Semester",
-    items: [
-      "Technisches Englisch für Informatiker",
-      "Technische Grundlagen der Informatik",
-      "Mathematische Grundlagen",
-      "Einführung in die Programmierung",
-      "Logik und diskrete Strukturen",
-    ],
-  },
-  {
-    title: "2. Semester",
-    items: [
-      "Statistik und Lineare Algebra",
-      "Betriebssysteme",
-      "Objektorientierte Programmierung",
-      "Algorithmen und Datenstrukturen",
-      "Theoretische Informatik",
-    ],
-  },
-  {
-    title: "3. Semester",
-    items: ["Rechnernetze", "Internetsprachen", "Softwaretechnik", "Datenbanksysteme", "Mensch-Computer-Interaktion"],
-  },
-];
+function UploadDialog({ open, onClose, programs }: { open: boolean; onClose: () => void; programs: typeof studyPrograms }) {
+  const [uploadProgram, setUploadProgram] = useState(programs[0]);
+  const [uploadPo, setUploadPo] = useState(programs[0].versions[0]);
+  const [moduleName, setModuleName] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
 
-// Studienverlauf Wirtschaftsinformatik, PO23
-const wiPO23Semesters: Semester[] = [
-  {
-    title: "1. Semester",
-    items: [
-      "Logik und diskrete Strukturen",
-      "Einführung in die Programmierung",
-      "Mathematische Grundlagen",
-      "Einführung in die Betriebswirtschaftslehre",
-      "Grundlagen der Wirtschaftsinformatik",
-    ],
-  },
-  {
-    title: "2. Semester",
-    items: [
-      "Algorithmen und Datenstrukturen",
-      "Objektorientierte Programmierung",
-      "Statistik und Lineare Algebra",
-      "Produktion und Materialwirtschaft",
-      "Wirtschaftsenglisch",
-    ],
-  },
-  {
-    title: "3. Semester",
-    items: [
-      "Datenbanksysteme",
-      "Softwaretechnik",
-      "Mensch-Computer-Interaktion",
-      "Betriebssysteme und Netzwerke",
-      "Projektmanagement",
-    ],
-  },
-  {
-    title: "4. Semester",
-    items: [
-      "Softwareprojekt Wirtschaftsinformatik",
-      "IT-Recht",
-      "Grundlagen Supply Chain Management",
-      "Geschäftsprozessmanagement",
-    ],
-  },
-  {
-    title: "5. Semester",
-    items: [
-      "Softwareprojekt Wirtschaftsinformatik",
-      "Betriebliches Rechnungswesen",
-      "Supply Chain Management und Digitalisierung",
-      "Digitales Marketing",
-    ],
-  },
-];
+  const availableModules = useMemo(() => {
+    const semesters = getModulesForProgram(uploadProgram.id, uploadPo);
+    return semesters.flatMap(s => s.items).sort();
+  }, [uploadProgram, uploadPo]);
 
-// Wahlpflichtmodule für Informatik, PO16
-const electivesPI_PO16 = [
-  "Betrieb komplexer verteilter Systeme",
-  "Betriebswirtschaftslehre für Informatiker",
-  "Bildverarbeitung",
-  "Grundlagen der IT-Sicherheit",
-  "IT-Recht",
-  "Komponentenbasierte Softwareentwicklung",
-  "Künstliche Intelligenz",
-  "Mobile Computing",
-  "Mobile Robotik",
-  "Objektorientierte Programmierung mit C++",
-  "Parallele Programmierung",
-  "Practical Security Attacks and Exploitation",
-  "Prozedurale Programmierung",
-  "Software Design",
-  "Medientechnik",
-  "Modellbasierter Entwurf von Regelsystemen",
-  "Systemtheorie",
-  "Zeitdiskrete Regelsysteme",
-];
+  const handleProgramChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const prog = programs.find(p => p.id === Number(e.target.value));
+    if (prog) {
+        setUploadProgram(prog);
+        setUploadPo(prog.versions[0]);
+        setModuleName(null); 
+    }
+  };
 
-// Wahlpflichtmodule für Wirtschaftsinformatik, PO16
-const electivesWI_PO16 = [
-  "Betrieb komplexer verteilter Systeme",
-  "Entwicklung von Informationssystemen",
-  "Grundlagen der IT-Sicherheit",
-  "Internet-Datenbanken",
-  "Internet-Sprachen",
-  "Mobile Computing",
-  "Practical Security Attacks and Exploitation",
-  "Prozedurale Programmierung",
-  "Software Design",
-];
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
+  };
 
-// Wahlpflichtmodule für Informatik, PO23
-const electivesPI_PO23 = [
-  "Betrieb komplexer verteilter Systeme",
-  "Einführung in die Bildverarbeitung",
-  "Data on the Web",
-  "Data Science in Practice",
-  "Einführung in die medizinische Informatik",
-  "Einführung in die Robotik",
-  "Internet-Protokolle",
-  "IT-Recht",
-  "Grundlagen der IT Sicherheit",
-  "Komponentenbasierte Softwareentwicklung",
-  "Künstliche Intelligenz",
-  "Knowledge Graphs",
-  "Mobile Application Development",
-  "Mobile and Cloud Computing",
-  "Mobile Robotik",
-  "Parallele Programmierung",
-  "Prozedurale Programmierung",
-  "Practical Security Attacks and Exploitation",
-  "Software Design",
-  "Betriebliches Rechnungswesen",
-  "Digitales Marketing",
-  "Einführung in die Betriebswirtschaftslehre",
-  "Geschäftsprozessmanagement",
-  "Grundlagen der Wirtschaftsinformatik",
-  "Angewandte Netzwerksicherheit",
-  "Projektmanagement",
-  "Produktion und Materialwirtschaft",
-];
+  const handleDrag = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
+  const handleDragIn = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragging(true); };
+  const handleDragOut = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragging(false); };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation(); setDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        if(e.dataTransfer.files[0].type === "application/pdf") setFile(e.dataTransfer.files[0]);
+    }
+  };
 
-// Wahlpflichtmodule für Wirtschaftsinformatik, PO23
-const electivesWI_PO23 = [
-  "Betrieb komplexer verteilter Systeme",
-  "Einführung in die Bildverarbeitung",
-  "Data on the Web",
-  "Einführung in die Robotik",
-  "Internet-Protokolle",
-  "Internet-Sprachen",
-  "Grundlagen der IT Sicherheit",
-  "Komponentenbasierte Softwareentwicklung",
-  "Knowledge Graphs",
-  "Mobile Application Development",
-  "Mobile Robotik",
-  "Angewandte Netzwerksicherheit",
-  "Practical Security Attacks and Exploitation",
-  "Software Design",
-];
-
-export default function Exams() {
-  const [studiengangAnchor, setStudiengangAnchor] = useState<null | HTMLElement>(null);
-  const [studiengang, setStudiengang] = useState("Studiengang");
-  const [poAnchor, setPoAnchor] = useState<null | HTMLElement>(null);
-  const [selectedPo, setSelectedPo] = useState("PO16");
-  const [search, setSearch] = useState("");
-
-  const semestersToShow = useMemo(() => {
-    if (studiengang === "Informatik" && selectedPo === "PO16") return piPO16Semesters;
-    if (studiengang === "Wirtschaftsinformatik" && selectedPo === "PO16") return wiPO16Semesters;
-    if (studiengang === "Informatik" && selectedPo === "PO23") return piPO23Semesters;
-    if (studiengang === "Wirtschaftsinformatik" && selectedPo === "PO23") return wiPO23Semesters;
-    return null;
-  }, [studiengang, selectedPo]);
-
-  // Konfiguration, ab welchem Semesterblock die Wahlpflichtmodule angezeigt werden sollen
-  const electivesConfig = useMemo(() => {
-    if (selectedPo === "PO16" && studiengang === "Informatik")
-      return { afterTitle: "5. Semester", list: electivesPI_PO16 };
-    if (selectedPo === "PO16" && studiengang === "Wirtschaftsinformatik")
-      return { afterTitle: "5. Semester", list: electivesWI_PO16 };
-    if (selectedPo === "PO23" && studiengang === "Informatik")
-      return { afterTitle: "3. Semester", list: electivesPI_PO23 };
-    if (selectedPo === "PO23" && studiengang === "Wirtschaftsinformatik")
-      return { afterTitle: "5. Semester", list: electivesWI_PO23 };
-    return null;
-  }, [studiengang, selectedPo]);
+  const handleSubmit = () => {
+    onClose();
+    setFile(null);
+    setModuleName(null);
+  };
 
   return (
-    // Container begrenzt die Breite und sorgt für Abstand nach oben
-    <Container maxWidth="md" sx={{ mt: 6 }}>
-      {/* Seitentitel */}
-      <Typography variant="h4" color="primary" fontWeight={600} gutterBottom>
-        Klausurrekonstruktionen
-      </Typography>
-      {/* Menübereich: Studiengang, PO und Suchfeld */}
-      <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 4 }}>
-        {/* Auswahl: Studiengang */}
-        <Box>
-          <Button
-            variant="outlined"
-            endIcon={<ArrowDropDownRoundedIcon />}
-            onClick={(e) => setStudiengangAnchor(e.currentTarget)}
+    <Dialog 
+        open={open} 
+        onClose={onClose} 
+        fullWidth 
+        maxWidth="sm" 
+        PaperProps={{ sx: { borderRadius: 3 } }}
+    >
+      <DialogTitle sx={{ m: 0, p: 3, pb: 1, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        Klausur hochladen
+        <IconButton onClick={onClose}><CloseRoundedIcon /></IconButton>
+      </DialogTitle>
+      
+      <DialogContent sx={{ p: 3 }}>
+        <Stack spacing={3} sx={{ mt: 1 }}>
+          
+          <TextField 
+            select 
+            label="Studiengang" 
+            fullWidth 
+            value={uploadProgram.id} 
+            onChange={handleProgramChange}
           >
-            {studiengang}
-          </Button>
-          <Menu
-            anchorEl={studiengangAnchor}
-            open={Boolean(studiengangAnchor)}
-            onClose={() => setStudiengangAnchor(null)}
+            {programs.map((p) => (<MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>))}
+          </TextField>
+
+          <TextField 
+            select 
+            label="Prüfungsordnung (PO)" 
+            fullWidth 
+            value={uploadPo} 
+            onChange={(e) => {
+                setUploadPo(e.target.value);
+                setModuleName(null);
+            }}
           >
-            <MenuItem
-              onClick={() => {
-                setStudiengang("Informatik");
-                setStudiengangAnchor(null);
-              }}
-            >
-              Informatik
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                setStudiengang("Wirtschaftsinformatik");
-                setStudiengangAnchor(null);
-              }}
-            >
-              Wirtschaftsinformatik
-            </MenuItem>
-          </Menu>
-        </Box>
+            {uploadProgram.versions.map((v) => (<MenuItem key={v} value={v}>{v}</MenuItem>))}
+          </TextField>
 
-        {/* Auswahl: Prüfungsordnung (PO) */}
-        <Box>
-          <Button
-            variant="outlined"
-            endIcon={<ArrowDropDownRoundedIcon />}
-            onClick={(e) => setPoAnchor(e.currentTarget)}
+          <Autocomplete
+            options={availableModules}
+            value={moduleName}
+            onChange={(_, newValue) => setModuleName(newValue)}
+            renderInput={(params) => (
+              <TextField 
+                {...params} 
+                label="Modul auswählen" 
+                placeholder="Suche..." 
+                fullWidth 
+              />
+            )}
+            noOptionsText="Keine Module gefunden"
+          />
+
+          <TextField
+             type="date"
+             label="Prüfungsdatum"
+             InputLabelProps={{ shrink: true }}
+             fullWidth
+          />
+
+          <Box 
+            onDragEnter={handleDragIn} onDragLeave={handleDragOut} onDragOver={handleDrag} onDrop={handleDrop}
+            sx={{ 
+                border: '2px dashed', 
+                borderColor: dragging ? 'primary.main' : 'divider', 
+                bgcolor: dragging ? 'action.hover' : 'background.default',
+                borderRadius: 2, 
+                p: 4, 
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+            }}
           >
-            {selectedPo}
-          </Button>
-          <Menu
-            anchorEl={poAnchor}
-            open={Boolean(poAnchor)}
-            onClose={() => setPoAnchor(null)}
-          >
-            <MenuItem
-              onClick={() => {
-                setSelectedPo("PO23");
-                setPoAnchor(null);
-              }}
-            >
-              PO23
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                setSelectedPo("PO16");
-                setPoAnchor(null);
-              }}
-            >
-              PO16
-            </MenuItem>
-          </Menu>
-        </Box>
+            <input accept="application/pdf" style={{ display: 'none' }} id="file-upload" type="file" onChange={handleFileChange} />
+            
+            {!file ? (
+                <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'block' }}>
+                    <CloudUploadRoundedIcon sx={{ fontSize: 40, color: dragging ? "primary.main" : "text.secondary", mb: 1 }} />
+                    <Typography variant="body1" fontWeight={500} color="text.primary">
+                       PDF hier ablegen
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                       oder klicken zum Auswählen
+                    </Typography>
+                </label>
+            ) : (
+                <Stack alignItems="center" spacing={1}>
+                    <InsertDriveFileRoundedIcon color="primary" sx={{ fontSize: 40 }} />
+                    <Typography variant="body1" fontWeight={600} noWrap sx={{ maxWidth: '100%' }}>{file.name}</Typography>
+                    <Button size="small" color="error" onClick={(e) => { e.preventDefault(); setFile(null); }}>
+                        Andere Datei wählen
+                    </Button>
+                </Stack>
+            )}
+          </Box>
 
-        {/* Suchfeld für zukünftige Filterfunktion nach Modulen */}
-        <OutlinedInput
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Suche nach Modul..."
-          sx={{ flexGrow: 1, maxWidth: 300 }}
-          endAdornment={
-            <InputAdornment position="end">
-              <IconButton>
-                <SearchRoundedIcon />
-              </IconButton>
-            </InputAdornment>
-          }
-        />
-      </Box>
-      {/* Anzeige der Semester und Module */}
-      <Box>
-        {semestersToShow ? (
-          semestersToShow.map((sem, i) => (
-            <Box key={sem.title} sx={{ mb: 3 }}>
-              {/* Überschrift pro Semesterblock */}
-              <Typography variant="h6" fontWeight={600} color="secondary" gutterBottom>
-                {sem.title}
-              </Typography>
+          <TextField
+            label="Anmerkungen (Optional)"
+            multiline
+            minRows={3}
+            fullWidth
+            placeholder="Besonderheiten, Themen..."
+          />
+        </Stack>
+      </DialogContent>
+      
+      <DialogActions sx={{ p: 3, pt: 0 }}>
+        <Button onClick={onClose} color="inherit" sx={{ mr: 1 }}>Abbrechen</Button>
+        <Button onClick={handleSubmit} variant="contained" disabled={!file || !moduleName} disableElevation size="large">
+          Hochladen
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
-              {/* Modulliste innerhalb des Semesters */}
-              <Box sx={{ pl: 2 }}>
-                {sem.items.map((label) => (
-                  <Typography
-                    key={label}
-                    component={RouterLink}
-                    to="/rekos/klausuren/modul"
-                    // über state gebe ich Studiengang, PO und Modulname an die Detailseite weiter
-                    state={{
-                      studiengang,
-                      po: selectedPo,
-                      modul: label,
-                    }}
-                    sx={{
-                      display: "block",
-                      mb: 1,
-                      color: "text.primary",
-                      textDecoration: "none",
-                      "&:hover": { textDecoration: "underline", color: "primary.main" },
-                    }}
-                  >
-                    {label}
-                  </Typography>
-                ))}
-              </Box>
+export default function Exams() {
+  const { user } = useAuth();
+  const canUpload = user?.role === "admin" || user?.role === "editor";
 
-              {/* Trennlinie zwischen den Semestern */}
-              {i < semestersToShow.length - 1 && <Divider sx={{ mt: 2, mb: 2 }} />}
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState(studyPrograms[0]); 
+  const [selectedPo, setSelectedPo] = useState(studyPrograms[0].versions[0]);
+  const [search, setSearch] = useState("");
 
-              {/* Wahlpflichtmodule werden nach einem bestimmten Semesterblock eingefügt */}
-              {electivesConfig && sem.title === electivesConfig.afterTitle && (
-                <>
-                  <Divider sx={{ mt: 3, mb: 2 }} />
-                  <Typography variant="h6" fontWeight={700} color="secondary" gutterBottom>
-                    Wahlpflichtmodule
-                  </Typography>
-                  <Box sx={{ pl: 2 }}>
-                    {electivesConfig.list.map((label) => (
-                      <Typography
-                        key={label}
-                        component={RouterLink}
-                        to="/rekos/klausuren/modul"
-                        state={{
-                          studiengang,
-                          po: selectedPo,
-                          modul: label,
-                        }}
-                        sx={{
-                          display: "block",
-                          mb: 1,
-                          color: "text.primary",
-                          textDecoration: "none",
-                          "&:hover": { textDecoration: "underline", color: "primary.main" },
-                        }}
-                      >
-                        {label}
-                      </Typography>
-                    ))}
-                  </Box>
-                </>
-              )}
+  useEffect(() => {
+    if (!selectedProgram.versions.includes(selectedPo)) setSelectedPo(selectedProgram.versions[0]);
+  }, [selectedProgram, selectedPo]);
+
+  const displaySemesters = useMemo(() => {
+    const rawData = getModulesForProgram(selectedProgram.id, selectedPo);
+    const term = search.toLowerCase();
+    if (!term) return rawData;
+    return rawData.map(sem => ({
+      ...sem,
+      items: sem.items.filter(item => item.toLowerCase().includes(term))
+    })).filter(sem => sem.items.length > 0);
+  }, [selectedProgram, selectedPo, search]);
+
+  return (
+    <Sidebar user={user} title="Rekos">
+      <Container maxWidth="md" sx={{ mt: 5, mb: 10 }}>
+        
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box>
+                <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+                    Modulverzeichnis
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                    Verwalte deine Module und Klausuranmeldungen.
+                </Typography>
             </Box>
-          ))
-        ) : (
-          // Fallback, wenn noch kein Studiengang/PO gewählt ist
-          (<Typography sx={{ opacity: 0.7 }}>Bitte oben passenden <strong>Studiengang</strong>und <strong>PO</strong>auswählen.
-                      </Typography>)
-        )}
-      </Box>
-    </Container>
+
+            {canUpload && (
+                <Button 
+                    variant="contained" 
+                    startIcon={<AddRoundedIcon />} 
+                    onClick={() => setUploadOpen(true)}
+                    sx={{ mt: 1, textTransform: 'none', fontWeight: 600, borderRadius: 2 }}
+                    disableElevation
+                >
+                    Material hochladen
+                </Button>
+            )}
+        </Box>
+
+        <Paper elevation={0} sx={{ p: 3, mb: 5, borderRadius: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider" }}>
+            <Stack spacing={2}>
+                <TextField
+                    fullWidth
+                    placeholder="Suche nach Modul..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    InputProps={{
+                        startAdornment: <InputAdornment position="start"><SearchRoundedIcon color="primary" /></InputAdornment>,
+                        sx: { borderRadius: 2 }
+                    }}
+                />
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    <TextField
+                        select
+                        label="Studiengang"
+                        value={selectedProgram.id}
+                        onChange={(e) => {
+                            const prog = studyPrograms.find(p => p.id === Number(e.target.value));
+                            if(prog) setSelectedProgram(prog);
+                        }}
+                        size="small"
+                        sx={{ flex: 2, minWidth: 220 }}
+                    >
+                        {studyPrograms.map((prog) => (<MenuItem key={prog.id} value={prog.id}>{prog.name}</MenuItem>))}
+                    </TextField>
+
+                    <TextField
+                        select
+                        label="Prüfungsordnung"
+                        value={selectedPo}
+                        onChange={(e) => setSelectedPo(e.target.value)}
+                        size="small"
+                        sx={{ flex: 1, minWidth: 120 }}
+                    >
+                        {selectedProgram.versions.map((ver) => (<MenuItem key={ver} value={ver}>{ver}</MenuItem>))}
+                    </TextField>
+                </Box>
+            </Stack>
+        </Paper>
+
+        <Stack spacing={4}>
+          {displaySemesters.length > 0 ? (
+            displaySemesters.map((sem) => (
+              <Box key={sem.title}>
+                <Typography variant="h6" color="primary.main" fontWeight={600} sx={{ mb: 1, px: 2 }}>{sem.title}</Typography>
+                <List sx={{ p: 0 }}>
+                    {sem.items.map((label, index) => (
+                        <ListItem key={label} disablePadding divider={index < sem.items.length - 1}>
+                            <ListItemButton 
+                                component={RouterLink} 
+                                to="/rekos/klausuren/modul"
+                                state={{ studiengang: selectedProgram.name, po: selectedPo, modul: label }}
+                                sx={{ borderRadius: 1, py: 1.5 }}
+                            >
+                                <ListItemText primary={label} primaryTypographyProps={{ fontWeight: 500 }} />
+                                <ArrowForwardIosRoundedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                            </ListItemButton>
+                        </ListItem>
+                    ))}
+                </List>
+              </Box>
+            ))
+          ) : (
+             <Box textAlign="center" py={4} sx={{ opacity: 0.6 }}><Typography variant="h6">Keine Module gefunden.</Typography></Box>
+          )}
+        </Stack>
+
+        <UploadDialog open={uploadOpen} onClose={() => setUploadOpen(false)} programs={studyPrograms} />
+
+      </Container>
+    </Sidebar>
   );
 }
