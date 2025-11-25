@@ -18,13 +18,11 @@ import {
   DialogActions,
   Button,
   IconButton,
-  Autocomplete
+  Autocomplete,
+  Alert
 } from "@mui/material";
 
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
-import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
-import ArrowForwardIosRoundedIcon from '@mui/icons-material/ArrowForwardIosRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import CloudUploadRoundedIcon from '@mui/icons-material/CloudUploadRounded';
 import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRounded';
@@ -33,49 +31,36 @@ import { Link as RouterLink } from "react-router-dom";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
+import { getPrograms, getProgramModules, postExams, getAuthCsrf } from "@lib/api";
+import type { Program, Module } from "@lib/api";
 
-const studyPrograms = [
-  { id: 1, name: "Informatik (B. Sc.)", versions: ["PO2023", "PO2016"] },
-  { id: 4, name: "Informatik (M. Sc.)", versions: ["PO2023", "PO2016"] },
-  { id: 2, name: "Informatik und Design (B. Sc.)", versions: ["PO2023"] },
-  { id: 7, name: "Internetsicherheit (M. Sc.)", versions: ["PO2023", "PO2016"] },
-  { id: 5, name: "Medieninformatik (M. Sc.)", versions: ["PO2023", "PO2016"] },
-  { id: 3, name: "Wirtschaftsinformatik (B. Sc.)", versions: ["PO2023", "PO2016"] },
-  { id: 6, name: "Wirtschaftsinformatik (M. Sc.)", versions: ["PO2023", "PO2016"] }
-];
-
-type Semester = { title: string; items: string[] };
-
-const getModulesForProgram = (programId: number, po: string): Semester[] => {
-  if (programId === 1 && po === "PO2023") {
-    return [
-      { title: "1. Semester", items: ["Logik und diskrete Strukturen", "Einführung in die Programmierung", "Mathematische Grundlagen", "Technische Grundlagen der Informatik", "Technisches Englisch für Informatiker"] },
-      { title: "2. Semester", items: ["Algorithmen und Datenstrukturen", "Objektorientierte Programmierung", "Statistik und Lineare Algebra", "Theoretische Informatik", "Betriebssysteme"] },
-      { title: "3. Semester", items: ["Datenbanksysteme", "Softwaretechnik", "Mensch-Computer-Interaktion", "Rechnernetze", "Internetsprachen"] },
-    ];
-  }
-  return [{ title: "Semester 1", items: ["Beispielmodul A", "Beispielmodul B"] }];
-};
-
-function UploadDialog({ open, onClose, programs }: { open: boolean; onClose: () => void; programs: typeof studyPrograms }) {
-  const [uploadProgram, setUploadProgram] = useState(programs[0]);
-  const [uploadPo, setUploadPo] = useState(programs[0].versions[0]);
-  const [moduleName, setModuleName] = useState<string | null>(null);
+function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; onClose: () => void; programs: Program[]; onSuccess: () => void }) {
+  const [uploadProgram, setUploadProgram] = useState<Program | null>(null);
+  const [uploadPo, setUploadPo] = useState("");
+  const [uploadModule, setUploadModule] = useState<Module | null>(null);
+  const [programModules, setProgramModules] = useState<Module[]>([]);
   const [file, setFile] = useState<File | null>(null);
+  const [examDate, setExamDate] = useState("");
+  const [comment, setComment] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const availableModules = useMemo(() => {
-    const semesters = getModulesForProgram(uploadProgram.id, uploadPo);
-    return semesters.flatMap(s => s.items).sort();
-  }, [uploadProgram, uploadPo]);
+  useEffect(() => {
+    if (uploadProgram) {
+      getProgramModules({ path: { id: uploadProgram.id } })
+        .then(({ data }) => setProgramModules(data || []))
+        .catch(() => setProgramModules([]));
+      setUploadPo(uploadProgram.versions[0] || "");
+      setUploadModule(null);
+    } else {
+      setProgramModules([]);
+    }
+  }, [uploadProgram]);
 
   const handleProgramChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const prog = programs.find(p => p.id === Number(e.target.value));
-    if (prog) {
-        setUploadProgram(prog);
-        setUploadPo(prog.versions[0]);
-        setModuleName(null); 
-    }
+    setUploadProgram(prog || null);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,10 +77,54 @@ function UploadDialog({ open, onClose, programs }: { open: boolean; onClose: () 
     }
   };
 
-  const handleSubmit = () => {
-    onClose();
-    setFile(null);
-    setModuleName(null);
+  const handleSubmit = async () => {
+    if (!uploadProgram || !uploadModule || !file || !examDate || !uploadPo) return;
+    setLoading(true);
+    setError("");
+
+    try {
+      const { data: csrfData, error: csrfError } = await getAuthCsrf();
+      
+      const token = csrfData?.csrf;
+      if (csrfError || !token) {
+        throw new Error("Sicherheits-Token konnte nicht geladen werden. Bitte neu einloggen.");
+      }
+
+      const formData = {
+        file: file, 
+        programid: uploadProgram.id,
+        version: uploadPo,
+        moduleid: uploadModule.id,
+        date: examDate,
+        comment: comment
+      };
+
+      const { error: apiError } = await postExams({
+        // @ts-ignore: formData contains File, validation disabled via config to allow this
+        body: formData,
+        headers: {
+            "X-CSRF-Token": token
+        }
+      });
+
+      if (apiError) {
+        // @ts-ignore
+        const msg = apiError.message || "Fehler beim Hochladen.";
+        setError(msg);
+      } else {
+        onSuccess();
+        onClose();
+        setFile(null);
+        setUploadModule(null);
+        setComment("");
+        setExamDate("");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      setError(err instanceof Error ? err.message : "Netzwerkfehler.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -113,15 +142,20 @@ function UploadDialog({ open, onClose, programs }: { open: boolean; onClose: () 
       
       <DialogContent sx={{ p: 3 }}>
         <Stack spacing={3} sx={{ mt: 1 }}>
+          {error && <Alert severity="error">{error}</Alert>}
           
           <TextField 
             select 
             label="Studiengang" 
             fullWidth 
-            value={uploadProgram.id} 
+            value={uploadProgram?.id || ""} 
             onChange={handleProgramChange}
           >
-            {programs.map((p) => (<MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>))}
+            {programs.length > 0 ? (
+              programs.map((p) => (<MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>))
+            ) : (
+              <MenuItem disabled value="">Keine Studiengänge verfügbar</MenuItem>
+            )}
           </TextField>
 
           <TextField 
@@ -129,18 +163,22 @@ function UploadDialog({ open, onClose, programs }: { open: boolean; onClose: () 
             label="Prüfungsordnung (PO)" 
             fullWidth 
             value={uploadPo} 
-            onChange={(e) => {
-                setUploadPo(e.target.value);
-                setModuleName(null);
-            }}
+            disabled={!uploadProgram}
+            onChange={(e) => setUploadPo(e.target.value)}
           >
-            {uploadProgram.versions.map((v) => (<MenuItem key={v} value={v}>{v}</MenuItem>))}
+            {uploadProgram && uploadProgram.versions.length > 0 ? (
+              uploadProgram.versions.map((v) => (<MenuItem key={v} value={v}>{v}</MenuItem>))
+            ) : (
+              <MenuItem disabled value="">{uploadProgram ? "Keine POs verfügbar" : "Bitte Studiengang wählen"}</MenuItem>
+            )}
           </TextField>
 
           <Autocomplete
-            options={availableModules}
-            value={moduleName}
-            onChange={(_, newValue) => setModuleName(newValue)}
+            options={programModules}
+            getOptionLabel={(option) => option.name}
+            value={uploadModule}
+            onChange={(_, newValue) => setUploadModule(newValue)}
+            disabled={!uploadProgram}
             renderInput={(params) => (
               <TextField 
                 {...params} 
@@ -157,6 +195,8 @@ function UploadDialog({ open, onClose, programs }: { open: boolean; onClose: () 
              label="Prüfungsdatum"
              InputLabelProps={{ shrink: true }}
              fullWidth
+             value={examDate}
+             onChange={(e) => setExamDate(e.target.value)}
           />
 
           <Box 
@@ -196,10 +236,12 @@ function UploadDialog({ open, onClose, programs }: { open: boolean; onClose: () 
           </Box>
 
           <TextField
-            label="Anmerkungen (Optional)"
+            label="Kommentar (Optional)"
             multiline
             minRows={3}
             fullWidth
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
             placeholder="Besonderheiten, Themen..."
           />
         </Stack>
@@ -207,8 +249,8 @@ function UploadDialog({ open, onClose, programs }: { open: boolean; onClose: () 
       
       <DialogActions sx={{ p: 3, pt: 0 }}>
         <Button onClick={onClose} color="inherit" sx={{ mr: 1 }}>Abbrechen</Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={!file || !moduleName} disableElevation size="large">
-          Hochladen
+        <Button onClick={handleSubmit} variant="contained" disabled={loading || !file || !uploadModule} disableElevation size="large">
+          {loading ? "Lade hoch..." : "Hochladen"}
         </Button>
       </DialogActions>
     </Dialog>
@@ -220,23 +262,36 @@ export default function Exams() {
   const canUpload = user?.role === "admin" || user?.role === "editor";
 
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [selectedProgram, setSelectedProgram] = useState(studyPrograms[0]); 
-  const [selectedPo, setSelectedPo] = useState(studyPrograms[0].versions[0]);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [selectedProgram, setSelectedProgram] = useState<Program | null>(null); 
+  const [selectedPo, setSelectedPo] = useState("");
+  const [modules, setModules] = useState<Module[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (!selectedProgram.versions.includes(selectedPo)) setSelectedPo(selectedProgram.versions[0]);
+    getPrograms().then(({ data }) => {
+        if (data && data.length > 0) {
+            setPrograms(data);
+            setSelectedProgram(data[0]);
+            setSelectedPo(data[0].versions[0]);
+        }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (selectedProgram) {
+        getProgramModules({ path: { id: selectedProgram.id } })
+            .then(({ data }) => setModules(data || []));
+        if (!selectedProgram.versions.includes(selectedPo)) {
+            setSelectedPo(selectedProgram.versions[0]);
+        }
+    }
   }, [selectedProgram, selectedPo]);
 
-  const displaySemesters = useMemo(() => {
-    const rawData = getModulesForProgram(selectedProgram.id, selectedPo);
-    const term = search.toLowerCase();
-    if (!term) return rawData;
-    return rawData.map(sem => ({
-      ...sem,
-      items: sem.items.filter(item => item.toLowerCase().includes(term))
-    })).filter(sem => sem.items.length > 0);
-  }, [selectedProgram, selectedPo, search]);
+  const filteredModules = useMemo(() => {
+    if (!search) return modules;
+    return modules.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
+  }, [modules, search]);
 
   return (
     <Sidebar user={user} title="Rekos">
@@ -281,15 +336,19 @@ export default function Exams() {
                     <TextField
                         select
                         label="Studiengang"
-                        value={selectedProgram.id}
+                        value={selectedProgram?.id || ""}
                         onChange={(e) => {
-                            const prog = studyPrograms.find(p => p.id === Number(e.target.value));
+                            const prog = programs.find(p => p.id === Number(e.target.value));
                             if(prog) setSelectedProgram(prog);
                         }}
                         size="small"
                         sx={{ flex: 2, minWidth: 220 }}
                     >
-                        {studyPrograms.map((prog) => (<MenuItem key={prog.id} value={prog.id}>{prog.name}</MenuItem>))}
+                        {programs.length > 0 ? (
+                            programs.map((prog) => (<MenuItem key={prog.id} value={prog.id}>{prog.name}</MenuItem>))
+                        ) : (
+                            <MenuItem disabled value="">Lädt...</MenuItem>
+                        )}
                     </TextField>
 
                     <TextField
@@ -299,41 +358,46 @@ export default function Exams() {
                         onChange={(e) => setSelectedPo(e.target.value)}
                         size="small"
                         sx={{ flex: 1, minWidth: 120 }}
+                        disabled={!selectedProgram}
                     >
-                        {selectedProgram.versions.map((ver) => (<MenuItem key={ver} value={ver}>{ver}</MenuItem>))}
+                        {selectedProgram?.versions.map((ver) => (<MenuItem key={ver} value={ver}>{ver}</MenuItem>))}
                     </TextField>
                 </Box>
             </Stack>
         </Paper>
 
         <Stack spacing={4}>
-          {displaySemesters.length > 0 ? (
-            displaySemesters.map((sem) => (
-              <Box key={sem.title}>
-                <Typography variant="h6" color="primary.main" fontWeight={600} sx={{ mb: 1, px: 2 }}>{sem.title}</Typography>
+          {filteredModules.length > 0 ? (
+              <Box>
+                <Typography variant="h6" color="primary.main" fontWeight={600} sx={{ mb: 1, px: 2 }}>Module</Typography>
                 <List sx={{ p: 0 }}>
-                    {sem.items.map((label, index) => (
-                        <ListItem key={label} disablePadding divider={index < sem.items.length - 1}>
+                    {filteredModules.map((mod, index) => (
+                        <ListItem key={mod.id} disablePadding divider={index < filteredModules.length - 1}>
                             <ListItemButton 
                                 component={RouterLink} 
                                 to="/rekos/klausuren/modul"
-                                state={{ studiengang: selectedProgram.name, po: selectedPo, modul: label }}
+                                state={{ studiengang: selectedProgram?.name, po: selectedPo, modul: mod.name, modulId: mod.id }}
                                 sx={{ borderRadius: 1, py: 1.5 }}
                             >
-                                <ListItemText primary={label} primaryTypographyProps={{ fontWeight: 500 }} />
-                                <ArrowForwardIosRoundedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                                <ListItemText primary={mod.name} primaryTypographyProps={{ fontWeight: 500 }} />
                             </ListItemButton>
                         </ListItem>
                     ))}
                 </List>
               </Box>
-            ))
           ) : (
              <Box textAlign="center" py={4} sx={{ opacity: 0.6 }}><Typography variant="h6">Keine Module gefunden.</Typography></Box>
           )}
         </Stack>
 
-        <UploadDialog open={uploadOpen} onClose={() => setUploadOpen(false)} programs={studyPrograms} />
+        {programs.length > 0 && (
+            <UploadDialog 
+                open={uploadOpen} 
+                onClose={() => setUploadOpen(false)} 
+                programs={programs} 
+                onSuccess={() => { /* Refresh */ }} 
+            />
+        )}
 
       </Container>
     </Sidebar>
