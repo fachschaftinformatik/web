@@ -18,6 +18,24 @@ export type Program = {
     versions: Array<string>;
 };
 
+export type Module = {
+    id: number;
+    programid: number;
+    name: string;
+};
+
+export type ExamListEntry = {
+    id?: string;
+    programid?: number;
+    version?: string;
+    moduleid?: number;
+    module_name?: string;
+    exam_date?: string;
+    uploaded_at?: string;
+    uploader_name?: string;
+    comment?: string;
+};
+
 export type User = {
     /**
      * Version 4 UUID
@@ -315,3 +333,112 @@ export type GetProgramsIdResponses = {
 };
 
 export type GetProgramsIdResponse = GetProgramsIdResponses[keyof GetProgramsIdResponses];
+
+export type GetProgramModulesData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/programs/{id}/modules';
+};
+
+export type GetProgramModulesResponses = {
+    /**
+     * List of modules
+     */
+    200: Array<Module>;
+};
+
+export type GetProgramModulesResponse = GetProgramModulesResponses[keyof GetProgramModulesResponses];
+
+export type GetExamsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        programid?: number;
+        version?: string;
+        moduleid?: number;
+    };
+    url: '/exams';
+};
+
+export type GetExamsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: _Error;
+};
+
+export type GetExamsError = GetExamsErrors[keyof GetExamsErrors];
+
+export type GetExamsResponses = {
+    /**
+     * List of exams
+     */
+    200: Array<ExamListEntry>;
+};
+
+export type GetExamsResponse = GetExamsResponses[keyof GetExamsResponses];
+
+export type PostExamsData = {
+    body: {
+        file: Blob | File;
+        programid: number;
+        version: string;
+        moduleid: number;
+        date: string;
+        comment?: string;
+    };
+    headers: {
+        'X-CSRF-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/exams';
+};
+
+export type PostExamsErrors = {
+    /**
+     * Forbidden
+     */
+    403: _Error;
+};
+
+export type PostExamsError = PostExamsErrors[keyof PostExamsErrors];
+
+export type PostExamsResponses = {
+    /**
+     * Exam uploaded
+     */
+    201: ExamListEntry;
+};
+
+export type PostExamsResponse = PostExamsResponses[keyof PostExamsResponses];
+
+export type GetExamsFileData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/exams/{id}/file';
+};
+
+export type GetExamsFileErrors = {
+    /**
+     * Not found
+     */
+    404: _Error;
+};
+
+export type GetExamsFileError = GetExamsFileErrors[keyof GetExamsFileErrors];
+
+export type GetExamsFileResponses = {
+    /**
+     * File content
+     */
+    200: Blob | File;
+};
+
+export type GetExamsFileResponse = GetExamsFileResponses[keyof GetExamsFileResponses];

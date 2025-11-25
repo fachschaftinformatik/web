@@ -79,7 +79,7 @@ CREATE TABLE comments (
                ON DELETE RESTRICT ON UPDATE CASCADE,
   body       TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-m-%dT%H:%M:%fZ','now'))
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 ) STRICT;
 
 CREATE INDEX idx_comments_post        ON comments(postid);
@@ -91,7 +91,7 @@ AFTER UPDATE ON comments
 FOR EACH ROW
 BEGIN
   UPDATE comments
-     SET updated_at = strftime('%Y-m-%dT%H:%M:%fZ','now')
+     SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
    WHERE id = OLD.id;
 END;
 
@@ -103,7 +103,7 @@ CREATE TABLE exams (
   programid    INTEGER NOT NULL,
   version      TEXT NOT NULL,
   exam_date    TEXT NOT NULL,
-  uploaded_at  TEXT NOT NULL DEFAULT (strftime('%Y-m-%dT%H:%M:%fZ','now')),
+  uploaded_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   accesskey    TEXT NOT NULL UNIQUE,
   mime_type    TEXT NOT NULL CHECK (mime_type IN ('application/pdf')),
   nbytes       INTEGER NOT NULL,
@@ -130,8 +130,8 @@ CREATE TABLE sessions (
   userid     TEXT NOT NULL
                REFERENCES users(id)
                ON DELETE CASCADE ON UPDATE CASCADE,
-  created_at TEXT NOT NULL DEFAULT (strftime('%Y-m-%dT%H:%M:%fZ','now')),
-  last_seen  TEXT NOT NULL DEFAULT (strftime('%Y-m-%dT%H:%M:%fZ','now')),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  last_seen  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   expires_at TEXT NOT NULL
 ) STRICT;
 

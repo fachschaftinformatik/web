@@ -13,6 +13,24 @@ export const zProgram = z.object({
     versions: z.array(z.string())
 });
 
+export const zModule = z.object({
+    id: z.int(),
+    programid: z.int(),
+    name: z.string()
+});
+
+export const zExamListEntry = z.object({
+    id: z.optional(z.string()),
+    programid: z.optional(z.int()),
+    version: z.optional(z.string()),
+    moduleid: z.optional(z.int()),
+    module_name: z.optional(z.string()),
+    exam_date: z.optional(z.iso.date()),
+    uploaded_at: z.optional(z.iso.datetime()),
+    uploader_name: z.optional(z.string()),
+    comment: z.optional(z.string())
+});
+
 export const zUser = z.object({
     id: z.string(),
     email: z.email(),
@@ -184,3 +202,65 @@ export const zGetProgramsIdData = z.object({
  * Program
  */
 export const zGetProgramsIdResponse = zProgram;
+
+export const zGetProgramModulesData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.int()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * List of modules
+ */
+export const zGetProgramModulesResponse = z.array(zModule);
+
+export const zGetExamsData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.object({
+        programid: z.optional(z.int()),
+        version: z.optional(z.string()),
+        moduleid: z.optional(z.int())
+    }))
+});
+
+/**
+ * List of exams
+ */
+export const zGetExamsResponse = z.array(zExamListEntry);
+
+export const zPostExamsData = z.object({
+    body: z.object({
+        file: z.string(),
+        programid: z.int(),
+        version: z.string(),
+        moduleid: z.int(),
+        date: z.iso.date(),
+        comment: z.optional(z.string())
+    }),
+    path: z.optional(z.never()),
+    query: z.optional(z.never()),
+    headers: z.object({
+        'X-CSRF-Token': z.string()
+    })
+});
+
+/**
+ * Exam uploaded
+ */
+export const zPostExamsResponse = zExamListEntry;
+
+export const zGetExamsFileData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * File content
+ */
+export const zGetExamsFileResponse = z.string();
