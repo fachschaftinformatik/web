@@ -732,7 +732,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Fachschaft Informatik API",
-	Description:      "API Server for the FSV Website",
+	Description:      "API for the website of the FSV Informatik",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

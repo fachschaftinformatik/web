@@ -85,13 +85,22 @@ func main() {
 		r.Put("/exams/{id}", authServer.PutExamsId)
 		r.Delete("/exams/{id}", authServer.DeleteExamsId)
 		r.Get("/exams/{id}/file", authServer.GetExamsFile)
+
+		r.Get("/events", authServer.GetEvents)
+		r.Post("/events", authServer.PostEvents)
+		r.Get("/events/{id}/cover", authServer.GetEventCover)
+		r.Get("/media", authServer.GetMedia)
+		r.Post("/media", authServer.PostMedia)
+		r.Get("/media/{id}/file", authServer.GetMediaFile)
+
 	})
 
 	httpServer := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,
 		Handler:      r,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		// Erhöht auf 5 Minuten für große Uploads
+		ReadTimeout:  5 * time.Minute,
+		WriteTimeout: 5 * time.Minute,
 		IdleTimeout:  120 * time.Second,
 	}
 
