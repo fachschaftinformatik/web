@@ -14,6 +14,7 @@ type Querier interface {
 	CreateModule(ctx context.Context, arg CreateModuleParams) (Module, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteExam(ctx context.Context, id string) error
 	DeleteExpiredSessions(ctx context.Context) error
 	DeleteSession(ctx context.Context, id string) error
 	DeleteUserSessions(ctx context.Context, userid string) error
@@ -33,6 +34,7 @@ type Querier interface {
 	SweepExpiredVerifications(ctx context.Context) error
 	TouchSession(ctx context.Context, id string) (Session, error)
 	UnverifyUser(ctx context.Context, id string) (User, error)
+	UpdateExam(ctx context.Context, arg UpdateExamParams) (Exam, error)
 	UpdateUserToken(ctx context.Context, arg UpdateUserTokenParams) error
 	UpdateUserVerificationWindow(ctx context.Context, arg UpdateUserVerificationWindowParams) (User, error)
 	VerifyUser(ctx context.Context, arg VerifyUserParams) (User, error)
