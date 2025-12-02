@@ -6,8 +6,7 @@ import { Outlet } from 'react-router-dom';
 import { client } from '@lib/api/client.gen';
 
 import {
-  ThemeModeProvider,
-  ThemeModeToggle
+  ThemeModeProvider
 } from '@lib/theme';
 
 import { AuthProvider, useAuth } from '@lib/auth';
@@ -20,12 +19,10 @@ import MediaPage from '@routes/media/page';
 import TeamPage from '@routes/team/page';
 import NewsPage from '@routes/news/page';
 import ExamsPage from '@routes/exams/page';
-import ExamsListPage from '@routes/exams/list/page';
-import ExamDetailsPage from '@routes/exams/list/extensions'; // Import the details page
+import ExamDetailsPage from '@routes/exams/extensions';
 import ForumPage from '@routes/forum/page';
 import NewsFeedPage from '@routes/homepage/page';
 
-// Configure global client settings
 client.setConfig({
   baseUrl: '/api', 
   credentials: 'include', 
@@ -56,7 +53,6 @@ function App() {
             <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/exams" element={<ExamsPage />} />
-                <Route path="/exams/list" element={<ExamsListPage />} />
                 <Route path="/rekos/klausuren/modul" element={<ExamDetailsPage />} />
             </Route>
 
@@ -69,7 +65,6 @@ function App() {
             <Route path="*" element={<Navigate to="/login" replace />} />
 
           </Routes>
-          <ThemeModeToggle />
         </BrowserRouter>
       </AuthProvider>
     </ThemeModeProvider>
