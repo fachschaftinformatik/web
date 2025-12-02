@@ -141,17 +141,25 @@ type GetExamsParams struct {
 
 // PostExamsMultipartBody defines parameters for PostExams.
 type PostExamsMultipartBody struct {
-	Comment   *string            `json:"comment,omitempty"`
-	Date      openapi_types.Date `json:"date"`
-	File      openapi_types.File `json:"file"`
-	Moduleid  int                `json:"moduleid"`
-	Programid int                `json:"programid"`
-	Version   string             `json:"version"`
+	// Assignments JSON string of list of {programid, version, moduleid}
+	Assignments string             `json:"assignments"`
+	Comment     *string            `json:"comment,omitempty"`
+	Date        openapi_types.Date `json:"date"`
+	File        openapi_types.File `json:"file"`
 }
 
 // PostExamsParams defines parameters for PostExams.
 type PostExamsParams struct {
 	XCSRFToken CsrfHeader `json:"X-CSRF-Token"`
+}
+
+// PutExamsIdJSONBody defines parameters for PutExamsId.
+type PutExamsIdJSONBody struct {
+	Comment   *string            `json:"comment,omitempty"`
+	Date      openapi_types.Date `json:"date"`
+	Moduleid  int                `json:"moduleid"`
+	Programid int                `json:"programid"`
+	Version   string             `json:"version"`
 }
 
 // GetUsersParams defines parameters for GetUsers.
@@ -168,6 +176,9 @@ type PostAuthRegisterJSONRequestBody = UserRegister
 
 // PostExamsMultipartRequestBody defines body for PostExams for multipart/form-data ContentType.
 type PostExamsMultipartRequestBody PostExamsMultipartBody
+
+// PutExamsIdJSONRequestBody defines body for PutExamsId for application/json ContentType.
+type PutExamsIdJSONRequestBody PutExamsIdJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -195,6 +206,12 @@ type ServerInterface interface {
 	// Upload an exam
 	// (POST /exams)
 	PostExams(w http.ResponseWriter, r *http.Request, params PostExamsParams)
+	// Delete an exam
+	// (DELETE /exams/{id})
+	DeleteExamsId(w http.ResponseWriter, r *http.Request, id string)
+	// Update an exam assignment
+	// (PUT /exams/{id})
+	PutExamsId(w http.ResponseWriter, r *http.Request, id string)
 	// Download exam file
 	// (GET /exams/{id}/file)
 	GetExamsFile(w http.ResponseWriter, r *http.Request, id string)
@@ -264,6 +281,18 @@ func (_ Unimplemented) GetExams(w http.ResponseWriter, r *http.Request, params G
 // Upload an exam
 // (POST /exams)
 func (_ Unimplemented) PostExams(w http.ResponseWriter, r *http.Request, params PostExamsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete an exam
+// (DELETE /exams/{id})
+func (_ Unimplemented) DeleteExamsId(w http.ResponseWriter, r *http.Request, id string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update an exam assignment
+// (PUT /exams/{id})
+func (_ Unimplemented) PutExamsId(w http.ResponseWriter, r *http.Request, id string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -548,6 +577,68 @@ func (siw *ServerInterfaceWrapper) PostExams(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostExams(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteExamsId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteExamsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteExamsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutExamsId operation middleware
+func (siw *ServerInterfaceWrapper) PutExamsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutExamsId(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -862,6 +953,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/exams", wrapper.PostExams)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/exams/{id}", wrapper.DeleteExamsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/exams/{id}", wrapper.PutExamsId)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/exams/{id}/file", wrapper.GetExamsFile)
 	})
 	r.Group(func(r chi.Router) {
@@ -886,33 +983,35 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"H4sIAAAAAAAC/9RaW2/bOhL+KwR3H1pAiZ3LFli/7aZpm3PSNmhOigMEQcCIY5utRKoklcYI/N8PeNHN",
+	"omS5SdzkqbXEy/D7Zr4ZjnKPY5FmggPXCk/u8RwIBWn/ew76SIjvDMwPFc8hJeZ/epEBnmClJeMzvFwu",
+	"I5wRSVLQft6RktMPdhnzi3E88aviCHOSmsl/7xydf3m385f4DhxHWMKPnEmgeKJlDlH/Zu6l3elYSmE3",
+	"yaTIQGoG9jEUj1dmRzgFpcgMQivXrbj0S1QTrqJigrj5BrE2ix3fkfSUKX3MtVy0rYhFmgLXQTvgjqTX",
+	"lGhryVTIlGg8wfZB1B7NaPgwguYJXDtIO983JjOuYQbSvM2kmEmSdr3Os0QQCvSa6JaNO5qlQUP9JNlt",
+	"0y1IxQQPE9BC+KM9QRvaLqM7t+097Ar1jOL6BL9qyAHO3KBHsM/DYidTULFkmbYwYeNgSEzRLUkYRWef",
+	"FZoKifScKeRtRK9gd7aLzj7vj/feRPbf/YPXOMJMQ6qC2/kHREqyCJ/fWlqzK3T8CwWB4COxZrf2lMDz",
+	"FE8ux9FeNbsGRiyB6A0dDFLCksZw96QzaJpgfnXHQYfo4uLkbWjWr3lQhKVwfkphSvLEGJYrK3gehPIn",
+	"ZdoKC6Ep4zVY60FEN8blFiSbMqADYC+G9q3P8yQhN+ZETo8797vOuV4hZIN1Qo5X8Okd0OIaFU5VO2gz",
+	"RGu+1ACwy21PxYzxQOIY7l4ZUeqnkHRAKvFLlDO6jPoCM6Z0KKY2sKtw4JTxU+AzPceTvTXm14e+iR4m",
+	"niv0ldvUV2mf32R1iHPJ9OLcZPcigZri43+5MczXEe5RVUdcX38QSu8oUDarVMqWsT9h4eoFxqfCWs50",
+	"4t/hWiLC49293bE5p8iAm5cTfLA73j2w5uu5NWVEcj0fxUpOza8Z2NAxDBGjLCcUT/B70MZUU/zYikZl",
+	"git3kP3x2J2Ha18QkCxLWGwnj74plw+romeljvC79nuZHRVAdhmtaKApvJA2hRdiSuU2lJpF305V9f1b",
+	"whRP8L9GVZE48oNHVXm4XNYZxJPLqwirPE2JKYvwidkFEVRtbHgiM2XMtuxemekO4qQMTKECIJ8JZVF2",
+	"8esQAKX/L+hiI4RD5/J15ajSh2UTZKNhywdSu27jEGOnYjYDiuyBH85UhA/He49ms6vAA0afcFexxBIo",
+	"cM1IorDd++Dp9z42IoS40KhMF30OeipmDtwepxS5HuSVZlzzPnQZPkQ1ZFS7Ly2vWv51GKgJnUO4vV6M",
+	"R3wSGhk4jTfEJkGvktJU/MurZYsld+Iumlzi6xPnj4B/Q/we5VIC18iWgC8E7fegUVy3uxt2WS9beuOj",
+	"LHCeTrjLLQZp996Tc2+eI1+dOu7H29PejCzMfdzt+99t6S5JJBC6QHDHlFa9yluwhcg6J7NCvlgX31/d",
+	"qJYA29rxRw5yUZWOeuPe09WjlnW9rai1VZyDukhvSOVxDEpN8yRZbN3NHJJ9PDteLMeovLm0mYY74hoW",
+	"XRwf2wGD6K3fDluU1m4v4dnF7aDPHTqmll233n0f6ktlb6eXuUaDst33aVeavtnkiHgphYExGrxnFF7l",
+	"POXK3F47U1KHN21arXUlsjRPNMuI1CNza9+hRJM+PSBKsRlPiz58E6I/zj9/Qs7zDD+J5+m+9PIIeZeN",
+	"UOGAy1B7oK8pPbgfPWVJc+AN48TGQP8d1c6LimXrBw5fXLeXvlciJaC3dyRFRU98axeZd0LeMErb6tof",
+	"ERfWTkS4DYtAVJRiO7o3fmLdLQHHfjNO3trndt4J7VDejOh5pX9W+R6SVAMXHou+M9GDf7gdWZqKnG8o",
+	"Rw6xHvAjnOUhRcr1U8P8ayX38K9agwXkQV+mej8h1eWmXgJUCb2Wn615vyY9461LDyUvwPkvrJmF86NK",
+	"4teK0KhIKr213zuXQbagQn0EZ3TahHh9ImxLO0sAFes/d0kTP7nNKJZUn8VDdPqI663hz4ox26iAiy+0",
+	"G9S+5Rl6W4ZmMEmScjQinCI9ByarL7U1kMpDN3Eq0+86sB41KTzeLWQQ9G2oa6z8XrdvtbyKT+o3C2Sx",
+	"HMLfyGWUIU7/0Y98jlwOiif/BxkbhFMBztpo8gPtnzeQgogQBcWfhRRk5Mq3v7vAv7ADBnUNEpYy3bi5",
+	"lx/0D/YjnJI7luYpnuz/502EU8bdr71ocGNBTKcKOnYY15YcR7+J4QvfpB7Kr0P/mV+IrLHWUvRKgknK",
+	"sQb6uuZdzkdqDrVWmu2Mbd2JxltpVD/3OsQotO0hrspzyd661Zb/BAAA//+rOjtn7ygAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

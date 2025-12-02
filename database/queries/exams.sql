@@ -21,3 +21,16 @@ ORDER BY e.exam_date DESC;
 
 -- name: GetExam :one
 SELECT * FROM exams WHERE id = sqlc.arg(id) LIMIT 1;
+
+-- name: UpdateExam :one
+UPDATE exams
+SET programid = sqlc.arg(programid),
+    version = sqlc.arg(version),
+    moduleid = sqlc.arg(moduleid),
+    exam_date = sqlc.arg(exam_date),
+    comment = sqlc.arg(comment)
+WHERE id = sqlc.arg(id)
+RETURNING *;
+
+-- name: DeleteExam :exec
+DELETE FROM exams WHERE id = sqlc.arg(id);
