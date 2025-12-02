@@ -1,4 +1,3 @@
-
 openapi: 3.1.2
 info:
   title: api
@@ -332,11 +331,53 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [file, programid, version, moduleid, date]
+              required: [file, date, assignments]
               properties:
                 file:
                   type: string
                   format: binary
+                date:
+                  type: string
+                  format: date
+                assignments:
+                  type: string
+                  description: "JSON string of list of {programid, version, moduleid}"
+                comment:
+                  type: string
+      responses:
+        '201':
+          description: Exam uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamListEntry'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /exams/{id}:
+    put:
+      operationId: putExamsId
+      tags: [Exams]
+      summary: Update an exam assignment
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [programid, version, moduleid, date]
+              properties:
                 programid:
                   type: integer
                 version:
@@ -349,14 +390,34 @@ paths:
                 comment:
                   type: string
       responses:
-        '201':
-          description: Exam uploaded
+        '200':
+          description: Exam updated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExamListEntry'
-        '403':
-          description: Forbidden
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      operationId: deleteExamsId
+      tags: [Exams]
+      summary: Delete an exam
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: Exam deleted
+        '404':
+          description: Not found
           content:
             application/json:
               schema:
