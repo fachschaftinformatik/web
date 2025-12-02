@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -25,14 +24,14 @@ RETURNING id, email, name, password, role, active, verified, verified_at, verifi
 `
 
 type CreateUserParams struct {
-	ID                string         `json:"id"`
-	Email             string         `json:"email"`
-	Name              string         `json:"name"`
-	Password          string         `json:"password"`
-	Role              interface{}    `json:"role"`
-	Active            interface{}    `json:"active"`
-	Programid         int64          `json:"programid"`
-	VerificationToken sql.NullString `json:"verification_token"`
+	ID                string      `json:"id"`
+	Email             string      `json:"email"`
+	Name              string      `json:"name"`
+	Password          string      `json:"password"`
+	Role              interface{} `json:"role"`
+	Active            interface{} `json:"active"`
+	Programid         int64       `json:"programid"`
+	VerificationToken *string     `json:"verification_token"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -128,7 +127,7 @@ WHERE verification_token = ?1
 LIMIT 1
 `
 
-func (q *Queries) GetUserByVerificationToken(ctx context.Context, verificationToken sql.NullString) (User, error) {
+func (q *Queries) GetUserByVerificationToken(ctx context.Context, verificationToken *string) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUserByVerificationToken, verificationToken)
 	var i User
 	err := row.Scan(
@@ -312,8 +311,8 @@ WHERE id = ?2
 `
 
 type UpdateUserTokenParams struct {
-	VerificationToken sql.NullString `json:"verification_token"`
-	ID                string         `json:"id"`
+	VerificationToken *string `json:"verification_token"`
+	ID                string  `json:"id"`
 }
 
 func (q *Queries) UpdateUserToken(ctx context.Context, arg UpdateUserTokenParams) error {
@@ -329,8 +328,8 @@ RETURNING id, email, name, password, role, active, verified, verified_at, verifi
 `
 
 type UpdateUserVerificationWindowParams struct {
-	VerifiedUntil sql.NullString `json:"verified_until"`
-	ID            string         `json:"id"`
+	VerifiedUntil *string `json:"verified_until"`
+	ID            string  `json:"id"`
 }
 
 func (q *Queries) UpdateUserVerificationWindow(ctx context.Context, arg UpdateUserVerificationWindowParams) (User, error) {
@@ -365,8 +364,8 @@ RETURNING id, email, name, password, role, active, verified, verified_at, verifi
 `
 
 type VerifyUserParams struct {
-	VerifiedUntil sql.NullString `json:"verified_until"`
-	ID            string         `json:"id"`
+	VerifiedUntil *string `json:"verified_until"`
+	ID            string  `json:"id"`
 }
 
 func (q *Queries) VerifyUser(ctx context.Context, arg VerifyUserParams) (User, error) {

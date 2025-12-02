@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteExamsIdData, DeleteExamsIdErrors, DeleteExamsIdResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeErrors, GetAuthMeResponses, GetAuthVerifyData, GetAuthVerifyErrors, GetAuthVerifyResponses, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileErrors, GetExamsFileResponses, GetExamsResponses, GetProgramModulesData, GetProgramModulesResponses, GetProgramsData, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetUsersData, GetUsersErrors, GetUsersIdData, GetUsersIdErrors, GetUsersIdResponses, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PutExamsIdData, PutExamsIdErrors, PutExamsIdResponses } from './types.gen';
+import type { DeleteExamsIdData, DeleteExamsIdResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthVerifyData, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileResponses, GetExamsResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetUsersByIdData, GetUsersByIdResponses, GetUsersData, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PutExamsIdData, PutExamsIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -19,26 +19,9 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
- * Issue a CSRF token
+ * Issue CSRF token
  */
 export const getAuthCsrf = <ThrowOnError extends boolean = false>(options?: Options<GetAuthCsrfData, ThrowOnError>) => (options?.client ?? client).get<GetAuthCsrfResponses, unknown, ThrowOnError>({ url: '/auth/csrf', ...options });
-
-/**
- * Register a user
- */
-export const postAuthRegister = <ThrowOnError extends boolean = false>(options: Options<PostAuthRegisterData, ThrowOnError>) => (options.client ?? client).post<PostAuthRegisterResponses, PostAuthRegisterErrors, ThrowOnError>({
-    url: '/auth/register',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Verify user email
- */
-export const getAuthVerify = <ThrowOnError extends boolean = false>(options: Options<GetAuthVerifyData, ThrowOnError>) => (options.client ?? client).get<GetAuthVerifyResponses, GetAuthVerifyErrors, ThrowOnError>({ url: '/auth/verify', ...options });
 
 /**
  * Log in
@@ -55,93 +38,42 @@ export const postAuthLogin = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Log out
  */
-export const postAuthLogout = <ThrowOnError extends boolean = false>(options: Options<PostAuthLogoutData, ThrowOnError>) => (options.client ?? client).post<PostAuthLogoutResponses, PostAuthLogoutErrors, ThrowOnError>({
-    security: [{
-            in: 'cookie',
-            name: '__Host-session',
-            type: 'apiKey'
-        }],
-    url: '/auth/logout',
-    ...options
-});
+export const postAuthLogout = <ThrowOnError extends boolean = false>(options: Options<PostAuthLogoutData, ThrowOnError>) => (options.client ?? client).post<PostAuthLogoutResponses, unknown, ThrowOnError>({ url: '/auth/logout', ...options });
 
 /**
  * Get current user
  */
-export const getAuthMe = <ThrowOnError extends boolean = false>(options?: Options<GetAuthMeData, ThrowOnError>) => (options?.client ?? client).get<GetAuthMeResponses, GetAuthMeErrors, ThrowOnError>({
-    security: [{
-            in: 'cookie',
-            name: '__Host-session',
-            type: 'apiKey'
-        }],
-    url: '/auth/me',
-    ...options
+export const getAuthMe = <ThrowOnError extends boolean = false>(options?: Options<GetAuthMeData, ThrowOnError>) => (options?.client ?? client).get<GetAuthMeResponses, unknown, ThrowOnError>({ url: '/auth/me', ...options });
+
+/**
+ * Register a user
+ */
+export const postAuthRegister = <ThrowOnError extends boolean = false>(options: Options<PostAuthRegisterData, ThrowOnError>) => (options.client ?? client).post<PostAuthRegisterResponses, PostAuthRegisterErrors, ThrowOnError>({
+    url: '/auth/register',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
- * Get user by id
+ * Verify user email
  */
-export const getUsersId = <ThrowOnError extends boolean = false>(options: Options<GetUsersIdData, ThrowOnError>) => (options.client ?? client).get<GetUsersIdResponses, GetUsersIdErrors, ThrowOnError>({
-    security: [{
-            in: 'cookie',
-            name: '__Host-session',
-            type: 'apiKey'
-        }],
-    url: '/users/{id}',
-    ...options
-});
-
-/**
- * List users (restricted)
- */
-export const getUsers = <ThrowOnError extends boolean = false>(options?: Options<GetUsersData, ThrowOnError>) => (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError>({
-    security: [{
-            in: 'cookie',
-            name: '__Host-session',
-            type: 'apiKey'
-        }],
-    url: '/users',
-    ...options
-});
-
-/**
- * List all programs and their valid POs
- */
-export const getPrograms = <ThrowOnError extends boolean = false>(options?: Options<GetProgramsData, ThrowOnError>) => (options?.client ?? client).get<GetProgramsResponses, unknown, ThrowOnError>({ url: '/programs', ...options });
-
-/**
- * Get program by id
- */
-export const getProgramsId = <ThrowOnError extends boolean = false>(options: Options<GetProgramsIdData, ThrowOnError>) => (options.client ?? client).get<GetProgramsIdResponses, GetProgramsIdErrors, ThrowOnError>({ url: '/programs/{id}', ...options });
-
-/**
- * List modules for a program
- */
-export const getProgramModules = <ThrowOnError extends boolean = false>(options: Options<GetProgramModulesData, ThrowOnError>) => (options.client ?? client).get<GetProgramModulesResponses, unknown, ThrowOnError>({ url: '/programs/{id}/modules', ...options });
+export const getAuthVerify = <ThrowOnError extends boolean = false>(options: Options<GetAuthVerifyData, ThrowOnError>) => (options.client ?? client).get<unknown, unknown, ThrowOnError>({ url: '/auth/verify', ...options });
 
 /**
  * List exams
  */
-export const getExams = <ThrowOnError extends boolean = false>(options?: Options<GetExamsData, ThrowOnError>) => (options?.client ?? client).get<GetExamsResponses, GetExamsErrors, ThrowOnError>({
-    security: [{
-            in: 'cookie',
-            name: '__Host-session',
-            type: 'apiKey'
-        }],
-    url: '/exams',
-    ...options
-});
+export const getExams = <ThrowOnError extends boolean = false>(options?: Options<GetExamsData, ThrowOnError>) => (options?.client ?? client).get<GetExamsResponses, GetExamsErrors, ThrowOnError>({ url: '/exams', ...options });
 
 /**
- * Upload an exam
+ * Upload exam
+ *
+ * Upload a PDF and assign it to one or more modules
  */
 export const postExams = <ThrowOnError extends boolean = false>(options: Options<PostExamsData, ThrowOnError>) => (options.client ?? client).post<PostExamsResponses, PostExamsErrors, ThrowOnError>({
     ...formDataBodySerializer,
-    security: [{
-            in: 'cookie',
-            name: '__Host-session',
-            type: 'apiKey'
-        }],
     url: '/exams',
     ...options,
     headers: {
@@ -151,27 +83,14 @@ export const postExams = <ThrowOnError extends boolean = false>(options: Options
 });
 
 /**
- * Delete an exam
+ * Delete exam
  */
-export const deleteExamsId = <ThrowOnError extends boolean = false>(options: Options<DeleteExamsIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteExamsIdResponses, DeleteExamsIdErrors, ThrowOnError>({
-    security: [{
-            in: 'cookie',
-            name: '__Host-session',
-            type: 'apiKey'
-        }],
-    url: '/exams/{id}',
-    ...options
-});
+export const deleteExamsId = <ThrowOnError extends boolean = false>(options: Options<DeleteExamsIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteExamsIdResponses, unknown, ThrowOnError>({ url: '/exams/{id}', ...options });
 
 /**
- * Update an exam assignment
+ * Update exam
  */
-export const putExamsId = <ThrowOnError extends boolean = false>(options: Options<PutExamsIdData, ThrowOnError>) => (options.client ?? client).put<PutExamsIdResponses, PutExamsIdErrors, ThrowOnError>({
-    security: [{
-            in: 'cookie',
-            name: '__Host-session',
-            type: 'apiKey'
-        }],
+export const putExamsId = <ThrowOnError extends boolean = false>(options: Options<PutExamsIdData, ThrowOnError>) => (options.client ?? client).put<PutExamsIdResponses, unknown, ThrowOnError>({
     url: '/exams/{id}',
     ...options,
     headers: {
@@ -181,14 +100,33 @@ export const putExamsId = <ThrowOnError extends boolean = false>(options: Option
 });
 
 /**
- * Download exam file
+ * Download file
  */
-export const getExamsFile = <ThrowOnError extends boolean = false>(options: Options<GetExamsFileData, ThrowOnError>) => (options.client ?? client).get<GetExamsFileResponses, GetExamsFileErrors, ThrowOnError>({
-    security: [{
-            in: 'cookie',
-            name: '__Host-session',
-            type: 'apiKey'
-        }],
-    url: '/exams/{id}/file',
-    ...options
-});
+export const getExamsFile = <ThrowOnError extends boolean = false>(options: Options<GetExamsFileData, ThrowOnError>) => (options.client ?? client).get<GetExamsFileResponses, unknown, ThrowOnError>({ url: '/exams/{id}/file', ...options });
+
+/**
+ * List all programs
+ *
+ * Returns a list of study programs and their valid PO versions
+ */
+export const getPrograms = <ThrowOnError extends boolean = false>(options?: Options<GetProgramsData, ThrowOnError>) => (options?.client ?? client).get<GetProgramsResponses, GetProgramsErrors, ThrowOnError>({ url: '/programs', ...options });
+
+/**
+ * Get program by ID
+ */
+export const getProgramsId = <ThrowOnError extends boolean = false>(options: Options<GetProgramsIdData, ThrowOnError>) => (options.client ?? client).get<GetProgramsIdResponses, GetProgramsIdErrors, ThrowOnError>({ url: '/programs/{id}', ...options });
+
+/**
+ * List modules for a program
+ */
+export const getProgramModules = <ThrowOnError extends boolean = false>(options: Options<GetProgramModulesData, ThrowOnError>) => (options.client ?? client).get<GetProgramModulesResponses, GetProgramModulesErrors, ThrowOnError>({ url: '/programs/{id}/modules', ...options });
+
+/**
+ * List users
+ */
+export const getUsers = <ThrowOnError extends boolean = false>(options?: Options<GetUsersData, ThrowOnError>) => (options?.client ?? client).get<GetUsersResponses, unknown, ThrowOnError>({ url: '/users', ...options });
+
+/**
+ * Get user by ID
+ */
+export const getUsersById = <ThrowOnError extends boolean = false>(options: Options<GetUsersByIdData, ThrowOnError>) => (options.client ?? client).get<GetUsersByIdResponses, unknown, ThrowOnError>({ url: '/users/{id}', ...options });

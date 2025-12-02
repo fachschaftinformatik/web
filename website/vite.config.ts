@@ -16,15 +16,31 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', '@mui/material'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            const normalizedId = id.split(path.sep).join('/');
+            switch (true) {
+              case normalizedId.includes('@mui/icons-material'):
+                return 'mui-icons';
+              case normalizedId.includes('@mui'):
+              case normalizedId.includes('@emotion'):
+                return 'mui-vendor';
+              case normalizedId.includes('react'):
+              case normalizedId.includes('scheduler'):
+              case normalizedId.includes('remix-run'):
+                return 'react-vendor';
+              case normalizedId.includes('zod'):
+                return 'utils';
+              default:
+                return 'vendor';
+            }
+          }
         },
       },
     },
