@@ -4,10 +4,10 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"time"
 	"errors"
 
@@ -21,6 +21,12 @@ const maxUploadSize = 10 << 20
 
 func toPtr[T any](v T) *T {
 	return &v
+}
+
+type ExamAssignment struct {
+	ProgramID int64  `json:"programid"`
+	Version   string `json:"version"`
+	ModuleID  int64  `json:"moduleid"`
 }
 
 func (s *Server) PostExams(w http.ResponseWriter, r *http.Request, params api.PostExamsParams) {
@@ -62,14 +68,18 @@ func (s *Server) PostExams(w http.ResponseWriter, r *http.Request, params api.Po
 		return
 	}
 
-	programID, _ := strconv.ParseInt(r.FormValue("programid"), 10, 64)
-	version := r.FormValue("version")
-	moduleID, _ := strconv.ParseInt(r.FormValue("moduleid"), 10, 64)
 	examDate := r.FormValue("date")
 	comment := r.FormValue("comment")
+	assignmentsJSON := r.FormValue("assignments")
 
-	if programID == 0 || version == "" || moduleID == 0 || examDate == "" {
+	if examDate == "" || assignmentsJSON == "" {
 		s.jsonError(w, "bad_request", "Missing metadata", http.StatusBadRequest)
+		return
+	}
+
+	var assignments []ExamAssignment
+	if err := json.Unmarshal([]byte(assignmentsJSON), &assignments); err != nil || len(assignments) == 0 {
+		s.jsonError(w, "bad_request", "Invalid assignments", http.StatusBadRequest)
 		return
 	}
 
@@ -91,26 +101,27 @@ func (s *Server) PostExams(w http.ResponseWriter, r *http.Request, params api.Po
 		return
 	}
 
-	paramsDB := database.CreateExamParams{
-		ID:        uuid.NewString(),
-		Userid:    user.ID,
-		Programid: programID,
-		Version:   version,
-		Moduleid:  sql.NullInt64{Int64: moduleID, Valid: true},
-		ExamDate:  examDate,
-		Accesskey: accessKey,
-		MimeType:  "application/pdf",
-		Nbytes:    header.Size,
-		Checksum:  checksum,
-		Comment:   sql.NullString{String: comment, Valid: comment != ""},
-	}
+	ctx := r.Context()
+	
+	for _, assign := range assignments {
+		paramsDB := database.CreateExamParams{
+			ID:        uuid.NewString(),
+			Userid:    user.ID,
+			Programid: assign.ProgramID,
+			Version:   assign.Version,
+			Moduleid:  sql.NullInt64{Int64: assign.ModuleID, Valid: true},
+			ExamDate:  examDate,
+			Accesskey: accessKey,
+			MimeType:  "application/pdf",
+			Nbytes:    header.Size,
+			Checksum:  checksum,
+			Comment:   sql.NullString{String: comment, Valid: comment != ""},
+		}
 
-	_, err = s.DB.CreateExam(r.Context(), paramsDB)
-	if err != nil {
-		s.Log.Printf("DB CreateExam failed: %v", err)
-		s.Store.Delete(r.Context(), objectKey)
-		s.jsonError(w, "database_error", "Failed to save metadata", http.StatusInternalServerError)
-		return
+		_, err = s.DB.CreateExam(ctx, paramsDB)
+		if err != nil {
+			s.Log.Printf("DB CreateExam failed for assignment %+v: %v", assign, err)
+		}
 	}
 
 	s.respondJSON(w, http.StatusCreated, map[string]string{"status": "created"})
@@ -207,4 +218,104 @@ func (s *Server) GetExamsFile(w http.ResponseWriter, r *http.Request, id string)
 	if _, err := io.Copy(w, obj); err != nil {
 		s.Log.Printf("Stream error: %v", err)
 	}
+}
+
+func (s *Server) PutExamsId(w http.ResponseWriter, r *http.Request, id string) {
+	_, user, err := s.authenticate(w, r)
+	if err != nil {
+		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if user.Role != "admin" && user.Role != "editor" {
+		s.jsonError(w, "forbidden", "Insufficient permissions", http.StatusForbidden)
+		return
+	}
+
+	var payload struct {
+		Programid int    `json:"programid"`
+		Version   string `json:"version"`
+		Moduleid  int    `json:"moduleid"`
+		Date      string `json:"date"`
+		Comment   string `json:"comment"`
+	}
+	
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		s.jsonError(w, "bad_request", "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	params := database.UpdateExamParams{
+		ID:        id,
+		Programid: int64(payload.Programid),
+		Version:   payload.Version,
+		Moduleid:  sql.NullInt64{Int64: int64(payload.Moduleid), Valid: true},
+		ExamDate:  payload.Date,
+		Comment:   sql.NullString{String: payload.Comment, Valid: payload.Comment != ""},
+	}
+
+	updated, err := s.DB.UpdateExam(r.Context(), params)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			s.jsonError(w, "not_found", "Exam not found", http.StatusNotFound)
+		} else {
+			s.Log.Printf("DB UpdateExam error: %v", err)
+			s.jsonError(w, "database_error", "Failed to update exam", http.StatusInternalServerError)
+		}
+		return
+	}
+	
+	entry := api.ExamListEntry{
+		Id:           toPtr(updated.ID),
+		Programid:    toPtr(int(updated.Programid)),
+		Version:      toPtr(updated.Version),
+		Moduleid:     toPtr(int(updated.Moduleid.Int64)),
+		Comment:      toPtr(updated.Comment.String),
+	}
+	
+	if t, err := time.Parse("2006-01-02", updated.ExamDate); err == nil {
+		entry.ExamDate = toPtr(openapi_types.Date{Time: t})
+	}
+
+	s.respondJSON(w, http.StatusOK, entry)
+}
+
+func (s *Server) DeleteExamsId(w http.ResponseWriter, r *http.Request, id string) {
+	_, user, err := s.authenticate(w, r)
+	if err != nil {
+		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if user.Role != "admin" && user.Role != "editor" {
+		s.jsonError(w, "forbidden", "Insufficient permissions", http.StatusForbidden)
+		return
+	}
+
+	// Fetch to get accesskey for S3 deletion
+	exam, err := s.DB.GetExam(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			s.jsonError(w, "not_found", "Exam not found", http.StatusNotFound)
+		} else {
+			s.Log.Printf("DB GetExam error: %v", err)
+			s.jsonError(w, "database_error", "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Delete from DB
+	if err := s.DB.DeleteExam(r.Context(), id); err != nil {
+		s.Log.Printf("DB DeleteExam error: %v", err)
+		s.jsonError(w, "database_error", "Failed to delete exam", http.StatusInternalServerError)
+		return
+	}
+
+	// Delete from S3
+	objectKey := fmt.Sprintf("exams/%s.pdf", exam.Accesskey)
+	if err := s.Store.Delete(r.Context(), objectKey); err != nil {
+		s.Log.Printf("S3 Delete error (non-fatal): %v", err)
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

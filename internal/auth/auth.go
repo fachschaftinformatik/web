@@ -21,10 +21,11 @@ import (
 )
 
 const (
-	sessionCookieName = "__Host-session"
-	csrfCookieName    = "__Host-csrf"
-	sessionDuration   = 24 * time.Hour
-	csrfDuration      = 15 * time.Minute
+	sessionCookieName     = "__Host-session"
+	csrfCookieName        = "__Host-csrf"
+	sessionDuration       = 24 * time.Hour
+	sessionUpdateInterval = 5 * time.Minute
+	csrfDuration          = 15 * time.Minute
 )
 
 type Server struct {
@@ -484,15 +485,24 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) (database.
 		return database.Session{}, database.User{}, errors.New("user not found for session")
 	}
 
-	newExpiresAt := time.Now().Add(sessionDuration)
-	if _, err = s.DB.SlideSession(ctx, database.SlideSessionParams{
-		ID:        sessionID,
-		ExpiresAt: newExpiresAt.Format(time.RFC3339),
-	}); err != nil {
-		s.Log.Printf("Auth: Failed to slide session: %v", err)
+	shouldUpdate := true
+	if lastSeen, err := time.Parse(time.RFC3339, session.LastSeen); err == nil {
+		if time.Since(lastSeen) < sessionUpdateInterval {
+			shouldUpdate = false
+		}
 	}
 
-	s.setCookie(w, sessionCookieName, sessionID, sessionDuration, true)
+	if shouldUpdate {
+		newExpiresAt := time.Now().Add(sessionDuration)
+		if _, err = s.DB.SlideSession(ctx, database.SlideSessionParams{
+			ID:        sessionID,
+			ExpiresAt: newExpiresAt.Format(time.RFC3339),
+		}); err != nil {
+			s.Log.Printf("Auth: Failed to slide session: %v", err)
+		}
+
+		s.setCookie(w, sessionCookieName, sessionID, sessionDuration, true)
+	}
 
 	return session, user, nil
 }

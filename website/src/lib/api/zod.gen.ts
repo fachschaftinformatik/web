@@ -234,10 +234,8 @@ export const zGetExamsResponse = z.array(zExamListEntry);
 export const zPostExamsData = z.object({
     body: z.object({
         file: z.string(),
-        programid: z.int(),
-        version: z.string(),
-        moduleid: z.int(),
         date: z.iso.date(),
+        assignments: z.string(),
         comment: z.optional(z.string())
     }),
     path: z.optional(z.never()),
@@ -251,6 +249,38 @@ export const zPostExamsData = z.object({
  * Exam uploaded
  */
 export const zPostExamsResponse = zExamListEntry;
+
+export const zDeleteExamsIdData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * Exam deleted
+ */
+export const zDeleteExamsIdResponse = z.void();
+
+export const zPutExamsIdData = z.object({
+    body: z.object({
+        programid: z.int(),
+        version: z.string(),
+        moduleid: z.int(),
+        date: z.iso.date(),
+        comment: z.optional(z.string())
+    }),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * Exam updated
+ */
+export const zPutExamsIdResponse = zExamListEntry;
 
 export const zGetExamsFileData = z.object({
     body: z.optional(z.never()),

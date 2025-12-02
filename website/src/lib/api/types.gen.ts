@@ -384,10 +384,11 @@ export type GetExamsResponse = GetExamsResponses[keyof GetExamsResponses];
 export type PostExamsData = {
     body: {
         file: Blob | File;
-        programid: number;
-        version: string;
-        moduleid: number;
         date: string;
+        /**
+         * JSON string of list of {programid, version, moduleid}
+         */
+        assignments: string;
         comment?: string;
     };
     headers: {
@@ -415,6 +416,66 @@ export type PostExamsResponses = {
 };
 
 export type PostExamsResponse = PostExamsResponses[keyof PostExamsResponses];
+
+export type DeleteExamsIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/exams/{id}';
+};
+
+export type DeleteExamsIdErrors = {
+    /**
+     * Not found
+     */
+    404: _Error;
+};
+
+export type DeleteExamsIdError = DeleteExamsIdErrors[keyof DeleteExamsIdErrors];
+
+export type DeleteExamsIdResponses = {
+    /**
+     * Exam deleted
+     */
+    204: void;
+};
+
+export type DeleteExamsIdResponse = DeleteExamsIdResponses[keyof DeleteExamsIdResponses];
+
+export type PutExamsIdData = {
+    body: {
+        programid: number;
+        version: string;
+        moduleid: number;
+        date: string;
+        comment?: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/exams/{id}';
+};
+
+export type PutExamsIdErrors = {
+    /**
+     * Not found
+     */
+    404: _Error;
+};
+
+export type PutExamsIdError = PutExamsIdErrors[keyof PutExamsIdErrors];
+
+export type PutExamsIdResponses = {
+    /**
+     * Exam updated
+     */
+    200: ExamListEntry;
+};
+
+export type PutExamsIdResponse = PutExamsIdResponses[keyof PutExamsIdResponses];
 
 export type GetExamsFileData = {
     body?: never;

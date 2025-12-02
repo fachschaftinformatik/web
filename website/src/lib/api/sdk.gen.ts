@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeErrors, GetAuthMeResponses, GetAuthVerifyData, GetAuthVerifyErrors, GetAuthVerifyResponses, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileErrors, GetExamsFileResponses, GetExamsResponses, GetProgramModulesData, GetProgramModulesResponses, GetProgramsData, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetUsersData, GetUsersErrors, GetUsersIdData, GetUsersIdErrors, GetUsersIdResponses, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses } from './types.gen';
+import type { DeleteExamsIdData, DeleteExamsIdErrors, DeleteExamsIdResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeErrors, GetAuthMeResponses, GetAuthVerifyData, GetAuthVerifyErrors, GetAuthVerifyResponses, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileErrors, GetExamsFileResponses, GetExamsResponses, GetProgramModulesData, GetProgramModulesResponses, GetProgramsData, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetUsersData, GetUsersErrors, GetUsersIdData, GetUsersIdErrors, GetUsersIdResponses, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutErrors, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PutExamsIdData, PutExamsIdErrors, PutExamsIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -146,6 +146,36 @@ export const postExams = <ThrowOnError extends boolean = false>(options: Options
     ...options,
     headers: {
         'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Delete an exam
+ */
+export const deleteExamsId = <ThrowOnError extends boolean = false>(options: Options<DeleteExamsIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteExamsIdResponses, DeleteExamsIdErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-session',
+            type: 'apiKey'
+        }],
+    url: '/exams/{id}',
+    ...options
+});
+
+/**
+ * Update an exam assignment
+ */
+export const putExamsId = <ThrowOnError extends boolean = false>(options: Options<PutExamsIdData, ThrowOnError>) => (options.client ?? client).put<PutExamsIdResponses, PutExamsIdErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: '__Host-session',
+            type: 'apiKey'
+        }],
+    url: '/exams/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
         ...options.headers
     }
 });
