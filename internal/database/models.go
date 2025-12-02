@@ -22,14 +22,14 @@ type Exam struct {
 	Userid     string         `json:"userid"`
 	Programid  int64          `json:"programid"`
 	Version    string         `json:"version"`
+	Moduleid   sql.NullInt64  `json:"moduleid"`
+	Comment    sql.NullString `json:"comment"`
 	ExamDate   string         `json:"exam_date"`
 	UploadedAt string         `json:"uploaded_at"`
 	Accesskey  string         `json:"accesskey"`
 	MimeType   string         `json:"mime_type"`
 	Nbytes     int64          `json:"nbytes"`
 	Checksum   string         `json:"checksum"`
-	Moduleid   sql.NullInt64  `json:"moduleid"`
-	Comment    sql.NullString `json:"comment"`
 }
 
 type Module struct {

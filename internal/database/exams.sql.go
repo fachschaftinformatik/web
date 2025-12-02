@@ -18,7 +18,7 @@ INSERT INTO exams (
   ?1, ?2, ?3, ?4, 
   ?5, ?6, ?7, 
   ?8, ?9, ?10, ?11
-) RETURNING id, userid, programid, version, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum, moduleid, comment
+) RETURNING id, userid, programid, version, moduleid, comment, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum
 `
 
 type CreateExamParams struct {
@@ -55,20 +55,29 @@ func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, e
 		&i.Userid,
 		&i.Programid,
 		&i.Version,
+		&i.Moduleid,
+		&i.Comment,
 		&i.ExamDate,
 		&i.UploadedAt,
 		&i.Accesskey,
 		&i.MimeType,
 		&i.Nbytes,
 		&i.Checksum,
-		&i.Moduleid,
-		&i.Comment,
 	)
 	return i, err
 }
 
+const deleteExam = `-- name: DeleteExam :exec
+DELETE FROM exams WHERE id = ?1
+`
+
+func (q *Queries) DeleteExam(ctx context.Context, id string) error {
+	_, err := q.db.ExecContext(ctx, deleteExam, id)
+	return err
+}
+
 const getExam = `-- name: GetExam :one
-SELECT id, userid, programid, version, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum, moduleid, comment FROM exams WHERE id = ?1 LIMIT 1
+SELECT id, userid, programid, version, moduleid, comment, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum FROM exams WHERE id = ?1 LIMIT 1
 `
 
 func (q *Queries) GetExam(ctx context.Context, id string) (Exam, error) {
@@ -79,14 +88,14 @@ func (q *Queries) GetExam(ctx context.Context, id string) (Exam, error) {
 		&i.Userid,
 		&i.Programid,
 		&i.Version,
+		&i.Moduleid,
+		&i.Comment,
 		&i.ExamDate,
 		&i.UploadedAt,
 		&i.Accesskey,
 		&i.MimeType,
 		&i.Nbytes,
 		&i.Checksum,
-		&i.Moduleid,
-		&i.Comment,
 	)
 	return i, err
 }
@@ -152,4 +161,51 @@ func (q *Queries) ListExams(ctx context.Context, arg ListExamsParams) ([]ListExa
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateExam = `-- name: UpdateExam :one
+UPDATE exams
+SET programid = ?1,
+    version = ?2,
+    moduleid = ?3,
+    exam_date = ?4,
+    comment = ?5
+WHERE id = ?6
+RETURNING id, userid, programid, version, moduleid, comment, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum
+`
+
+type UpdateExamParams struct {
+	Programid int64          `json:"programid"`
+	Version   string         `json:"version"`
+	Moduleid  sql.NullInt64  `json:"moduleid"`
+	ExamDate  string         `json:"exam_date"`
+	Comment   sql.NullString `json:"comment"`
+	ID        string         `json:"id"`
+}
+
+func (q *Queries) UpdateExam(ctx context.Context, arg UpdateExamParams) (Exam, error) {
+	row := q.db.QueryRowContext(ctx, updateExam,
+		arg.Programid,
+		arg.Version,
+		arg.Moduleid,
+		arg.ExamDate,
+		arg.Comment,
+		arg.ID,
+	)
+	var i Exam
+	err := row.Scan(
+		&i.ID,
+		&i.Userid,
+		&i.Programid,
+		&i.Version,
+		&i.Moduleid,
+		&i.Comment,
+		&i.ExamDate,
+		&i.UploadedAt,
+		&i.Accesskey,
+		&i.MimeType,
+		&i.Nbytes,
+		&i.Checksum,
+	)
+	return i, err
 }
