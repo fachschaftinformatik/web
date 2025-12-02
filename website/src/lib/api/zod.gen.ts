@@ -2,80 +2,86 @@
 
 import { z } from 'zod';
 
-export const zError = z.object({
-    error: z.string(),
-    message: z.string()
+export const zAuthCsrfResponse = z.object({
+    csrf: z.optional(z.string())
 });
 
-export const zProgram = z.object({
-    id: z.int(),
-    name: z.string(),
-    versions: z.array(z.string())
+export const zAuthErrorResponse = z.object({
+    error: z.optional(z.string()),
+    message: z.optional(z.string())
 });
 
-export const zModule = z.object({
-    id: z.int(),
-    programid: z.int(),
-    name: z.string()
-});
-
-export const zExamListEntry = z.object({
-    id: z.optional(z.string()),
-    programid: z.optional(z.int()),
-    version: z.optional(z.string()),
-    moduleid: z.optional(z.int()),
-    module_name: z.optional(z.string()),
+/**
+ * Exam details
+ */
+export const zAuthExamResponse = z.object({
+    comment: z.optional(z.string()),
     exam_date: z.optional(z.iso.date()),
-    uploaded_at: z.optional(z.iso.datetime()),
+    id: z.optional(z.string()),
+    module_name: z.optional(z.string()),
+    moduleid: z.optional(z.int()),
+    programid: z.optional(z.int()),
+    uploaded_at: z.optional(z.string()),
     uploader_name: z.optional(z.string()),
-    comment: z.optional(z.string())
+    version: z.optional(z.string())
 });
 
-export const zUser = z.object({
-    id: z.string(),
-    email: z.email(),
-    name: z.string(),
-    role: z.enum([
-        'user',
-        'editor',
-        'admin'
-    ]),
-    active: z.union([z.literal(0), z.literal(1)]),
-    verified: z.union([z.literal(0), z.literal(1)]),
-    verified_at: z.optional(z.union([
-        z.iso.datetime(),
-        z.null()
-    ])),
-    verified_until: z.optional(z.union([
-        z.iso.datetime(),
-        z.null()
-    ])),
-    programid: z.int(),
-    created_at: z.iso.datetime(),
-    updated_at: z.iso.datetime()
+export const zAuthLoginRequest = z.object({
+    email: z.optional(z.string()),
+    password: z.optional(z.string())
 });
 
-export const zUserRegister = z.object({
-    email: z.email(),
-    name: z.string().min(1),
-    password: z.string().min(16),
-    programid: z.int()
+/**
+ * A study module
+ */
+export const zAuthModuleResponse = z.object({
+    id: z.optional(z.int()),
+    name: z.optional(z.string()),
+    programid: z.optional(z.int())
 });
 
-export const zUserLogin = z.object({
-    email: z.email(),
-    password: z.string()
+/**
+ * A study program including valid PO versions
+ */
+export const zAuthProgramResponse = z.object({
+    id: z.optional(z.int()),
+    name: z.optional(z.string()),
+    versions: z.optional(z.array(z.string()))
 });
 
-export const zSession = z.object({
-    id: z.string(),
-    userid: z.string(),
-    created_at: z.iso.datetime(),
-    last_seen: z.iso.datetime(),
-    expires_at: z.iso.datetime()
+export const zAuthRegisterRequest = z.object({
+    email: z.optional(z.string()),
+    name: z.optional(z.string()),
+    password: z.optional(z.string()),
+    programid: z.optional(z.int())
 });
 
-export const zCsrfHeader = z.string();
+export const zAuthUpdateExamRequest = z.object({
+    comment: z.optional(z.string()),
+    date: z.optional(z.string()),
+    moduleid: z.optional(z.int()),
+    programid: z.optional(z.int()),
+    version: z.optional(z.string())
+});
+
+/**
+ * User account information
+ */
+export const zAuthUserResponse = z.object({
+    active: z.optional(z.int()),
+    created_at: z.optional(z.string()),
+    email: z.optional(z.string()),
+    id: z.optional(z.string()),
+    name: z.optional(z.string()),
+    password: z.optional(z.string()),
+    programid: z.optional(z.int()),
+    role: z.optional(z.string()),
+    updated_at: z.optional(z.string()),
+    verification_token: z.optional(z.string()),
+    verified: z.optional(z.int()),
+    verified_at: z.optional(z.string()),
+    verified_until: z.optional(z.string())
+});
 
 export const zGetAuthCsrfData = z.object({
     body: z.optional(z.never()),
@@ -84,48 +90,20 @@ export const zGetAuthCsrfData = z.object({
 });
 
 /**
- * CSRF token issued
+ * OK
  */
-export const zGetAuthCsrfResponse = z.object({
-    csrf: z.string()
-});
-
-export const zPostAuthRegisterData = z.object({
-    body: zUserRegister,
-    path: z.optional(z.never()),
-    query: z.optional(z.never())
-});
-
-/**
- * User created
- */
-export const zPostAuthRegisterResponse = zUser;
-
-export const zGetAuthVerifyData = z.object({
-    body: z.optional(z.never()),
-    path: z.optional(z.never()),
-    query: z.object({
-        token: z.string()
-    })
-});
-
-/**
- * Email verified successfully
- */
-export const zGetAuthVerifyResponse = z.object({
-    message: z.optional(z.string())
-});
+export const zGetAuthCsrfResponse = zAuthCsrfResponse;
 
 export const zPostAuthLoginData = z.object({
-    body: zUserLogin,
+    body: zAuthLoginRequest,
     path: z.optional(z.never()),
     query: z.optional(z.never())
 });
 
 /**
- * Logged in
+ * OK
  */
-export const zPostAuthLoginResponse = zUser;
+export const zPostAuthLoginResponse = zAuthUserResponse;
 
 export const zPostAuthLogoutData = z.object({
     body: z.optional(z.never()),
@@ -136,11 +114,6 @@ export const zPostAuthLogoutData = z.object({
     })
 });
 
-/**
- * Logged out
- */
-export const zPostAuthLogoutResponse = z.void();
-
 export const zGetAuthMeData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),
@@ -148,73 +121,28 @@ export const zGetAuthMeData = z.object({
 });
 
 /**
- * Current user
+ * OK
  */
-export const zGetAuthMeResponse = zUser;
+export const zGetAuthMeResponse = zAuthUserResponse;
 
-export const zGetUsersIdData = z.object({
-    body: z.optional(z.never()),
-    path: z.object({
-        id: z.string()
-    }),
-    query: z.optional(z.never())
-});
-
-/**
- * User
- */
-export const zGetUsersIdResponse = zUser;
-
-export const zGetUsersData = z.object({
-    body: z.optional(z.never()),
-    path: z.optional(z.never()),
-    query: z.optional(z.object({
-        limit: z.optional(z.int().gte(1).lte(256)).default(32),
-        offset: z.optional(z.int().gte(0)).default(0)
-    }))
-});
-
-/**
- * List of users
- */
-export const zGetUsersResponse = z.array(zUser);
-
-export const zGetProgramsData = z.object({
-    body: z.optional(z.never()),
+export const zPostAuthRegisterData = z.object({
+    body: zAuthRegisterRequest,
     path: z.optional(z.never()),
     query: z.optional(z.never())
 });
 
 /**
- * List of programs
+ * Created
  */
-export const zGetProgramsResponse = z.array(zProgram);
+export const zPostAuthRegisterResponse = zAuthUserResponse;
 
-export const zGetProgramsIdData = z.object({
+export const zGetAuthVerifyData = z.object({
     body: z.optional(z.never()),
-    path: z.object({
-        id: z.int()
-    }),
-    query: z.optional(z.never())
+    path: z.optional(z.never()),
+    query: z.object({
+        token: z.string()
+    })
 });
-
-/**
- * Program
- */
-export const zGetProgramsIdResponse = zProgram;
-
-export const zGetProgramModulesData = z.object({
-    body: z.optional(z.never()),
-    path: z.object({
-        id: z.int()
-    }),
-    query: z.optional(z.never())
-});
-
-/**
- * List of modules
- */
-export const zGetProgramModulesResponse = z.array(zModule);
 
 export const zGetExamsData = z.object({
     body: z.optional(z.never()),
@@ -227,14 +155,14 @@ export const zGetExamsData = z.object({
 });
 
 /**
- * List of exams
+ * OK
  */
-export const zGetExamsResponse = z.array(zExamListEntry);
+export const zGetExamsResponse = z.array(zAuthExamResponse);
 
 export const zPostExamsData = z.object({
     body: z.object({
         file: z.string(),
-        date: z.iso.date(),
+        date: z.string(),
         assignments: z.string(),
         comment: z.optional(z.string())
     }),
@@ -246,9 +174,9 @@ export const zPostExamsData = z.object({
 });
 
 /**
- * Exam uploaded
+ * Created
  */
-export const zPostExamsResponse = zExamListEntry;
+export const zPostExamsResponse = z.record(z.string(), z.string());
 
 export const zDeleteExamsIdData = z.object({
     body: z.optional(z.never()),
@@ -258,19 +186,8 @@ export const zDeleteExamsIdData = z.object({
     query: z.optional(z.never())
 });
 
-/**
- * Exam deleted
- */
-export const zDeleteExamsIdResponse = z.void();
-
 export const zPutExamsIdData = z.object({
-    body: z.object({
-        programid: z.int(),
-        version: z.string(),
-        moduleid: z.int(),
-        date: z.iso.date(),
-        comment: z.optional(z.string())
-    }),
+    body: zAuthUpdateExamRequest,
     path: z.object({
         id: z.string()
     }),
@@ -278,9 +195,9 @@ export const zPutExamsIdData = z.object({
 });
 
 /**
- * Exam updated
+ * OK
  */
-export const zPutExamsIdResponse = zExamListEntry;
+export const zPutExamsIdResponse = zAuthExamResponse;
 
 export const zGetExamsFileData = z.object({
     body: z.optional(z.never()),
@@ -290,7 +207,66 @@ export const zGetExamsFileData = z.object({
     query: z.optional(z.never())
 });
 
+export const zGetProgramsData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
 /**
- * File content
+ * OK
  */
-export const zGetExamsFileResponse = z.string();
+export const zGetProgramsResponse = z.array(zAuthProgramResponse);
+
+export const zGetProgramsIdData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.int()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetProgramsIdResponse = zAuthProgramResponse;
+
+export const zGetProgramModulesData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.int()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetProgramModulesResponse = z.array(zAuthModuleResponse);
+
+export const zGetUsersData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.object({
+        limit: z.optional(z.int()),
+        offset: z.optional(z.int())
+    }))
+});
+
+/**
+ * OK
+ */
+export const zGetUsersResponse = z.array(zAuthUserResponse);
+
+export const zGetUsersByIdData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetUsersByIdResponse = zAuthUserResponse;

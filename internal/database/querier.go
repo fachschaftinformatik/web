@@ -6,7 +6,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 )
 
 type Querier interface {
@@ -23,7 +22,7 @@ type Querier interface {
 	GetSession(ctx context.Context, id string) (Session, error)
 	GetUser(ctx context.Context, id string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
-	GetUserByVerificationToken(ctx context.Context, verificationToken sql.NullString) (User, error)
+	GetUserByVerificationToken(ctx context.Context, verificationToken *string) (User, error)
 	ListExams(ctx context.Context, arg ListExamsParams) ([]ListExamsRow, error)
 	ListModulesByProgram(ctx context.Context, programid int64) ([]Module, error)
 	ListProgramsWithVersions(ctx context.Context) ([]ListProgramsWithVersionsRow, error)

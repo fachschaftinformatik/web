@@ -10,23 +10,50 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fachschaftinformatik/web/internal/api"
 	"github.com/fachschaftinformatik/web/internal/buckets"
 	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/email"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/oapi-codegen/runtime/types"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const (
-	sessionCookieName     = "__Host-session"
-	csrfCookieName        = "__Host-csrf"
-	sessionDuration       = 24 * time.Hour
-	sessionUpdateInterval = 5 * time.Minute
-	csrfDuration          = 15 * time.Minute
+	sessionCookieName = "__Host-session"
+	csrfCookieName    = "__Host-csrf"
+	sessionDuration   = 24 * time.Hour
+	csrfDuration      = 15 * time.Minute
 )
+
+// @Description User account information
+type UserResponse struct {
+	database.User
+
+  // Do not export the password hash
+	Password string `json:"-"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" example:"user@studmail.w-hs.de"`
+	Password string `json:"password" example:"secret123"`
+}
+
+type RegisterRequest struct {
+	Email     string `json:"email" example:"user@studmail.w-hs.de"`
+	Name      string `json:"name" example:"Max Mustermann"`
+	Password  string `json:"password" example:"secret123"`
+	Programid int    `json:"programid" example:"1"`
+}
+
+type ErrorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
+type CsrfResponse struct {
+	Csrf string `json:"csrf"`
+}
 
 type Server struct {
 	DB            database.Querier
@@ -48,8 +75,17 @@ func NewServer(db database.Querier, logger *log.Logger, cfg *config.Config, emai
 	}
 }
 
+// PostAuthRegister registers a new user
+// @Summary Register a user
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body RegisterRequest true "Registration Info"
+// @Success 201 {object} UserResponse
+// @Failure 400 {object} ErrorResponse
+// @Router /auth/register [post]
 func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
-	var payload api.UserRegister
+	var payload RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		s.jsonError(w, "invalid_request_body", "Could not decode JSON body", http.StatusBadRequest)
 		return
@@ -72,7 +108,7 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 		Role:              "user",
 		Active:            1,
 		Programid:         int64(payload.Programid),
-		VerificationToken: sql.NullString{String: verificationToken, Valid: true},
+		VerificationToken: &verificationToken,
 	}
 
 	dbUser, err := s.DB.CreateUser(r.Context(), params)
@@ -87,19 +123,19 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if s.Config.SignupsVerify {
-		// Send verification email
 		go func() {
 			if err := s.Email.SendVerificationEmail(dbUser.Email, dbUser.Name, verificationToken); err != nil {
 				s.Log.Printf("Failed to send verification email to %s: %v", dbUser.Email, err)
 			}
 		}()
 	} else {
-		// Auto-verify
-		var verifiedUntil sql.NullString
+		var verifiedUntil *string
 		now := time.Now()
 
 		if strings.HasSuffix(dbUser.Email, "@studmail.w-hs.de") {
 			year := now.Year()
+
+			// TODO: Actually handle this at some point
 			march1 := time.Date(year, time.March, 1, 0, 0, 0, 0, time.UTC)
 			oct1 := time.Date(year, time.October, 1, 0, 0, 0, 0, time.UTC)
 
@@ -111,9 +147,10 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 			} else {
 				nextDate = time.Date(year+1, time.March, 1, 0, 0, 0, 0, time.UTC)
 			}
-			verifiedUntil = sql.NullString{String: nextDate.Format(time.RFC3339), Valid: true}
+			tStr := nextDate.Format(time.RFC3339)
+			verifiedUntil = &tStr
 		} else {
-			verifiedUntil = sql.NullString{Valid: false}
+			verifiedUntil = nil
 		}
 
 		updatedUser, err := s.DB.VerifyUser(r.Context(), database.VerifyUserParams{
@@ -128,17 +165,20 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 		dbUser = updatedUser
 	}
 
-	apiUser, err := dbUserToAPI(dbUser)
-	if err != nil {
-		s.jsonError(w, "server_error", "Could not process user data", http.StatusInternalServerError)
-		return
-	}
-
-	s.respondJSON(w, http.StatusCreated, apiUser)
+	s.respondJSON(w, http.StatusCreated, UserResponse{User: dbUser})
 }
 
+// PostAuthLogin logs in a user
+// @Summary Log in
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "Login Credentials"
+// @Success 200 {object} UserResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /auth/login [post]
 func (s *Server) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
-	var payload api.UserLogin
+	var payload LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		s.jsonError(w, "invalid_request_body", "Could not decode JSON body", http.StatusBadRequest)
 		return
@@ -160,7 +200,7 @@ func (s *Server) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
 		newToken := uuid.NewString()
 		if err := s.DB.UpdateUserToken(r.Context(), database.UpdateUserTokenParams{
 			ID:                dbUser.ID,
-			VerificationToken: sql.NullString{String: newToken, Valid: true},
+			VerificationToken: &newToken,
 		}); err != nil {
 			s.Log.Printf("Failed to update token for user %s: %v", dbUser.ID, err)
 		} else {
@@ -190,18 +230,23 @@ func (s *Server) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.setCookie(w, sessionCookieName, sessionID, sessionDuration, true)
+	s.respondJSON(w, http.StatusOK, UserResponse{User: dbUser})
+}
 
-	apiUser, err := dbUserToAPI(dbUser)
-	if err != nil {
-		s.jsonError(w, "server_error", "Could not process user data", http.StatusInternalServerError)
+// GetAuthVerify verifies an email
+// @Summary Verify user email
+// @Tags Auth
+// @Param token query string true "Verification Token"
+// @Success 302
+// @Router /auth/verify [get]
+func (s *Server) GetAuthVerify(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		s.jsonError(w, "invalid_token", "Missing token", http.StatusBadRequest)
 		return
 	}
 
-	s.respondJSON(w, http.StatusOK, apiUser)
-}
-
-func (s *Server) GetAuthVerify(w http.ResponseWriter, r *http.Request, params api.GetAuthVerifyParams) {
-	dbUser, err := s.DB.GetUserByVerificationToken(r.Context(), sql.NullString{String: params.Token, Valid: true})
+	dbUser, err := s.DB.GetUserByVerificationToken(r.Context(), &token) // FIXED: Pointer
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			s.jsonError(w, "invalid_token", "Invalid verification token", http.StatusBadRequest)
@@ -212,7 +257,7 @@ func (s *Server) GetAuthVerify(w http.ResponseWriter, r *http.Request, params ap
 		return
 	}
 
-	var verifiedUntil sql.NullString
+	var verifiedUntil *string
 	now := time.Now()
 
 	if strings.HasSuffix(dbUser.Email, "@studmail.w-hs.de") {
@@ -228,9 +273,10 @@ func (s *Server) GetAuthVerify(w http.ResponseWriter, r *http.Request, params ap
 		} else {
 			nextDate = time.Date(year+1, time.March, 1, 0, 0, 0, 0, time.UTC)
 		}
-		verifiedUntil = sql.NullString{String: nextDate.Format(time.RFC3339), Valid: true}
+		tStr := nextDate.Format(time.RFC3339)
+		verifiedUntil = &tStr
 	} else {
-		verifiedUntil = sql.NullString{Valid: false}
+		verifiedUntil = nil
 	}
 
 	_, err = s.DB.VerifyUser(r.Context(), database.VerifyUserParams{
@@ -246,23 +292,27 @@ func (s *Server) GetAuthVerify(w http.ResponseWriter, r *http.Request, params ap
 	http.Redirect(w, r, fmt.Sprintf("%s/login?verified=true", s.Config.Domain), http.StatusFound)
 }
 
+// GetAuthMe gets the current user
+// @Summary Get current user
+// @Tags Auth
+// @Success 200 {object} UserResponse
+// @Router /auth/me [get]
 func (s *Server) GetAuthMe(w http.ResponseWriter, r *http.Request) {
 	_, dbUser, err := s.authenticate(w, r)
 	if err != nil {
 		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
 		return
 	}
-
-	apiUser, err := dbUserToAPI(dbUser)
-	if err != nil {
-		s.jsonError(w, "server_error", "Could not process user data", http.StatusInternalServerError)
-		return
-	}
-
-	s.respondJSON(w, http.StatusOK, apiUser)
+	s.respondJSON(w, http.StatusOK, UserResponse{User: dbUser})
 }
 
-func (s *Server) PostAuthLogout(w http.ResponseWriter, r *http.Request, params api.PostAuthLogoutParams) {
+// PostAuthLogout logs out
+// @Summary Log out
+// @Tags Auth
+// @Param X-CSRF-Token header string true "CSRF Token"
+// @Success 204
+// @Router /auth/logout [post]
+func (s *Server) PostAuthLogout(w http.ResponseWriter, r *http.Request) {
 	session, _, err := s.authenticate(w, r)
 	if err != nil {
 		s.setCookie(w, sessionCookieName, "", -time.Hour, true)
@@ -281,17 +331,28 @@ func (s *Server) PostAuthLogout(w http.ResponseWriter, r *http.Request, params a
 
 	s.setCookie(w, sessionCookieName, "", -time.Hour, true)
 	s.setCookie(w, csrfCookieName, "", -time.Hour, false)
-
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetAuthCsrf issues a CSRF token
+// @Summary Issue CSRF token
+// @Tags Auth
+// @Success 200 {object} CsrfResponse
+// @Router /auth/csrf [get]
 func (s *Server) GetAuthCsrf(w http.ResponseWriter, r *http.Request) {
 	csrfToken := uuid.NewString()
 	s.setCookie(w, csrfCookieName, csrfToken, csrfDuration, false)
-	s.respondJSON(w, http.StatusOK, map[string]string{"csrf": csrfToken})
+	s.respondJSON(w, http.StatusOK, CsrfResponse{Csrf: csrfToken})
 }
 
-func (s *Server) GetUsers(w http.ResponseWriter, r *http.Request, params api.GetUsersParams) {
+// GetUsers lists users (admin only)
+// @Summary List users
+// @Tags Users
+// @Param limit query int false "Limit"
+// @Param offset query int false "Offset"
+// @Success 200 {array} UserResponse
+// @Router /users [get]
+func (s *Server) GetUsers(w http.ResponseWriter, r *http.Request) {
 	_, dbUser, err := s.authenticate(w, r)
 	if err != nil {
 		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
@@ -299,43 +360,40 @@ func (s *Server) GetUsers(w http.ResponseWriter, r *http.Request, params api.Get
 	}
 
 	if dbUser.Role != "admin" {
-		s.jsonError(w, "forbidden", "You do not have permission to access this resource", http.StatusForbidden)
+		s.jsonError(w, "forbidden", "Insufficient permissions", http.StatusForbidden)
 		return
 	}
 
+	// TODO
 	limit := int64(32)
 	offset := int64(0)
-	if params.Limit != nil {
-		limit = int64(*params.Limit)
-	}
-	if params.Offset != nil {
-		offset = int64(*params.Offset)
-	}
 
 	dbUsers, err := s.DB.ListUsers(r.Context(), database.ListUsersParams{
 		Limit:  limit,
 		Offset: offset,
 	})
 	if err != nil {
-		s.Log.Printf("Failed to list users: %v", err)
 		s.jsonError(w, "database_error", "Could not list users", http.StatusInternalServerError)
 		return
 	}
 
-	apiUsers := make([]api.User, 0, len(dbUsers))
+	apiUsers := make([]UserResponse, 0, len(dbUsers))
 	for _, user := range dbUsers {
-		apiUser, err := dbUserToAPI(user)
-		if err != nil {
-			s.jsonError(w, "server_error", "Could not process user data", http.StatusInternalServerError)
-			return
-		}
-		apiUsers = append(apiUsers, apiUser)
+		apiUsers = append(apiUsers, UserResponse{User: user})
 	}
 
 	s.respondJSON(w, http.StatusOK, apiUsers)
 }
 
-func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request, id string) {
+// GetUsersId gets a specific user
+// @Summary Get user by ID
+// @Tags Users
+// @Param id path string true "User ID"
+// @Success 200 {object} UserResponse
+// @Router /users/{id} [get]
+func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
 	_, authUser, err := s.authenticate(w, r)
 	if err != nil {
 		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
@@ -343,7 +401,7 @@ func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request, id string) {
 	}
 
 	if authUser.ID != id && authUser.Role != "admin" {
-		s.jsonError(w, "forbidden", "You do not have permission to access this resource", http.StatusForbidden)
+		s.jsonError(w, "forbidden", "Access denied", http.StatusForbidden)
 		return
 	}
 
@@ -352,85 +410,16 @@ func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request, id string) {
 		if errors.Is(err, sql.ErrNoRows) {
 			s.jsonError(w, "not_found", "User not found", http.StatusNotFound)
 		} else {
-			s.Log.Printf("Failed to get user: %v", err)
 			s.jsonError(w, "database_error", "Database error", http.StatusInternalServerError)
 		}
 		return
 	}
 
-	apiUser, err := dbUserToAPI(dbUser)
-	if err != nil {
-		s.jsonError(w, "server_error", "Could not process user data", http.StatusInternalServerError)
-		return
-	}
-
-	s.respondJSON(w, http.StatusOK, apiUser)
-}
-
-func (s *Server) GetPrograms(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.DB.ListProgramsWithVersions(r.Context())
-	if err != nil {
-		s.Log.Printf("Failed to list programs: %v", err)
-		s.jsonError(w, "database_error", "Could not fetch programs", http.StatusInternalServerError)
-		return
-	}
-
-	programMap := make(map[int64]*api.Program)
-	var orderedPrograms []*api.Program
-
-	for _, row := range rows {
-		prog, exists := programMap[row.ID]
-		if !exists {
-			prog = &api.Program{
-				Id:       int(row.ID),
-				Name:     row.Name,
-				Versions: []string{},
-			}
-			programMap[row.ID] = prog
-			orderedPrograms = append(orderedPrograms, prog)
-		}
-		prog.Versions = append(prog.Versions, row.Version)
-	}
-
-	response := make([]api.Program, 0, len(orderedPrograms))
-	for _, p := range orderedPrograms {
-		response = append(response, *p)
-	}
-
-	s.respondJSON(w, http.StatusOK, response)
-}
-
-func (s *Server) GetProgramsId(w http.ResponseWriter, r *http.Request, id int) {
-	rows, err := s.DB.GetProgramWithVersions(r.Context(), int64(id))
-	if err != nil {
-		s.Log.Printf("Failed to get program: %v", err)
-		s.jsonError(w, "database_error", "Could not fetch program", http.StatusInternalServerError)
-		return
-	}
-
-	if len(rows) == 0 {
-		s.jsonError(w, "not_found", "Program not found", http.StatusNotFound)
-		return
-	}
-
-	prog := api.Program{
-		Id:       int(rows[0].ID),
-		Name:     rows[0].Name,
-		Versions: make([]string, 0, len(rows)),
-	}
-
-	for _, row := range rows {
-		prog.Versions = append(prog.Versions, row.Version)
-	}
-
-	s.respondJSON(w, http.StatusOK, prog)
+	s.respondJSON(w, http.StatusOK, UserResponse{User: dbUser})
 }
 
 func (s *Server) jsonError(w http.ResponseWriter, err, msg string, status int) {
-	s.respondJSON(w, status, api.Error{
-		Error:   err,
-		Message: msg,
-	})
+	s.respondJSON(w, status, ErrorResponse{Error: err, Message: msg})
 }
 
 func (s *Server) respondJSON(w http.ResponseWriter, status int, payload interface{}) {
@@ -467,41 +456,17 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) (database.
 
 	session, err := s.DB.GetSession(ctx, sessionID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return database.Session{}, database.User{}, errors.New("invalid session")
-		}
-		s.Log.Printf("Auth: DB.GetSession error: %v", err)
-		return database.Session{}, database.User{}, errors.New("database error")
+		return database.Session{}, database.User{}, errors.New("invalid session")
 	}
 
-	expiresAt, err := time.Parse(time.RFC3339, session.ExpiresAt)
-	if err != nil || expiresAt.Before(time.Now()) {
+	expiresAt, _ := time.Parse(time.RFC3339, session.ExpiresAt)
+	if expiresAt.Before(time.Now()) {
 		return database.Session{}, database.User{}, errors.New("session expired")
 	}
 
 	user, err := s.DB.GetUser(ctx, session.Userid)
 	if err != nil {
-		s.Log.Printf("Auth: DB.GetUser error: %v", err)
-		return database.Session{}, database.User{}, errors.New("user not found for session")
-	}
-
-	shouldUpdate := true
-	if lastSeen, err := time.Parse(time.RFC3339, session.LastSeen); err == nil {
-		if time.Since(lastSeen) < sessionUpdateInterval {
-			shouldUpdate = false
-		}
-	}
-
-	if shouldUpdate {
-		newExpiresAt := time.Now().Add(sessionDuration)
-		if _, err = s.DB.SlideSession(ctx, database.SlideSessionParams{
-			ID:        sessionID,
-			ExpiresAt: newExpiresAt.Format(time.RFC3339),
-		}); err != nil {
-			s.Log.Printf("Auth: Failed to slide session: %v", err)
-		}
-
-		s.setCookie(w, sessionCookieName, sessionID, sessionDuration, true)
+		return database.Session{}, database.User{}, errors.New("user not found")
 	}
 
 	return session, user, nil
@@ -509,66 +474,9 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) (database.
 
 func (s *Server) checkCSRF(r *http.Request) error {
 	headerToken := r.Header.Get("X-CSRF-Token")
-	if headerToken == "" {
-		return errors.New("X-CSRF-Token header missing")
-	}
-
 	cookie, err := r.Cookie(csrfCookieName)
-	if err != nil {
-		return errors.New("CSRF cookie missing")
-	}
-
-	if headerToken != cookie.Value {
+	if headerToken == "" || err != nil || headerToken != cookie.Value {
 		return errors.New("invalid CSRF token")
 	}
-
 	return nil
-}
-
-func dbUserToAPI(user database.User) (api.User, error) {
-	apiUser := api.User{
-		Active:       api.UserActive(user.Active),
-		Programid:    int(user.Programid),
-		Email:        types.Email(user.Email),
-		Id:           user.ID,
-		Name:         user.Name,
-		Role:         api.UserRole(user.Role),
-		Verified:     api.UserVerified(user.Verified),
-	}
-
-	var err error
-	apiUser.CreatedAt, err = time.Parse(time.RFC3339, user.CreatedAt)
-	if err != nil {
-		return api.User{}, fmt.Errorf("could not parse CreatedAt: %w", err)
-	}
-
-	apiUser.UpdatedAt, err = time.Parse(time.RFC3339, user.UpdatedAt)
-	if err != nil {
-		return api.User{}, fmt.Errorf("could not parse UpdatedAt: %w", err)
-	}
-
-	if t, err := convertNullTime(user.VerifiedAt); err == nil && t != nil {
-		apiUser.VerifiedAt = t
-	} else if err != nil {
-		return api.User{}, err
-	}
-
-	if t, err := convertNullTime(user.VerifiedUntil); err == nil && t != nil {
-		apiUser.VerifiedUntil = t
-	} else if err != nil {
-		return api.User{}, err
-	}
-
-	return apiUser, nil
-}
-
-func convertNullTime(ns sql.NullString) (*time.Time, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	t, err := time.Parse(time.RFC3339, ns.String)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse timestamp: %w", err)
-	}
-	return &t, nil
 }
