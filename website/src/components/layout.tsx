@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   AppBar,
   Avatar,
@@ -20,7 +20,7 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 import SearchRounded from '@mui/icons-material/SearchRounded';
 import NotificationsNoneRounded from '@mui/icons-material/NotificationsNoneRounded';
 import MenuRounded from '@mui/icons-material/MenuRounded';
@@ -33,6 +33,8 @@ import CollectionsRounded from '@mui/icons-material/CollectionsRounded';
 import PeopleRounded from '@mui/icons-material/PeopleRounded';
 import PersonRounded from '@mui/icons-material/PersonRounded';
 import LogoutRounded from '@mui/icons-material/LogoutRounded';
+import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
+import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { User } from '@lib/api/types.gen';
@@ -77,11 +79,31 @@ const navItems = [
   { label: 'Team', href: '/team', icon: <PeopleRounded />, isRoute: true },
 ];
 
-const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; children: React.ReactNode; title?: string }) => {
-  const { mode } = useThemeMode();
+const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; children: React.ReactNode; title?: string; headerActions?: React.ReactNode }) => {
+  const { mode, toggleMode } = useThemeMode();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
-  const [navOpen, setNavOpen] = useState(isMdUp);
+  
+  // -- Persistent Sidebar State Logic --
+  const [desktopOpen, setDesktopOpen] = useState(() => {
+    const stored = localStorage.getItem('sidebar_desktop_open');
+    return stored !== null ? stored === 'true' : true;
+  });
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    if (isMdUp) {
+      const newState = !desktopOpen;
+      setDesktopOpen(newState);
+      localStorage.setItem('sidebar_desktop_open', String(newState));
+    } else {
+      setMobileOpen(!mobileOpen);
+    }
+  };
+
+  const navOpen = isMdUp ? desktopOpen : mobileOpen;
+  // ------------------------------------
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const { logout } = useAuth();
@@ -89,18 +111,33 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
   const avatarColor = useMemo(() => stringToColor(user?.name), [user?.name]);
   const avatarLetter = user?.name ? user.name.charAt(0).toUpperCase() : '?';
 
-  useEffect(() => {
-    setNavOpen(isMdUp);
-  }, [isMdUp]);
-
   const handleMenuClose = () => setAnchorEl(null);
+
+  const toggleBtnStyle = {
+    border: '1px solid ' + alpha(theme.palette.primary.main, mode === 'dark' ? 0.5 : 0.25),
+    transition: theme.transitions.create(['background-color', 'border-color'], {
+      duration: theme.transitions.duration.shortest,
+    }),
+    '&:hover': {
+      borderColor: alpha(theme.palette.primary.main, 0.6),
+      bgcolor: mode === 'dark' 
+        ? alpha(theme.palette.primary.dark, 0.55) 
+        : alpha(theme.palette.primary.main, 0.2)
+    },
+    bgcolor: mode === 'dark' 
+      ? alpha(theme.palette.primary.dark, 0.35) 
+      : alpha(theme.palette.primary.main, 0.1),
+    color: mode === 'dark' 
+      ? theme.palette.primary.contrastText 
+      : theme.palette.primary.main
+  };
   
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {!isMdUp && (
         <>
           <Toolbar sx={{ justifyContent: 'flex-end' }}>
-             <IconButton onClick={() => setNavOpen(false)}>
+             <IconButton onClick={() => setMobileOpen(false)}>
                <MenuOpenRounded />
              </IconButton>
           </Toolbar>
@@ -108,7 +145,7 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
         </>
       )}
       
-      <List sx={{ pt: 1 }}>
+      <List sx={{ pt: 1, flexGrow: 1 }}>
         {navItems.map((item) => (
           <Tooltip key={item.label} title={navOpen ? '' : item.label} placement="right">
             <ListItemButton
@@ -129,6 +166,18 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
           </Tooltip>
         ))}
       </List>
+
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 1, mb: 1 }}>
+        <Tooltip title="Farbschema wechseln">
+          <IconButton
+            aria-label="toggle color mode"
+            onClick={toggleMode}
+            sx={toggleBtnStyle}
+          >
+            {mode === 'dark' ? <Brightness7Rounded /> : <Brightness4Rounded />}
+          </IconButton>
+        </Tooltip>
+      </Box>
     </Box>
   );
 
@@ -139,7 +188,7 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
           <IconButton
             color="inherit"
             edge="start"
-            onClick={() => setNavOpen(!navOpen)}
+            onClick={handleDrawerToggle}
             sx={{ mr: 2, display: { xs: 'block', md: 'block' } }}
           >
              {navOpen ? <MenuOpenRounded /> : <MenuRounded />}
@@ -228,7 +277,7 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
       <Drawer
         variant={isMdUp ? "permanent" : "temporary"}
         open={navOpen}
-        onClose={() => setNavOpen(false)}
+        onClose={() => setMobileOpen(false)}
         sx={{
           width: navOpen ? drawerWidthOpen : drawerWidthClosed,
           flexShrink: 0,
