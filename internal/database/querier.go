@@ -9,21 +9,28 @@ import (
 )
 
 type Querier interface {
+	CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error)
 	CreateExam(ctx context.Context, arg CreateExamParams) (Exam, error)
+	CreateMedia(ctx context.Context, arg CreateMediaParams) (Medium, error)
 	CreateModule(ctx context.Context, arg CreateModuleParams) (Module, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteExam(ctx context.Context, id string) error
 	DeleteExpiredSessions(ctx context.Context) error
+	DeleteMedia(ctx context.Context, id string) error
 	DeleteSession(ctx context.Context, id string) error
 	DeleteUserSessions(ctx context.Context, userid string) error
+	GetEvent(ctx context.Context, id int64) (Event, error)
 	GetExam(ctx context.Context, id string) (Exam, error)
+	GetMedia(ctx context.Context, id string) (Medium, error)
 	GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error)
 	GetSession(ctx context.Context, id string) (Session, error)
 	GetUser(ctx context.Context, id string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByVerificationToken(ctx context.Context, verificationToken *string) (User, error)
+	ListEvents(ctx context.Context) ([]Event, error)
 	ListExams(ctx context.Context, arg ListExamsParams) ([]ListExamsRow, error)
+	ListMediaByEvent(ctx context.Context, eventID int64) ([]ListMediaByEventRow, error)
 	ListModulesByProgram(ctx context.Context, programid int64) ([]Module, error)
 	ListProgramsWithVersions(ctx context.Context) ([]ListProgramsWithVersionsRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
