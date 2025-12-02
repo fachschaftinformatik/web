@@ -13,6 +13,13 @@ type Comment struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
+type Event struct {
+	ID        int64   `json:"id"`
+	Title     string  `json:"title"`
+	CreatedAt string  `json:"created_at"`
+	CoverPath *string `json:"cover_path"`
+}
+
 type Exam struct {
 	ID         string  `json:"id"`
 	Userid     string  `json:"userid"`
@@ -26,6 +33,18 @@ type Exam struct {
 	MimeType   string  `json:"mime_type"`
 	Nbytes     int64   `json:"nbytes"`
 	Checksum   string  `json:"checksum"`
+}
+
+type Medium struct {
+	ID          string  `json:"id"`
+	EventID     int64   `json:"event_id"`
+	Userid      string  `json:"userid"`
+	Title       *string `json:"title"`
+	Description *string `json:"description"`
+	Accesskey   string  `json:"accesskey"`
+	MimeType    string  `json:"mime_type"`
+	Nbytes      int64   `json:"nbytes"`
+	UploadedAt  string  `json:"uploaded_at"`
 }
 
 type Module struct {

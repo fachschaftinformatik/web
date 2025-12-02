@@ -1,863 +1,703 @@
-// Galerie.tsx (korrigiert)
-
-import React from "react";
-import { useLocation } from "react-router-dom";
-import { useAuth } from "@lib/auth";
-import { Sidebar } from "@components/layout";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  Container,
-  Typography,
-  Card,
-  CardMedia,
-  Box,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  ImageList,
-  ImageListItem,
-  ImageListItemBar,
-  Pagination,
-  Button,
-  Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Snackbar,
-  Alert,
-  SelectChangeEvent,
-  TextField,
-  alpha,
+  Container, Typography, Card, CardMedia, Box, Dialog, DialogTitle, DialogContent,
+  DialogActions, IconButton, ImageList, ImageListItem, ImageListItemBar, Pagination,
+  Button, Stack, TextField, MenuItem, Snackbar, Alert, CircularProgress, Tooltip, Paper
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import InsertPhotoRoundedIcon from '@mui/icons-material/InsertPhotoRounded';
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
+import { alpha } from "@mui/material/styles";
 
-// Importiere Typen und Daten aus der neuen data.ts
-import {
-  EventItem,
-  Bild,
-  IMAGES_PER_PAGE,
-  events,
-  bilderByEvent,
-  pic,
-  getImageTitle,
-  defaultTitleForFile,
-} from "@lib/data";
+import { useAuth } from "@lib/auth";
+import { Sidebar } from "@components/layout";
+import { client } from "@lib/api/client.gen";
+import { getAuthCsrf } from "@lib/api";
 
-const ADMIN_PREVIEW_KEY = "media_admin_preview";
+type EventItem = { id: number; title: string; created_at: string; cover_path?: string };
+type MediaItem = { id: string; event_id: number; title: string; description: string; mime_type: string; uploaded_at: string };
 
-type UploadEntry = { file: File; title: string };
+const IMAGES_PER_PAGE = 10;
+
+const pic = (seed: number) => `https://picsum.photos/seed/${seed}/300/200`;
 
 export default function Galerie() {
-  // --- State (vereinfacht) ---
-  const [selectedEventId, setSelectedEventId] = React.useState<number | null>(
-    null
-  );
-  const [page, setPage] = React.useState(1);
-  const [customImages, setCustomImages] = React.useState<Record<number, Bild[]>>(
-    {}
-  );
-  const [customEvents, setCustomEvents] = React.useState<EventItem[]>([]);
-  const [uploadOpen, setUploadOpen] = React.useState(false);
-  const [selectedUploadEventId, setSelectedUploadEventId] = React.useState<
-    number | "" | "new"
-  >("");
-  const [uploadEntries, setUploadEntries] = React.useState<UploadEntry[]>([]);
-  const [uploadError, setUploadError] = React.useState<string | null>(null);
-  const [uploading, setUploading] = React.useState(false);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
-  const [newEventTitle, setNewEventTitle] = React.useState("");
-  const [newEventCover, setNewEventCover] = React.useState<string | null>(null);
-  const [newEventCoverName, setNewEventCoverName] = React.useState("");
-  const [newEventError, setNewEventError] = React.useState<string | null>(null);
-
-  // --- State für Lightbox ---
-  const [open, setOpen] = React.useState(false);
-  const [index, setIndex] = React.useState(0);
   const { user } = useAuth();
-  const location = useLocation();
-  const [adminPreview, setAdminPreview] = React.useState(false);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [loadingMedia, setLoadingMedia] = useState(false);
 
-  React.useEffect(() => {
-    // Admin-Vorschau per URL-Param (admin=1/0) oder persistentes Flag
-    const searchParams = new URLSearchParams(location.search);
-    const param = searchParams.get("admin");
-    if (param === "1") {
-      setAdminPreview(true);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(ADMIN_PREVIEW_KEY, "1");
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [createEventOpen, setCreateEventOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const canUpload = user?.role === "admin" || user?.role === "editor";
+
+  const fetchEvents = async () => {
+    try {
+      const res = await client.request({ method: 'GET', url: '/events' });
+      if (res.data) {
+        const list = res.data as EventItem[];
+        setEvents(list);
+        if (list.length > 0 && !selectedEventId) {
+          setSelectedEventId(list[0].id);
+        }
       }
-      return;
+    } catch (e) {
+      console.error("Fehler beim Laden der Events", e);
     }
-    if (param === "0") {
-      setAdminPreview(false);
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem(ADMIN_PREVIEW_KEY);
-      }
-      return;
-    }
-    if (typeof window !== "undefined") {
-      setAdminPreview(window.localStorage.getItem(ADMIN_PREVIEW_KEY) === "1");
-    }
-  }, [location.search]);
-
-  const canUpload =
-    adminPreview || user?.role === "admin" || user?.role === "editor";
-  const allEvents = React.useMemo(
-    () => [...customEvents, ...events],
-    [customEvents]
-  );
-
-  // Abgeleiteter State: Die Thumbnails für das ausgewählte Event
-  const thumbs = selectedEventId
-    ? [
-        ...(bilderByEvent[selectedEventId] ?? []),
-        ...(customImages[selectedEventId] ?? []),
-      ]
-    : [];
-  const pageCount = Math.max(Math.ceil(thumbs.length / IMAGES_PER_PAGE), 1);
-  const startIndex = (page - 1) * IMAGES_PER_PAGE;
-  const paginatedThumbs = thumbs.slice(
-    startIndex,
-    startIndex + IMAGES_PER_PAGE
-  );
-  const currentImage = thumbs[index];
-  const currentImageTitle = getImageTitle(currentImage);
-
-  React.useEffect(() => {
-    if (page > pageCount) {
-      setPage(pageCount);
-    }
-  }, [page, pageCount]);
-
-  const handlePageChange = (
-    _: React.ChangeEvent<unknown>,
-    value: number
-  ) => {
-    setPage(value);
   };
 
-  const handleOpenUploadDialog = () => {
-    setUploadError(null);
-    setUploadEntries([]);
-    setNewEventTitle("");
-    setNewEventCover(null);
-    setNewEventCoverName("");
-    setNewEventError(null);
-    setSelectedUploadEventId(
-      selectedEventId ?? allEvents[0]?.id ?? ""
-    );
-    setUploadOpen(true);
-  };
-
-  const handleCloseUploadDialog = () => {
-    if (uploading) return;
-    setUploadOpen(false);
-  };
-
-  const handleFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) {
-      setUploadEntries([]);
-      return;
-    }
-    const entries = Array.from(files).map((file) => ({
-      file,
-      title: defaultTitleForFile(file),
-    }));
-    setUploadEntries(entries);
-    setUploadError(null);
-  };
-
-  const readFileAsDataUrl = React.useCallback((file: File) => {
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () =>
-        reject(new Error("Datei konnte nicht gelesen werden."));
-      reader.readAsDataURL(file);
-    });
+  useEffect(() => {
+    fetchEvents();
   }, []);
 
-  const handleUploadImages = async () => {
-    if (!selectedUploadEventId) {
-      setUploadError("Bitte ein Event auswählen.");
-      return;
-    }
-    if (uploadEntries.length === 0) {
-      setUploadError("Bitte mindestens ein Bild auswählen.");
-      return;
-    }
-    setUploading(true);
-    setUploadError(null);
-    try {
-      let eventId: number | null = null;
-      let createdTitle = "";
-      if (selectedUploadEventId === "new") {
-        const title = newEventTitle.trim();
-        if (!title) {
-          setNewEventError("Bitte einen Eventnamen angeben.");
-          setUploading(false);
-          return;
-        }
-        eventId = Date.now();
-        const newEvent: EventItem = {
-          id: eventId,
-          title,
-          src: newEventCover ?? pic(eventId, 400, 600),
-        };
-        setCustomEvents((prev) => [newEvent, ...prev]);
-        createdTitle = title;
-      } else {
-        eventId = selectedUploadEventId as number;
-      }
-      const filesArray = await Promise.all(
-        uploadEntries.map(async (entry, idx) => {
-          const dataUrl = await readFileAsDataUrl(entry.file);
-          return {
-            id: Date.now() + idx,
-            title: entry.title || entry.file.name,
-            thumb: dataUrl,
-            full: dataUrl,
-          };
+  useEffect(() => {
+    if (selectedEventId) {
+      setLoadingMedia(true);
+      client.request({ method: 'GET', url: '/media', query: { event_id: selectedEventId } })
+        .then(res => {
+          setMedia(res.data as MediaItem[] || []);
+          setPage(1);
         })
-      );
-      if (eventId === null) {
-        setUploadError("Es ist ein Fehler aufgetreten.");
-        return;
-      }
-      setCustomImages((prev) => ({
-        ...prev,
-        [eventId]: [...(prev[eventId] ?? []), ...filesArray],
-      }));
-      setUploadOpen(false);
-      setUploadEntries([]);
-      setSuccessMessage(
-        `${filesArray.length} Bild${
-          filesArray.length > 1 ? "er" : ""
-        } ${createdTitle ? `für "${createdTitle}" ` : ""}hinzugefügt (nur lokal sichtbar).`
-      );
-      setSelectedEventId(eventId);
-      setSelectedUploadEventId(eventId);
-      setPage(1);
-      setIndex(0);
-      setNewEventTitle("");
-      setNewEventCover(null);
-      setNewEventCoverName("");
-      setNewEventError(null);
-    } catch (error) {
-      setUploadError(
-        error instanceof Error
-          ? error.message
-          : "Beim Lesen der Dateien ist ein Fehler aufgetreten."
-      );
+        .finally(() => setLoadingMedia(false));
+    }
+  }, [selectedEventId]);
+
+  const getImageUrl = (id: string) => `/api/media/${id}/file`;
+  const getEventCoverUrl = (ev: EventItem) => ev.cover_path ? `/api/events/${ev.id}/cover` : pic(ev.id);
+
+  const pageCount = Math.max(Math.ceil(media.length / IMAGES_PER_PAGE), 1);
+  const displayedMedia = media.slice((page - 1) * IMAGES_PER_PAGE, page * IMAGES_PER_PAGE);
+  const currentImage = displayedMedia[lightboxIndex];
+
+  const openLightbox = (idx: number) => {
+    setLightboxIndex(idx);
+    setLightboxOpen(true);
+  };
+  
+  const closeLightbox = useCallback(() => setLightboxOpen(false), []);
+  
+  const nextImage = useCallback(() => {
+    setLightboxIndex((i) => (i + 1) % displayedMedia.length);
+  }, [displayedMedia.length]);
+  
+  const prevImage = useCallback(() => {
+    setLightboxIndex((i) => (i - 1 + displayedMedia.length) % displayedMedia.length);
+  }, [displayedMedia.length]);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") prevImage();
+      if (e.key === "ArrowRight") nextImage();
+      if (e.key === "Escape") closeLightbox();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxOpen, prevImage, nextImage, closeLightbox]);
+
+  const handleCopyLink = () => {
+    if (!currentImage) return;
+    const url = window.location.origin + getImageUrl(currentImage.id);
+    navigator.clipboard.writeText(url).then(() => {
+      setSuccessMessage("Link in die Zwischenablage kopiert!");
+    });
+  };
+
+  const handleEditImage = () => {
+    console.log("Edit image:", currentImage);
+  };
+
+  return (
+    <Sidebar user={user} title="Galerie">
+      <Container maxWidth="xl" sx={{ mt: 5, mb: 10 }}>
+        
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box>
+                <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+                    Galerie
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                    Fotos von Veranstaltungen, Partys und Events der Fachschaft.
+                </Typography>
+            </Box>
+            {canUpload && (
+              <Button
+                variant="contained"
+                startIcon={<CloudUploadIcon />}
+                onClick={() => setUploadOpen(true)}
+                sx={{ boxShadow: 2 }}
+              >
+                Bilder hochladen
+              </Button>
+            )}
+        </Box>
+
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: 2, 
+            mb: 5, 
+            borderRadius: 3, 
+            bgcolor: "background.paper", 
+            border: "1px solid", 
+            borderColor: "divider" 
+          }}
+        >
+          
+          <Box sx={{ display: "flex", justifyContent: "flex-start", minWidth: 0 }}>
+            {events.length > 0 ? (
+              <ImageList
+                sx={(theme) => ({
+                  display: "flex",
+                  flexDirection: "row",
+                  flexWrap: "nowrap",
+                  justifyContent: "flex-start",
+                  p: 3,
+                  pt: 1, 
+                  overflowX: "auto",
+                  overflowY: "visible",
+                  "&::-webkit-scrollbar": { display: "none" },
+                  "-ms-overflow-style": "none",
+                  "scrollbar-width": "none",
+                  width: "100%",
+                  gap: 3,
+                  "& > li:not(:last-of-type)": { marginRight: theme.spacing(3) },
+                })}
+              >
+                {events.map((ev) => {
+                  const selected = ev.id === selectedEventId;
+                  
+                  return (
+                    <ImageListItem
+                      key={ev.id}
+                      onClick={() => { setSelectedEventId(ev.id); setPage(1); }}
+                      sx={(theme) => ({
+                        cursor: "pointer",
+                        width: 160,
+                        flexShrink: 0,
+                        borderRadius: 2,
+                        overflow: "visible",
+                        boxShadow: theme.shadows[selected ? 4 : 1],
+                        outline: selected ? "2px solid" : "none",
+                        outlineColor: selected ? theme.palette.primary.main : "transparent",
+                        zIndex: selected ? 2 : 1,
+                        transform: selected ? "scale(1.02)" : "scale(1)",
+                        transition: theme.transitions.create(["transform", "box-shadow", "outline"]),
+                        outlineOffset: "2px",
+                        "&:hover": {
+                          transform: "scale(1.05)",
+                          boxShadow: theme.shadows[6],
+                          zIndex: 3,
+                        }
+                      })}
+                    >
+                      <Box sx={{ overflow: "hidden", borderRadius: 2, bgcolor: "background.default" }}>
+                        <Box
+                          component="img"
+                          src={getEventCoverUrl(ev)}
+                          alt={ev.title}
+                          loading="lazy"
+                          sx={{ width: "100%", height: 100, objectFit: "cover", display: "block" }}
+                        />
+                        <ImageListItemBar
+                          title={ev.title}
+                          position="below"
+                          sx={(theme) => ({
+                            textAlign: "left",
+                            px: 1,
+                            py: 0.8,
+                            bgcolor: selected ? alpha(theme.palette.primary.main, 0.05) : "background.paper",
+                            "& .MuiImageListItemBar-title": {
+                              fontSize: "0.85rem",
+                              fontWeight: selected ? 600 : 500,
+                              color: selected ? "primary.main" : "text.primary",
+                            }
+                          })}
+                        />
+                      </Box>
+                    </ImageListItem>
+                  );
+                })}
+              </ImageList>
+            ) : (
+              <Typography color="text.secondary" sx={{ py: 2, px: 2 }}>Keine Events vorhanden.</Typography>
+            )}
+          </Box>
+        </Paper>
+
+
+        {loadingMedia ? (
+          <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>
+        ) : media.length === 0 ? (
+          <Box 
+            py={8} 
+            textAlign="center" 
+            sx={(theme) => ({ 
+                border: '1px dashed', 
+                borderColor: 'divider', 
+                borderRadius: 3,
+                bgcolor: alpha(theme.palette.text.primary, 0.04) 
+            })}
+          >
+            <Typography color="text.secondary">
+                {selectedEventId ? "Keine Bilder in diesem Album." : "Bitte ein Event oben auswählen."}
+            </Typography>
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", md: "repeat(4, 1fr)", lg: "repeat(5, 1fr)" },
+              gap: 2
+            }}
+          >
+            {displayedMedia.map((item, idx) => (
+              <Card
+                key={item.id}
+                onClick={() => openLightbox(idx)}
+                elevation={0}
+                sx={(theme) => ({
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  transition: "transform 0.2s, box-shadow 0.2s, border-color 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: theme.shadows[4],
+                    borderColor: "primary.main",
+                  },
+                })}
+              >
+                <CardMedia
+                  component="img"
+                  image={getImageUrl(item.id)}
+                  alt={item.title || "Bild"}
+                  sx={{ width: "100%", aspectRatio: "3/2", objectFit: "cover" }}
+                />
+              </Card>
+            ))}
+          </Box>
+        )}
+
+        {media.length > IMAGES_PER_PAGE && (
+          <Box sx={{ mt: 5, display: "flex", justifyContent: "center" }}>
+            <Pagination
+              count={pageCount}
+              page={page}
+              onChange={(_, p) => setPage(p)}
+              showFirstButton
+              showLastButton
+              color="primary"
+              shape="rounded"
+            />
+          </Box>
+        )}
+
+        {canUpload && (
+          <UploadDialog 
+            open={uploadOpen} 
+            onClose={() => setUploadOpen(false)} 
+            events={events}
+            onSuccess={() => { 
+              fetchEvents(); 
+              if(selectedEventId) {
+                const current = selectedEventId;
+                setSelectedEventId(null); 
+                setTimeout(() => setSelectedEventId(current), 50);
+              }
+              setSuccessMessage("Bilder erfolgreich hochgeladen.");
+            }} 
+            onCreateEvent={() => setCreateEventOpen(true)}
+          />
+        )}
+
+        {canUpload && (
+          <CreateEventDialog 
+            open={createEventOpen} 
+            onClose={() => setCreateEventOpen(false)} 
+            onSuccess={() => { fetchEvents(); }}
+          />
+        )}
+
+        <Snackbar
+          open={Boolean(successMessage)}
+          autoHideDuration={4000}
+          onClose={() => setSuccessMessage(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert severity="success" variant="filled" onClose={() => setSuccessMessage(null)}>
+            {successMessage}
+          </Alert>
+        </Snackbar>
+
+        <Dialog
+          open={lightboxOpen}
+          onClose={closeLightbox}
+          fullWidth
+          maxWidth="lg"
+          aria-labelledby="bild-dialog-title"
+          slotProps={{ paper: { sx: { overflow: "hidden", bgcolor: "background.default", backgroundImage: "none" } } }}
+        >
+          <DialogTitle
+            id="bild-dialog-title"
+            sx={{ pr: 2, pl: 3, py: 1.5, position: "relative", zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <Typography variant="h6" noWrap sx={{ flex: 1 }}>
+                {currentImage?.title || (currentImage && `Bild ${lightboxIndex + 1}`) || ""}
+            </Typography>
+            
+            <Stack direction="row" spacing={1} alignItems="center">
+              {canUpload && (
+                <Tooltip title="Bearbeiten">
+                  <IconButton onClick={handleEditImage} size="small">
+                    <EditRoundedIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+              <Tooltip title="Link kopieren">
+                <IconButton onClick={handleCopyLink} size="small">
+                  <LinkRoundedIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Schließen">
+                <IconButton onClick={closeLightbox} size="small">
+                  <CloseIcon />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </DialogTitle>
+
+          <DialogContent dividers sx={{ position: "relative", p: 0, bgcolor: "background.default", display: "flex", justifyContent: "center", alignItems: "center", minHeight: 500 }}>
+            {currentImage && (
+              <Box
+                component="img"
+                src={getImageUrl(currentImage.id)}
+                alt={currentImage.title}
+                sx={{
+                  display: "block",
+                  maxWidth: "100%",
+                  maxHeight: "80vh",
+                  objectFit: "contain",
+                }}
+              />
+            )}
+            
+            {displayedMedia.length > 1 && (
+              <>
+                <IconButton
+                  aria-label="previous"
+                  onClick={prevImage}
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: 16,
+                    transform: "translateY(-50%)",
+                    color: "white",
+                    bgcolor: "rgba(0,0,0,0.4)",
+                    "&:hover": { bgcolor: "rgba(0,0,0,0.6)" },
+                  }}
+                >
+                  <ArrowBackIosNewIcon />
+                </IconButton>
+                <IconButton
+                  aria-label="next"
+                  onClick={nextImage}
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    right: 16,
+                    transform: "translateY(-50%)",
+                    color: "white",
+                    bgcolor: "rgba(0,0,0,0.4)",
+                    "&:hover": { bgcolor: "rgba(0,0,0,0.6)" },
+                  }}
+                >
+                  <ArrowForwardIosIcon />
+                </IconButton>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+      </Container>
+    </Sidebar>
+  );
+}
+
+function getFriendlyErrorMessage(error: any): string {
+  const msg = error?.message || error?.error || (typeof error === 'string' ? error : "");
+  const errorMap: Record<string, string> = {
+    "File too large": "Die Datei ist zu groß (maximal 50MB erlaubt).",
+    "File upload failed": "Der Upload ist fehlgeschlagen. Bitte versuche es erneut.",
+    "Invalid event_id": "Das ausgewählte Event ist ungültig.",
+    "Missing metadata": "Es fehlen notwendige Daten für den Upload.",
+    "invalid_csrf": "Deine Sitzung ist abgelaufen. Bitte lade die Seite neu.",
+    "bad_request": "Ungültige Anfrage.",
+    "Upload failed": "Der Upload ist fehlgeschlagen. Bitte prüfe Format und Größe der Datei."
+  };
+  return errorMap[msg] || `Ein Fehler ist aufgetreten: ${msg || "Unbekannter Fehler"}`;
+}
+
+function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: any) {
+  const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [eventId, setEventId] = useState<number | "">("");
+  const [dragging, setDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragging(false);
+    if (e.dataTransfer.files?.[0]) setFile(e.dataTransfer.files[0]);
+  };
+
+  const handleSubmit = async () => {
+    if (!file || !eventId) return;
+    setUploading(true);
+    setError("");
+    try {
+      const { data } = await getAuthCsrf();
+      const token = data?.csrf;
+      
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("event_id", String(eventId));
+      if(title) formData.append("title", title);
+      if(description) formData.append("description", description);
+
+      const res = await client.request({
+        method: 'POST',
+        url: '/media',
+        body: formData,
+        bodySerializer: null,
+        // @ts-ignore
+        headers: { 
+            "X-CSRF-Token": token || "",
+            "Content-Type": null 
+        }
+      });
+
+      if (res.error) throw res.error;
+      
+      onSuccess();
+      onClose();
+      setFile(null);
+      setTitle("");
+      setDescription("");
+    } catch (e: any) {
+      console.error("Upload error:", e);
+      setError(getFriendlyErrorMessage(e));
     } finally {
       setUploading(false);
     }
   };
 
-  const handleNewEventCoverChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      setNewEventCover(null);
-      setNewEventCoverName("");
-      return;
-    }
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6" fontWeight={700}>Bild hochladen</Typography>
+        <IconButton onClick={onClose}><CloseIcon /></IconButton>
+      </DialogTitle>
+      <DialogContent sx={{ pt: 1 }}>
+        <Stack spacing={3} mt={1}>
+          {error && <Alert severity="error">{error}</Alert>}
+          
+          <Stack direction="row" spacing={1} alignItems="stretch">
+            <TextField
+              select
+              fullWidth
+              label="Event auswählen"
+              value={eventId}
+              onChange={(e) => setEventId(Number(e.target.value))}
+              size="small"
+            >
+              {events.map((e: any) => <MenuItem key={e.id} value={e.id}>{e.title}</MenuItem>)}
+            </TextField>
+            <Tooltip title="Neues Event anlegen">
+              <Button 
+                variant="outlined" 
+                sx={{ minWidth: 40, px: 0, borderRadius: 2 }} 
+                onClick={onCreateEvent}
+              >
+                <AddRoundedIcon />
+              </Button>
+            </Tooltip>
+          </Stack>
+
+          <Box
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            sx={{
+              border: '2px dashed',
+              borderColor: dragging ? 'primary.main' : 'divider',
+              bgcolor: dragging ? 'action.hover' : 'background.default',
+              borderRadius: 2,
+              p: 3,
+              textAlign: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              '&:hover': {
+                  borderColor: 'text.primary',
+                  bgcolor: 'action.hover'
+              }
+            }}
+          >
+            <input type="file" accept="image/*" hidden id="img-upload" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+            {!file ? (
+              <label htmlFor="img-upload" style={{ width: '100%', display: 'block', cursor: 'pointer' }}>
+                <CloudUploadIcon sx={{ fontSize: 40, color: dragging ? "primary.main" : "text.secondary", mb: 1 }} />
+                <Typography variant="body2" fontWeight={500}>Bild hier ablegen</Typography>
+                <Typography variant="caption" color="text.secondary">oder klicken zum Auswählen</Typography>
+              </label>
+            ) : (
+              <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+                <InsertPhotoRoundedIcon color="primary" />
+                <Typography noWrap sx={{ maxWidth: 200, fontWeight: 500 }}>{file.name}</Typography>
+                <IconButton size="small" color="error" onClick={(e) => { e.preventDefault(); setFile(null); }}>
+                  <DeleteOutlineRoundedIcon />
+                </IconButton>
+              </Stack>
+            )}
+          </Box>
+
+          <TextField label="Titel (Optional)" size="small" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <TextField label="Beschreibung (Optional)" size="small" multiline rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ p: 3 }}>
+        <Button onClick={onClose} color="inherit">Abbrechen</Button>
+        <Button variant="contained" onClick={handleSubmit} disabled={!file || !eventId || uploading}>
+          {uploading ? <CircularProgress size={24} /> : "Hochladen"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function CreateEventDialog({ open, onClose, onSuccess }: any) {
+  const [title, setTitle] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [dragging, setDragging] = useState(false);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragging(false);
+    if (e.dataTransfer.files?.[0]) setFile(e.dataTransfer.files[0]);
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const dataUrl = await readFileAsDataUrl(file);
-      setNewEventCover(dataUrl);
-      setNewEventCoverName(file.name);
-      setNewEventError(null);
-    } catch (error) {
-      setNewEventError(
-        error instanceof Error
-          ? error.message
-          : "Das Titelbild konnte nicht gelesen werden."
-      );
+      const { data } = await getAuthCsrf();
+      const token = data?.csrf;
+      
+      const formData = new FormData();
+      formData.append("title", title);
+      if (file) {
+        formData.append("file", file);
+      }
+
+      const res = await client.request({
+        method: 'POST',
+        url: '/events',
+        body: formData,
+        bodySerializer: null,
+        // @ts-ignore
+        headers: { "X-CSRF-Token": token || "", "Content-Type": null }
+      });
+
+      if (res.error) throw res.error;
+
+      onSuccess();
+      onClose();
+      setTitle("");
+      setFile(null);
+    } catch (e: any) {
+      setError(getFriendlyErrorMessage(e));
+    } finally {
+      setLoading(false);
     }
   };
-
-  const updateUploadEntryTitle = (index: number, value: string) => {
-    setUploadEntries((prev) =>
-      prev.map((entry, i) =>
-        i === index ? { ...entry, title: value } : entry
-      )
-    );
-  };
-
-
-  // --- Lightbox Handlers (optimiert mit useCallback) ---
-  const openLightbox = (i: number) => {
-    setIndex(i);
-    setOpen(true);
-  };
-
-  const closeLightbox = React.useCallback(() => {
-    setOpen(false);
-  }, []);
-
-  const prev = React.useCallback(() => {
-    setIndex((i) => (i - 1 + thumbs.length) % thumbs.length);
-  }, [thumbs.length]);
-
-  const next = React.useCallback(() => {
-    setIndex((i) => (i + 1) % thumbs.length);
-  }, [thumbs.length]);
-
-  // Keyboard-Navigation für Lightbox
-  React.useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") prev();
-      if (e.key === "ArrowRight") next();
-      if (e.key === "Escape") closeLightbox();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, prev, next, closeLightbox]);
-
-  React.useEffect(() => {
-    if (thumbs.length === 0) {
-      setIndex(0);
-      setOpen(false);
-      return;
-    }
-    if (index >= thumbs.length) {
-      setIndex(0);
-    }
-  }, [thumbs.length, index]);
 
   return (
-    <Sidebar user={user} title="Galerie">
-      <Container
-        sx={(theme) => ({
-          py: theme.spacing(4)
-        })}
-      >
-      {canUpload && (
-        <Box
-          sx={(theme) => ({
-            display: "flex",
-            justifyContent: "flex-end",
-            mb: theme.spacing(2),
-          })}
-        >
-          <Button
-            variant="contained"
-            startIcon={<CloudUploadIcon />}
-            onClick={handleOpenUploadDialog}
-            sx={(theme) => ({
-              boxShadow: theme.shadows[4],
-            })}
-          >
-            Bilder hochladen
-          </Button>
-        </Box>
-      )}
-      <Typography variant="h4" align="center" gutterBottom>
-        Galerie
-      </Typography>
-      {/* --- Event-Auswahl als horizontale ImageList --- */}
-      <Box
-        sx={(theme) => ({
-          mb: theme.spacing(4),
-          mx: theme.spacing(-2),
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: theme.spacing(2),
-          flexWrap: "wrap",
-        })}
-      >
-        <Box
-          sx={(theme) => ({
-            flex: 1,
-            display: "flex",
-            justifyContent: "center",
-            minWidth: 0,
-          })}
-        >
-          <ImageList
-            sx={(theme) => ({
-              display: "flex",
-              flexDirection: "row",
-              flexWrap: "nowrap",
-              justifyContent: "center",
-              transform: "translateZ(0)",
-              py: theme.spacing(2),
-              overflowX: "auto",
-              overflowY: "visible", // allow scaled items to render fully
-              "&::-webkit-scrollbar": { display: "none" },
-              "-ms-overflow-style": "none",
-              "scrollbar-width": "none",
-              px: theme.spacing(1),
-              width: "100%",
-              gap: theme.spacing(3),
-              columnGap: theme.spacing(3), // fallback for flex gap support
-              "& > li:not(:last-of-type)": {
-                marginRight: theme.spacing(3), // ensure spacing on browsers without flex gap on ImageList
-              },
-            })}
-          >
-            {allEvents.map((ev) => {
-              const selected = ev.id === selectedEventId;
-              return (
-                <ImageListItem
-                  key={ev.id}
-                  onClick={() => {
-                    setSelectedEventId(ev.id);
-                    setIndex(0);
-                    setPage(1);
-                  }}
-                  // KORREKTUR: Alle Theme-abhängigen und bedingten Styles in der Theme-Funktion zusammengefasst
-                  sx={[(theme) => ({ 
-                    cursor: "pointer",
-                    width: theme.spacing(18.75),
-                    flexShrink: 0,
-                    borderRadius: theme.shape.borderRadius,
-                    overflow: "visible",
-                    
-                    // Konsolidierte bedingte Styles
-                    boxShadow: theme.shadows[selected ? 6 : 2],
-                    outline: selected ? "2px solid" : "none",
-                    outlineColor: selected ? theme.palette.primary.main : "transparent",
-                    zIndex: selected ? 2 : 1,
-                    transform: selected ? "scale(1.05)" : "scale(1)",
-                    
-                    transition: theme.transitions.create([
-                      "transform",
-                      "box-shadow",
-                      "outline",
-                      "margin",
-                    ]),
-                    outlineOffset: "2px",
-                    "&:hover": {
-                      transform: "scale(1.08)",
-                      boxShadow: theme.shadows[8],
-                      zIndex: 3,
-                    }
-                  })]}
-                >
-                  <Box
-                    sx={(theme) => ({
-                      overflow: "hidden",
-                      borderRadius: theme.shape.borderRadius,
-                      bgcolor: theme.palette.background.paper,
-                      boxShadow: theme.shadows[selected ? 6 : 1],
-                    })}
-                  >
-                    <Box
-                      component="img"
-                      src={ev.src} // Holt sich den Pfad (entweder /DEIN_ORDNER/... oder picsum)
-                      alt={ev.title}
-                      loading="lazy"
-                      sx={(theme) => ({
-                        width: "100%",
-                        height: theme.spacing(20),
-                        objectFit: "contain",
-                        display: "block",
-                      })}
-                    />
-                    <ImageListItemBar
-                      title={ev.title}
-                      position="below"
-                      // KORREKTUR: Alle Theme-abhängigen und bedingten Styles in der Theme-Funktion zusammengefasst
-                      sx={[(theme) => ({ 
-                        textAlign: "center",
-                        py: theme.spacing(1),
-                        // Konsolidierte bedingte Styles
-                        bgcolor: selected ? theme.palette.primary.main : theme.palette.background.paper,
-                        color: selected ? theme.palette.primary.contrastText : theme.palette.text.primary,
-                        
-                        "& .MuiImageListItemBar-title": {
-                          fontSize: "0.8rem",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }
-                      })]}
-                    />
-                  </Box>
-                </ImageListItem>
-              );
-            })}
-          </ImageList>
-        </Box>
-      </Box>
-      {/* --- Titel der ausgewählten Veranstaltung --- */}
-      {selectedEventId && (
-        <Typography
-          variant="h5"
-          component="h2"
-          align="center"
-          sx={(theme) => ({
-            mb: theme.spacing(3)
-          })}
-        >
-          {allEvents.find((ev) => ev.id === selectedEventId)?.title}
-        </Typography>
-      )}
-      {/* --- Bilderbereich --- */}
-      {!selectedEventId ? (
-        <Typography
-          align="center"
-          color="text.secondary"
-          sx={(theme) => ({
-            mt: theme.spacing(6)
-          })}
-        >
-          Bitte ein Event oben auswählen, um Bilder zu sehen.
-        </Typography>
-      ) : thumbs.length === 0 ? (
-        <Typography
-          align="center"
-          color="text.secondary"
-          sx={(theme) => ({
-            mt: theme.spacing(6)
-          })}
-        >
-          Für dieses Event sind noch keine Bilder hinterlegt. (Überprüfe die 'bilderByEvent'-Konstante)
-        </Typography>
-          ) : (
-            <Box
-              sx={(theme) => ({
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "repeat(2, 1fr)",
-                  sm: "repeat(3, 1fr)",
-                  md: "repeat(4, 1fr)",
-                },
-                gap: theme.spacing(3)
-              })}
-            >
-          {paginatedThumbs.map((b, i) => (
-            <Card
-              key={b.id}
-              onClick={() => openLightbox(startIndex + i)}
-              sx={(theme) => ({
-                borderRadius: theme.shape.borderRadius,
-                overflow: "hidden",
-                cursor: "pointer",
-                transition: theme.transitions.create([
-                  "transform",
-                  "box-shadow",
-                ]),
-                "&:hover": {
-                  transform: "translateY(-3px)",
-                  boxShadow: theme.shadows[6],
-                },
-              })}
-            >
-              <CardMedia
-                component="img"
-                image={b.thumb} // Holt sich den Pfad (entweder /DEIN_ORDNER/... oder picsum)
-                alt={getImageTitle(b)}
-                sx={{
-                  width: "100%",
-                  aspectRatio: "3/2",
-                  objectFit: "contain",
-                }}
-              />
-            </Card>
-          ))}
-        </Box>
-      )}
-      {selectedEventId && thumbs.length > IMAGES_PER_PAGE && (
-        <Box
-          sx={(theme) => ({
-            mt: theme.spacing(4),
-            display: "flex",
-            justifyContent: "center"
-          })}
-        >
-          <Pagination
-            count={pageCount}
-            page={page}
-            onChange={handlePageChange}
-            showFirstButton
-            showLastButton
-            color="primary"
-            siblingCount={0}
-            variant="text"
-            shape="rounded"
-            sx={(theme) => ({
-              "& .MuiPaginationItem-root": {
-                borderRadius: "50%",
-                minWidth: theme.spacing(5),
-                height: theme.spacing(5),
-                color: theme.palette.primary.main,
-              },
-              "& .MuiPaginationItem-root.Mui-selected": {
-                bgcolor: theme.palette.primary.main,
-                color: theme.palette.primary.contrastText,
-                "&:hover": {
-                  bgcolor: theme.palette.primary.dark,
-                },
-              },
-            })}
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6" fontWeight={700}>Neues Event</Typography>
+        <IconButton onClick={onClose}><CloseIcon /></IconButton>
+      </DialogTitle>
+      <DialogContent sx={{ pt: 1 }}>
+        <Stack spacing={3} mt={1}>
+          {error && <Alert severity="error">{error}</Alert>}
+          <TextField
+            autoFocus
+            label="Event Titel"
+            fullWidth
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
           />
-        </Box>
-      )}
-      {canUpload && (
-        <Dialog
-          open={uploadOpen}
-          onClose={handleCloseUploadDialog}
-          fullWidth
-          maxWidth="sm"
-        >
-          <DialogTitle>Neue Bilder hochladen</DialogTitle>
-          <DialogContent dividers>
-            <Stack spacing={3}>
-              <FormControl fullWidth>
-                <InputLabel id="upload-event-label">Event auswählen</InputLabel>
-                <Select
-                  labelId="upload-event-label"
-                  label="Event auswählen"
-                  value={selectedUploadEventId}
-                  onChange={(
-                    event: SelectChangeEvent<number | "" | "new">
-                  ) => {
-                    const value = event.target.value;
-                    if (value === "" || value === "new") {
-                      setSelectedUploadEventId(value);
-                      if (value !== "new") {
-                        setNewEventError(null);
-                      }
-                    } else {
-                      setSelectedUploadEventId(Number(value));
-                      setNewEventError(null);
-                    }
-                  }}
-                >
-                  <MenuItem value="">
-                    <em>Bitte auswählen</em>
-                  </MenuItem>
-                  <MenuItem value="new">+ Neues Event anlegen</MenuItem>
-                  {allEvents.map((event) => (
-                    <MenuItem key={event.id} value={event.id}>
-                      {event.title}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              {selectedUploadEventId === "new" && (
-                <Stack spacing={2}>
-                  <TextField
-                    label="Eventname"
-                    value={newEventTitle}
-                    onChange={(event) => {
-                      setNewEventTitle(event.target.value);
-                      setNewEventError(null);
-                    }}
-                    required
-                  />
-                  <Button variant="outlined" component="label">
-                    Titelbild auswählen
-                    <input
-                      hidden
-                      type="file"
-                      accept="image/*"
-                      onChange={handleNewEventCoverChange}
-                    />
-                  </Button>
-                  {newEventCoverName && (
-                    <Typography variant="body2" color="text.secondary">
-                      Ausgewählt: {newEventCoverName}
-                    </Typography>
-                  )}
-                  {newEventError && <Alert severity="error">{newEventError}</Alert>}
-                </Stack>
-              )}
-
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<CloudUploadIcon />}
-                disabled={uploading}
-              >
-                Dateien auswählen
-                <input
-                  hidden
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFilesChange}
-                />
-              </Button>
-
-              {uploadEntries.length > 0 && (
-                <Stack spacing={2}>
-                  <Typography variant="body2" color="text.secondary">
-                    {uploadEntries.length} Datei
-                    {uploadEntries.length === 1 ? "" : "en"} ausgewählt.
-                  </Typography>
-                  {uploadEntries.map((entry, idx) => (
-                    <TextField
-                      key={`${entry.file.name}-${idx}`}
-                      label={`Titel für ${entry.file.name}`}
-                      value={entry.title}
-                      onChange={(event) =>
-                        updateUploadEntryTitle(idx, event.target.value)
-                      }
-                      helperText="Optional – leer lassen, um Dateinamen zu verwenden."
-                      fullWidth
-                    />
-                  ))}
-                </Stack>
-              )}
-
-              <Alert severity="info">
-                Events und Bilder werden aktuell nur lokal simuliert und gehen
-                nach einem Seiten-Reload verloren.
-              </Alert>
-
-              {uploadError && <Alert severity="error">{uploadError}</Alert>}
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseUploadDialog} disabled={uploading}>
-              Abbrechen
-            </Button>
-            <Button
-              onClick={handleUploadImages}
-              variant="contained"
-              disabled={uploading}
-            >
-              {uploading ? "Lade hoch..." : "Hochladen"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
-      <Snackbar
-        open={Boolean(successMessage)}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          severity="success"
-          variant="filled"
-          sx={{ width: "100%" }}
-          onClose={() => setSuccessMessage(null)}
-        >
-          {successMessage}
-        </Alert>
-      </Snackbar>
-      {/* --- Lightbox --- */}
-      <Dialog
-        open={open}
-        onClose={closeLightbox}
-        fullWidth
-        maxWidth="lg" // <-- Klassische Lightbox-Größe
-        aria-labelledby="bild-dialog-title"
-        slotProps={{
-          paper: { sx: { overflow: "hidden" } }
-        }}
-      >
-        <DialogTitle
-          id="bild-dialog-title"
-          sx={(theme) => ({
-            pr: theme.spacing(6),
-            position: "relative",
-            zIndex: 1
-          })}
-        >
-          {currentImageTitle && (
-            <Typography
-              variant="subtitle1"
-              sx={(theme) => ({
-                pr: theme.spacing(4)
-              })}
-            >
-              {currentImageTitle}
-            </Typography>
-          )}
-          <IconButton
-            aria-label="close"
-            onClick={closeLightbox}
-            sx={(theme) => ({
-              position: "absolute",
-              right: theme.spacing(1.5),
-              top: theme.spacing(1.5),
-              zIndex: 2
-            })}
+          <Box
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            sx={{
+              border: '2px dashed',
+              borderColor: dragging ? 'primary.main' : 'divider',
+              bgcolor: dragging ? 'action.hover' : 'background.default',
+              borderRadius: 2,
+              p: 3,
+              textAlign: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              '&:hover': {
+                  borderColor: 'text.primary',
+                  bgcolor: 'action.hover'
+              }
+            }}
           >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent
-          dividers
-          sx={{
-            position: "relative",
-            p: 0,
-            bgcolor: "background.default",
-          }}
-        >
-          {currentImage && (
-            <Box
-              component="img"
-              src={currentImage.full} // Holt sich den Pfad (entweder /DEIN_ORDNER/... oder picsum)
-              alt={currentImageTitle}
-              sx={{
-                display: "block",
-                width: "100%",
-                height: "auto",
-                maxHeight: "85vh", // Begrenzt die Höhe, damit es auf den Schirm passt
-                objectFit: "contain",
-              }}
-            />
-          )}
-          {thumbs.length > 1 && (
-            <>
-              <IconButton
-                aria-label="previous"
-                onClick={prev}
-                sx={(theme) => ({
-                  position: "absolute",
-                  top: "50%",
-                  left: theme.spacing(1.5),
-                  transform: "translateY(-50%)",
-                  color: theme.palette.text.primary,
-                  bgcolor: alpha(theme.palette.background.default, 0.4),
-                  zIndex: 2,
-                  "&:hover": {
-                    bgcolor: alpha(theme.palette.background.default, 0.7),
-                  },
-                })}
-              >
-                <ArrowBackIosNewIcon />
-              </IconButton>
-              <IconButton
-                aria-label="next"
-                onClick={next}
-                sx={(theme) => ({
-                  position: "absolute",
-                  top: "50%",
-                  right: theme.spacing(1.5),
-                  transform: "translateY(-50%)",
-                  color: theme.palette.text.primary,
-                  bgcolor: alpha(theme.palette.background.default, 0.4),
-                  zIndex: 2,
-                  "&:hover": {
-                    bgcolor: alpha(theme.palette.background.default, 0.7),
-                  },
-                })}
-              >
-                <ArrowForwardIosIcon />
-              </IconButton>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-      </Container>
-    </Sidebar>
+            <input type="file" accept="image/*" hidden id="event-cover-upload" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+            {!file ? (
+              <label htmlFor="event-cover-upload" style={{ width: '100%', display: 'block', cursor: 'pointer' }}>
+                <CloudUploadIcon sx={{ fontSize: 40, color: dragging ? "primary.main" : "text.secondary", mb: 1 }} />
+                <Typography variant="body2" fontWeight={500}>Vorschaubild hier ablegen</Typography>
+                <Typography variant="caption" color="text.secondary">oder klicken (Optional)</Typography>
+              </label>
+            ) : (
+              <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+                <InsertPhotoRoundedIcon color="primary" />
+                <Typography noWrap sx={{ maxWidth: 200, fontWeight: 500 }}>{file.name}</Typography>
+                <IconButton size="small" color="error" onClick={(e) => { e.preventDefault(); setFile(null); }}>
+                  <DeleteOutlineRoundedIcon />
+                </IconButton>
+              </Stack>
+            )}
+          </Box>
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ p: 3 }}>
+        <Button onClick={onClose} color="inherit">Abbrechen</Button>
+        <Button onClick={handleSubmit} variant="contained" disabled={!title || loading}>
+          {loading ? <CircularProgress size={24} /> : "Erstellen"}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }
