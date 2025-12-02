@@ -127,7 +127,7 @@ definitions:
     type: object
 info:
   contact: {}
-  description: API Server for the FSV Website
+  description: API for the website of the FSV Informatik
   title: Fachschaft Informatik API
   version: "1.0"
 paths:
