@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 )
 
 const createExam = `-- name: CreateExam :one
@@ -22,17 +21,17 @@ INSERT INTO exams (
 `
 
 type CreateExamParams struct {
-	ID        string         `json:"id"`
-	Userid    string         `json:"userid"`
-	Programid int64          `json:"programid"`
-	Version   string         `json:"version"`
-	Moduleid  sql.NullInt64  `json:"moduleid"`
-	ExamDate  string         `json:"exam_date"`
-	Accesskey string         `json:"accesskey"`
-	MimeType  string         `json:"mime_type"`
-	Nbytes    int64          `json:"nbytes"`
-	Checksum  string         `json:"checksum"`
-	Comment   sql.NullString `json:"comment"`
+	ID        string  `json:"id"`
+	Userid    string  `json:"userid"`
+	Programid int64   `json:"programid"`
+	Version   string  `json:"version"`
+	Moduleid  *int64  `json:"moduleid"`
+	ExamDate  string  `json:"exam_date"`
+	Accesskey string  `json:"accesskey"`
+	MimeType  string  `json:"mime_type"`
+	Nbytes    int64   `json:"nbytes"`
+	Checksum  string  `json:"checksum"`
+	Comment   *string `json:"comment"`
 }
 
 func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, error) {
@@ -119,15 +118,15 @@ type ListExamsParams struct {
 }
 
 type ListExamsRow struct {
-	ID           string         `json:"id"`
-	Programid    int64          `json:"programid"`
-	Version      string         `json:"version"`
-	ExamDate     string         `json:"exam_date"`
-	UploadedAt   string         `json:"uploaded_at"`
-	Moduleid     sql.NullInt64  `json:"moduleid"`
-	Comment      sql.NullString `json:"comment"`
-	ModuleName   string         `json:"module_name"`
-	UploaderName string         `json:"uploader_name"`
+	ID           string  `json:"id"`
+	Programid    int64   `json:"programid"`
+	Version      string  `json:"version"`
+	ExamDate     string  `json:"exam_date"`
+	UploadedAt   string  `json:"uploaded_at"`
+	Moduleid     *int64  `json:"moduleid"`
+	Comment      *string `json:"comment"`
+	ModuleName   string  `json:"module_name"`
+	UploaderName string  `json:"uploader_name"`
 }
 
 func (q *Queries) ListExams(ctx context.Context, arg ListExamsParams) ([]ListExamsRow, error) {
@@ -175,12 +174,12 @@ RETURNING id, userid, programid, version, moduleid, comment, exam_date, uploaded
 `
 
 type UpdateExamParams struct {
-	Programid int64          `json:"programid"`
-	Version   string         `json:"version"`
-	Moduleid  sql.NullInt64  `json:"moduleid"`
-	ExamDate  string         `json:"exam_date"`
-	Comment   sql.NullString `json:"comment"`
-	ID        string         `json:"id"`
+	Programid int64   `json:"programid"`
+	Version   string  `json:"version"`
+	Moduleid  *int64  `json:"moduleid"`
+	ExamDate  string  `json:"exam_date"`
+	Comment   *string `json:"comment"`
+	ID        string  `json:"id"`
 }
 
 func (q *Queries) UpdateExam(ctx context.Context, arg UpdateExamParams) (Exam, error) {

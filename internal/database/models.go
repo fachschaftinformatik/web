@@ -4,10 +4,6 @@
 
 package database
 
-import (
-	"database/sql"
-)
-
 type Comment struct {
 	ID        string `json:"id"`
 	Postid    string `json:"postid"`
@@ -18,18 +14,18 @@ type Comment struct {
 }
 
 type Exam struct {
-	ID         string         `json:"id"`
-	Userid     string         `json:"userid"`
-	Programid  int64          `json:"programid"`
-	Version    string         `json:"version"`
-	Moduleid   sql.NullInt64  `json:"moduleid"`
-	Comment    sql.NullString `json:"comment"`
-	ExamDate   string         `json:"exam_date"`
-	UploadedAt string         `json:"uploaded_at"`
-	Accesskey  string         `json:"accesskey"`
-	MimeType   string         `json:"mime_type"`
-	Nbytes     int64          `json:"nbytes"`
-	Checksum   string         `json:"checksum"`
+	ID         string  `json:"id"`
+	Userid     string  `json:"userid"`
+	Programid  int64   `json:"programid"`
+	Version    string  `json:"version"`
+	Moduleid   *int64  `json:"moduleid"`
+	Comment    *string `json:"comment"`
+	ExamDate   string  `json:"exam_date"`
+	UploadedAt string  `json:"uploaded_at"`
+	Accesskey  string  `json:"accesskey"`
+	MimeType   string  `json:"mime_type"`
+	Nbytes     int64   `json:"nbytes"`
+	Checksum   string  `json:"checksum"`
 }
 
 type Module struct {
@@ -40,13 +36,13 @@ type Module struct {
 }
 
 type Post struct {
-	ID        string         `json:"id"`
-	Userid    string         `json:"userid"`
-	Title     string         `json:"title"`
-	Body      string         `json:"body"`
-	CreatedAt string         `json:"created_at"`
-	UpdatedAt string         `json:"updated_at"`
-	Deleted   sql.NullString `json:"deleted"`
+	ID        string  `json:"id"`
+	Userid    string  `json:"userid"`
+	Title     string  `json:"title"`
+	Body      string  `json:"body"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+	Deleted   *string `json:"deleted"`
 }
 
 type Program struct {
@@ -69,17 +65,17 @@ type Session struct {
 }
 
 type User struct {
-	ID                string         `json:"id"`
-	Email             string         `json:"email"`
-	Name              string         `json:"name"`
-	Password          string         `json:"password"`
-	Role              string         `json:"role"`
-	Active            int64          `json:"active"`
-	Verified          int64          `json:"verified"`
-	VerifiedAt        sql.NullString `json:"verified_at"`
-	VerifiedUntil     sql.NullString `json:"verified_until"`
-	Programid         int64          `json:"programid"`
-	CreatedAt         string         `json:"created_at"`
-	UpdatedAt         string         `json:"updated_at"`
-	VerificationToken sql.NullString `json:"verification_token"`
+	ID                string  `json:"id"`
+	Email             string  `json:"email"`
+	Name              string  `json:"name"`
+	Password          string  `json:"password"`
+	Role              string  `json:"role"`
+	Active            int64   `json:"active"`
+	Verified          int64   `json:"verified"`
+	VerifiedAt        *string `json:"verified_at"`
+	VerifiedUntil     *string `json:"verified_until"`
+	Programid         int64   `json:"programid"`
+	CreatedAt         string  `json:"created_at"`
+	UpdatedAt         string  `json:"updated_at"`
+	VerificationToken *string `json:"verification_token"`
 }

@@ -2,7 +2,8 @@ import { defineConfig } from '@hey-api/openapi-ts';
 
 export default defineConfig({
   client: '@hey-api/client-fetch',
-  input: '../api/openapi.yaml',
+  // input: '../api/openapi.yaml',
+  input: '../docs/swagger.yaml',
   output: 'src/lib/api',
   plugins: [
     'zod', 
