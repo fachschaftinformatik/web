@@ -13,6 +13,9 @@ import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import LinkIcon from "@mui/icons-material/Link";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
 import { forumDemoPosts } from "@lib/data";
@@ -20,10 +23,10 @@ import { forumDemoPosts } from "@lib/data";
 const PROGRAM_CATALOG = [
   { id: "inf-bsc", label: "Informatik (B.Sc.)", shortLabel: "INF B.Sc.", level: "Bachelor" },
   { id: "winf-bsc", label: "Wirtschaftsinformatik (B.Sc.)", shortLabel: "WINF B.Sc.", level: "Bachelor" },
-  { id: "med-bsc", label: "Medieninformatik (B.Sc.)", shortLabel: "MED B.Sc.", level: "Bachelor" },
+  { id: "med-bsc", label: "Informatik und Design (B.Sc.)", shortLabel: "IuD B.Sc.", level: "Bachelor" },
   { id: "inf-msc", label: "Informatik (M.Sc.)", shortLabel: "INF M.Sc.", level: "Master" },
   { id: "winf-msc", label: "Wirtschaftsinformatik (M.Sc.)", shortLabel: "WINF M.Sc.", level: "Master" },
-  { id: "med-msc", label: "Medieninformatik (M.Sc.)", shortLabel: "MED M.Sc.", level: "Master" },
+  { id: "med-msc", label: "Informatik und Design (M.Sc.)", shortLabel: "IuD M.Sc.", level: "Master" },
 ] as const;
 
 type ProgramMeta = typeof PROGRAM_CATALOG[number];
@@ -48,6 +51,7 @@ type Post = {
   votes: number;
   programs: Program[];
   comments: Comment[];
+  pinned?: boolean;
 };
 
 type CommentAppearance = {
@@ -67,12 +71,15 @@ const LEGACY_PROGRAM_MAP: Record<string, Program> = {
   Informatik: "inf-bsc",
   Wirtschaftsinformatik: "winf-bsc",
   Medieninformatik: "med-bsc",
+  "Informatik und Design": "med-bsc",
   "Informatik (B.Sc.)": "inf-bsc",
   "Wirtschaftsinformatik (B.Sc.)": "winf-bsc",
   "Medieninformatik (B.Sc.)": "med-bsc",
+  "Informatik und Design (B.Sc.)": "med-bsc",
   "Informatik (M.Sc.)": "inf-msc",
   "Wirtschaftsinformatik (M.Sc.)": "winf-msc",
   "Medieninformatik (M.Sc.)": "med-msc",
+  "Informatik und Design (M.Sc.)": "med-msc",
 };
 
 const normalizeProgramValue = (value: unknown): Program | null => {
@@ -119,6 +126,14 @@ function isoToShort(iso: string) {
     minute: "2-digit",
   });
 }
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 type CommentNode = Comment & { children: CommentNode[] };
 function buildCommentTree(comments: Comment[]): CommentNode[] {
@@ -175,163 +190,19 @@ function renderTextWithMentions(text: string) {
 }
 
 /* Seeds */
-const BASE_SEEDS: Post[] = [
-  {
-    id: "p1",
-    title: "Wie strukturiert ihr React-Formulare ohne libs?",
-    body: "Ich suche einen sauberen Weg für Validierung + Fehlermeldungen ohne Formik/React Hook Form. Gibt es mit MUI Best Practices?",
-    tags: ["react", "mui", "forms"],
-    author: "Lea",
-    createdAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
-    votes: 7,
-    programs: ["inf-bsc", "inf-msc"],
-    comments: [
-      { id: "c1", author: "Jonas", text: "Ich nutze Zod + eigene Inputs.", createdAt: new Date(Date.now()-32*3600*1000).toISOString() },
-      { id: "c2", author: "Mara", text: "React Hook Form ist leichtgewichtig genug.", createdAt: new Date(Date.now()-30*3600*1000).toISOString() },
-      { id: "c3", author: "Lea", text: "Danke! Hast du ein Beispielrepo?", createdAt: new Date(Date.now()-29*3600*1000).toISOString(), parentId: "c1" },
-    ],
-  },
-  {
-    id: "p2",
-    title: "TS: Unterschied zwischen type und interface?",
-    body: "Wann würdet ihr type statt interface nutzen? Besonders im Kontext von Union-Types & Declaration-Merging.",
-    tags: ["typescript"],
-    author: "Jonas",
-    createdAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
-    votes: 12,
-    programs: ["winf-bsc", "inf-msc"],
-    comments: [
-      {
-        id: "c4",
-        author: "Timo",
-        text: "Ich nehme type sobald Union/Intersection im Spiel ist.",
-        createdAt: new Date(Date.now() - 4.5 * 3600 * 1000).toISOString(),
-      },
-      {
-        id: "c5",
-        author: "Eva",
-        text: "Interfaces fürs Structural Typing in Klassen, Rest mache ich mit type.",
-        createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
-      },
-      {
-        id: "c6",
-        author: "Jonas",
-        text: "Makes sense. @Timo nutzt du auch satisfies?",
-        createdAt: new Date(Date.now() - 3.5 * 3600 * 1000).toISOString(),
-        parentId: "c4",
-      },
-    ],
-  },
-  {
-    id: "p3",
-    title: "useMemo/useCallback – Overhead vs. Nutzen?",
-    body: "Gibt es Richtlinien, wann der Overhead größer ist als der Nutzen? Beispiele willkommen.",
-    tags: ["react", "performance"],
-    author: "Mara",
-    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-    votes: 3,
-    programs: ["med-bsc", "med-msc", "inf-bsc", "winf-msc"],
-    comments: [
-      {
-        id: "c7",
-        author: "Sara",
-        text: "Ich nutze useMemo fast nur um schwere Berechnungen zu cachen.",
-        createdAt: new Date(Date.now() - 1.8 * 3600 * 1000).toISOString(),
-      },
-      {
-        id: "c8",
-        author: "Luca",
-        text: "Callbacks nur wenn ich Props in tiefe Komponenten reiche.",
-        createdAt: new Date(Date.now() - 1.6 * 3600 * 1000).toISOString(),
-      },
-      {
-        id: "c9",
-        author: "Mara",
-        text: "Danke euch, ich packe das mal in unser Wiki.",
-        createdAt: new Date(Date.now() - 1.5 * 3600 * 1000).toISOString(),
-        parentId: "c7",
-      },
-    ],
-  },
-];
-
-function makeExtraSeeds(n: number): Post[] {
-  const authors = ["Lea","Jonas","Mara","Timo","Eva","Noah","Sara","Luca","Milan","Nora"];
-  const topics = [
-    "State-Management mit Context",
-    "Routing mit React Router",
-    "Vite Build-Tipps",
-    "Unit-Testing mit Vitest",
-    "MUI Table vs. DataGrid",
-    "Responsive Layout mit Grid",
-    "Dark Mode mit MUI",
-    "Form-Validation Patterns",
-    "Performance messen",
-    "Code-Splitting & lazy()",
-  ];
-  const tagsPool = ["react","typescript","mui","routing","state","hooks","performance","testing","vite","ui"];
-
-  const arr: Post[] = [];
-  for (let i = 0; i < n; i++) {
-    const id = `seed-${i}`;
-    const programs: Program[] =
-      i % 7 === 0 ? PROGRAMS.slice()
-      : i % 3 === 0 ? ["inf-bsc", "inf-msc", "winf-bsc"]
-      : i % 2 === 0 ? ["med-bsc", "med-msc"]
-      : [PROGRAMS[i % PROGRAMS.length]];
-    let comments: Comment[] = [];
-    if (i % 5 === 0) {
-      comments = [
-        {
-          id: `${id}-c1`,
-          author: "Eva",
-          text: "Klingt spannend – hast du ein Repo?",
-          createdAt: new Date(Date.now() - (i + 2) * 3600 * 1000).toISOString(),
-        },
-        {
-          id: `${id}-c2`,
-          author: "Timo",
-          text: "Ich habe letzte Woche etwas Ähnliches gebaut.",
-          createdAt: new Date(Date.now() - (i + 1.8) * 3600 * 1000).toISOString(),
-        },
-        {
-          id: `${id}-c3`,
-          author: "Eva",
-          text: "@Timo magst du den Link teilen?",
-          createdAt: new Date(Date.now() - (i + 1.6) * 3600 * 1000).toISOString(),
-          parentId: `${id}-c2`,
-        },
-      ];
-    } else if (i % 5 === 2) {
-      comments = [
-        {
-          id: `${id}-c1`,
-          author: "Jonas",
-          text: "Nutze hier unbedingt Lazy Loading.",
-          createdAt: new Date(Date.now() - (i + 2.2) * 3600 * 1000).toISOString(),
-        },
-      ];
-    }
-
-    const base: Post = {
-      id,
-      title: `Demo #${i + 1}: ${topics[i % topics.length]}`,
-      body: "Dies ist ein Demo-Beitrag zum Testen von Suche, Sortierung, Filter, Votes, Erstellen und verschachtelten Kommentaren.",
-      tags: [tagsPool[i % tagsPool.length], tagsPool[(i + 3) % tagsPool.length]],
-      author: authors[i % authors.length],
-      createdAt: new Date(Date.now() - (i + 4) * 2 * 3600 * 1000).toISOString(),
-      votes: (i * 7) % 25,
-      programs,
-      comments,
-    };
-    arr.push(base);
-  }
-  return arr;
-}
-
-const SEED_POSTS: Post[] = [...BASE_SEEDS, ...makeExtraSeeds(20)];
+const SEED_POSTS: Post[] = forumDemoPosts.map((post, index) => ({
+  id: post.id,
+  title: post.title,
+  body: post.body,
+  tags: post.tags,
+  author: post.author,
+  createdAt: post.createdAt,
+  votes: post.votes,
+  programs: normalizeProgramList(post.programs as unknown[]),
+  comments: post.comments,
+  pinned: index === 0,
+}));
 export const FORUM_SEED_POSTS = SEED_POSTS;
-
 /* Kommentare (rekursiv) */
 function CommentThread({
   node,
@@ -444,36 +315,287 @@ function CommentThread({
     </Box>
   );
 }
+
+function FocusedPost({
+  post,
+  onAddComment,
+  onVote,
+  vote,
+  commentAppearance,
+  mutedColor,
+  canComment,
+  commentDisabledReason,
+  programChipSx,
+  openPostWindow,
+  onCloseFocus,
+  fullPageMode,
+  onBackToForum,
+}: {
+  post: Post;
+  onAddComment: (parentId: string | null, text: string) => void;
+  onVote: (id: string, v: Vote) => void;
+  vote: Vote;
+  commentAppearance: CommentAppearance;
+  mutedColor: string;
+  canComment: boolean;
+  commentDisabledReason?: string;
+  programChipSx: SxProps;
+  openPostWindow: (post: Post, options?: { view?: "full" | null }) => void;
+  onCloseFocus: () => void;
+  fullPageMode: boolean;
+  onBackToForum?: () => void;
+}) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  const netVotes = post.votes + (vote as number);
+  const [shareCopied, setShareCopied] = React.useState(false);
+  const focusShareUrl = React.useMemo(() => {
+    const origin =
+      typeof window !== "undefined" && window.location?.origin
+        ? window.location.origin
+        : "https://campus-demo.local";
+    const params = new URLSearchParams();
+    params.set("post", post.id);
+    if (fullPageMode) params.set("view", "full");
+    return `${origin}/forum?${params.toString()}#${post.id}`;
+  }, [post.id, fullPageMode]);
+  const titleVariant = fullPageMode ? "h4" : "h5";
+  const bodyVariant = fullPageMode ? "body1" : "body2";
+
+  const handleCopy = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(focusShareUrl).then(() => setShareCopied(true)).catch(() => setShareCopied(true));
+    } else {
+      setShareCopied(true);
+    }
+    setTimeout(() => setShareCopied(false), 2000);
+  };
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        mb: 3,
+        p: { xs: 2.5, md: 3 },
+        borderRadius: 3,
+        border: fullPageMode ? "none" : "1px solid",
+        borderColor: theme.palette.divider,
+        bgcolor: fullPageMode ? "transparent" : "var(--card-bg)",
+        boxShadow: fullPageMode
+          ? "none"
+          : isDark
+          ? "0px 12px 28px rgba(0,0,0,0.32)"
+          : "0px 12px 28px rgba(15,110,46,0.12)",
+      }}
+    >
+      <Stack spacing={fullPageMode ? 3 : 2.5}>
+        {fullPageMode && (
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", sm: "center" }}
+          >
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={onBackToForum ?? onCloseFocus}
+              variant="outlined"
+              size="small"
+            >
+              Zurück zum Forum
+            </Button>
+            <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<OpenInNewIcon fontSize="small" />}
+                onClick={() => openPostWindow(post, { view: "full" })}
+              >
+                Im neuen Tab öffnen
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<LinkIcon />}
+                onClick={handleCopy}
+              >
+                {shareCopied ? "Kopiert!" : "Link kopieren"}
+              </Button>
+            </Stack>
+          </Stack>
+        )}
+        <Stack direction="row" spacing={1} alignItems="flex-start">
+          <Stack
+            direction={{ xs: "row", md: "column" }}
+            spacing={1}
+            alignItems="center"
+            justifyContent="center"
+            sx={{
+              minWidth: { xs: 88, md: 56 },
+              borderRadius: 2,
+              bgcolor: "action.hover",
+              p: 1.25,
+            }}
+          >
+            <IconButton
+              aria-label="upvote"
+              onClick={(e) => {
+                e.stopPropagation();
+                onVote(post.id, vote === 1 ? 0 : 1);
+              }}
+              color={vote === 1 ? "primary" : "default"}
+              size="small"
+            >
+              <ThumbUpOutlined fontSize="small" />
+            </IconButton>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {netVotes}
+            </Typography>
+            <IconButton
+              aria-label="downvote"
+              onClick={(e) => {
+                e.stopPropagation();
+                onVote(post.id, vote === -1 ? 0 : -1);
+              }}
+              color={vote === -1 ? "primary" : "default"}
+              size="small"
+            >
+              <ThumbDownOutlined fontSize="small" />
+            </IconButton>
+          </Stack>
+          <Stack spacing={1.5} sx={{ flex: 1 }}>
+              <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                <Stack spacing={0.75}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant={titleVariant} sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                      {post.title}
+                    </Typography>
+                    {post.pinned && (
+                      <Tooltip title="Angepinnt">
+                        <PushPinOutlinedIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
+                      </Tooltip>
+                    )}
+                  </Stack>
+                  <Typography variant={bodyVariant} sx={{ color: mutedColor }}>
+                    {post.body}
+                  </Typography>
+                </Stack>
+                <Stack direction="row" spacing={1}>
+                  <Tooltip title="Im neuen Tab öffnen">
+                    <IconButton size="small" onClick={() => openPostWindow(post, { view: "full" })}>
+                      <OpenInNewIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Button size="small" onClick={onCloseFocus}>
+                    Schließen
+                  </Button>
+                </Stack>
+              </Stack>
+
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+              {post.tags.map((t) => (
+                <Chip
+                  key={t}
+                  label={t}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    bgcolor: isDark ? alpha(theme.palette.primary.light, 0.12) : alpha(theme.palette.primary.main, 0.08),
+                    borderColor: isDark ? alpha(theme.palette.primary.light, 0.3) : alpha(theme.palette.primary.main, 0.25),
+                    color: theme.palette.primary.main,
+                  }}
+                />
+              ))}
+              <Divider flexItem orientation="vertical" sx={{ mx: 1 }} />
+              {post.programs.map((p) => (
+                <Chip
+                  key={p}
+                  label={PROGRAM_META_MAP[p]?.shortLabel ?? p}
+                  size="small"
+                  variant="outlined"
+                  sx={programChipSx}
+                />
+              ))}
+              <Divider flexItem orientation="vertical" sx={{ mx: 1 }} />
+              <Typography variant="caption" sx={{ color: mutedColor }}>
+                von {post.author} · {isoToShort(post.createdAt)} · {post.comments.length} Kommentare
+              </Typography>
+            </Stack>
+
+            {post.comments.length > 0 && <Divider />}
+
+            <CommentsSection
+              comments={post.comments}
+              onAdd={(parentId, text) => onAddComment(parentId, text)}
+              appearance={commentAppearance}
+              canComment={canComment}
+              disabledHelper={commentDisabledReason}
+              flat={fullPageMode}
+              disableCollapse={fullPageMode}
+            />
+
+            <Divider />
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1} alignItems="stretch">
+              <TextField
+                label="Link teilen"
+                value={focusShareUrl}
+                fullWidth
+                sx={{ "& .MuiInputBase-root": { bgcolor: isDark ? alpha(theme.palette.common.white, 0.08) : theme.palette.common.white } }}
+                slotProps={{
+                  input: { readOnly: true }
+                }}
+              />
+              <Button variant="contained" startIcon={<LinkIcon />} onClick={handleCopy} sx={{ whiteSpace: "nowrap" }}>
+                {shareCopied ? "Kopiert!" : "Link kopieren"}
+              </Button>
+            </Stack>
+            {shareCopied && (
+              <Typography variant="caption" color="success.main">
+                Link in der Zwischenablage gespeichert.
+              </Typography>
+            )}
+          </Stack>
+        </Stack>
+      </Stack>
+    </Paper>
+  );
+}
 function CommentsSection({
   comments,
   onAdd,
   appearance,
   canComment,
   disabledHelper,
+  flat = false,
+  disableCollapse = false,
 }: {
   comments: Comment[];
   onAdd: (parentId: string | null, text: string) => void;
   appearance: CommentAppearance;
   canComment: boolean;
   disabledHelper?: string;
+  flat?: boolean;
+  disableCollapse?: boolean;
 }) {
   const totalComments = comments.length;
   const [expanded, setExpanded] = React.useState(false);
+  const collapseLimit = disableCollapse ? Number.MAX_SAFE_INTEGER : COMMENT_COLLAPSE_LIMIT;
   const visibleComments = React.useMemo(
     () =>
-      expanded || totalComments <= COMMENT_COLLAPSE_LIMIT
+      expanded || totalComments <= collapseLimit
         ? comments
-        : comments.slice(0, COMMENT_COLLAPSE_LIMIT),
-    [comments, expanded, totalComments]
+        : comments.slice(0, collapseLimit),
+    [comments, expanded, totalComments, collapseLimit]
   );
-  const hiddenCount = totalComments - visibleComments.length;
+  const hiddenCount = disableCollapse ? 0 : totalComments - visibleComments.length;
   const tree = React.useMemo(() => buildCommentTree(visibleComments), [visibleComments]);
   const [text, setText] = React.useState("");
-  const shouldScroll = visibleComments.length > 5;
-  const inputBg = appearance.surface;
+  const shouldScroll = !flat && visibleComments.length > 5;
+  const inputBg = flat ? "transparent" : appearance.surface;
   const handleAdd = React.useCallback(
     (parentId: string | null, t: string) => {
-      if (!expanded && (hiddenCount > 0 || totalComments >= COMMENT_COLLAPSE_LIMIT)) {
+      if (!expanded && (hiddenCount > 0 || totalComments >= collapseLimit)) {
         setExpanded(true);
       }
       onAdd(parentId, t);
@@ -495,42 +617,53 @@ function CommentsSection({
   );
 
   return (
-    <Stack spacing={1.5}>
-      <Paper
-        elevation={0}
-        variant="outlined"
-        sx={{
-          borderColor: appearance.border,
-          bgcolor: appearance.surface,
-          p: 1.5,
-          maxHeight: shouldScroll ? 440 : "none",
-          overflowY: shouldScroll ? "auto" : "visible",
-        }}
-      >
-        {tree.length ? (
-          <Stack spacing={1}>{renderNodes()}</Stack>
-        ) : (
-          <Typography variant="body2" sx={{ color: appearance.textSecondary }}>
-            Noch keine Kommentare.
-          </Typography>
-        )}
-        {hiddenCount > 0 && !expanded && (
-          <Box sx={{ mt: 1 }}>
-            <Button size="small" onClick={() => setExpanded(true)}>
-              Weitere Kommentare anzeigen ({hiddenCount})
-            </Button>
-          </Box>
-        )}
-      </Paper>
-      <Paper
-        elevation={0}
-        variant="outlined"
-        sx={{
-          borderColor: appearance.border,
-          bgcolor: appearance.surface,
-          p: 1.5,
-        }}
-      >
+    <Stack spacing={flat ? 2 : 1.5}>
+      {flat ? (
+        <Box>
+          {tree.length ? (
+            <Stack spacing={1.25}>{renderNodes()}</Stack>
+          ) : (
+            <Typography variant="body2" sx={{ color: appearance.textSecondary }}>
+              Noch keine Kommentare.
+            </Typography>
+          )}
+          {hiddenCount > 0 && !expanded && (
+            <Box sx={{ mt: 1 }}>
+              <Button size="small" onClick={() => setExpanded(true)}>
+                Weitere Kommentare anzeigen ({hiddenCount})
+              </Button>
+            </Box>
+          )}
+        </Box>
+      ) : (
+        <Paper
+          elevation={0}
+          variant="outlined"
+          sx={{
+            borderColor: appearance.border,
+            bgcolor: appearance.surface,
+            p: 1.5,
+            maxHeight: shouldScroll ? 440 : "none",
+            overflowY: shouldScroll ? "auto" : "visible",
+          }}
+        >
+          {tree.length ? (
+            <Stack spacing={1}>{renderNodes()}</Stack>
+          ) : (
+            <Typography variant="body2" sx={{ color: appearance.textSecondary }}>
+              Noch keine Kommentare.
+            </Typography>
+          )}
+          {hiddenCount > 0 && !expanded && (
+            <Box sx={{ mt: 1 }}>
+              <Button size="small" onClick={() => setExpanded(true)}>
+                Weitere Kommentare anzeigen ({hiddenCount})
+              </Button>
+            </Box>
+          )}
+        </Paper>
+      )}
+      {flat ? (
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
           <TextField
             size="small"
@@ -543,7 +676,7 @@ function CommentsSection({
             disabled={!canComment}
             sx={{
               "& .MuiInputBase-root": {
-                bgcolor: inputBg,
+                bgcolor: inputBg || "transparent",
                 borderRadius: 2,
                 borderColor: appearance.border,
               },
@@ -567,13 +700,66 @@ function CommentsSection({
           >
             Posten
           </Button>
+          {!canComment && disabledHelper && (
+            <Typography variant="caption" sx={{ color: appearance.textSecondary, mt: 0.75, display: "block" }}>
+              {disabledHelper}
+            </Typography>
+          )}
         </Stack>
-        {!canComment && disabledHelper && (
-          <Typography variant="caption" sx={{ color: appearance.textSecondary, mt: 0.75, display: "block" }}>
-            {disabledHelper}
-          </Typography>
-        )}
-      </Paper>
+      ) : (
+        <Paper
+          elevation={0}
+          variant="outlined"
+          sx={{
+            borderColor: appearance.border,
+            bgcolor: appearance.surface,
+            p: 1.5,
+          }}
+        >
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
+            <TextField
+              size="small"
+              fullWidth
+              multiline
+              minRows={2}
+              placeholder={canComment ? "Neuen Kommentar schreiben…" : "Bitte einloggen, um zu kommentieren."}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              disabled={!canComment}
+              sx={{
+                "& .MuiInputBase-root": {
+                  bgcolor: inputBg,
+                  borderRadius: 2,
+                  borderColor: appearance.border,
+                },
+              }}
+            />
+            <Button
+              variant="contained"
+              onClick={() => {
+                if (!canComment) return;
+                if (text.trim()) {
+                  handleAdd(null, text.trim());
+                  setText("");
+                }
+              }}
+              disabled={!canComment}
+              sx={{
+                alignSelf: { xs: "stretch", sm: "center" },
+                minWidth: 96,
+                height: 40,
+              }}
+            >
+              Posten
+            </Button>
+          </Stack>
+          {!canComment && disabledHelper && (
+            <Typography variant="caption" sx={{ color: appearance.textSecondary, mt: 0.75, display: "block" }}>
+              {disabledHelper}
+            </Typography>
+          )}
+        </Paper>
+      )}
     </Stack>
   );
 }
@@ -585,11 +771,14 @@ function PostItem({
   onDelete,
   onReport,
   onOpenDetail,
+  onOpenInWindow,
+  onTogglePin,
   commentAppearance,
   mutedColor,
   canComment,
   commentDisabledReason,
   currentAuthor,
+  canModerate,
   programChipSx,
 }: {
   post: Post;
@@ -599,16 +788,21 @@ function PostItem({
   onDelete: (id: string) => void;
   onReport: (id: string) => void;
   onOpenDetail: (post: Post) => void;
+  onOpenInWindow: (post: Post, options?: { view?: "full" | null }) => void;
+  onTogglePin: (id: string) => void;
   commentAppearance: CommentAppearance;
   mutedColor: string;
   canComment: boolean;
   commentDisabledReason?: string;
   currentAuthor: string;
+  canModerate: boolean;
   programChipSx: SxProps;
 }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const netVotes = post.votes + (vote as number);
+  const canDelete = canModerate || (currentAuthor && post.author === currentAuthor);
+  const canPin = true;
   const [menuEl, setMenuEl] = React.useState<null | HTMLElement>(null);
   const openMenu = Boolean(menuEl);
   const handleOpenDetail = () => onOpenDetail(post);
@@ -623,6 +817,7 @@ function PostItem({
   return (
     <Card
       component="article"
+      id={post.id}
       variant="outlined"
       sx={{
         borderRadius: 3,
@@ -677,13 +872,32 @@ function PostItem({
           <Stack spacing={1.5} sx={{ flex: 1 }}>
             <Stack direction="row" spacing={1} alignItems="flex-start">
               <Box sx={{ flex: 1, cursor: "pointer" }} onClick={handleOpenDetail}>
-                <Typography variant="h6" sx={{ mb: 0.75, lineHeight: 1.2 }}>
-                  {post.title}
-                </Typography>
-                <Typography variant="body2" sx={{ color: mutedColor }}>
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.25 }}>
+                  <Typography variant="h6" sx={{ lineHeight: 1.2 }}>
+                    {post.title}
+                  </Typography>
+                  {post.pinned && (
+                    <Tooltip title="Angepinnt">
+                      <PushPinOutlinedIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
+                    </Tooltip>
+                  )}
+                </Stack>
+                <Typography variant="body2" sx={{ color: mutedColor, mb: 0.5 }}>
                   {post.body}
                 </Typography>
               </Box>
+              <Tooltip title="Im neuen Tab öffnen">
+                <IconButton
+                  size="small"
+                  aria-label="Im neuen Tab öffnen"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenInWindow(post, { view: "full" });
+                  }}
+                >
+                  <OpenInNewIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <IconButton
                 size="small"
                 aria-label="Aktionen"
@@ -741,6 +955,8 @@ function PostItem({
               appearance={commentAppearance}
               canComment={canComment}
               disabledHelper={commentDisabledReason}
+              flat={false}
+              disableCollapse={false}
             />
           </Stack>
         </Stack>
@@ -748,7 +964,28 @@ function PostItem({
 
       <Menu anchorEl={menuEl} open={openMenu} onClose={() => setMenuEl(null)}>
         <MenuItem
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuEl(null);
+            onOpenInWindow(post, { view: "full" });
+          }}
+        >
+          Im neuen Tab öffnen
+        </MenuItem>
+        {canPin && (
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuEl(null);
+              onTogglePin(post.id);
+            }}
+          >
+            {post.pinned ? "Anpinnen aufheben" : "Beitrag anpinnen"}
+          </MenuItem>
+        )}
+        <MenuItem
+          onClick={(e) => {
+            e.stopPropagation();
             setMenuEl(null);
             navigator.clipboard?.writeText(location.href + "#" + post.id);
           }}
@@ -756,16 +993,18 @@ function PostItem({
           Link kopieren
         </MenuItem>
         <MenuItem
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             setMenuEl(null);
             onReport(post.id);
           }}
         >
           Beitrag melden
         </MenuItem>
-        {currentAuthor && post.author === currentAuthor && (
+        {canDelete && (
           <MenuItem
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setMenuEl(null);
               onDelete(post.id);
             }}
@@ -783,6 +1022,7 @@ export default function ForumStandalone() {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const activeUserName = user?.name ?? user?.email ?? "";
+  const isAdmin = user?.role === "admin";
   const canComment = Boolean(user);
   // Laden + Migration (program ? programs)
   const [posts, setPosts] = React.useState<Post[]>(() => {
@@ -790,16 +1030,17 @@ export default function ForumStandalone() {
       const raw = typeof window !== "undefined" ? localStorage.getItem(LS_KEY) : null;
       const parsed = raw ? (JSON.parse(raw) as unknown) : SEED_POSTS;
       const data = Array.isArray(parsed) ? parsed : SEED_POSTS;
-      type StoredPost = Partial<Post> & { program?: unknown; programs?: unknown };
+      type StoredPost = Partial<Post> & { program?: unknown; programs?: unknown; pinned?: unknown };
       return (data as StoredPost[]).map((p) => {
-        const { program, programs: storedPrograms, ...rest } = p ?? {};
+        const { program, programs: storedPrograms, pinned: storedPinned, ...rest } = p ?? {};
         const normalizedPrograms = Array.isArray(storedPrograms)
           ? normalizeProgramList(storedPrograms)
           : program
           ? normalizeProgramList([program])
           : [];
         const programs = normalizedPrograms.length ? normalizedPrograms : [PROGRAMS[0]];
-        return { ...(rest as Omit<Post, "programs">), programs } as Post;
+        const pinned = Boolean(storedPinned);
+        return { ...(rest as Omit<Post, "programs" | "pinned">), programs, pinned } as Post;
       });
     } catch {
       return SEED_POSTS;
@@ -861,6 +1102,9 @@ export default function ForumStandalone() {
 
   const [detailPost, setDetailPost] = React.useState<Post | null>(null);
   const [shareCopied, setShareCopied] = React.useState(false);
+  const [focusedPostId, setFocusedPostId] = React.useState<string | null>(null);
+  const [fullPageMode, setFullPageMode] = React.useState(false); // fullPageMode: Großansicht nur für einen Post
+  const openedFromUrl = React.useRef(false);
 
   const shareUrl = React.useMemo(() => {
     if (!detailPost) return "";
@@ -868,8 +1112,35 @@ export default function ForumStandalone() {
       typeof window !== "undefined" && window.location?.origin
         ? window.location.origin
         : "https://campus-demo.local";
-    return `${origin}/post/${detailPost.id}`;
+    return `${origin}/forum?post=${detailPost.id}`;
   }, [detailPost]);
+
+  const focusedPost = React.useMemo(
+    () => (focusedPostId ? posts.find((p) => p.id === focusedPostId) ?? null : null),
+    [focusedPostId, posts]
+  );
+
+  const clearForumUrlParams = React.useCallback(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("post");
+    url.searchParams.delete("postId");
+    url.searchParams.delete("view");
+    window.history.replaceState({}, "", url.toString());
+  }, []);
+
+  // opens a post in a new tab; view=full triggers the Großansicht layout
+  const openPostWindow = React.useCallback((post: Post, options?: { view?: "full" | null }) => {
+    if (typeof window === "undefined") return;
+    const origin = window.location?.origin ?? "https://campus-demo.local";
+    const params = new URLSearchParams();
+    params.set("post", post.id);
+    if (options?.view === "full") {
+      params.set("view", "full");
+    }
+    const url = `${origin}/forum?${params.toString()}#${post.id}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, []);
 
   React.useEffect(() => {
     if (!shareCopied) return;
@@ -894,14 +1165,44 @@ export default function ForumStandalone() {
     }
   }, [posts, detailPost]);
 
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash ? window.location.hash.replace(/^#/, "") : "";
+    const targetId = params.get("post") || params.get("postId") || hash;
+    const viewIsFull = params.get("view") === "full";
+    setFullPageMode(viewIsFull);
+    if (openedFromUrl.current) return;
+    if (!targetId) return;
+    const targetPost = posts.find((p) => p.id === targetId);
+    if (targetPost) {
+      openedFromUrl.current = true;
+      if (viewIsFull) {
+        setFocusedPostId(targetPost.id);
+      } else {
+        setDetailPost(targetPost);
+      }
+    }
+  }, [posts]);
+
+  const handleBackToForum = React.useCallback(() => {
+    setDetailPost(null);
+    setFocusedPostId(null);
+    setFullPageMode(false);
+    setShareCopied(false);
+    openedFromUrl.current = false;
+    clearForumUrlParams();
+  }, [clearForumUrlParams]);
+
   const openDetail = (post: Post) => {
     setDetailPost(post);
+    setFocusedPostId(null);
     setShareCopied(false);
+    setFullPageMode(false);
   };
 
   const closeDetail = () => {
-    setDetailPost(null);
-    setShareCopied(false);
+    handleBackToForum();
   };
 
   const copyShareUrl = () => {
@@ -928,17 +1229,17 @@ export default function ForumStandalone() {
       prev.includes(program) ? prev.filter((entry) => entry !== program) : [...prev, program]
     );
   };
-    const clearAllFilters = () => {
-      setActiveProgramFilters([]);
-      setAllProgramsOnly(false);
-      setQ("");
-      setSort("new");
-    };
-    const activeFiltersCount = activeProgramFilters.length + (allProgramsOnly ? 1 : 0);
+  const clearAllFilters = () => {
+    setActiveProgramFilters([]);
+    setAllProgramsOnly(false);
+    setQ("");
+    setSort("new");
+  };
+  const activeFiltersCount = activeProgramFilters.length + (allProgramsOnly ? 1 : 0);
 
-    React.useEffect(() => {
-      setPage(1);
-    }, [q, sort, activeProgramFilters, allProgramsOnly]);
+  React.useEffect(() => {
+    setPage(1);
+  }, [q, sort, activeProgramFilters, allProgramsOnly]);
 
   const hasAllPrograms = React.useCallback(
     (p: Post) => PROGRAMS.every((program) => p.programs.includes(program)),
@@ -947,6 +1248,7 @@ export default function ForumStandalone() {
 
   const filtered = React.useMemo(() => {
     const query = q.trim().toLowerCase();
+    const isDefaultView = !query && !activeProgramFilters.length && !allProgramsOnly;
     let base = posts;
 
     if (allProgramsOnly) {
@@ -968,29 +1270,37 @@ export default function ForumStandalone() {
       );
     }
 
-      if (sort === "votes") {
-        return [...base].sort(
-          (a, b) => (b.votes + (votes[b.id] || 0)) - (a.votes + (votes[a.id] || 0))
-        );
+    const sortWithPinned = (a: Post, b: Post) => {
+      if (isDefaultView) {
+        const pinDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+        if (pinDiff !== 0) return pinDiff;
       }
-      return [...base].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
-    }, [posts, q, sort, votes, hasAllPrograms, activeProgramFilters, allProgramsOnly]);
-  
-    const pageCount = React.useMemo(
-      () => Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE)),
-      [filtered.length]
-    );
+      if (sort === "votes") {
+        return (b.votes + (votes[b.id] || 0)) - (a.votes + (votes[a.id] || 0));
+      }
+      return +new Date(b.createdAt) - +new Date(a.createdAt);
+    };
 
-    React.useEffect(() => {
-      setPage((prev) => Math.min(prev, pageCount));
-    }, [pageCount]);
+    return [...base].sort(sortWithPinned);
+  }, [posts, q, sort, votes, hasAllPrograms, activeProgramFilters, allProgramsOnly]);
+  const pageCount = React.useMemo(
+    () => Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE)),
+    [filtered.length]
+  );
 
-    const paginatedPosts = React.useMemo(() => {
-      const startIndex = (page - 1) * POSTS_PER_PAGE;
-      return filtered.slice(startIndex, startIndex + POSTS_PER_PAGE);
-    }, [filtered, page]);
-  
-    const handleVote = (id: string, v: Vote) => setVotes((prev) => ({ ...prev, [id]: v }));
+  React.useEffect(() => {
+    setPage((prev) => Math.min(prev, pageCount));
+  }, [pageCount]);
+
+  const paginatedPosts = React.useMemo(() => {
+    const startIndex = (page - 1) * POSTS_PER_PAGE;
+    return filtered.slice(startIndex, startIndex + POSTS_PER_PAGE);
+  }, [filtered, page]);
+
+  const handleVote = (id: string, v: Vote) => setVotes((prev) => ({ ...prev, [id]: v }));
+  const togglePin = (id: string) => {
+    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, pinned: !p.pinned } : p)));
+  };
 
   // Kommentare
   const handleAddComment = (postId: string, parentId: string | null, text: string) => {
@@ -1041,6 +1351,7 @@ export default function ForumStandalone() {
       votes: 0,
       programs: selectedPrograms,
       comments: [],
+      pinned: false,
     };
     setPosts((prev) => [newPost, ...prev]);
     setOpen(false);
@@ -1051,7 +1362,20 @@ export default function ForumStandalone() {
 
   // Menü-Aktionen
   const handleDelete = (id: string) => {
-    setPosts(prev => prev.filter(p => p.id !== id));
+    setPosts((prev) =>
+      prev.filter((p) => {
+        if (p.id !== id) return true;
+        if (isAdmin) return false;
+        if (!activeUserName) return true;
+        return p.author !== activeUserName;
+      })
+    );
+    setDetailPost((prev) => (prev?.id === id ? null : prev));
+    setFocusedPostId((prev) => (prev === id ? null : prev));
+    if (focusedPostId === id) {
+      clearForumUrlParams();
+      setFullPageMode(false);
+    }
   };
 
   // Report Dialog
@@ -1096,251 +1420,317 @@ export default function ForumStandalone() {
           minHeight: "100vh",
           bgcolor: palette.background,
           "--card-bg": palette.card,
-          "--card-border": palette.border,
-          color: theme.palette.text.primary,
-        }}
-      >
-        <Container maxWidth="lg" sx={{ py: 3 }}>
-        {/* Filterleiste */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            mb: 3,
-            borderRadius: 4,
-            border: "1px solid",
-            borderColor: palette.border,
-            bgcolor: palette.surface,
-            boxShadow: isDark ? "0px 8px 24px rgba(0,0,0,0.35)" : "0px 8px 24px rgba(15,110,46,0.08)",
-            color: theme.palette.text.primary,
-          }}
-        >
-          <Stack spacing={2}>
-            <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "stretch", md: "center" }}>
-              <TextField
-                placeholder="Suche in Titel, Text oder Tags…"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                fullWidth
-                sx={inputStyles}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                  }
-                }}
+      "--card-border": palette.border,
+      color: theme.palette.text.primary,
+    }}
+  >
+        <Container maxWidth={fullPageMode ? "md" : "lg"} sx={{ py: fullPageMode ? 4 : 3 }}>
+          {/* fullPageMode: Nur den fokussierten Post ohne Liste rendern */}
+          {/* fullPageMode: Nur den fokussierten Post ohne Liste rendern */}
+          {fullPageMode ? (
+            focusedPost ? (
+              <FocusedPost
+                post={focusedPost}
+                onAddComment={(parentId, text) => handleAddComment(focusedPost.id, parentId, text)}
+                onVote={handleVote}
+                vote={(votes[focusedPost.id] ?? 0) as Vote}
+                commentAppearance={commentAppearance}
+                mutedColor={palette.textSecondary}
+                canComment={canComment}
+                commentDisabledReason="Bitte einloggen, um zu kommentieren."
+                programChipSx={programChipSx}
+                openPostWindow={openPostWindow}
+                onCloseFocus={handleBackToForum}
+                fullPageMode
+                onBackToForum={handleBackToForum}
               />
-              <Select
-                size="small"
-                value={sort}
-                onChange={(e) => setSort(e.target.value as "new" | "votes")}
+            ) : (
+              <Paper
+                elevation={0}
                 sx={{
-                  width: { xs: "100%", md: 220 },
-                  "& .MuiOutlinedInput-root": {
-                    bgcolor: isDark ? alpha(theme.palette.common.white, 0.08) : theme.palette.common.white,
-                  },
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid",
+                  borderColor: palette.border,
+                  bgcolor: palette.surface,
                 }}
               >
-                <MenuItem value="new">Neueste zuerst</MenuItem>
-                <MenuItem value="votes">Beste (Votes)</MenuItem>
-              </Select>
-              <Button
-                startIcon={<FilterListIcon />}
-                variant={activeFiltersCount ? "contained" : "outlined"}
-                color="primary"
-                onClick={() => setFiltersOpen(true)}
-                size="small"
+                <Stack spacing={1.5}>
+                  <Typography variant="h6">Beitrag nicht gefunden.</Typography>
+                  <Typography variant="body2" sx={{ color: palette.textSecondary }}>
+                    Zurück zur Übersicht wechseln.
+                  </Typography>
+                  <Button startIcon={<ArrowBackIcon />} onClick={handleBackToForum} variant="outlined">
+                    Zurück zum Forum
+                  </Button>
+                </Stack>
+              </Paper>
+            )
+          ) : (
+            <>
+              {/* Filterleiste */}
+              <Paper
+                elevation={0}
                 sx={{
-                  width: { xs: "100%", md: 220 },
-                  alignSelf: { xs: "stretch", md: "center" },
-                  height: 40,
-                  borderColor: isDark ? alpha(theme.palette.common.white, 0.35) : undefined,
-                  bgcolor: !activeFiltersCount && isDark ? alpha(theme.palette.common.white, 0.06) : undefined,
-                  color: !activeFiltersCount && isDark ? theme.palette.common.white : undefined,
-                  "&:hover": {
-                    bgcolor: activeFiltersCount
-                      ? undefined
-                      : isDark
-                      ? alpha(theme.palette.common.white, 0.1)
-                      : alpha(theme.palette.primary.main, 0.04),
-                    borderColor: isDark ? alpha(theme.palette.common.white, 0.5) : undefined,
-                  }
+                  p: 3,
+                  mb: 3,
+                  borderRadius: 4,
+                  border: "1px solid",
+                  borderColor: palette.border,
+                  bgcolor: palette.surface,
+                  boxShadow: isDark ? "0px 8px 24px rgba(0,0,0,0.35)" : "0px 8px 24px rgba(15,110,46,0.08)",
+                  color: theme.palette.text.primary,
                 }}
               >
-                Filter{activeFiltersCount ? ` (${activeFiltersCount})` : ""}
-              </Button>
-            </Stack>
+                <Stack spacing={2}>
+                  <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "stretch", md: "center" }}>
+                    <TextField
+                      placeholder="Suche in Titel, Text oder Tags…"
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      fullWidth
+                      sx={inputStyles}
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchIcon fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }
+                      }}
+                    />
+                    <Select
+                      size="small"
+                      value={sort}
+                      onChange={(e) => setSort(e.target.value as "new" | "votes")}
+                      sx={{
+                        width: { xs: "100%", md: 220 },
+                        "& .MuiOutlinedInput-root": {
+                          bgcolor: isDark ? alpha(theme.palette.common.white, 0.08) : theme.palette.common.white,
+                        },
+                      }}
+                    >
+                      <MenuItem value="new">Neueste zuerst</MenuItem>
+                      <MenuItem value="votes">Beste (Votes)</MenuItem>
+                    </Select>
+                    <Button
+                      startIcon={<FilterListIcon />}
+                      variant={activeFiltersCount ? "contained" : "outlined"}
+                      color="primary"
+                      onClick={() => setFiltersOpen(true)}
+                      size="small"
+                      sx={{
+                        width: { xs: "100%", md: 220 },
+                        alignSelf: { xs: "stretch", md: "center" },
+                        height: 40,
+                        borderColor: isDark ? alpha(theme.palette.common.white, 0.35) : undefined,
+                        bgcolor: !activeFiltersCount && isDark ? alpha(theme.palette.common.white, 0.06) : undefined,
+                        color: !activeFiltersCount && isDark ? theme.palette.common.white : undefined,
+                        "&:hover": {
+                          bgcolor: activeFiltersCount
+                            ? undefined
+                            : isDark
+                            ? alpha(theme.palette.common.white, 0.1)
+                            : alpha(theme.palette.primary.main, 0.04),
+                          borderColor: isDark ? alpha(theme.palette.common.white, 0.5) : undefined,
+                        }
+                      }}
+                    >
+                      Filter{activeFiltersCount ? ` (${activeFiltersCount})` : ""}
+                    </Button>
+                  </Stack>
 
-            {(activeProgramFilters.length > 0 || allProgramsOnly) && (
-              <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-                {allProgramsOnly && (
-                  <Chip
-                    label="Nur Beiträge für alle Studiengänge"
-                    onDelete={() => setAllProgramsOnly(false)}
-                    color="secondary"
-                    variant="outlined"
-                  />
-                )}
-                {activeProgramFilters.map((program) => (
-                  <Chip
-                    key={program}
-                    label={PROGRAM_META_MAP[program]?.label ?? program}
-                    onDelete={() => toggleProgramFilter(program)}
-                    color="secondary"
-                    variant="outlined"
+                  {(activeProgramFilters.length > 0 || allProgramsOnly) && (
+                    <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+                      {allProgramsOnly && (
+                        <Chip
+                          label="Nur Beiträge für alle Studiengänge"
+                          onDelete={() => setAllProgramsOnly(false)}
+                          color="secondary"
+                          variant="outlined"
+                        />
+                      )}
+                      {activeProgramFilters.map((program) => (
+                        <Chip
+                          key={program}
+                          label={PROGRAM_META_MAP[program]?.label ?? program}
+                          onDelete={() => toggleProgramFilter(program)}
+                          color="secondary"
+                          variant="outlined"
+                        />
+                      ))}
+                      <Button size="small" onClick={clearAllFilters}>
+                        Alle Filter entfernen
+                      </Button>
+                    </Stack>
+                  )}
+                </Stack>
+              </Paper>
+
+              {/* Liste */}
+              <Stack spacing={2}>
+                {paginatedPosts.map((p) => (
+                  <PostItem
+                    key={p.id}
+                    post={p}
+                    vote={(votes[p.id] ?? 0) as Vote}
+                    onVote={handleVote}
+                    onAddComment={handleAddComment}
+                    onDelete={handleDelete}
+                    onReport={openReport}
+                    onOpenDetail={openDetail}
+                    onOpenInWindow={openPostWindow}
+                    onTogglePin={togglePin}
+                    commentAppearance={commentAppearance}
+                    mutedColor={palette.textSecondary}
+                    canComment={canComment}
+                    commentDisabledReason="Bitte einloggen, um zu kommentieren."
+                    currentAuthor={activeUserName}
+                    canModerate={isAdmin}
+                    programChipSx={programChipSx}
                   />
                 ))}
+                {filtered.length === 0 && (
+                  <Stack spacing={1.5}>
+                    <Typography variant="body2" sx={{ color: palette.textSecondary }}>
+                      Keine Treffer. Suchbegriff oder Filter anpassen.
+                    </Typography>
+                  </Stack>
+                )}
+              </Stack>
+              {filtered.length > POSTS_PER_PAGE && (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+                  <Pagination
+                    count={pageCount}
+                    page={page}
+                    onChange={(_, value) => setPage(value)}
+                    color="primary"
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              )}
+            </>
+          )}
+        </Container>
+      {!fullPageMode && (
+        <Drawer
+          anchor="right"
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          slotProps={{
+            paper: { sx: { bgcolor: palette.surface, color: theme.palette.text.primary } }
+          }}
+        >
+          <Box sx={{ width: { xs: 340, sm: 420 }, p: 3 }}>
+            <Stack spacing={2}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="h6">Filter</Typography>
                 <Button size="small" onClick={clearAllFilters}>
-                  Alle Filter entfernen
+                  Zurücksetzen
                 </Button>
               </Stack>
-            )}
-          </Stack>
-        </Paper>
+              <Box>
+                <Typography variant="subtitle2" sx={{ color: palette.textSecondary }}>
+                  Beiträge
+                </Typography>
+                <FormControlLabel
+                  sx={{ mt: 1 }}
+                  control={
+                    <Checkbox
+                      checked={allProgramsOnly}
+                      onChange={(e) => setAllProgramsOnly(e.target.checked)}
+                    />
+                  }
+                  label="Nur Beiträge anzeigen, die alle Studiengänge adressieren"
+                />
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ color: palette.textSecondary }}>
+                  Studiengänge
+                </Typography>
+                <Grid container spacing={2} mt={1}>
+                  {PROGRAM_CATALOG.map((meta) => {
+                    const active = activeProgramFilters.includes(meta.id);
+                    return (
+                      <Grid component="div" key={meta.id} size={6}>
+                        <Paper
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => toggleProgramFilter(meta.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              toggleProgramFilter(meta.id);
+                            }
+                          }}
+                          sx={[{
+                            p: 1.5,
+                            border: 2,
+                            cursor: "pointer",
+                            transition: "all .2s ease",
+                            minHeight: 96,
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                            "&:hover": {
+                              borderColor: "secondary.main",
+                              boxShadow: 2,
+                            }
+                          }, active ? {
+                            borderColor: "secondary.main"
+                          } : {
+                            borderColor: palette.border
+                          }, active ? {
+                            bgcolor: "rgba(15,110,46,0.12)"
+                          } : {
+                            bgcolor: palette.surface
+                          }]}
+                        >
+                          <Typography variant="body2" fontWeight={600}>
+                            {meta.label}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {meta.level}
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Box>
 
-        {/* Liste */}
-        <Stack spacing={2}>
-          {paginatedPosts.map((p) => (
-            <PostItem
-              key={p.id}
-              post={p}
-              vote={(votes[p.id] ?? 0) as Vote}
-              onVote={handleVote}
-              onAddComment={handleAddComment}
-              onDelete={handleDelete}
-              onReport={openReport}
-              onOpenDetail={openDetail}
-              commentAppearance={commentAppearance}
-              mutedColor={palette.textSecondary}
-              canComment={canComment}
-              commentDisabledReason="Bitte einloggen, um zu kommentieren."
-              currentAuthor={activeUserName}
-              programChipSx={programChipSx}
-            />
-          ))}
-          {filtered.length === 0 && (
-            <Stack spacing={1.5}>
-              <Typography variant="body2" sx={{ color: palette.textSecondary }}>
-                Keine Treffer. Suchbegriff oder Filter anpassen.
-              </Typography>
+              <Stack direction="row" justifyContent="space-between" pt={1}>
+                <Button onClick={clearAllFilters}>Alle löschen</Button>
+                <Button variant="contained" onClick={() => setFiltersOpen(false)}>
+                  Anwenden
+                </Button>
+              </Stack>
             </Stack>
-          )}
-        </Stack>
-        {filtered.length > POSTS_PER_PAGE && (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
-            <Pagination
-              count={pageCount}
-              page={page}
-              onChange={(_, value) => setPage(value)}
-              color="primary"
-              showFirstButton
-              showLastButton
-            />
           </Box>
-        )}
-      </Container>
-      <Drawer
-        anchor="right"
-        open={filtersOpen}
-        onClose={() => setFiltersOpen(false)}
-        slotProps={{
-          paper: { sx: { bgcolor: palette.surface, color: theme.palette.text.primary } }
-        }}
-      >
-        <Box sx={{ width: { xs: 340, sm: 420 }, p: 3 }}>
-          <Stack spacing={2}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="h6">Filter</Typography>
-              <Button size="small" onClick={clearAllFilters}>
-                Zurücksetzen
-              </Button>
-            </Stack>
-            <Box>
-              <Typography variant="subtitle2" sx={{ color: palette.textSecondary }}>
-                Beiträge
-              </Typography>
-              <FormControlLabel
-                sx={{ mt: 1 }}
-                control={
-                  <Checkbox
-                    checked={allProgramsOnly}
-                    onChange={(e) => setAllProgramsOnly(e.target.checked)}
-                  />
-                }
-                label="Nur Beiträge anzeigen, die alle Studiengänge adressieren"
-              />
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" sx={{ color: palette.textSecondary }}>
-                Studiengänge
-              </Typography>
-              <Grid container spacing={2} mt={1}>
-                {PROGRAM_CATALOG.map((meta) => {
-                  const active = activeProgramFilters.includes(meta.id);
-                  return (
-                    <Grid component="div" key={meta.id} size={6}>
-                      <Paper
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => toggleProgramFilter(meta.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            toggleProgramFilter(meta.id);
-                          }
-                        }}
-                        sx={[{
-                          p: 1.5,
-                          border: 2,
-                          cursor: "pointer",
-                          transition: "all .2s ease",
-                          minHeight: 96,
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "space-between",
-                          "&:hover": {
-                            borderColor: "secondary.main",
-                            boxShadow: 2,
-                          }
-                        }, active ? {
-                          borderColor: "secondary.main"
-                        } : {
-                          borderColor: palette.border
-                        }, active ? {
-                          bgcolor: "rgba(15,110,46,0.12)"
-                        } : {
-                          bgcolor: palette.surface
-                        }]}
-                      >
-                        <Typography variant="body2" fontWeight={600}>
-                          {meta.label}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {meta.level}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  );
-                })}
-              </Grid>
-            </Box>
-
-            <Stack direction="row" justifyContent="space-between" pt={1}>
-              <Button onClick={clearAllFilters}>Alle löschen</Button>
-              <Button variant="contained" onClick={() => setFiltersOpen(false)}>
-                Anwenden
-              </Button>
-            </Stack>
-          </Stack>
-        </Box>
-      </Drawer>
+        </Drawer>
+      )}
       <Dialog open={!!detailPost} onClose={closeDetail} fullWidth maxWidth="md">
         {detailPost && (
           <>
-            <DialogTitle>{detailPost.title}</DialogTitle>
+            <DialogTitle>
+              <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="h6">{detailPost.title}</Typography>
+                  {detailPost.pinned && (
+                    <Tooltip title="Angepinnt">
+                      <PushPinOutlinedIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
+                    </Tooltip>
+                  )}
+                </Stack>
+                <Tooltip title="Im neuen Tab öffnen">
+                  <IconButton onClick={() => openPostWindow(detailPost, { view: "full" })}>
+                    <OpenInNewIcon />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            </DialogTitle>
             <DialogContent dividers>
               <Stack spacing={2}>
                 <Typography variant="body1">{detailPost.body}</Typography>
@@ -1523,7 +1913,3 @@ export default function ForumStandalone() {
     </Sidebar>
   );
 }
-
-
-
-
