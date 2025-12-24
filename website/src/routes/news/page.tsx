@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Card, CardMedia, CardContent, CardActions, Avatar, IconButton, Typography,
-  Grid, Container, List, ListItem, Divider, ListItemText, ListItemAvatar,
+  Card, Button, CardMedia, CardContent, CardActions, Avatar, IconButton, Typography,
+  Container, List, ListItem, Divider, ListItemText, ListItemAvatar,
   Box, Chip, Stack, Paper, InputBase, CardActionArea
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate, Link } from 'react-router-dom';
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
+import { Outlet } from "react-router-dom";
 
 // --- DATEN (Exportiert für details.tsx) ---
 export type NewsItem = {
@@ -21,12 +24,12 @@ export type NewsItem = {
   summary: string;
   content: string;
   links: string[];
-  isNew: boolean;
+  isNew?: boolean;
   tags: string[];
   pdf?: string | null;
   pdfName?: string | null;
+  createdAt?: number; 
 };
-
 export const newsDaten: NewsItem[] = [
   {
     id: 1,
@@ -36,8 +39,8 @@ export const newsDaten: NewsItem[] = [
     summary: "A tragic accident occurred during the race, raising concerns about animal safety...",
     content: "Lorem ipsum dolor sit amet...",
     links: ["https://conference2025.com", "https://more-info.com"],
-    isNew: true,
-    tags: ["Events", "Jobs"]
+    tags: ["Events", "Jobs"],
+    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 // 🟢 1 Tag alt → wird NEU sein
   },
   {
     id: 2,
@@ -47,8 +50,8 @@ export const newsDaten: NewsItem[] = [
     summary: "Industry leaders gather to discuss the future of AI, robotics, and quantum computing...",
     content: "",
     links: ["https://conference2025.com"],
-    isNew: true,
-    tags: ["Prüfungen", "Studium"]
+    tags: ["Prüfungen", "Studium"],
+    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 // 🟢 1 Tag alt → wird NEU sein
   },
   {
     id: 3,
@@ -58,8 +61,8 @@ export const newsDaten: NewsItem[] = [
     summary: "World leaders agreed on a historic pact aiming to reduce emissions worldwide...",
     content: "",
     links: [],
-    isNew: true,
-    tags: ["Events", "Studium"]
+    tags: ["Events", "Studium"],
+    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 // 🔴 20 Tage → NICHT NEU
   },
   {
     id: 4,
@@ -69,8 +72,8 @@ export const newsDaten: NewsItem[] = [
     summary: "Scientists reported a promising new therapy with encouraging early trial results...",
     content: "",
     links: [],
-    isNew: false,
-    tags: ["Studium"]
+    tags: ["Studium"],
+    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 // 🔴 20 Tage → NICHT NEU
   },
   {
     id: 5,
@@ -80,34 +83,31 @@ export const newsDaten: NewsItem[] = [
     summary: "Scientists reported a promising new therapy with encouraging early trial results...",
     content: "",
     links: [],
-    isNew: true,
-    tags: ["Events", "Studium"]
+    tags: ["Events", "Studium"],
+    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 // 🔴 20 Tage → NICHT NEU
   },
 ];
-
 // --- COMPONENTS ---
-
 function CustomizedInputBase() {
   return (
     <Paper
       component="form"
-      sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: "100%" }}
-    >
-      <InputBase
-        sx={{ ml: 1, flex: 1 }}
-        placeholder="Suchen..."
-        inputProps={{ 'aria-label': 'search' }}
-      />
-      <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
+      sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: "100%", borderRadius:2}}
+    > 
+     <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
         <SearchIcon />
       </IconButton>
+      <InputBase
+        sx={{ ml: 1, flex: 1 }}
+        placeholder="Suche"
+        inputProps={{ 'aria-label': 'search' }}
+      />
       <Divider sx={{ height: 28, m: 0.5 }} orientation="vertical" />
     </Paper>
   );
 }
-
-function ClickableChips({ selectedTag, setSelectedTag }: { selectedTag: string, setSelectedTag: (tag: string) => void }) {
-  const tags = ["Alle", "Studium", "Prüfungen", "Events", "Jobs"];
+function ClickableChips({ selectedTag, setSelectedTag }: { selectedTag: string, setSelectedTag: (tag: string) => void}) {
+  const tags = ["Alle", "Events", "Studium", "Prüfungen", "Jobs"];
   return (
     <Stack direction="row" spacing={1}>
       {tags.map((tag) => (
@@ -122,13 +122,14 @@ function ClickableChips({ selectedTag, setSelectedTag }: { selectedTag: string, 
     </Stack>
   );
 }
-
 type CardProps = NewsItem & {
   isLiked: boolean;
   onToggleLike: (id: number) => void;
+  onDelete: (id: number) => void;
+  isAdmin:boolean;
 };
-
-function RecipeReviewCard({ id, title, date, image, summary, isNew, isLiked, tags, onToggleLike }: CardProps) {
+function ReviewCard({ id, title, date, image, summary, isLiked, tags, isNew, isAdmin, onToggleLike, onDelete }: CardProps) {
+  //const { user } = useAuth();  
   const navigate = useNavigate();
   return (
     <Card sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 3 }}>
@@ -159,54 +160,66 @@ function RecipeReviewCard({ id, title, date, image, summary, isNew, isLiked, tag
               {date}
             </Typography>
           </Box>
-
-          <Box sx={{ mt: 'auto' }}>
-            <Stack direction="row" spacing={1} mb={1}>
-              {tags && tags.length > 0 ? (
-                tags.map((tag) => <Chip key={tag} label={tag} size="small" />)
-              ) : (
-                <Chip label="Allgemein" size="small" variant="outlined" />
-              )}
-            </Stack>
-            <Typography variant="body2" sx={{
+         <Box>
+          <Stack direction="row" spacing={1} mb={1}>
+            {tags && tags.length > 0 ? (
+              tags.map((tag) => <Chip key={tag} label={tag} size="small" />)
+            ) : (
+              <Chip label="Allgemein" size="small" variant="filled" />
+            )}
+          </Stack>
+          <Typography
+            variant="body2"
+            sx={{
               color: 'text.secondary',
               display: '-webkit-box',
               WebkitLineClamp: 3,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-            }}>
-              {summary}
-            </Typography>
-          </Box>
+            }}
+          >
+            {summary}
+          </Typography>
+        </Box>
         </CardContent>
       </CardActionArea>
-
-      <CardActions disableSpacing>
-        <IconButton onClick={() => onToggleLike(id)} aria-label="add to favorites">
-          {isLiked ? <FavoriteIcon color="error" /> : <FavoriteIcon />}
-        </IconButton>
-        {isNew && (
-          <Chip
-            icon={<StarBorderIcon />}
-            label="Neu"
-            color="warning"
-            size="small"
-            sx={{ ml: 1 }}
-          />
-        )}
+      <CardActions disableSpacing sx={{ justifyContent: "space-between" }}>
+        <Box>
+          <IconButton onClick={() => onToggleLike(id)} aria-label="add to favorites">
+            {isLiked ? <FavoriteIcon color="error" /> : <FavoriteIcon />}
+          </IconButton>
+          {isNew && (
+            <Chip
+              icon={<StarBorderIcon />}
+              label="Neu"
+              color="warning"
+              size="small"
+              sx={{ ml: 1 }}
+            />
+          )}
+        </Box>
+        {/* 🔥 Lösch-Button NUR für Admins */}
+        {/* {isAdmin && ( */}
+          <Button
+            variant="text"
+            color="error"
+            endIcon={<DeleteIcon />}
+            onClick={() => onDelete(id)}
+            sx={{ fontSize: "0.75rem" }}
+          >
+            Löschen
+          </Button>
+          {/* )} */}
       </CardActions>
     </Card>
   );
 }
-
 type FavoriteListProps = {
   likedIds: number[];
   allNews: NewsItem[];
 };
-
 function FavoriteList({ likedIds, allNews }: FavoriteListProps) {
   const likedItems = allNews.filter((item) => likedIds.includes(item.id));
-
   return (
     <List sx={{ width: '100%' }}>
       {likedItems.map((item) => (
@@ -243,12 +256,13 @@ function FavoriteList({ likedIds, allNews }: FavoriteListProps) {
   );
 }
 
+
 export default function NewsLayout() {
   const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [selectedTag, setSelectedTag] = useState<string>("Alle");
   const [likedNewsIds, setLikedNewsIds] = useState<number[]>([]);
   const [allNews, setAllNews] = useState<NewsItem[]>([]);
-
   // Likes laden
   useEffect(() => {
     const savedLikes = localStorage.getItem('likedNews');
@@ -256,35 +270,49 @@ export default function NewsLayout() {
       setLikedNewsIds(JSON.parse(savedLikes));
     }
   }, []);
-
   const handleToggleLike = (id: number) => {
     setLikedNewsIds((prev) => {
       const updatedLikes = prev.includes(id)
         ? prev.filter((itemId) => itemId !== id)
         : [...prev, id];
-
       localStorage.setItem('likedNews', JSON.stringify(updatedLikes));
       return updatedLikes;
     });
   };
-
-  // News laden (Hardcoded + LocalStorage)
+  const handleDelete = (id: number) => {
+  const updated = allNews.filter(item => item.id !== id);
+  setAllNews(updated);
+  // nur Custom-News löschen, Hardcoded bleiben unangetastet
+  const stored = JSON.parse(localStorage.getItem("custom-news") || "[]");
+  const filteredStored = stored.filter((item: any) => item.id !== id);
+  localStorage.setItem("custom-news", JSON.stringify(filteredStored));
+};
+ 
+ 
   useEffect(() => {
-    const custom = JSON.parse(localStorage.getItem("custom-news") || "[]");
-    const merged = [...newsDaten, ...custom];
-
-    merged.sort((a, b) => {
-      if (a.isNew && !b.isNew) return -1;
-      if (!a.isNew && b.isNew) return 1;
-      return b.id - a.id; // Neueste zuerst
-    });
-
-    setAllNews(merged);
-  }, []);
-
+  const custom = JSON.parse(localStorage.getItem("custom-news") || "[]");
+  const merged = [...newsDaten, ...custom];
+  const now = Date.now();
+  const updatedNews = merged.map(item => {
+    // Falls kein createdAt existiert → alten Beiträgen ein Datum geben
+    const created = item.createdAt ?? now;
+    const ageInDays = (now - created) / (1000 * 60 * 60 * 24);
+    return {
+      ...item,
+      isNew: ageInDays <= 7,  // NEU nur 7 Tage sichtbar
+    };
+  });
+  updatedNews.sort((a, b) => {
+    if (a.isNew && !b.isNew) return -1;
+    if (!a.isNew && b.isNew) return 1;
+    return b.id - a.id;
+  });
+  setAllNews(updatedNews);
+}, []);
   const filteredNews = selectedTag === "Alle"
     ? allNews
     : allNews.filter((n) => n.tags?.includes(selectedTag));
+
 
   return (
     <Sidebar user={user} title="Beiträge">
@@ -292,45 +320,61 @@ export default function NewsLayout() {
         {/* Hauptinhalt */}
         <Box sx={{ flex: 1, maxWidth: "1200px", mr: { lg: 4 }, mb: 4 }}>
           <Container sx={{ pt: 4, pb: 2 }}>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={2}
-              sx={{ mb: 4, alignItems: { xs: 'stretch', sm: 'center' } }}
-            >
-              <Box sx={{ flexShrink: 1 }}>
-                <ClickableChips selectedTag={selectedTag} setSelectedTag={setSelectedTag} />
-              </Box>
-              <Box sx={{ flexGrow: 1, minWidth: { xs: '100%', sm: 280 } }}>
-                <CustomizedInputBase />
-              </Box>
-              <IconButton
-                component={Link}
-                to="/news/create"
-                color="primary"
-                sx={{
-                  bgcolor: 'primary.light',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'primary.main' }
-                }}
-              >
-                <AddIcon />
-              </IconButton>
-            </Stack>
+           <Box
+  sx={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    mb: 2,
+    flexWrap: "wrap",
+    gap: 2,
+  }}
+>
+  <ClickableChips
+    selectedTag={selectedTag}
+    setSelectedTag={setSelectedTag}
+  />
+
+  <Button
+    component={Link}
+    to="/news/create"
+    variant="contained"
+    color="success"
+    startIcon={<AddIcon />}
+    sx={{
+      borderRadius: 2,
+      px: 2.5,
+      py: 1,
+      fontWeight: 600,
+      textTransform: "none",
+      whiteSpace: "nowrap",
+    }}
+  >
+    Beitrag erstellen
+  </Button>
+</Box>
+
+{/* 🔹 ZEILE 2: Suche volle Breite */}
+<Box sx={{ mb: 6 }}>
+  <CustomizedInputBase />
+</Box>
+
 
             <Grid container spacing={3}>
               {filteredNews.map((item) => (
-                <Grid key={item.id} item xs={12} sm={6} md={4}>
-                  <RecipeReviewCard
+                <Grid key={item.id} size={{ xs: 12, sm: 6, md:6 }}>
+                  <ReviewCard
                     {...item}
                     isLiked={likedNewsIds.includes(item.id)}
                     onToggleLike={handleToggleLike}
+                    onDelete={handleDelete}
+                    isAdmin={isAdmin}
                   />
                 </Grid>
               ))}
             </Grid>
           </Container>
         </Box>
-
         {/* Sidebar Rechts (Favoriten) */}
         <Box
           sx={{
@@ -350,6 +394,7 @@ export default function NewsLayout() {
           </Paper>
         </Box>
       </Box>
+      <Outlet />
     </Sidebar>
   );
 }
