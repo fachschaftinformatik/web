@@ -347,7 +347,7 @@ function FocusedPost({
 }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const netVotes = post.votes + (vote as number);
+  const netVotes = post.votes + (votes[post.id] ?? 0);
   const [shareCopied, setShareCopied] = React.useState(false);
   const focusShareUrl = React.useMemo(() => {
     const origin =
@@ -800,7 +800,7 @@ function PostItem({
 }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const netVotes = post.votes + (vote as number);
+  const netVotes = post.votes + (votes[post.id] ?? 0);
   const canDelete = canModerate || (currentAuthor && post.author === currentAuthor);
   const canPin = true;
   const [menuEl, setMenuEl] = React.useState<null | HTMLElement>(null);
@@ -1297,7 +1297,19 @@ export default function ForumStandalone() {
     return filtered.slice(startIndex, startIndex + POSTS_PER_PAGE);
   }, [filtered, page]);
 
-  const handleVote = (id: string, v: Vote) => setVotes((prev) => ({ ...prev, [id]: v }));
+  const handleVote = (id: string, newVote: Vote) => {
+  setVotes((prev) => {
+    const currentVote = prev[id] ?? 0;
+
+    // gleiches Vote → zurücksetzen
+    if (currentVote === newVote) {
+      return { ...prev, [id]: 0 };
+    }
+
+    // neues oder gewechseltes Vote
+    return { ...prev, [id]: newVote };
+  });
+};
   const togglePin = (id: string) => {
     setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, pinned: !p.pinned } : p)));
   };
