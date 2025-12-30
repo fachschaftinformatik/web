@@ -34,6 +34,7 @@ export default function CreateNews() {
       id: Date.now(),
       title,
       date,
+      createdAt: new Date().toISOString(),
       image: imageFile ? URL.createObjectURL(imageFile) : null,
       pdf: pdf ? URL.createObjectURL(pdf) : null,
       pdfName: pdf?.name || null,

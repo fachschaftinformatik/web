@@ -184,7 +184,7 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
   return (
     <Box sx={{ display: 'flex' }}>
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <Toolbar>
+        <Toolbar sx={{ position: 'relative' }}>
           <IconButton
             color="inherit"
             edge="start"
