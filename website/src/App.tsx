@@ -18,6 +18,7 @@ import DashboardPage from '@routes/dashboard/page';
 import MediaPage from '@routes/media/page';
 import TeamPage from '@routes/team/page';
 import NewsPage from '@routes/news/page';
+import NewsDetail from '@routes/news/details';
 import ExamsPage from '@routes/exams/page';
 import ExamDetailsPage from '@routes/exams/extensions';
 import ForumPage from '@routes/forum/page';
@@ -60,6 +61,7 @@ function App() {
             <Route path="/media" element={<MediaPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/news" element={<NewsPage />} />
+            <Route path="/news/:id" element={<NewsDetail />} />
 
             <Route path="/" element={<NewsFeedPage />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
