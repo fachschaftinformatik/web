@@ -238,7 +238,7 @@ const pic = (seed: number, w: number, h: number) => `https://picsum.photos/seed/
 export const events: EventItem[] = [
   // --- EVENT 1 (DEIN ORDNER 1) ---
   // Ersetze DEIN_ORDNER_1 und den Dateinamen
-  { id: 1, title: "LAN-Party 2023", src: "/LAN-Party 2023/1.jpg" },
+  { id: 1, title: "LAN-Party 2023", src: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg" },
 
   // --- EVENT 2 (DEIN ORDNER 2) ---
   // Ersetze DEIN_ORDNER_2 und den Dateinamen
@@ -257,7 +257,7 @@ export const bilderByEvent: Record<number, Bild[]> = {
   // --- EVENT 1 (DEIN ORDNER 1) ---
   // Ersetze DEIN_ORDNER_1 und die Dateinamen
   1: [
-    { id: 101, title: "", thumb: "/LAN-Party 2023/1.jpg", full: "/LAN-Party 2023/1.jpg" },
+    { id: 101, title: "", thumb: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg", full: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg" },
     { id: 102, title: "", thumb: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg", full: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg" },
     { id: 103, title: "", thumb: "/LAN-Party 2023/ad23f7da-c6cd-4a96-9fce-8b5d0ccd8cf8.jpg", full: "/LAN-Party 2023/ad23f7da-c6cd-4a96-9fce-8b5d0ccd8cf8.jpg" },
     { id: 104, title: "", thumb: "/LAN-Party 2023/b4818f1d-72e6-45ab-8f65-17e2c84b9c77.jpg", full: "/LAN-Party 2023/b4818f1d-72e6-45ab-8f65-17e2c84b9c77.jpg" },
@@ -326,6 +326,91 @@ export const defaultTitleForFile = (file: File) => {
   const withoutExtension = name.replace(/\.[^/.]+$/, "");
   return withoutExtension || name;
 };
+
+// --- TEAMDATEN ---
+
+export type TeamMember = {
+  id: number;
+  name: string;
+  email: string;
+  img: string | null;
+};
+
+export type TeamSection = {
+  id: string;
+  title: string;
+  members: TeamMember[];
+};
+
+export const teamSections: TeamSection[] = [
+  {
+    id: "vorstand",
+    title: "Vorstand",
+    members: [
+      { id: 1, name: "Eric König (Vorsitz)", email: "vorsitz.informatik@fsv-whs.de", img: null },
+      { id: 2, name: "Hannah Willemsen (stellv. Vorsitz)", email: "stellv.vorsitz.informatik@fsv-whs.de", img: null },
+      { id: 3, name: "Leon Pearse (Finanzen)", email: "finanzen.informatik@fsv-whs.de", img: null },
+    ],
+  },
+  {
+    id: "kultur",
+    title: "Kultur",
+    members: [
+      { id: 4, name: "Hannah Willemsen", email: "kultur.informatik@fsv-whs.de", img: null },
+      { id: 5, name: "Caner Bayram", email: "kultur.informatik@fsv-whs.de", img: null },
+      { id: 6, name: "Leon Weihrauch", email: "kultur.informatik@fsv-whs.de", img: null },
+      { id: 7, name: "Yannic Leismann", email: "kultur.informatik@fsv-whs.de", img: null },
+      { id: 8, name: "Daniel Chudaska", email: "kultur.informatik@fsv-whs.de", img: null },
+    ],
+  },
+  {
+    id: "infrastruktur",
+    title: "Infrastruktur",
+    members: [
+      { id: 9, name: "Francesco La Camera", email: "edv.informatik@fsv-whs.de", img: null },
+    ],
+  },
+  {
+    id: "hochschulpolitik",
+    title: "Hochschulpolitik",
+    members: [
+      { id: 10, name: "Mike Drost", email: "hopo.informatik@fsv-whs.de", img: null },
+    ],
+  },
+  {
+    id: "oeffentlichkeit",
+    title: "Öffentlichkeit",
+    members: [
+      { id: 11, name: "Linda Gudaqi", email: "oeffentlichkeit.informatik@fsv-whs.de", img: null },
+      { id: 12, name: "Hong Nguyen", email: "oeffentlichkeit.informatik@fsv-whs.de", img: null },
+    ],
+  },
+  {
+    id: "beschaffung",
+    title: "Beschaffung",
+    members: [
+      { id: 13, name: "Marcel Roith", email: "beschaffung.informatik@fsv-whs.de", img: null },
+      { id: 14, name: "Alan Said Suleiman", email: "beschaffung.informatik@fsv-whs.de", img: null },
+    ],
+  },
+  {
+    id: "kassenwart",
+    title: "Kassenwart",
+    members: [
+      { id: 15, name: "Eric Seidel", email: "kassenwart.informatik@fsv-whs.de", img: null },
+    ],
+  },
+  {
+    id: "sport",
+    title: "Sport",
+    members: [
+      { id: 16, name: "Caner Bayram", email: "", img: null },
+      { id: 17, name: "Yannic Leismann", email: "", img: null },
+      { id: 18, name: "Daniel Chudaska", email: "", img: null },
+      { id: 19, name: "Abdullah Msaedi", email: "", img: null },
+    ],
+  },
+];
 
 // Export der pic-Funktion für die Verwendung im Komponenten-State, falls nötig
 export { pic };
