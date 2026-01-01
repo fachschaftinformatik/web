@@ -20,6 +20,7 @@ export type NewsItem = {
   id: number;
   title: string;
   date: string;
+  createdAt?: string;
   image: string;
   summary: string;
   content: string;
