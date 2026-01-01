@@ -18,7 +18,7 @@ services:
     env_file: .env
     environment:
       - DOMAIN=http://localhost:5173
-      - SIGNUPS_VERIFY=false
+      - SIGNUPS_VERIFY=true
       - SIGNUPS_DOMAINS_WHITELIST=studmail.w-hs.de,fachschaftinformatik.de
       - S3_BUCKET=production
       - S3_ENDPOINT=minio:9000
