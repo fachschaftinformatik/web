@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   Button,
@@ -196,20 +196,17 @@ export default function NewsRoomPage() {
     const saved = localStorage.getItem("newsroom-liked");
     return saved ? JSON.parse(saved) : [];
   });
-  const [allNews, setAllNews] = useState<NewsItem[]>([]);
-
-  useEffect(() => {
+  const [allNews, setAllNews] = useState<NewsItem[]>(() => {
     const custom = JSON.parse(localStorage.getItem("custom-news") || "[]");
     const merged = [...NEWS_DATA, ...custom];
 
     // Sort logic from main/stashed
-    const sorted = merged.sort((a, b) => {
+    return merged.sort((a, b) => {
       if (a.isNew && !b.isNew) return -1;
       if (!a.isNew && b.isNew) return 1;
       return b.id - a.id;
     });
-    setAllNews(sorted);
-  }, []);
+  });
 
   const handleToggleLike = (id: number) => {
     setLikedNewsIds((prev) => {
@@ -223,7 +220,7 @@ export default function NewsRoomPage() {
     setAllNews((prev) => prev.filter(item => item.id !== id));
     // Also remove from custom news in localStorage
     const stored = JSON.parse(localStorage.getItem("custom-news") || "[]");
-    const filteredStored = stored.filter((item: any) => item.id !== id);
+    const filteredStored = stored.filter((item: { id: number }) => item.id !== id);
     localStorage.setItem("custom-news", JSON.stringify(filteredStored));
   };
 

@@ -540,7 +540,7 @@ function CommentsSection({
       }
       onAdd(parentId, t);
     },
-    [expanded, hiddenCount, totalComments, onAdd]
+    [expanded, hiddenCount, totalComments, onAdd, collapseLimit]
   );
   const renderNodes = React.useCallback(
     () =>
@@ -1165,7 +1165,7 @@ export default function ForumStandalone() {
   const [allProgramsOnly, setAllProgramsOnly] = React.useState(false);
   const [page, setPage] = React.useState(1);
 
-  const isDefaultView = q === "" && activeProgramFilters.length === 0 && !allProgramsOnly;
+
   const toggleProgramFilter = (program: Program) => {
     setActiveProgramFilters((prev) =>
       prev.includes(program) ? prev.filter((entry) => entry !== program) : [...prev, program]
@@ -1224,7 +1224,7 @@ export default function ForumStandalone() {
     };
 
     return [...base].sort(sortWithPinned);
-  }, [posts, q, sort, votes, hasAllPrograms, activeProgramFilters, allProgramsOnly, isDefaultView]);
+  }, [posts, q, sort, votes, hasAllPrograms, activeProgramFilters, allProgramsOnly]);
   const pageCount = React.useMemo(
     () => Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE)),
     [filtered.length]
