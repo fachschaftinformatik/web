@@ -3,7 +3,6 @@ networks:
 
 volumes:
   buckets:
-  database:
 
 services:
   api:
@@ -12,13 +11,13 @@ services:
     ports:
       - 8080:80
     volumes:
-      - database:/data
+      - ./data:/data
     networks:
       - api
     env_file: .env
     environment:
       - DOMAIN=http://localhost:5173
-      - SIGNUPS_VERIFY=true
+      - SIGNUPS_VERIFY=false
       - SIGNUPS_DOMAINS_WHITELIST=studmail.w-hs.de,fachschaftinformatik.de
       - S3_BUCKET=production
       - S3_ENDPOINT=minio:9000

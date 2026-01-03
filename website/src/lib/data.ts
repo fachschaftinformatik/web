@@ -1,13 +1,19 @@
-export type ForumPost = {
-  id: string;
-  title: string;
-  excerpt: string;
-  createdAt: string;
-  replies: number;
-  category: string;
-};
-
 export type ForumProgram = "inf-bsc" | "winf-bsc" | "med-bsc" | "inf-msc" | "winf-msc" | "med-msc";
+
+export type NewsItem = {
+  id: number;
+  title: string;
+  date: string;
+  createdAt?: string;
+  image: string;
+  summary: string;
+  content: string;
+  links: string[];
+  isNew: boolean;
+  tags: string[];
+  pdf?: string | null;
+  pdfName?: string | null;
+};
 
 export type ForumComment = {
   id: string;
@@ -17,7 +23,7 @@ export type ForumComment = {
   parentId?: string | null;
 };
 
-export type ForumDemoPost = {
+export type ForumPost = {
   id: string;
   title: string;
   body: string;
@@ -27,16 +33,19 @@ export type ForumDemoPost = {
   votes: number;
   programs: ForumProgram[];
   comments: ForumComment[];
+  pinned?: boolean;
 };
 
-type ForumProgramMeta = {
+export type ForumVote = -1 | 0 | 1;
+
+export type ForumProgramMeta = {
   id: ForumProgram;
   label: string;
   shortLabel: string;
   level: "Bachelor" | "Master";
 };
 
-export const forumProgramCatalog: ForumProgramMeta[] = [
+export const FORUM_PROGRAM_CATALOG: ForumProgramMeta[] = [
   { id: "inf-bsc", label: "Informatik (B.Sc.)", shortLabel: "INF B.Sc.", level: "Bachelor" },
   { id: "winf-bsc", label: "Wirtschaftsinformatik (B.Sc.)", shortLabel: "WINF B.Sc.", level: "Bachelor" },
   { id: "med-bsc", label: "Medieninformatik (B.Sc.)", shortLabel: "MED B.Sc.", level: "Bachelor" },
@@ -45,9 +54,28 @@ export const forumProgramCatalog: ForumProgramMeta[] = [
   { id: "med-msc", label: "Medieninformatik (M.Sc.)", shortLabel: "MED M.Sc.", level: "Master" },
 ];
 
-export const forumPrograms: ForumProgram[] = forumProgramCatalog.map((meta) => meta.id);
+export const FORUM_PROGRAM_META_MAP: Record<ForumProgram, ForumProgramMeta> = FORUM_PROGRAM_CATALOG.reduce((acc, meta) => {
+  acc[meta.id] = meta;
+  return acc;
+}, {} as Record<ForumProgram, ForumProgramMeta>);
 
-const forumBaseSeeds: ForumDemoPost[] = [
+export const FORUM_PROGRAMS: ForumProgram[] = FORUM_PROGRAM_CATALOG.map((meta) => meta.id);
+
+export const FORUM_LEGACY_PROGRAM_MAP: Record<string, ForumProgram> = {
+  Informatik: "inf-bsc",
+  Wirtschaftsinformatik: "winf-bsc",
+  Medieninformatik: "med-bsc",
+  "Informatik (B.Sc.)": "inf-bsc",
+  "Wirtschaftsinformatik (B.Sc.)": "winf-bsc",
+  "Medieninformatik (B.Sc.)": "med-bsc",
+  "Informatik (M.Sc.)": "inf-msc",
+  "Wirtschaftsinformatik (M.Sc.)": "winf-msc",
+  "Medieninformatik (M.Sc.)": "med-msc",
+};
+
+export const FORUM_STORAGE_KEY = "forum-demo-posts";
+
+const forumBaseSeeds: ForumPost[] = [
   {
     id: "p1",
     title: "Wie strukturiert ihr React-Formulare ohne libs?",
@@ -61,17 +89,8 @@ const forumBaseSeeds: ForumDemoPost[] = [
       { id: "c1", author: "Jonas", text: "Ich nutze Zod + eigene Inputs.", createdAt: new Date(Date.now() - 32 * 3600 * 1000).toISOString() },
       { id: "c2", author: "Mara", text: "React Hook Form ist leichtgewichtig genug.", createdAt: new Date(Date.now() - 30 * 3600 * 1000).toISOString() },
       { id: "c3", author: "Lea", text: "Danke! Hast du ein Beispielrepo?", createdAt: new Date(Date.now() - 29 * 3600 * 1000).toISOString(), parentId: "c1" },
-      { id: "c4", author: "Noah", text: "Ich würde einen Form-Provider schreiben.", createdAt: new Date(Date.now() - 28 * 3600 * 1000).toISOString() },
-      { id: "c5", author: "Sara", text: "Oder alle Inputs als controlled Components mit Zod Resolver.", createdAt: new Date(Date.now() - 27 * 3600 * 1000).toISOString() },
-      { id: "c6", author: "Milan", text: "Ich mag react-hook-form, weil es performant ist.", createdAt: new Date(Date.now() - 26 * 3600 * 1000).toISOString() },
-      { id: "c7", author: "Nora", text: "Yup + RHF geht auch schnell.", createdAt: new Date(Date.now() - 25 * 3600 * 1000).toISOString() },
-      { id: "c8", author: "Eva", text: "Validierung nur bei Blur spart Render.", createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString() },
-      { id: "c9", author: "Timo", text: "Achte auf Accessibility, aria-describedby setzen.", createdAt: new Date(Date.now() - 23 * 3600 * 1000).toISOString() },
-      { id: "c10", author: "Luca", text: "Inline Errors lieber unter das Feld statt rechts.", createdAt: new Date(Date.now() - 22 * 3600 * 1000).toISOString() },
-      { id: "c11", author: "Lea", text: "Ich probiere mal einen FormContext.", createdAt: new Date(Date.now() - 21 * 3600 * 1000).toISOString() },
-      { id: "c12", author: "Jonas", text: "Checkout react-aria-components für Inputs.", createdAt: new Date(Date.now() - 20 * 3600 * 1000).toISOString() },
-      { id: "c13", author: "Mara", text: "Danke für die Tipps!", createdAt: new Date(Date.now() - 19 * 3600 * 1000).toISOString() },
     ],
+    pinned: true,
   },
   {
     id: "p2",
@@ -137,7 +156,7 @@ const forumBaseSeeds: ForumDemoPost[] = [
   },
 ];
 
-const makeForumExtraSeeds = (n: number): ForumDemoPost[] => {
+const makeForumExtraSeeds = (n: number): ForumPost[] => {
   const authors = ["Lea", "Jonas", "Mara", "Timo", "Eva", "Noah", "Sara", "Luca", "Milan", "Nora"];
   const topics = [
     "State-Management mit Context",
@@ -153,17 +172,17 @@ const makeForumExtraSeeds = (n: number): ForumDemoPost[] => {
   ];
   const tagsPool = ["react", "typescript", "mui", "routing", "state", "hooks", "performance", "testing", "vite", "ui"];
 
-  const arr: ForumDemoPost[] = [];
+  const arr: ForumPost[] = [];
   for (let i = 0; i < n; i++) {
     const id = `seed-${i}`;
     const programs: ForumProgram[] =
       i % 7 === 0
-        ? forumPrograms.slice()
+        ? FORUM_PROGRAMS.slice()
         : i % 3 === 0
-        ? ["inf-bsc", "inf-msc", "winf-bsc"]
-        : i % 2 === 0
-        ? ["med-bsc", "med-msc"]
-        : [forumPrograms[i % forumPrograms.length]];
+          ? ["inf-bsc", "inf-msc", "winf-bsc"]
+          : i % 2 === 0
+            ? ["med-bsc", "med-msc"]
+            : [FORUM_PROGRAMS[i % FORUM_PROGRAMS.length]];
 
     let comments: ForumComment[] = [];
     if (i % 5 === 0) {
@@ -214,9 +233,18 @@ const makeForumExtraSeeds = (n: number): ForumDemoPost[] => {
   return arr;
 };
 
-export const forumDemoPosts: ForumDemoPost[] = [...forumBaseSeeds, ...makeForumExtraSeeds(20)];
+export const FORUM_SEED_POSTS: ForumPost[] = [...forumBaseSeeds, ...makeForumExtraSeeds(20)];
 
-export const mockForumPosts: ForumPost[] = forumDemoPosts.map((post) => ({
+export type ForumPostSummary = {
+  id: string;
+  title: string;
+  excerpt: string;
+  createdAt: string;
+  replies: number;
+  category: string;
+};
+
+export const FORUM_POST_SUMMARIES: ForumPostSummary[] = FORUM_SEED_POSTS.map((post) => ({
   id: post.id,
   title: post.title,
   excerpt: post.body,
@@ -233,18 +261,70 @@ export type Bild = { id: number; title: string; thumb: string; full: string };
 // --- HILFSFUNKTION FÜR BEISPIELBILDER ---
 const pic = (seed: number, w: number, h: number) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 
+export const NEWS_DATA: NewsItem[] = [
+  {
+    id: 1,
+    title: "6-Year-Old Horse Dies at Belmont Park After Race Injury",
+    date: "September 14, 2016",
+    image: pic(201, 400, 200),
+    summary: "A tragic accident occurred during the race, raising concerns about animal safety...",
+    content: "Lorem ipsum dolor sit amet...",
+    links: ["https://conference2025.com", "https://more-info.com"],
+    isNew: true,
+    tags: ["Events", "Jobs"]
+  },
+  {
+    id: 2,
+    title: "Tech Conference 2025 Kicks Off in Berlin",
+    date: "September 12, 2025",
+    image: pic(202, 400, 200),
+    summary: "Industry leaders gather to discuss the future of AI, robotics, and quantum computing...",
+    content: "",
+    links: ["https://conference2025.com"],
+    isNew: true,
+    tags: ["Prüfungen", "Studium"]
+  },
+  {
+    id: 3,
+    title: "New Climate Agreement Signed",
+    date: "September 10, 2025",
+    image: pic(203, 400, 200),
+    summary: "World leaders agreed on a historic pact aiming to reduce emissions worldwide...",
+    content: "",
+    links: [],
+    isNew: true,
+    tags: ["Events", "Studium"]
+  },
+  {
+    id: 4,
+    title: "-Year-Old Horse Dies at Belmont Park After Race Injury",
+    date: "September 8, 2025",
+    image: pic(204, 400, 200),
+    summary: "Scientists reported a promising new therapy with encouraging early trial results...",
+    content: "",
+    links: [],
+    isNew: false,
+    tags: ["Studium"]
+  },
+  {
+    id: 5,
+    title: "Breakthrough in Cancer Research",
+    date: "September 8, 2025",
+    image: pic(205, 400, 200),
+    summary: "Scientists reported a promising new therapy with encouraging early trial results...",
+    content: "",
+    links: [],
+    isNew: true,
+    tags: ["Events", "Studium"]
+  },
+];
+
 // --- HIER SIND DEINE LOKALEN BILDER & BEISPIELBILDER ---
 
 export const events: EventItem[] = [
-  // --- EVENT 1 (DEIN ORDNER 1) ---
-  // Ersetze DEIN_ORDNER_1 und den Dateinamen
-  { id: 1, title: "LAN-Party 2023", src: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg" },
-
-  // --- EVENT 2 (DEIN ORDNER 2) ---
-  // Ersetze DEIN_ORDNER_2 und den Dateinamen
-  { id: 2, title: "LAN-Party 2024", src: "/LAN-Party 2024/2024-11-29_23.07.08-_PHI1930-klaushardt.com.jpg" },
-
-  // --- EVENTS 3-6 (BEISPIELBILDER) ---
+  // --- EVENTS (BEISPIELBILDER) ---
+  { id: 1, title: "LAN-Party", src: pic(101, 400, 600) },
+  { id: 2, title: "Gaming Night", src: pic(102, 400, 600) },
   { id: 3, title: "Weinprobe", src: pic(103, 400, 600) },
   { id: 4, title: "Kulturabend", src: pic(104, 400, 600) },
   { id: 5, title: "Weihnachtsfeier", src: pic(105, 400, 600) },
@@ -254,51 +334,13 @@ export const events: EventItem[] = [
 export const IMAGES_PER_PAGE = 20;
 
 export const bilderByEvent: Record<number, Bild[]> = {
-  // --- EVENT 1 (DEIN ORDNER 1) ---
-  // Ersetze DEIN_ORDNER_1 und die Dateinamen
-  1: [
-    { id: 101, title: "", thumb: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg", full: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg" },
-    { id: 102, title: "", thumb: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg", full: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg" },
-    { id: 103, title: "", thumb: "/LAN-Party 2023/ad23f7da-c6cd-4a96-9fce-8b5d0ccd8cf8.jpg", full: "/LAN-Party 2023/ad23f7da-c6cd-4a96-9fce-8b5d0ccd8cf8.jpg" },
-    { id: 104, title: "", thumb: "/LAN-Party 2023/b4818f1d-72e6-45ab-8f65-17e2c84b9c77.jpg", full: "/LAN-Party 2023/b4818f1d-72e6-45ab-8f65-17e2c84b9c77.jpg" },
-    { id: 105, title: "", thumb: "/LAN-Party 2023/c7cdd3e2-6b75-4d06-805d-1f761b359dd7.jpg", full: "/LAN-Party 2023/c7cdd3e2-6b75-4d06-805d-1f761b359dd7.jpg" },
-    { id: 106, title: "", thumb: "/LAN-Party 2023/DSC00061.jpg", full: "/LAN-Party 2023/DSC00061.jpg" },
-    { id: 107, title: "", thumb: "/LAN-Party 2023/DSC00097.jpg", full: "/LAN-Party 2023/DSC00097.jpg" },
-    { id: 108, title: "", thumb: "/LAN-Party 2023/DSC00114.jpg", full: "/LAN-Party 2023/DSC00114.jpg" },
-    { id: 109, title: "", thumb: "/LAN-Party 2023/DSC00132.jpg", full: "/LAN-Party 2023/DSC00132.jpg" },
-    { id: 110, title: "", thumb: "/LAN-Party 2023/DSC00140.jpg", full: "/LAN-Party 2023/DSC00140.jpg" },
-    { id: 111, title: "", thumb: "/LAN-Party 2023/DSC00146.jpg", full: "/LAN-Party 2023/DSC00146.jpg" },
-    { id: 112, title: "", thumb: "/LAN-Party 2023/DSC00170.jpg", full: "/LAN-Party 2023/DSC00170.jpg" },
-    { id: 113, title: "", thumb: "/LAN-Party 2023/DSC00173.jpg", full: "/LAN-Party 2023/DSC00173.jpg" },
-
-    // ...
-  ],
-
-  // --- EVENT 2 (DEIN ORDNER 2) ---
-  // Ersetze DEIN_ORDNER_2 und die Dateinamen
-  2: [
-    { id: 201, title: "", thumb: "/LAN-Party 2024/1.jpg", full: "/LAN-Party 2024/1.jpg" },
-    { id: 202, title: "", thumb: "/LAN-Party 2024/2.jpg", full: "/LAN-Party 2024/2.jpg" },
-    { id: 203, title: "", thumb: "/LAN-Party 2024/3.jpg", full: "/LAN-Party 2024/3.jpg" },
-    { id: 204, title: "", thumb: "/LAN-Party 2024/4.jpg", full: "/LAN-Party 2024/4.jpg" },
-    { id: 205, title: "", thumb: "/LAN-Party 2024/5.jpg", full: "/LAN-Party 2024/5.jpg" },
-    { id: 206, title: "", thumb: "/LAN-Party 2024/6.jpg", full: "/LAN-Party 2024/6.jpg" },
-    { id: 207, title: "", thumb: "/LAN-Party 2024/7.jpg", full: "/LAN-Party 2024/7.jpg" },
-    { id: 208, title: "", thumb: "/LAN-Party 2024/8.jpg", full: "/LAN-Party 2024/8.jpg" },
-    { id: 209, title: "", thumb: "/LAN-Party 2024/9.jpg", full: "/LAN-Party 2024/9.jpg" },
-    { id: 210, title: "", thumb: "/LAN-Party 2024/10.jpg", full: "/LAN-Party 2024/10.jpg" },
-    { id: 211, title: "", thumb: "/LAN-Party 2024/11.jpg", full: "/LAN-Party 2024/11.jpg" },
-    { id: 212, title: "", thumb: "/LAN-Party 2024/12.jpg", full: "/LAN-Party 2024/12.jpg" },
-    { id: 213, title: "", thumb: "/LAN-Party 2024/13.jpg", full: "/LAN-Party 2024/13.jpg" },
-    { id: 214, title: "", thumb: "/LAN-Party 2024/14.jpg", full: "/LAN-Party 2024/14.jpg" },
-    // ...
-  ],
+  1: [], 2: []
 };
 
-// --- EVENTS 3-6 (BEISPIELBILDER) ---
-// Füllt `bilderByEvent` für alle Events > 2 automatisch mit picsum-Bildern
+// --- EVENTS (BEISPIELBILDER) ---
+// Füllt `bilderByEvent` für alle Events automatisch mit picsum-Bildern
 events.forEach((event) => {
-  if (event.id > 2) {
+  if (event.id > 0) {
     bilderByEvent[event.id] = Array.from({ length: 30 }).map((_, i) => {
       const seed = event.id * 100 + i;
       return {
@@ -414,3 +456,22 @@ export const teamSections: TeamSection[] = [
 
 // Export der pic-Funktion für die Verwendung im Komponenten-State, falls nötig
 export { pic };
+
+export interface TeamMember {
+  name: string;
+  role: string;
+  team: string;
+  image?: string;
+}
+
+export const teamMembers: TeamMember[] = [
+  { name: "Max Mustermann", role: "Vorsitz", team: "Vorstand", image: pic(201, 200, 200) },
+  { name: "Erika Mustermann", role: "Stellv. Vorsitz", team: "Vorstand", image: pic(202, 200, 200) },
+  { name: "Lukas Schmidt", role: "Finanzen", team: "Kassenwart", image: pic(203, 200, 200) },
+  { name: "Julia Weber", role: "EDV Adm", team: "EDV", image: pic(204, 200, 200) },
+  { name: "Kevin Müller", role: "Studi-Gremien", team: "Hopo", image: pic(205, 200, 200) },
+  { name: "Sarah Wagner", role: "Event-Planung", team: "Kultur", image: pic(206, 200, 200) },
+  { name: "Tim Fischer", role: "Social Media", team: "Öffentlichkeit", image: pic(207, 200, 200) },
+  { name: "Lisa Meyer", role: "Beratung", team: "Soziales", image: pic(208, 200, 200) },
+  { name: "Marc Becker", role: "Fußball-Turnier", team: "Sport", image: pic(209, 200, 200) },
+];

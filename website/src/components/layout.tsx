@@ -37,7 +37,7 @@ import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
 import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { User } from '@lib/api/types.gen';
+import type { AuthUserResponse as User } from "@lib/api";
 import { useThemeMode } from '@lib/theme';
 import { useAuth } from '@lib/auth';
 
@@ -83,7 +83,7 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
   const { mode, toggleMode } = useThemeMode();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
-  
+
   // -- Persistent Sidebar State Logic --
   const [desktopOpen, setDesktopOpen] = useState(() => {
     const stored = localStorage.getItem('sidebar_desktop_open');
@@ -120,31 +120,31 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
     }),
     '&:hover': {
       borderColor: alpha(theme.palette.primary.main, 0.6),
-      bgcolor: mode === 'dark' 
-        ? alpha(theme.palette.primary.dark, 0.55) 
+      bgcolor: mode === 'dark'
+        ? alpha(theme.palette.primary.dark, 0.55)
         : alpha(theme.palette.primary.main, 0.2)
     },
-    bgcolor: mode === 'dark' 
-      ? alpha(theme.palette.primary.dark, 0.35) 
+    bgcolor: mode === 'dark'
+      ? alpha(theme.palette.primary.dark, 0.35)
       : alpha(theme.palette.primary.main, 0.1),
-    color: mode === 'dark' 
-      ? theme.palette.primary.contrastText 
+    color: mode === 'dark'
+      ? theme.palette.primary.contrastText
       : theme.palette.primary.main
   };
-  
+
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {!isMdUp && (
         <>
           <Toolbar sx={{ justifyContent: 'flex-end' }}>
-             <IconButton onClick={() => setMobileOpen(false)}>
-               <MenuOpenRounded />
-             </IconButton>
+            <IconButton onClick={() => setMobileOpen(false)}>
+              <MenuOpenRounded />
+            </IconButton>
           </Toolbar>
           <Divider />
         </>
       )}
-      
+
       <List sx={{ pt: 1, flexGrow: 1 }}>
         {navItems.map((item) => (
           <Tooltip key={item.label} title={navOpen ? '' : item.label} placement="right">
@@ -191,9 +191,9 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
             onClick={handleDrawerToggle}
             sx={{ mr: 2, display: { xs: 'block', md: 'block' } }}
           >
-             {navOpen ? <MenuOpenRounded /> : <MenuRounded />}
+            {navOpen ? <MenuOpenRounded /> : <MenuRounded />}
           </IconButton>
-          
+
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
@@ -215,27 +215,27 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
               </Tooltip>
 
               <Tooltip title="Account">
-                <IconButton 
-                  onClick={(e) => setAnchorEl(e.currentTarget)} 
+                <IconButton
+                  onClick={(e) => setAnchorEl(e.currentTarget)}
                   size="small"
                   aria-controls={open ? 'account-menu' : undefined}
                   aria-haspopup="true"
                   aria-expanded={open ? 'true' : undefined}
                 >
-                  <Avatar 
-                    sx={{ 
-                      width: 32, 
+                  <Avatar
+                    sx={{
+                      width: 32,
                       height: 32,
                       bgcolor: avatarColor,
                       fontSize: '0.9rem',
                       fontWeight: 600
                     }}
                   >
-                      {avatarLetter}
+                    {avatarLetter}
                   </Avatar>
                 </IconButton>
               </Tooltip>
-              
+
               <Menu
                 anchorEl={anchorEl}
                 id="account-menu"
@@ -297,10 +297,10 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
         {drawerContent}
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3, width: '100%' }}>
+      <Box component="main" sx={{ flexGrow: 1, width: '100%', minHeight: '100vh' }}>
         <Toolbar />
-        <Container maxWidth="xl" disableGutters>
-            {children}
+        <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3 } }}>
+          {children}
         </Container>
       </Box>
     </Box>

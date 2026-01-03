@@ -46,7 +46,66 @@ const getLocalPart = (email: string) => {
 
 const normalizeLocalPart = (value: string) => value.split("@")[0].trim();
 
-export default function Team() {
+const MemberSection = ({ title, members }: { title: string; members: TeamMember[] }) => (
+  <Box sx={{ my: 4 }}>
+    <Typography variant="h5" gutterBottom>{title}</Typography>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 320px))",
+        justifyContent: "flex-start",
+        gap: 4,
+      }}
+    >
+      {members.map((m) => (
+        <Card key={m.id} sx={{ borderRadius: 2, overflow: "hidden", height: "100%" }}>
+
+          {m.img ? (
+            <CardMedia
+              component="img"
+              height="320"
+              image={m.img}
+              alt={m.name}
+              sx={{ objectFit: "contain", backgroundColor: "grey.100" }}
+            />
+          ) : (
+            <Box
+              sx={{
+                height: 320,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'grey.200',
+              }}
+            >
+              <AccountCircleIcon
+                sx={{
+                  fontSize: 200,
+                  color: 'grey.400'
+                }}
+              />
+            </Box>
+          )}
+          <CardContent>
+            <Typography variant="subtitle1">{m.name}</Typography>
+            {m.email && (
+              <Link
+                href={`mailto:${m.email}`}
+                variant="body2"
+                color="text.secondary"
+                underline="hover"
+              >
+                {m.email}
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </Box>
+  </Box>
+);
+
+export default function TeamPage() {
   const { user } = useAuth();
   const location = useLocation();
   const [adminPreview, setAdminPreview] = React.useState(false);
@@ -70,11 +129,11 @@ export default function Team() {
         prev.map((s) =>
           s.id === sectionId
             ? {
-                ...s,
-                members: s.members.map((m) =>
-                  m.id === memberId ? { ...m, img } : m
-                ),
-              }
+              ...s,
+              members: s.members.map((m) =>
+                m.id === memberId ? { ...m, img } : m
+              ),
+            }
             : s
         )
       );
@@ -119,9 +178,9 @@ export default function Team() {
       prev.map((s) =>
         s.id === deleteTarget.sectionId
           ? {
-              ...s,
-              members: s.members.filter((m) => m.id !== deleteTarget.memberId),
-            }
+            ...s,
+            members: s.members.filter((m) => m.id !== deleteTarget.memberId),
+          }
           : s
       )
     );
@@ -150,64 +209,6 @@ export default function Team() {
     }
   }, [location.search]);
 
-  const Section = ({ title, members }: { title: string; members: TeamMember[] }) => (
-    <Box sx={{ my: 4 }}>
-      <Typography variant="h5" gutterBottom>{title}</Typography>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 320px))",
-          justifyContent: "flex-start",
-          gap: 4, 
-        }}
-      >
-        {members.map((m) => (
-          <Card key={m.id} sx={{ borderRadius: 2, overflow: "hidden", height: "100%" }}>
-            
-            {m.img ? (
-              <CardMedia 
-                component="img" 
-                height="320"
-                image={m.img} 
-                alt={m.name} 
-                sx={{ objectFit: "contain", backgroundColor: "grey.100" }} 
-              />
-            ) : (
-              <Box 
-                sx={{
-                  height: 320,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'grey.200',
-                }}
-              >
-                <AccountCircleIcon 
-                  sx={{ 
-                    fontSize: 200, 
-                    color: 'grey.400' 
-                  }} 
-                />
-              </Box>
-            )}
-            <CardContent>
-              <Typography variant="subtitle1">{m.name}</Typography>
-              {m.email && (
-                <Link
-                  href={`mailto:${m.email}`}
-                  variant="body2"
-                  color="text.secondary"
-                  underline="hover"
-                >
-                  {m.email}
-                </Link>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
-    </Box>
-  );
   return (
     <Sidebar user={user} title="Team">
       <Container sx={{ py: 4 }}>
@@ -231,7 +232,7 @@ export default function Team() {
           FSV-Team
         </Typography>
         {sections.map((section) => (
-          <Section key={section.id} title={section.title} members={section.members} />
+          <MemberSection key={section.id} title={section.title} members={section.members} />
         ))}
       </Container>
 
@@ -255,12 +256,12 @@ export default function Team() {
                         return prev.map((s) =>
                           s.id === section.id
                             ? {
-                                ...s,
-                                members: [
-                                  ...s.members,
-                                  { id: maxId + 1, name: "", email: "", img: null },
-                                ],
-                              }
+                              ...s,
+                              members: [
+                                ...s.members,
+                                { id: maxId + 1, name: "", email: "", img: null },
+                              ],
+                            }
                             : s
                         );
                       });
@@ -292,11 +293,11 @@ export default function Team() {
                                 prev.map((s) =>
                                   s.id === section.id
                                     ? {
-                                        ...s,
-                                        members: s.members.map((m) =>
-                                          m.id === member.id ? { ...m, name: e.target.value } : m
-                                        ),
-                                      }
+                                      ...s,
+                                      members: s.members.map((m) =>
+                                        m.id === member.id ? { ...m, name: e.target.value } : m
+                                      ),
+                                    }
                                     : s
                                 )
                               )
@@ -313,18 +314,18 @@ export default function Team() {
                                 prev.map((s) =>
                                   s.id === section.id
                                     ? {
-                                        ...s,
-                                        members: s.members.map((m) =>
-                                          m.id === member.id
-                                            ? {
-                                                ...m,
-                                                email: normalizeLocalPart(e.target.value)
-                                                  ? `${normalizeLocalPart(e.target.value)}${EMAIL_DOMAIN}`
-                                                  : "",
-                                              }
-                                            : m
-                                        ),
-                                      }
+                                      ...s,
+                                      members: s.members.map((m) =>
+                                        m.id === member.id
+                                          ? {
+                                            ...m,
+                                            email: normalizeLocalPart(e.target.value)
+                                              ? `${normalizeLocalPart(e.target.value)}${EMAIL_DOMAIN}`
+                                              : "",
+                                          }
+                                          : m
+                                      ),
+                                    }
                                     : s
                                 )
                               )
