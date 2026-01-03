@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { NEWS_AVAILABLE_TAGS as availableTags, STORAGE_KEYS } from "@lib/data";
 
 export default function CreateNews() {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function CreateNews() {
   const [links, setLinks] = useState<string[]>([]);
   const [currentLink, setCurrentLink] = useState("");
 
-  const availableTags = ["Studium", "Prüfungen", "Events", "Jobs"];
+
 
   function saveToLocalStorage() {
     const newNews = {
@@ -44,8 +45,8 @@ export default function CreateNews() {
       tags,
       links,
     };
-    const stored = JSON.parse(localStorage.getItem("custom-news") || "[]");
-    localStorage.setItem("custom-news", JSON.stringify([...stored, newNews]));
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.NEWS_CUSTOM) || "[]");
+    localStorage.setItem(STORAGE_KEYS.NEWS_CUSTOM, JSON.stringify([...stored, newNews]));
     navigate("/news");
   }
 

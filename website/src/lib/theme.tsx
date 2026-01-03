@@ -1,13 +1,10 @@
 import React from 'react';
-import { PaletteMode } from '@mui/material';
+import { PaletteOptions, ThemeOptions, createTheme, PaletteMode } from '@mui/material/styles';
 import { Fab, Tooltip } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
-import { ThemeProvider } from '@mui/material/styles';
-import { useTheme } from '@mui/material/styles';
+import { ThemeProvider, useTheme } from '@mui/material/styles';
 import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
 import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
-import { PaletteMode } from '@mui/material';
-import { PaletteOptions, ThemeOptions, createTheme } from '@mui/material/styles';
 
 const getPalette = (mode: PaletteMode): PaletteOptions => {
   const shared = {
@@ -81,9 +78,6 @@ export const createAppTheme = (mode: PaletteMode = 'light') =>
     components,
   });
 
-const theme = createAppTheme('light');
-
-export default theme;
 
 
 type ThemeModeContextValue = {

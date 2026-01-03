@@ -59,16 +59,17 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
             getProgramModules({ path: { id: currentProgram.id! } })
                 .then(({ data }) => setProgramModules(data || []))
                 .catch(() => setProgramModules([]));
-
-            if (!currentPo || !currentProgram.versions?.includes(currentPo)) {
-                setCurrentPo(currentProgram.versions?.[0] || "");
-            }
             setCurrentModule(null);
         } else {
             setProgramModules([]);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentProgram]);
+
+    useEffect(() => {
+        if (currentProgram && (!currentPo || !currentProgram.versions?.includes(currentPo))) {
+            setCurrentPo(currentProgram.versions?.[0] || "");
+        }
+    }, [currentProgram, currentPo]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
@@ -415,15 +416,15 @@ export default function Exams() {
         if (selectedProgram) {
             getProgramModules({ path: { id: selectedProgram.id! } })
                 .then(({ data }) => setModules(data || []));
-
-            // Set PO when program changes if current PO is not valid for new program
-            if (!selectedProgram.versions?.includes(selectedPo)) {
-                const sorted = [...(selectedProgram.versions || [])].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-                if (sorted[0]) Promise.resolve().then(() => setSelectedPo(sorted[0]));
-            }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedProgram]);
+
+    useEffect(() => {
+        if (selectedProgram && !selectedProgram.versions?.includes(selectedPo)) {
+            const sorted = [...(selectedProgram.versions || [])].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+            if (sorted[0]) Promise.resolve().then(() => setSelectedPo(sorted[0]));
+        }
+    }, [selectedProgram, selectedPo]);
 
     useEffect(() => {
         if (selectedProgram && selectedPo) {

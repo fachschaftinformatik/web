@@ -29,7 +29,15 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
-import { NEWS_DATA, FORUM_SEED_POSTS, FORUM_STORAGE_KEY } from '@lib/data';
+import {
+  NEWS_DATA,
+  FORUM_SEED_POSTS,
+  FORUM_STORAGE_KEY,
+  CALENDAR_EVENT_CATEGORIES as EVENT_CATEGORIES,
+  STORAGE_KEYS
+} from '@lib/data';
+
+const STORAGE_EVENTS_KEY = STORAGE_KEYS.HOMEPAGE_EVENTS;
 
 type ForumPostSummary = {
   id: string;
@@ -56,14 +64,7 @@ type EventDraft = {
   category: string;
 };
 
-const STORAGE_EVENTS_KEY = 'homepage-events';
 
-const EVENT_CATEGORIES = [
-  { value: 'Treffen', label: 'Treffen', color: '#2f7d4a' },
-  { value: 'Workshop', label: 'Workshop', color: '#3267d8' },
-  { value: 'Party', label: 'Party', color: '#e16d48' },
-  { value: 'Info', label: 'Info', color: '#d39a3f' },
-];
 
 const toDateKey = (date: Date) => {
   const year = date.getFullYear();
@@ -148,7 +149,6 @@ const NewsFeedPage: React.FC = () => {
   });
 
   useEffect(() => {
-    // Other logic was moved to lazy initialization
   }, []);
 
   useEffect(() => {
@@ -214,7 +214,6 @@ const NewsFeedPage: React.FC = () => {
         </Box>
 
         <Grid container spacing={4}>
-          {/* Linke Spalte: News */}
           <Grid size={{ xs: 12, md: 8 }}>
             <Stack spacing={3}>
               <Stack direction="row" alignItems="center" justifyContent="space-between" px={1}>
@@ -265,10 +264,8 @@ const NewsFeedPage: React.FC = () => {
             </Stack>
           </Grid>
 
-          {/* Rechte Spalte: Agenda & Forum */}
           <Grid size={{ xs: 12, md: 4 }}>
             <Stack spacing={4}>
-              {/* Agenda */}
               <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
                 <Stack spacing={3}>
                   <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -350,7 +347,6 @@ const NewsFeedPage: React.FC = () => {
                 </Stack>
               </Paper>
 
-              {/* Forum Highlights */}
               <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
                 <Stack spacing={2}>
                   <Stack direction="row" spacing={1} alignItems="center">

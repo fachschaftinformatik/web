@@ -15,6 +15,49 @@ export type NewsItem = {
   pdfName?: string | null;
 };
 
+export const NEWS_TAGS = ["Alle", "Events", "Jobs", "Prüfungen", "Studium", "Sonstiges"];
+export const NEWS_AVAILABLE_TAGS = ["Studium", "Prüfungen", "Events", "Jobs"];
+
+export type CalendarEventCategory = { value: string; label: string; color: string };
+export const CALENDAR_EVENT_CATEGORIES: CalendarEventCategory[] = [
+  { value: 'Treffen', label: 'Treffen', color: '#2f7d4a' },
+  { value: 'Workshop', label: 'Workshop', color: '#3267d8' },
+  { value: 'Party', label: 'Party', color: '#e16d48' },
+  { value: 'Info', label: 'Info', color: '#d39a3f' },
+];
+
+export const STORAGE_KEYS = {
+  FORUM_POSTS: "forum-demo-posts",
+  FORUM_VOTES: "forum-demo-votes",
+  HOMEPAGE_EVENTS: "homepage-events",
+  NEWS_LIKED: "newsroom-liked",
+  NEWS_CUSTOM: "custom-news",
+  TEAM_ADMIN_PREVIEW: "team_admin_preview",
+  SIDEBAR_DESKTOP_OPEN: "sidebar_desktop_open",
+};
+
+export const NAV_ITEMS_DATA = [
+  { label: 'Startseite', href: '/', id: 'home' },
+  { label: 'Ankündigungen', href: '/news', id: 'news' },
+  { label: 'Rekos', href: '/exams', id: 'exams' },
+  { label: 'Forum', href: '/forum', id: 'forum' },
+  { label: 'Galerie', href: '/media', id: 'media' },
+  { label: 'Team', href: '/team', id: 'team' },
+];
+
+export const AVATAR_PALETTE = [
+  '#d32f2f', '#c2185b', '#7b1fa2', '#512da8', '#303f9f',
+  '#1976d2', '#0288d1', '#0097a7', '#00796b', '#388e3c',
+  '#e64a19', '#5d4037', '#455a64',
+];
+
+export const APP_CONSTANTS = {
+  EMAIL_DOMAIN_FSV: "@fsv-whs.de",
+  EMAIL_DOMAIN_STUDMAIL: "@studmail.w-hs.de",
+  FORUM_POSTS_PER_PAGE: 20,
+  MEDIA_IMAGES_PER_PAGE: 10,
+};
+
 export type ForumComment = {
   id: string;
   author: string;
@@ -73,7 +116,7 @@ export const FORUM_LEGACY_PROGRAM_MAP: Record<string, ForumProgram> = {
   "Medieninformatik (M.Sc.)": "med-msc",
 };
 
-export const FORUM_STORAGE_KEY = "forum-demo-posts";
+export const FORUM_STORAGE_KEY = STORAGE_KEYS.FORUM_POSTS;
 
 const forumBaseSeeds: ForumPost[] = [
   {
@@ -253,13 +296,10 @@ export const FORUM_POST_SUMMARIES: ForumPostSummary[] = FORUM_SEED_POSTS.map((po
   category: post.tags[0] ?? "Allgemein",
 }));
 
-// data.ts
-
 export type EventItem = { id: number; title: string; src: string };
 export type Bild = { id: number; title: string; thumb: string; full: string };
 
-// --- HILFSFUNKTION FÜR BEISPIELBILDER ---
-const pic = (seed: number, w: number, h: number) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
+export const pic = (seed: number, w: number, h: number) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 
 export const NEWS_DATA: NewsItem[] = [
   {
@@ -319,57 +359,6 @@ export const NEWS_DATA: NewsItem[] = [
   },
 ];
 
-// --- HIER SIND DEINE LOKALEN BILDER & BEISPIELBILDER ---
-
-export const events: EventItem[] = [
-  // --- EVENTS (BEISPIELBILDER) ---
-  { id: 1, title: "LAN-Party", src: pic(101, 400, 600) },
-  { id: 2, title: "Gaming Night", src: pic(102, 400, 600) },
-  { id: 3, title: "Weinprobe", src: pic(103, 400, 600) },
-  { id: 4, title: "Kulturabend", src: pic(104, 400, 600) },
-  { id: 5, title: "Weihnachtsfeier", src: pic(105, 400, 600) },
-  { id: 6, title: "Sporttag", src: pic(106, 400, 600) },
-];
-
-export const IMAGES_PER_PAGE = 20;
-
-export const bilderByEvent: Record<number, Bild[]> = {
-  1: [], 2: []
-};
-
-// --- EVENTS (BEISPIELBILDER) ---
-// Füllt `bilderByEvent` für alle Events automatisch mit picsum-Bildern
-events.forEach((event) => {
-  if (event.id > 0) {
-    bilderByEvent[event.id] = Array.from({ length: 30 }).map((_, i) => {
-      const seed = event.id * 100 + i;
-      return {
-        id: seed,
-        title: `${event.title} Bild ${i + 1}`,
-        thumb: pic(seed, 600, 400),
-        full: pic(seed, 1600, 1066),
-      };
-    });
-  }
-});
-
-// --- HELPER FUNKTIONEN ---
-
-export const getImageTitle = (image?: Bild) => {
-  if (!image) return "";
-  const trimmed = image.title?.trim();
-  if (trimmed) return trimmed;
-  const candidate = image.full || image.thumb;
-  return candidate.split("/").filter(Boolean).pop() ?? "Bild";
-};
-
-export const defaultTitleForFile = (file: File) => {
-  const name = file.name;
-  const withoutExtension = name.replace(/\.[^/.]+$/, "");
-  return withoutExtension || name;
-};
-
-// --- TEAMDATEN ---
 
 export type TeamMember = {
   id: number;
@@ -454,24 +443,3 @@ export const teamSections: TeamSection[] = [
   },
 ];
 
-// Export der pic-Funktion für die Verwendung im Komponenten-State, falls nötig
-export { pic };
-
-export interface TeamMember {
-  name: string;
-  role: string;
-  team: string;
-  image?: string;
-}
-
-export const teamMembers: TeamMember[] = [
-  { name: "Max Mustermann", role: "Vorsitz", team: "Vorstand", image: pic(201, 200, 200) },
-  { name: "Erika Mustermann", role: "Stellv. Vorsitz", team: "Vorstand", image: pic(202, 200, 200) },
-  { name: "Lukas Schmidt", role: "Finanzen", team: "Kassenwart", image: pic(203, 200, 200) },
-  { name: "Julia Weber", role: "EDV Adm", team: "EDV", image: pic(204, 200, 200) },
-  { name: "Kevin Müller", role: "Studi-Gremien", team: "Hopo", image: pic(205, 200, 200) },
-  { name: "Sarah Wagner", role: "Event-Planung", team: "Kultur", image: pic(206, 200, 200) },
-  { name: "Tim Fischer", role: "Social Media", team: "Öffentlichkeit", image: pic(207, 200, 200) },
-  { name: "Lisa Meyer", role: "Beratung", team: "Soziales", image: pic(208, 200, 200) },
-  { name: "Marc Becker", role: "Fußball-Turnier", team: "Sport", image: pic(209, 200, 200) },
-];

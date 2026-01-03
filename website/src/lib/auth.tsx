@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-// Import directly from the generated API module
 import { getAuthMe, postAuthLogout, getAuthCsrf } from '@lib/api';
-import type { User } from '@lib/api';
+import type { AuthUserResponse as User } from '@lib/api';
 
 const REMEMBERED_USER_KEY = 'fs_remembered_user';
 export const REMEMBERED_FLAG_KEY = 'fs_remember_flag';
@@ -62,7 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const { data, error } = await getAuthMe();
         if (error || !data) {
-            throw new Error('Not authenticated');
+          throw new Error('Not authenticated');
         }
         setUser(data);
         if (typeof window !== 'undefined' && window.localStorage.getItem(REMEMBERED_FLAG_KEY) === 'true') {
@@ -89,13 +88,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Fetch CSRF token first
       const { data } = await getAuthCsrf();
       const token = data?.csrf ?? '';
 
       await postAuthLogout({
         headers: {
-            'X-CSRF-Token': token
+          'X-CSRF-Token': token
         }
       });
       setUser(null);

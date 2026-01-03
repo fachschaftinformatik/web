@@ -28,7 +28,9 @@ import {
   FORUM_PROGRAMS,
   FORUM_LEGACY_PROGRAM_MAP,
   FORUM_SEED_POSTS,
-  FORUM_STORAGE_KEY
+  FORUM_STORAGE_KEY,
+  STORAGE_KEYS,
+  APP_CONSTANTS
 } from "@lib/data";
 
 const PROGRAM_CATALOG = FORUM_PROGRAM_CATALOG;
@@ -37,7 +39,7 @@ const PROGRAMS = FORUM_PROGRAMS;
 const LEGACY_PROGRAM_MAP = FORUM_LEGACY_PROGRAM_MAP;
 const SEED_POSTS = FORUM_SEED_POSTS;
 const LS_KEY = FORUM_STORAGE_KEY;
-const LS_VOTES_KEY = "forum-demo-votes";
+const LS_VOTES_KEY = STORAGE_KEYS.FORUM_VOTES;
 
 type CommentAppearance = {
   surface: string;
@@ -107,7 +109,7 @@ function buildCommentTree(comments: Comment[]): CommentNode[] {
 }
 
 const COMMENT_COLLAPSE_LIMIT = 6;
-const POSTS_PER_PAGE = 20;
+const POSTS_PER_PAGE = APP_CONSTANTS.FORUM_POSTS_PER_PAGE;
 
 function renderTextWithMentions(text: string) {
   const mentionRegex = /@[A-Za-z0-9._-]+/g;
@@ -964,7 +966,6 @@ export default function ForumStandalone() {
   const activeUserName = user?.name ?? user?.email ?? "";
   const isAdmin = user?.role === "admin";
   const canComment = Boolean(user);
-  // Laden + Migration (program ? programs)
   const [posts, setPosts] = React.useState<Post[]>(() => {
     try {
       const raw = typeof window !== "undefined" ? localStorage.getItem(LS_KEY) : null;
@@ -1043,7 +1044,7 @@ export default function ForumStandalone() {
   const [detailPost, setDetailPost] = React.useState<Post | null>(null);
   const [shareCopied, setShareCopied] = React.useState(false);
   const [focusedPostId, setFocusedPostId] = React.useState<string | null>(null);
-  const [fullPageMode, setFullPageMode] = React.useState(false); // fullPageMode: Großansicht nur für einen Post
+  const [fullPageMode, setFullPageMode] = React.useState(false);
   const openedFromUrl = React.useRef(false);
 
   const shareUrl = React.useMemo(() => {
@@ -1069,7 +1070,6 @@ export default function ForumStandalone() {
     window.history.replaceState({}, "", url.toString());
   }, []);
 
-  // opens a post in a new tab; view=full triggers the Großansicht layout
   const openPostWindow = React.useCallback((post: Post, options?: { view?: "full" | null }) => {
     if (typeof window === "undefined") return;
     const origin = window.location?.origin ?? "https://campus-demo.local";
@@ -1157,7 +1157,6 @@ export default function ForumStandalone() {
     }
   };
 
-  // Suche + Sortierung
   const [q, setQ] = React.useState("");
   const [sort, setSort] = React.useState<"new" | "votes">("new");
   const [filtersOpen, setFiltersOpen] = React.useState(false);
@@ -1243,12 +1242,10 @@ export default function ForumStandalone() {
     setVotes((prev) => {
       const currentVote = prev[id] ?? 0;
 
-      // gleiches Vote → zurücksetzen
       if (currentVote === newVote) {
         return { ...prev, [id]: 0 };
       }
 
-      // neues oder gewechseltes Vote
       return { ...prev, [id]: newVote };
     });
   };
@@ -1257,7 +1254,6 @@ export default function ForumStandalone() {
     setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, pinned: !p.pinned } : p)));
   };
 
-  // Kommentare
   const handleAddComment = (postId: string, parentId: string | null, text: string) => {
     if (!activeUserName) return;
     const newComment: Comment = {
@@ -1272,13 +1268,11 @@ export default function ForumStandalone() {
     );
   };
 
-  // Create Dialog
   const [open, setOpen] = React.useState(false);
   const [title, setTitle] = React.useState("");
   const [body, setBody] = React.useState("");
   const [tagsInput, setTagsInput] = React.useState("");
 
-  // "Für alle Studiengänge" + einzelne Checkboxen
   const [allPrograms, setAllPrograms] = React.useState<boolean>(false);
   const [programsInput, setProgramsInput] = React.useState<Record<Program, boolean>>(
     () => createProgramFlagState([PROGRAMS[0]])
@@ -1315,7 +1309,6 @@ export default function ForumStandalone() {
     setProgramsInput(createProgramFlagState([PROGRAMS[0]]));
   };
 
-  // Menü-Aktionen
   const handleDelete = (id: string) => {
     setPosts((prev) =>
       prev.filter((p) => {
@@ -1333,7 +1326,6 @@ export default function ForumStandalone() {
     }
   };
 
-  // Report Dialog
   const [reportFor, setReportFor] = React.useState<string | null>(null);
   const [reportReason, setReportReason] = React.useState("Spam / Werbung");
   const [reportNote, setReportNote] = React.useState("");
@@ -1343,7 +1335,6 @@ export default function ForumStandalone() {
     setReportNote("");
   };
   const sendReport = () => {
-    // hier würdest du an ein Backend schicken - wir loggen nur:
     console.log("Report:", { postId: reportFor, reason: reportReason, note: reportNote });
     closeReport();
   };
@@ -1379,7 +1370,6 @@ export default function ForumStandalone() {
         </Typography>
       </Box>
 
-      {/* Filterleiste */}
       <Paper
         variant="outlined"
         sx={{
@@ -1433,7 +1423,6 @@ export default function ForumStandalone() {
             )
           ) : (
             <>
-              {/* Filterleiste */}
               <Paper
                 elevation={0}
                 sx={{
@@ -1522,7 +1511,6 @@ export default function ForumStandalone() {
                 </Stack>
               </Paper>
 
-              {/* Liste */}
               <Stack spacing={2}>
                 {paginatedPosts.map((p) => (
                   <PostItem
@@ -1759,7 +1747,6 @@ export default function ForumStandalone() {
             </>
           )}
         </Dialog>
-        {/* Create Dialog */}
         <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
           <DialogTitle>Beitrag erstellen</DialogTitle>
           <DialogContent dividers>
@@ -1786,7 +1773,6 @@ export default function ForumStandalone() {
                 onChange={(e) => setTagsInput(e.target.value)}
                 sx={inputStyles}
               />
-              {/* Für alle + einzelne Checkboxen in einer Reihe */}
               <FormGroup row>
                 <FormControlLabel
                   control={
@@ -1829,7 +1815,6 @@ export default function ForumStandalone() {
             </Button>
           </DialogActions>
         </Dialog>
-        {/* Report Dialog */}
         <Dialog open={!!reportFor} onClose={closeReport} maxWidth="xs" fullWidth>
           <DialogTitle>Beitrag melden</DialogTitle>
           <DialogContent dividers>

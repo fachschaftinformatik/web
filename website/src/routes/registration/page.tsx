@@ -26,8 +26,11 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { getPrograms, postAuthRegister } from '@lib/api';
 import type { AuthProgramResponse as Program } from '@lib/api';
 import { getFriendlyErrorMessage } from '@lib/errors';
+import { APP_CONSTANTS } from '@lib/data';
 
-const EMAIL_SUFFIX = '@studmail.w-hs.de';
+const EMAIL_SUFFIX = APP_CONSTANTS.EMAIL_DOMAIN_STUDMAIL;
+
+
 
 const registrationSchema = z.object({
   name: z.string().min(1, "Bitte gib deinen Namen ein."),

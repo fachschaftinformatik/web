@@ -40,44 +40,37 @@ import { Link as RouterLink } from 'react-router-dom';
 import type { AuthUserResponse as User } from "@lib/api";
 import { useThemeMode } from '@lib/theme';
 import { useAuth } from '@lib/auth';
+import { NAV_ITEMS_DATA, AVATAR_PALETTE, STORAGE_KEYS } from '@lib/data';
 
 const drawerWidthOpen = 240;
 const drawerWidthClosed = 72;
 
-const avatarPalette = [
-  '#d32f2f',
-  '#c2185b',
-  '#7b1fa2',
-  '#512da8',
-  '#303f9f',
-  '#1976d2',
-  '#0288d1',
-  '#0097a7',
-  '#00796b',
-  '#388e3c',
-  '#e64a19',
-  '#5d4037',
-  '#455a64',
-];
+
 
 const stringToColor = (string?: string) => {
-  if (!string) return avatarPalette[0];
+  if (!string) return AVATAR_PALETTE[0];
   let hash = 0;
   for (let i = 0; i < string.length; i++) {
     hash = string.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const index = Math.abs(hash % avatarPalette.length);
-  return avatarPalette[index];
+  const index = Math.abs(hash % AVATAR_PALETTE.length);
+  return AVATAR_PALETTE[index];
 };
 
-const navItems = [
-  { label: 'Startseite', href: '/', icon: <DashboardRounded />, isRoute: true },
-  { label: 'Ankündigungen', href: '/news', icon: <CampaignRounded />, isRoute: true },
-  { label: 'Rekos', href: '/exams', icon: <SchoolRounded />, isRoute: true },
-  { label: 'Forum', href: '/forum', icon: <QuestionAnswerRounded />, isRoute: true },
-  { label: 'Galerie', href: '/media', icon: <CollectionsRounded />, isRoute: true },
-  { label: 'Team', href: '/team', icon: <PeopleRounded />, isRoute: true },
-];
+const iconMap: Record<string, React.ReactNode> = {
+  home: <DashboardRounded />,
+  news: <CampaignRounded />,
+  exams: <SchoolRounded />,
+  forum: <QuestionAnswerRounded />,
+  media: <CollectionsRounded />,
+  team: <PeopleRounded />,
+};
+
+const navItems = NAV_ITEMS_DATA.map(item => ({
+  ...item,
+  icon: iconMap[item.id] || <DashboardRounded />,
+  isRoute: true
+}));
 
 const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; children: React.ReactNode; title?: string; headerActions?: React.ReactNode }) => {
   const { mode, toggleMode } = useThemeMode();
@@ -86,7 +79,7 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
 
   // -- Persistent Sidebar State Logic --
   const [desktopOpen, setDesktopOpen] = useState(() => {
-    const stored = localStorage.getItem('sidebar_desktop_open');
+    const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_DESKTOP_OPEN);
     return stored !== null ? stored === 'true' : true;
   });
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -95,7 +88,7 @@ const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; 
     if (isMdUp) {
       const newState = !desktopOpen;
       setDesktopOpen(newState);
-      localStorage.setItem('sidebar_desktop_open', String(newState));
+      localStorage.setItem(STORAGE_KEYS.SIDEBAR_DESKTOP_OPEN, String(newState));
     } else {
       setMobileOpen(!mobileOpen);
     }

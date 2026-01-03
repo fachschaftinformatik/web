@@ -20,13 +20,16 @@ import { Sidebar } from "@components/layout";
 import { getFriendlyErrorMessage } from "@lib/errors";
 import { client } from "@lib/api/client.gen";
 import { getAuthCsrf } from "@lib/api";
+import { APP_CONSTANTS, pic } from "@lib/data";
+
+const IMAGES_PER_PAGE = APP_CONSTANTS.MEDIA_IMAGES_PER_PAGE;
 
 type EventItem = { id: number; title: string; created_at: string; cover_path?: string };
 type MediaItem = { id: string; event_id: number; title: string; description: string; mime_type: string; uploaded_at: string };
 
-const IMAGES_PER_PAGE = 10;
 
-const pic = (seed: number) => `https://picsum.photos/seed/${seed}/300/200`;
+
+
 
 export default function Galerie() {
   const { user } = useAuth();
@@ -81,7 +84,7 @@ export default function Galerie() {
   }, [selectedEventId]);
 
   const getImageUrl = (id: string) => `/api/media/${id}/file`;
-  const getEventCoverUrl = (ev: EventItem) => ev.cover_path ? `/api/events/${ev.id}/cover` : pic(ev.id);
+  const getEventCoverUrl = (ev: EventItem) => ev.cover_path ? `/api/events/${ev.id}/cover` : pic(ev.id, 300, 200);
 
   const pageCount = Math.max(Math.ceil(media.length / IMAGES_PER_PAGE), 1);
   const displayedMedia = media.slice((page - 1) * IMAGES_PER_PAGE, page * IMAGES_PER_PAGE);

@@ -88,7 +88,7 @@ const DashboardPage: React.FC = () => {
             Dashboard
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Willkommen zurück, {user.name.split(' ')[0] ?? user.name}! Hier ist deine Übersicht.
+            Willkommen zurück, {user.name ? user.name.split(' ')[0] : 'Nutzer'}! Hier ist deine Übersicht.
           </Typography>
         </Box>
 
@@ -114,7 +114,7 @@ const DashboardPage: React.FC = () => {
                 {user.email}
               </Typography>
               <Stack direction="row" spacing={1} mt={1.5}>
-                <Chip label={user.role.toUpperCase()} size="small" variant="outlined" />
+                <Chip label={(user.role ?? 'Gast').toUpperCase()} size="small" variant="outlined" />
                 <Chip
                   label={user.verified ? 'Verifiziert' : 'Nicht verifiziert'}
                   size="small"
@@ -240,7 +240,7 @@ const DashboardPage: React.FC = () => {
                     Erstellt am
                   </Typography>
                   <Typography variant="body1" fontWeight={500}>
-                    {new Date(user.created_at).toLocaleDateString()}
+                    {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unbekannt'}
                   </Typography>
                 </Box>
                 <Divider />

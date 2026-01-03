@@ -27,10 +27,10 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { useLocation } from "react-router-dom";
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
-import { teamSections, TeamMember, TeamSection } from "@lib/data";
+import { teamSections, TeamMember, TeamSection, STORAGE_KEYS, APP_CONSTANTS } from "@lib/data";
 
-const ADMIN_PREVIEW_KEY = "team_admin_preview";
-const EMAIL_DOMAIN = "@fsv-whs.de";
+const ADMIN_PREVIEW_KEY = STORAGE_KEYS.TEAM_ADMIN_PREVIEW;
+const EMAIL_DOMAIN = APP_CONSTANTS.EMAIL_DOMAIN_FSV;
 
 const deepCloneSections = (sections: TeamSection[]) =>
   sections.map((s) => ({
@@ -155,8 +155,8 @@ export default function TeamPage() {
       try {
         const dataUrl = await readFileAsDataUrl(file);
         updateMemberImage(sectionId, memberId, dataUrl);
-      } catch {
-        // ignore read errors
+      } catch (e) {
+        console.error("Read error", e);
       }
     },
     [readFileAsDataUrl, updateMemberImage]

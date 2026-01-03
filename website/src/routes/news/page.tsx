@@ -29,9 +29,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate, Link, Outlet } from 'react-router-dom';
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
-import { NEWS_DATA, NewsItem } from '@lib/data';
+import { NEWS_DATA, NewsItem, NEWS_TAGS as TAGS, STORAGE_KEYS } from '@lib/data';
 
-const TAGS = ["Alle", "Events", "Jobs", "Prüfungen", "Studium", "Sonstiges"];
+
 
 function CustomizedInputBase() {
   return (
@@ -193,14 +193,12 @@ export default function NewsRoomPage() {
   const isAdmin = user?.role === "admin" || user?.role === "editor";
   const [selectedTag, setSelectedTag] = useState("Alle");
   const [likedNewsIds, setLikedNewsIds] = useState<number[]>(() => {
-    const saved = localStorage.getItem("newsroom-liked");
+    const saved = localStorage.getItem(STORAGE_KEYS.NEWS_LIKED);
     return saved ? JSON.parse(saved) : [];
   });
   const [allNews, setAllNews] = useState<NewsItem[]>(() => {
-    const custom = JSON.parse(localStorage.getItem("custom-news") || "[]");
+    const custom = JSON.parse(localStorage.getItem(STORAGE_KEYS.NEWS_CUSTOM) || "[]");
     const merged = [...NEWS_DATA, ...custom];
-
-    // Sort logic from main/stashed
     return merged.sort((a, b) => {
       if (a.isNew && !b.isNew) return -1;
       if (!a.isNew && b.isNew) return 1;
@@ -211,17 +209,16 @@ export default function NewsRoomPage() {
   const handleToggleLike = (id: number) => {
     setLikedNewsIds((prev) => {
       const updated = prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id];
-      localStorage.setItem("newsroom-liked", JSON.stringify(updated));
+      localStorage.setItem(STORAGE_KEYS.NEWS_LIKED, JSON.stringify(updated));
       return updated;
     });
   };
 
   const handleDelete = (id: number) => {
     setAllNews((prev) => prev.filter(item => item.id !== id));
-    // Also remove from custom news in localStorage
-    const stored = JSON.parse(localStorage.getItem("custom-news") || "[]");
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.NEWS_CUSTOM) || "[]");
     const filteredStored = stored.filter((item: { id: number }) => item.id !== id);
-    localStorage.setItem("custom-news", JSON.stringify(filteredStored));
+    localStorage.setItem(STORAGE_KEYS.NEWS_CUSTOM, JSON.stringify(filteredStored));
   };
 
   const filteredNews = selectedTag === "Alle"
