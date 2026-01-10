@@ -16,7 +16,7 @@ import LinkIcon from "@mui/icons-material/Link";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { Sidebar } from "@components/layout";
+import { Sidebar } from "@components/layout"; 
 import { useAuth } from "@lib/auth";
 import { forumDemoPosts } from "@lib/data";
 
@@ -117,14 +117,19 @@ const uuid = () => {
 };
 
 function isoToShort(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleString("de-DE", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "Unbekanntes Datum";
+    return d.toLocaleString("de-DE", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "Datum Fehler";
+  }
 }
 
 const escapeHtml = (value: string) =>
@@ -137,6 +142,7 @@ const escapeHtml = (value: string) =>
 
 type CommentNode = Comment & { children: CommentNode[] };
 function buildCommentTree(comments: Comment[]): CommentNode[] {
+  if (!Array.isArray(comments)) return [];
   const map = new Map<string, CommentNode>();
   const roots: CommentNode[] = [];
   comments.forEach((c) => map.set(c.id, { ...c, children: [] }));
@@ -157,6 +163,7 @@ const COMMENT_COLLAPSE_LIMIT = 6;
 const POSTS_PER_PAGE = 20;
 
 function renderTextWithMentions(text: string) {
+  if (!text) return "";
   const mentionRegex = /@[A-Za-z0-9._-]+/g;
   const nodes: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -203,6 +210,7 @@ const SEED_POSTS: Post[] = forumDemoPosts.map((post, index) => ({
   pinned: index === 0,
 }));
 export const FORUM_SEED_POSTS = SEED_POSTS;
+
 /* Kommentare (rekursiv) */
 function CommentThread({
   node,
@@ -347,7 +355,7 @@ function FocusedPost({
 }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const netVotes = post.votes + (votes[post.id] ?? 0);
+  const netVotes = post.votes + vote;
   const [shareCopied, setShareCopied] = React.useState(false);
   const focusShareUrl = React.useMemo(() => {
     const origin =
@@ -578,15 +586,16 @@ function CommentsSection({
   flat?: boolean;
   disableCollapse?: boolean;
 }) {
-  const totalComments = comments.length;
+  const safeComments = Array.isArray(comments) ? comments : [];
+  const totalComments = safeComments.length;
   const [expanded, setExpanded] = React.useState(false);
   const collapseLimit = disableCollapse ? Number.MAX_SAFE_INTEGER : COMMENT_COLLAPSE_LIMIT;
   const visibleComments = React.useMemo(
     () =>
       expanded || totalComments <= collapseLimit
-        ? comments
-        : comments.slice(0, collapseLimit),
-    [comments, expanded, totalComments, collapseLimit]
+        ? safeComments
+        : safeComments.slice(0, collapseLimit),
+    [safeComments, expanded, totalComments, collapseLimit]
   );
   const hiddenCount = disableCollapse ? 0 : totalComments - visibleComments.length;
   const tree = React.useMemo(() => buildCommentTree(visibleComments), [visibleComments]);
@@ -800,7 +809,7 @@ function PostItem({
 }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const netVotes = post.votes + (votes[post.id] ?? 0);
+  const netVotes = post.votes + vote;
   const canDelete = canModerate || (currentAuthor && post.author === currentAuthor);
   const canPin = true;
   const [menuEl, setMenuEl] = React.useState<null | HTMLElement>(null);
@@ -1016,6 +1025,7 @@ function PostItem({
     </Card>
   );
 }
+
 /* Hauptkomponente */
 export default function ForumStandalone() {
   const { user } = useAuth();
@@ -1024,25 +1034,34 @@ export default function ForumStandalone() {
   const activeUserName = user?.name ?? user?.email ?? "";
   const isAdmin = user?.role === "admin";
   const canComment = Boolean(user);
-  // Laden + Migration (program ? programs)
+
+
   const [posts, setPosts] = React.useState<Post[]>(() => {
     try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem(LS_KEY) : null;
-      const parsed = raw ? (JSON.parse(raw) as unknown) : SEED_POSTS;
-      const data = Array.isArray(parsed) ? parsed : SEED_POSTS;
-      type StoredPost = Partial<Post> & { program?: unknown; programs?: unknown; pinned?: unknown };
-      return (data as StoredPost[]).map((p) => {
-        const { program, programs: storedPrograms, pinned: storedPinned, ...rest } = p ?? {};
-        const normalizedPrograms = Array.isArray(storedPrograms)
-          ? normalizeProgramList(storedPrograms)
-          : program
-          ? normalizeProgramList([program])
-          : [];
-        const programs = normalizedPrograms.length ? normalizedPrograms : [PROGRAMS[0]];
-        const pinned = Boolean(storedPinned);
-        return { ...(rest as Omit<Post, "programs" | "pinned">), programs, pinned } as Post;
-      });
-    } catch {
+      if (typeof window === "undefined") return SEED_POSTS;
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return SEED_POSTS;
+      
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return SEED_POSTS;
+
+     
+      return parsed.map((p: any) => ({
+        id: p?.id ?? uuid(),
+        title: p?.title ?? "Kein Titel",
+        body: p?.body ?? "",
+        tags: Array.isArray(p?.tags) ? p.tags : [],
+        author: p?.author ?? "Anonym",
+        createdAt: p?.createdAt ?? new Date().toISOString(),
+        votes: typeof p?.votes === 'number' ? p.votes : 0,
+      
+        programs: Array.isArray(p?.programs) ? normalizeProgramList(p.programs) : [PROGRAMS[0]],
+        
+        comments: Array.isArray(p?.comments) ? p.comments : [],
+        pinned: !!p?.pinned
+      }));
+    } catch (e) {
+      console.error("Fehler beim Laden der Posts:", e);
       return SEED_POSTS;
     }
   });
@@ -1076,6 +1095,8 @@ export default function ForumStandalone() {
     }),
     [isDark, theme]
   );
+  
+  // WICHTIG: Hier fehlte eine sichere Prüfung, falls theme undefiniert wäre (unwahrscheinlich aber möglich)
   const programChipSx = React.useMemo(
     () =>
       isDark
@@ -1091,6 +1112,7 @@ export default function ForumStandalone() {
           },
     [isDark, theme]
   );
+  
   const inputStyles = React.useMemo(
     () => ({
       "& .MuiInputBase-root": {
@@ -1103,7 +1125,7 @@ export default function ForumStandalone() {
   const [detailPost, setDetailPost] = React.useState<Post | null>(null);
   const [shareCopied, setShareCopied] = React.useState(false);
   const [focusedPostId, setFocusedPostId] = React.useState<string | null>(null);
-  const [fullPageMode, setFullPageMode] = React.useState(false); // fullPageMode: Großansicht nur für einen Post
+  const [fullPageMode, setFullPageMode] = React.useState(false); 
   const openedFromUrl = React.useRef(false);
 
   const shareUrl = React.useMemo(() => {
@@ -1129,7 +1151,6 @@ export default function ForumStandalone() {
     window.history.replaceState({}, "", url.toString());
   }, []);
 
-  // opens a post in a new tab; view=full triggers the Großansicht layout
   const openPostWindow = React.useCallback((post: Post, options?: { view?: "full" | null }) => {
     if (typeof window === "undefined") return;
     const origin = window.location?.origin ?? "https://campus-demo.local";
@@ -1157,6 +1178,7 @@ export default function ForumStandalone() {
 
   React.useEffect(() => { localStorage.setItem(LS_KEY, JSON.stringify(posts)); }, [posts]);
   React.useEffect(() => { localStorage.setItem(LS_VOTES_KEY, JSON.stringify(votes)); }, [votes]);
+  
   React.useEffect(() => {
     if (!detailPost) return;
     const updated = posts.find((p) => p.id === detailPost.id);
@@ -1217,7 +1239,6 @@ export default function ForumStandalone() {
     }
   };
 
-  // Suche + Sortierung
   const [q, setQ] = React.useState("");
   const [sort, setSort] = React.useState<"new" | "votes">("new");
   const [filtersOpen, setFiltersOpen] = React.useState(false);
@@ -1298,23 +1319,18 @@ export default function ForumStandalone() {
   }, [filtered, page]);
 
   const handleVote = (id: string, newVote: Vote) => {
-  setVotes((prev) => {
-    const currentVote = prev[id] ?? 0;
-
-    // gleiches Vote → zurücksetzen
-    if (currentVote === newVote) {
-      return { ...prev, [id]: 0 };
-    }
-
-    // neues oder gewechseltes Vote
-    return { ...prev, [id]: newVote };
-  });
-};
+    setVotes((prev) => {
+      const currentVote = prev[id] ?? 0;
+      if (currentVote === newVote) {
+        return { ...prev, [id]: 0 };
+      }
+      return { ...prev, [id]: newVote };
+    });
+  };
   const togglePin = (id: string) => {
     setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, pinned: !p.pinned } : p)));
   };
 
-  // Kommentare
   const handleAddComment = (postId: string, parentId: string | null, text: string) => {
     if (!activeUserName) return;
     const newComment: Comment = {
@@ -1329,13 +1345,11 @@ export default function ForumStandalone() {
     );
   };
 
-  // Create Dialog
   const [open, setOpen] = React.useState(false);
   const [title, setTitle] = React.useState("");
   const [body, setBody] = React.useState("");
   const [tagsInput, setTagsInput] = React.useState("");
 
-  // "Für alle Studiengänge" + einzelne Checkboxen
   const [allPrograms, setAllPrograms] = React.useState<boolean>(false);
   const [programsInput, setProgramsInput] = React.useState<Record<Program, boolean>>(
     () => createProgramFlagState([PROGRAMS[0]])
@@ -1372,7 +1386,6 @@ export default function ForumStandalone() {
     setProgramsInput(createProgramFlagState([PROGRAMS[0]]));
   };
 
-  // Menü-Aktionen
   const handleDelete = (id: string) => {
     setPosts((prev) =>
       prev.filter((p) => {
@@ -1390,7 +1403,6 @@ export default function ForumStandalone() {
     }
   };
 
-  // Report Dialog
   const [reportFor, setReportFor] = React.useState<string | null>(null);
   const [reportReason, setReportReason] = React.useState("Spam / Werbung");
   const [reportNote, setReportNote] = React.useState("");
@@ -1400,7 +1412,6 @@ export default function ForumStandalone() {
     setReportNote("");
   };
   const sendReport = () => {
-    // hier würdest du an ein Backend schicken - wir loggen nur:
     console.log("Report:", { postId: reportFor, reason: reportReason, note: reportNote });
     closeReport();
   };
@@ -1424,7 +1435,6 @@ export default function ForumStandalone() {
     </Tooltip>
   );
 
-  /* UI */
   return (
     <Sidebar user={user} title="Forum" headerActions={createButton}>
       <Box
@@ -1437,8 +1447,6 @@ export default function ForumStandalone() {
     }}
   >
         <Container maxWidth={fullPageMode ? "md" : "lg"} sx={{ py: fullPageMode ? 4 : 3 }}>
-          {/* fullPageMode: Nur den fokussierten Post ohne Liste rendern */}
-          {/* fullPageMode: Nur den fokussierten Post ohne Liste rendern */}
           {fullPageMode ? (
             focusedPost ? (
               <FocusedPost
