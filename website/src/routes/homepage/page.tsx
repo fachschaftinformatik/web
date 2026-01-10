@@ -61,11 +61,11 @@ const STORAGE_NEWS_KEY = 'custom-news';
 const STORAGE_EVENTS_KEY = 'homepage-events';
 
 const EVENT_CATEGORIES = [
-  { value: 'Treffen', label: 'Treffen', color: '#2f7d4a' },
-  { value: 'Workshop', label: 'Workshop', color: '#3267d8' },
-  { value: 'Party', label: 'Party', color: '#e16d48' },
-  { value: 'Info', label: 'Info', color: '#d39a3f' },
-];
+  { value: 'Treffen', label: 'Treffen', tone: 'success' },
+  { value: 'Workshop', label: 'Workshop', tone: 'info' },
+  { value: 'Party', label: 'Party', tone: 'error' },
+  { value: 'Info', label: 'Info', tone: 'warning' },
+] as const;
 
 const toDateKey = (date: Date) => {
   const year = date.getFullYear();
@@ -187,9 +187,6 @@ const loadForumPosts = (): ForumPostSummary[] => {
   }
 };
 
-const getCategoryColor = (category: string) =>
-  EVENT_CATEGORIES.find((entry) => entry.value === category)?.color || '#2f7d4a';
-
 const toEventTimestamp = (event: CalendarEvent) => {
   const [year, month, day] = event.date.split('-').map(Number);
   const [hour, minute] = (event.time || '00:00').split(':').map(Number);
@@ -210,6 +207,20 @@ const NewsFeedPage: React.FC = () => {
   const { user } = useAuth();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const categoryColors = useMemo(() => {
+    const paletteMap = {
+      success: theme.palette.success.main,
+      info: theme.palette.info.main,
+      warning: theme.palette.warning.main,
+      error: theme.palette.error.main,
+    };
+    return EVENT_CATEGORIES.reduce<Record<string, string>>((acc, entry) => {
+      acc[entry.value] = paletteMap[entry.tone];
+      return acc;
+    }, {});
+  }, [theme]);
+  const getCategoryColor = (category: string) => categoryColors[category] ?? theme.palette.success.main;
+  const imageOverlayBase = isDark ? theme.palette.background.default : theme.palette.text.primary;
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()));
@@ -254,28 +265,19 @@ const NewsFeedPage: React.FC = () => {
       railTargets.forEach((element) => element.setAttribute('data-visible', 'true'));
       return;
     }
+    const revealOnce = (entries: IntersectionObserverEntry[], observer: IntersectionObserver) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.setAttribute('data-visible', 'true');
+        observer.unobserve(entry.target);
+      });
+    };
     const sectionObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.setAttribute('data-visible', 'true');
-          } else {
-            entry.target.removeAttribute('data-visible');
-          }
-        });
-      },
+      (entries, observer) => revealOnce(entries, observer),
       { threshold: 0.12, rootMargin: '0px 0px -10% 0px' }
     );
     const railObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.setAttribute('data-visible', 'true');
-          } else {
-            entry.target.removeAttribute('data-visible');
-          }
-        });
-      },
+      (entries, observer) => revealOnce(entries, observer),
       { threshold: 0.2, rootMargin: '0px 0px -20% 0px' }
     );
     sectionTargets.forEach((element) => sectionObserver.observe(element));
@@ -372,7 +374,9 @@ const NewsFeedPage: React.FC = () => {
     overflow: 'visible',
     border: '1px solid transparent',
     backdropFilter: 'blur(16px)',
-    boxShadow: isDark ? '0 26px 60px rgba(0, 0, 0, 0.35)' : '0 26px 60px rgba(16, 40, 24, 0.12)',
+    boxShadow: isDark
+      ? `0 26px 60px ${alpha(theme.palette.common.black, 0.35)}`
+      : `0 26px 60px ${alpha(theme.palette.primary.dark, 0.12)}`,
     willChange: 'opacity, transform, filter',
     opacity: 0,
     transform: 'translateY(48px) scale(0.98)',
@@ -392,15 +396,22 @@ const NewsFeedPage: React.FC = () => {
     borderRadius: 4,
     border: '1px solid transparent',
     background: isDark
-      ? 'rgba(13, 20, 17, 0.72)'
-      : `linear-gradient(145deg, rgba(255, 255, 255, 0.96), ${alpha(theme.palette.primary.main, 0.04)})`,
-    boxShadow: isDark ? '0 18px 36px rgba(0, 0, 0, 0.35)' : '0 18px 36px rgba(16, 40, 24, 0.12)',
+      ? alpha(theme.palette.background.paper, 0.72)
+      : `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.98)}, ${alpha(
+          theme.palette.primary.main,
+          0.06
+        )})`,
+    boxShadow: isDark
+      ? `0 18px 36px ${alpha(theme.palette.common.black, 0.35)}`
+      : `0 18px 36px ${alpha(theme.palette.primary.dark, 0.12)}`,
     backdropFilter: 'blur(12px)',
     transition: 'transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease',
     '&:hover': {
       transform: 'translateY(-3px)',
       borderColor: 'var(--accent-strong)',
-      boxShadow: isDark ? '0 22px 45px rgba(0, 0, 0, 0.4)' : '0 22px 45px rgba(16, 40, 24, 0.16)',
+      boxShadow: isDark
+        ? `0 22px 45px ${alpha(theme.palette.common.black, 0.4)}`
+        : `0 22px 45px ${alpha(theme.palette.primary.dark, 0.16)}`,
     },
   } as const;
 
@@ -427,64 +438,58 @@ const NewsFeedPage: React.FC = () => {
 
   const sectionGradients = {
     newsroom: isDark
-      ? `linear-gradient(145deg, rgba(8, 12, 10, 0.96), ${alpha(theme.palette.primary.dark, 0.35)})`
-      : `linear-gradient(145deg, rgba(255, 249, 236, 0.96), ${alpha(theme.palette.primary.light, 0.22)})`,
+      ? `linear-gradient(145deg, ${alpha(theme.palette.background.default, 0.96)}, ${alpha(
+          theme.palette.primary.dark,
+          0.35
+        )})`
+      : `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.98)}, ${alpha(
+          theme.palette.primary.main,
+          0.08
+        )})`,
     agenda: isDark
-      ? `linear-gradient(145deg, rgba(8, 12, 10, 0.96), ${alpha(theme.palette.primary.main, 0.3)})`
-      : `linear-gradient(145deg, rgba(244, 252, 248, 0.96), ${alpha(theme.palette.primary.main, 0.14)})`,
+      ? `linear-gradient(145deg, ${alpha(theme.palette.background.default, 0.96)}, ${alpha(
+          theme.palette.primary.main,
+          0.3
+        )})`
+      : `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.98)}, ${alpha(
+          theme.palette.primary.main,
+          0.06
+        )})`,
     forum: isDark
-      ? `linear-gradient(145deg, rgba(9, 13, 11, 0.96), ${alpha(theme.palette.primary.dark, 0.4)})`
-      : `linear-gradient(145deg, rgba(247, 250, 245, 0.96), ${alpha(theme.palette.primary.light, 0.18)})`,
+      ? `linear-gradient(145deg, ${alpha(theme.palette.background.default, 0.96)}, ${alpha(
+          theme.palette.primary.dark,
+          0.4
+        )})`
+      : `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.98)}, ${alpha(
+          theme.palette.primary.main,
+          0.07
+        )})`,
   } as const;
 
   return (
-    <Sidebar user={user} title="Startseite">
+    <Sidebar user={user} title="Startseite" fullBleed>
       <Box
         sx={{
           position: 'relative',
-          borderRadius: { xs: 4, md: 6 },
-          p: { xs: 1.6, md: 2.4 },
+          borderRadius: 0,
+          py: 'var(--page-gutter)',
           overflow: 'hidden',
           color: 'var(--ink)',
           fontFamily: '"Manrope", "Space Grotesk", sans-serif',
-          '--ink': isDark ? '#f6f9f6' : '#0f1411',
-          '--muted': isDark ? '#9aaea3' : '#5b6660',
-          '--accent': isDark ? '#6df2bf' : '#1d8f63',
-          '--accent-strong': isDark ? '#3ee29b' : '#156a49',
-          '--accent-soft': isDark ? 'rgba(109, 242, 191, 0.16)' : 'rgba(29, 143, 99, 0.12)',
-          '--accent-2': isDark ? '#ffb454' : '#f59a47',
-          '--accent-3': isDark ? '#7cc7ff' : '#3a77ff',
-          '--surface': isDark ? '#0b1210' : '#f2f3ef',
-          '--card-bg': isDark ? 'rgba(13, 21, 18, 0.82)' : 'rgba(255, 255, 255, 0.9)',
-          '--card-border': isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 29, 22, 0.12)',
+          '--ink': theme.palette.text.primary,
+          '--muted': theme.palette.text.secondary,
+          '--accent': theme.palette.primary.light,
+          '--accent-strong': theme.palette.primary.main,
+          '--accent-soft': alpha(theme.palette.primary.main, isDark ? 0.16 : 0.12),
+          '--accent-2': theme.palette.warning.main,
+          '--accent-3': theme.palette.info.main,
+          '--surface': theme.palette.background.paper,
+          '--card-bg': alpha(theme.palette.background.paper, isDark ? 0.82 : 0.96),
+          '--card-border': theme.palette.divider,
           background: 'var(--surface)',
-          backgroundImage: isDark
-            ? 'radial-gradient(circle at 18% 22%, rgba(109, 242, 191, 0.12), transparent 55%), radial-gradient(circle at 80% 12%, rgba(255, 180, 84, 0.16), transparent 60%), radial-gradient(circle at 80% 90%, rgba(124, 199, 255, 0.16), transparent 65%)'
-            : 'radial-gradient(circle at 16% 18%, rgba(29, 143, 99, 0.16), transparent 55%), radial-gradient(circle at 85% 15%, rgba(245, 154, 71, 0.2), transparent 60%), radial-gradient(circle at 85% 85%, rgba(58, 119, 255, 0.12), transparent 65%)',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            width: { xs: 260, md: 420 },
-            height: { xs: 260, md: 420 },
-            right: { xs: -90, md: -160 },
-            top: { xs: -80, md: -140 },
-            background: 'radial-gradient(circle at 30% 30%, rgba(109, 242, 191, 0.35), transparent 70%)',
-            opacity: isDark ? 0.7 : 1,
-            zIndex: 0,
-            animation: 'float 12s ease-in-out infinite alternate',
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            width: { xs: 260, md: 420 },
-            height: { xs: 260, md: 420 },
-            left: { xs: -110, md: -180 },
-            bottom: { xs: -150, md: -220 },
-            background: 'radial-gradient(circle at 70% 70%, rgba(245, 154, 71, 0.35), transparent 70%)',
-            opacity: isDark ? 0.6 : 0.9,
-            zIndex: 0,
-            animation: 'float 10s ease-in-out infinite alternate-reverse',
-          },
+          backgroundImage: 'none',
+          '&::before': { content: 'none' },
+          '&::after': { content: 'none' },
           '@keyframes rise': {
             from: { opacity: 0, transform: 'translateY(36px)' },
             to: { opacity: 1, transform: 'translateY(0)' },
@@ -515,8 +520,28 @@ const NewsFeedPage: React.FC = () => {
           },
         }}
       >
-        <Box sx={{ position: 'relative', zIndex: 1, display: 'grid', gap: { xs: 3, md: 4 } }}>
-          <Box component="section">
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            width: '100%',
+            maxWidth: 'var(--page-max-width)',
+            mx: 'auto',
+            px: 'var(--page-gutter)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(var(--grid-columns), minmax(0, 1fr))',
+            columnGap: 'var(--grid-gap)',
+            rowGap: 'var(--section-gap)',
+          }}
+        >
+          <Box
+            component="section"
+            sx={{
+              gridColumn: '1 / -1',
+              width: { xs: '100%', md: 'calc(100% + (var(--grid-gap) * 12))' },
+              mx: { xs: 0, md: 'calc(0px - (var(--grid-gap) * 6))' },
+            }}
+          >
             <Paper
               elevation={0}
               sx={{
@@ -524,25 +549,32 @@ const NewsFeedPage: React.FC = () => {
                 overflow: 'hidden',
                 borderRadius: { xs: 5, md: 8 },
                 minHeight: { xs: 320, md: 420 },
-                backgroundColor: isDark ? '#0c1411' : alpha(theme.palette.primary.main, 0.06),
+                backgroundColor: theme.palette.background.default,
                 backgroundImage: isDark
-                  ? `linear-gradient(120deg, ${alpha(theme.palette.primary.dark, 0.72)}, rgba(8, 12, 10, 0.9))`
-                  : `linear-gradient(120deg, ${alpha(theme.palette.primary.light, 0.18)}, rgba(246, 252, 248, 0.96))`,
-                border: '1px solid var(--card-border)',
-                boxShadow: isDark ? '0 34px 80px rgba(0, 0, 0, 0.4)' : '0 34px 80px rgba(16, 40, 24, 0.18)',
+                  ? `linear-gradient(120deg, ${alpha(theme.palette.primary.dark, 0.72)}, ${alpha(
+                      theme.palette.background.default,
+                      0.9
+                    )})`
+                  : `linear-gradient(120deg, ${alpha(theme.palette.primary.light, 0.16)}, ${alpha(
+                      theme.palette.background.paper,
+                      0.98
+                    )})`,
+                border: 'none',
+                boxShadow: 'none',
                 animation: 'rise 0.6s ease both',
                 '&::before': {
                   content: '""',
                   position: 'absolute',
-                  right: { xs: '-6%', sm: '6%', md: '0%' },
-                  top: { xs: '56%', sm: '46%', md: '10%' },
-                  width: { xs: 200, sm: 280, md: 460 },
-                  height: { xs: 110, sm: 150, md: 220 },
+                  right: { xs: '6%', sm: '6%', md: 'auto' },
+                  top: { xs: '6%', sm: '8%', md: '0%' },
+                  left: { xs: 'auto', sm: 'auto', md: '67%' },
+                  width: { xs: 140, sm: 200, md: 460 },
+                  height: { xs: 80, sm: 120, md: 220 },
                   backgroundImage: `url(${heroImage})`,
                   backgroundRepeat: 'no-repeat',
                   backgroundPosition: 'center',
                   backgroundSize: 'contain',
-                  opacity: isDark ? 0.22 : 0.28,
+                  opacity: { xs: 0.12, sm: 0.18, md: isDark ? 0.22 : 0.28 },
                   pointerEvents: 'none',
                   zIndex: 0,
                 },
@@ -552,8 +584,11 @@ const NewsFeedPage: React.FC = () => {
                 sx={{
                   position: 'absolute',
                   inset: 0,
-                background: isDark
-                    ? 'linear-gradient(120deg, rgba(6, 10, 8, 0.85), rgba(6, 10, 8, 0.2))'
+                  background: isDark
+                    ? `linear-gradient(120deg, ${alpha(theme.palette.background.default, 0.85)}, ${alpha(
+                        theme.palette.background.default,
+                        0.2
+                      )})`
                     : `linear-gradient(120deg, ${alpha(theme.palette.primary.dark, 0.45)}, ${alpha(
                         theme.palette.primary.dark,
                         0.08
@@ -564,170 +599,185 @@ const NewsFeedPage: React.FC = () => {
                 sx={{
                   position: 'absolute',
                   inset: 0,
-                  background:
-                    'radial-gradient(circle at 20% 20%, rgba(109, 242, 191, 0.22), transparent 55%)',
+                  background: isDark
+                    ? `radial-gradient(circle at 20% 20%, ${alpha(theme.palette.primary.light, 0.22)}, transparent 55%)`
+                    : `radial-gradient(circle at 20% 20%, ${alpha(
+                        theme.palette.primary.light,
+                        0.2
+                      )}, transparent 55%)`,
                   mixBlendMode: 'screen',
                 }}
               />
-              <Stack
-                spacing={2}
+              <Box
                 sx={{
                   position: 'relative',
                   zIndex: 1,
-                  p: { xs: 2.5, md: 4 },
-                  maxWidth: { xs: '100%', md: '56%' },
+                  maxWidth: { xs: '100%', md: 'calc(var(--page-max-width) + (var(--grid-gap) * 12))' },
+                  mx: 'auto',
+                  px: 'var(--page-gutter)',
+                  py: { xs: 2.5, md: 4 },
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' },
+                  columnGap: 'var(--grid-gap)',
+                  rowGap: 'var(--grid-gap)',
                 }}
               >
-                <Box>
+                <Stack
+                  spacing={2}
+                  sx={{
+                    gridColumn: { xs: '1 / -1', md: '1 / 9' },
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="overline"
+                      sx={{
+                        letterSpacing: '0.26em',
+                        fontWeight: 700,
+                        color: 'var(--accent-strong)',
+                      }}
+                    >
+                      FSV Hub
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'var(--muted)',
+                        letterSpacing: '0.16em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Fachschaft Informatik
+                    </Typography>
+                  </Box>
                   <Typography
                     variant="overline"
                     sx={{
                       letterSpacing: '0.26em',
+                      color: 'var(--accent-2)',
                       fontWeight: 700,
-                      color: 'var(--accent-strong)',
                     }}
                   >
-                    FSV Hub
+                    Willkommen
                   </Typography>
                   <Typography
-                    variant="caption"
+                    variant="h1"
                     sx={{
-                      color: 'var(--muted)',
-                      letterSpacing: '0.16em',
-                      textTransform: 'uppercase',
+                      fontFamily: '"Space Grotesk", sans-serif',
+                      fontWeight: 700,
+                      lineHeight: 1.05,
+                      fontSize: { xs: '2rem', md: '3rem' },
+                      color: 'var(--ink)',
                     }}
                   >
-                    Fachschaft Informatik
+                    Willkommen bei der Fachschaft Informatik.
                   </Typography>
-                </Box>
-                <Typography
-                  variant="overline"
-                  sx={{
-                    letterSpacing: '0.26em',
-                    color: 'var(--accent-2)',
-                    fontWeight: 700,
-                  }}
-                >
-                  Willkommen
-                </Typography>
-                <Typography
-                  variant="h1"
-                  sx={{
-                    fontFamily: '"Space Grotesk", sans-serif',
-                    fontWeight: 700,
-                    lineHeight: 1.05,
-                    fontSize: { xs: '2rem', md: '3rem' },
-                    color: '#f8fbf7',
-                  }}
-                >
-                  Willkommen bei der Fachschaft Informatik.
-                </Typography>
-                <Typography variant="body1" sx={{ color: '#dfe7e1', maxWidth: 560 }}>
-                  Dein Hub für Termine, Unterstützung und Austausch im Studium.
-                </Typography>
-                <Stack
-                  direction={{ xs: 'column', sm: 'row' }}
-                  spacing={1}
-                  alignItems={{ xs: 'stretch', sm: 'center' }}
-                >
-                  <Button
-                    component="a"
-                    href="#events"
-                    variant="contained"
-                    sx={{
-                      borderRadius: 999,
-                      textTransform: 'none',
-                      bgcolor: 'var(--accent-strong)',
-                      color: isDark ? '#0b1511' : '#fff',
-                      boxShadow: `0 14px 30px ${alpha(theme.palette.success.main, 0.25)}`,
-                      '&:hover': { bgcolor: isDark ? '#4be5ab' : '#0f5e3d' },
-                    }}
+                  <Typography variant="body1" sx={{ color: 'var(--muted)', maxWidth: 560 }}>
+                    Dein Hub für Termine, Unterstützung und Austausch im Studium.
+                  </Typography>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={1}
+                    alignItems={{ xs: 'stretch', sm: 'center' }}
                   >
-                    Zu den Events
-                  </Button>
-                  <Button
-                    component={RouterLink}
-                    to="/forum"
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 999,
-                      textTransform: 'none',
-                      borderColor: 'rgba(255, 255, 255, 0.4)',
-                      color: '#f6faf6',
-                      '&:hover': { borderColor: 'var(--accent-strong)', bgcolor: 'rgba(255, 255, 255, 0.08)' },
-                    }}
-                  >
-                    Zum Forum
-                  </Button>
+                    <Button
+                      component="a"
+                      href="#events"
+                      variant="contained"
+                      sx={{
+                        borderRadius: 999,
+                        textTransform: 'none',
+                        bgcolor: 'var(--accent-strong)',
+                        color: theme.palette.primary.contrastText,
+                        boxShadow: `0 14px 30px ${alpha(theme.palette.success.main, 0.25)}`,
+                        '&:hover': { bgcolor: isDark ? theme.palette.primary.light : theme.palette.primary.dark },
+                      }}
+                    >
+                      Zu den Events
+                    </Button>
+                    <Button
+                      component={RouterLink}
+                      to="/forum"
+                      variant="outlined"
+                      sx={{
+                        borderRadius: 999,
+                        textTransform: 'none',
+                        borderColor: alpha(theme.palette.text.primary, 0.4),
+                        color: theme.palette.text.primary,
+                        '&:hover': { borderColor: 'var(--accent-strong)', bgcolor: alpha(theme.palette.text.primary, 0.08) },
+                      }}
+                    >
+                      Zum Forum
+                    </Button>
+                  </Stack>
                 </Stack>
-              </Stack>
 
-              {heroEvent && (
-                <Box
-                  sx={{
-                    position: { xs: 'relative', md: 'absolute' },
-                    right: { md: 28 },
-                    bottom: { md: 24 },
-                    mt: { xs: 2, md: 0 },
-                    mx: { xs: 2.5, md: 0 },
-                    width: { xs: 'auto', sm: 320 },
-                  }}
-                >
-                  <Paper
-                    elevation={0}
+                {heroEvent && (
+                  <Box
                     sx={{
-                      ...glassCardSx,
-                      p: 1.6,
-                      borderRadius: 4,
-                      transform: { md: 'rotate(-1deg)' },
-                      animation: 'eventFloat 6s ease-in-out infinite alternate',
+                      gridColumn: { xs: '1 / -1', md: '9 / -1' },
+                      justifySelf: { md: 'end' },
+                      alignSelf: { md: 'end' },
+                      mt: { xs: 2, md: 0 },
+                      width: '100%',
                     }}
                   >
-                    <Stack spacing={1}>
-                      <Typography
-                        variant="overline"
-                        sx={{ letterSpacing: '0.22em', color: 'var(--accent-strong)', fontWeight: 700 }}
-                      >
-                        Nächstes Event
-                      </Typography>
-                      <Typography variant="h6" fontWeight={700}>
-                        {heroEvent.title}
-                      </Typography>
-                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                        <Typography variant="caption" sx={{ color: 'var(--muted)' }}>
-                          {heroEventDate ? formatShortDate(heroEventDate) : heroEvent.date}
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        ...glassCardSx,
+                        p: 1.6,
+                        borderRadius: 4,
+                        transform: { md: 'rotate(-1deg)' },
+                        animation: 'eventFloat 6s ease-in-out infinite alternate',
+                      }}
+                    >
+                      <Stack spacing={1}>
+                        <Typography
+                          variant="overline"
+                          sx={{ letterSpacing: '0.22em', color: 'var(--accent-strong)', fontWeight: 700 }}
+                        >
+                          Nächstes Event
                         </Typography>
-                        {heroEvent.time && (
+                        <Typography variant="h6" fontWeight={700}>
+                          {heroEvent.title}
+                        </Typography>
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                           <Typography variant="caption" sx={{ color: 'var(--muted)' }}>
-                            {heroEvent.time} Uhr
+                            {heroEventDate ? formatShortDate(heroEventDate) : heroEvent.date}
                           </Typography>
-                        )}
-                        {heroEvent.location && (
-                          <Stack direction="row" spacing={0.3} alignItems="center">
-                            <LocationOnRounded sx={{ fontSize: 14, color: 'var(--muted)' }} />
+                          {heroEvent.time && (
                             <Typography variant="caption" sx={{ color: 'var(--muted)' }}>
-                              {heroEvent.location}
+                              {heroEvent.time} Uhr
                             </Typography>
-                          </Stack>
-                        )}
+                          )}
+                          {heroEvent.location && (
+                            <Stack direction="row" spacing={0.3} alignItems="center">
+                              <LocationOnRounded sx={{ fontSize: 14, color: 'var(--muted)' }} />
+                              <Typography variant="caption" sx={{ color: 'var(--muted)' }}>
+                                {heroEvent.location}
+                              </Typography>
+                            </Stack>
+                          )}
+                        </Stack>
+                        <Button
+                          component="a"
+                          href="#events"
+                          size="small"
+                          sx={{
+                            alignSelf: 'flex-start',
+                            textTransform: 'none',
+                            color: 'var(--accent-strong)',
+                            px: 0,
+                          }}
+                        >
+                          Zum Kalender
+                        </Button>
                       </Stack>
-                      <Button
-                        component="a"
-                        href="#events"
-                        size="small"
-                        sx={{
-                          alignSelf: 'flex-start',
-                          textTransform: 'none',
-                          color: 'var(--accent-strong)',
-                          px: 0,
-                        }}
-                      >
-                        Zum Kalender
-                      </Button>
-                    </Stack>
-                  </Paper>
-                </Box>
-              )}
+                    </Paper>
+                  </Box>
+                )}
+              </Box>
             </Paper>
           </Box>
 
@@ -736,6 +786,7 @@ const NewsFeedPage: React.FC = () => {
             data-reveal="true"
             sx={{
               ...sectionShellSx,
+              gridColumn: '1 / -1',
               background: sectionGradients.newsroom,
             }}
           >
@@ -761,7 +812,7 @@ const NewsFeedPage: React.FC = () => {
               <Box
                 sx={{
                   display: 'grid',
-                  gap: { xs: 2, md: 3 },
+                  gap: 'var(--grid-gap)',
                   gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' },
                   alignItems: 'stretch',
                 }}
@@ -782,22 +833,30 @@ const NewsFeedPage: React.FC = () => {
                         overflow: 'hidden',
                         textDecoration: 'none',
                         color: 'inherit',
-                        backgroundImage: leadNews.image
-                          ? `url(${leadNews.image})`
-                          : 'linear-gradient(135deg, rgba(12, 18, 15, 0.96), rgba(8, 13, 11, 0.98))',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
+                        background: 'none',
+                        backgroundColor: imageOverlayBase,
                         height: '100%',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          inset: -1,
+                          backgroundImage: leadNews.image
+                            ? `linear-gradient(180deg, ${alpha(imageOverlayBase, 0.6)} 0%, ${alpha(
+                                imageOverlayBase,
+                                1
+                              )} 100%), url(${leadNews.image})`
+                            : `linear-gradient(135deg, ${alpha(imageOverlayBase, 0.6)}, ${alpha(
+                                imageOverlayBase,
+                                0.98
+                              )})`,
+                          backgroundSize: leadNews.image ? '100% 100%, cover' : 'cover',
+                          backgroundPosition: 'center',
+                          backgroundRepeat: 'no-repeat',
+                          zIndex: 0,
+                          pointerEvents: 'none',
+                        },
                       }}
                     >
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          inset: 0,
-                          background:
-                            'linear-gradient(130deg, rgba(8, 12, 10, 0.88), rgba(8, 12, 10, 0.35))',
-                        }}
-                      />
                       <Stack
                         spacing={0.8}
                         sx={{
@@ -808,19 +867,22 @@ const NewsFeedPage: React.FC = () => {
                           justifyContent: 'flex-end',
                         }}
                       >
-                        <Typography variant="overline" sx={{ letterSpacing: '0.18em', color: '#e3f2ea' }}>
+                        <Typography
+                          variant="overline"
+                          sx={{ letterSpacing: '0.18em', color: alpha(theme.palette.common.white, 0.85) }}
+                        >
                           {formatNewsDate(leadNews.date)}
                         </Typography>
                         <Typography
                           variant="h4"
-                          sx={{ fontWeight: 700, color: '#f8fbf7', lineHeight: 1.15 }}
+                          sx={{ fontWeight: 700, color: theme.palette.common.white, lineHeight: 1.15 }}
                         >
                           {leadNews.title}
                         </Typography>
                         <Typography
                           variant="body2"
                           sx={{
-                            color: '#d9e3db',
+                            color: alpha(theme.palette.common.white, 0.75),
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical',
@@ -854,7 +916,7 @@ const NewsFeedPage: React.FC = () => {
                     gridColumn: { xs: '1 / -1', md: 'span 5' },
                     p: { xs: 1.8, md: 2.2 },
                     borderRadius: 4,
-                    background: isDark ? 'rgba(12, 18, 16, 0.72)' : 'rgba(255, 255, 255, 0.9)',
+                    background: alpha(theme.palette.background.paper, isDark ? 0.72 : 0.9),
                   }}
                 >
                   <Stack spacing={1.2}>
@@ -878,7 +940,7 @@ const NewsFeedPage: React.FC = () => {
                             p: 1,
                             borderRadius: 2.5,
                             border: '1px solid var(--card-border)',
-                            background: isDark ? 'rgba(10, 16, 14, 0.7)' : 'rgba(255, 255, 255, 0.85)',
+                            background: alpha(theme.palette.background.paper, isDark ? 0.7 : 0.85),
                             transition: 'border-color 150ms ease, transform 150ms ease',
                             '&:hover': {
                               borderColor: 'var(--accent-strong)',
@@ -952,13 +1014,13 @@ const NewsFeedPage: React.FC = () => {
                       pb: 1.2,
                       px: 0.4,
                       scrollbarWidth: 'thin',
-                      scrollbarColor: 'rgba(0,0,0,0.2) transparent',
+                      scrollbarColor: `${alpha(theme.palette.text.primary, 0.2)} transparent`,
                       '& > *': { scrollSnapAlign: 'start', scrollSnapStop: 'always' },
                       '&::-webkit-scrollbar': {
                         height: 6,
                       },
                       '&::-webkit-scrollbar-thumb': {
-                        background: 'rgba(0,0,0,0.2)',
+                        background: alpha(theme.palette.text.primary, 0.2),
                         borderRadius: 999,
                       },
                       '&::-webkit-scrollbar-track': {
@@ -978,6 +1040,13 @@ const NewsFeedPage: React.FC = () => {
                           overflow: 'hidden',
                           textDecoration: 'none',
                           color: 'inherit',
+                          borderColor: 'var(--card-border)',
+                          boxShadow: 'none',
+                          '&:hover': {
+                            transform: 'translateY(-3px)',
+                            borderColor: 'var(--accent-strong)',
+                            boxShadow: 'none',
+                          },
                         }}
                       >
                         <Box
@@ -985,7 +1054,15 @@ const NewsFeedPage: React.FC = () => {
                             height: 130,
                             backgroundImage: item.image
                               ? `url(${item.image})`
-                              : 'linear-gradient(135deg, rgba(12, 18, 15, 0.96), rgba(8, 13, 11, 0.98))',
+                              : isDark
+                              ? `linear-gradient(135deg, ${alpha(theme.palette.background.default, 0.96)}, ${alpha(
+                                  theme.palette.background.default,
+                                  0.98
+                                )})`
+                              : `linear-gradient(135deg, ${alpha(
+                                  theme.palette.primary.light,
+                                  0.18
+                                )}, ${alpha(theme.palette.background.paper, 0.98)})`,
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
                           }}
@@ -1024,6 +1101,7 @@ const NewsFeedPage: React.FC = () => {
             data-reveal="true"
             sx={{
               ...sectionShellSx,
+              gridColumn: '1 / -1',
               scrollMarginTop: { xs: 80, md: 100 },
               background: sectionGradients.agenda,
             }}
@@ -1051,8 +1129,8 @@ const NewsFeedPage: React.FC = () => {
                     borderRadius: 999,
                     textTransform: 'none',
                     bgcolor: 'var(--accent-strong)',
-                    color: isDark ? '#0b1511' : '#fff',
-                    '&:hover': { bgcolor: isDark ? '#4be5ab' : '#0f5e3d' },
+                    color: theme.palette.primary.contrastText,
+                    '&:hover': { bgcolor: isDark ? theme.palette.primary.light : theme.palette.primary.dark },
                   }}
                 >
                   Event eintragen
@@ -1062,7 +1140,7 @@ const NewsFeedPage: React.FC = () => {
               <Box
                 sx={{
                   display: 'grid',
-                  gap: { xs: 2, md: 3 },
+                  gap: 'var(--grid-gap)',
                   gridTemplateColumns: { xs: '1fr', lg: '7fr 5fr' },
                   alignItems: 'start',
                 }}
@@ -1134,10 +1212,10 @@ const NewsFeedPage: React.FC = () => {
                                   background: isActive
                                     ? 'var(--accent-soft)'
                                     : isDark
-                                    ? 'rgba(12, 18, 24, 0.72)'
-                                    : 'rgba(255, 255, 255, 0.94)',
+                                    ? alpha(theme.palette.background.paper, 0.72)
+                                    : alpha(theme.palette.background.paper, 0.94),
                                   position: 'relative',
-                                  color: isDark ? '#f6f9f6' : 'inherit',
+                                  color: theme.palette.text.primary,
                                 }}
                               >
                                 <Box
@@ -1206,7 +1284,7 @@ const NewsFeedPage: React.FC = () => {
                     mt: { xs: 2.6, md: 3.2 },
                     p: { xs: 1.6, md: 2 },
                     borderRadius: 4,
-                    background: isDark ? 'rgba(16, 20, 18, 0.92)' : '#ffffff',
+                    background: alpha(theme.palette.background.paper, 0.92),
                   }}
                 >
                   <Stack spacing={1}>
@@ -1313,6 +1391,7 @@ const NewsFeedPage: React.FC = () => {
             data-reveal="true"
             sx={{
               ...sectionShellSx,
+              gridColumn: '1 / -1',
               background: sectionGradients.forum,
             }}
           >
@@ -1339,7 +1418,7 @@ const NewsFeedPage: React.FC = () => {
                 <Box
                   sx={{
                     display: 'grid',
-                    gap: { xs: 2, md: 3 },
+                    gap: 'var(--grid-gap)',
                     gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' },
                   }}
                 >
@@ -1350,22 +1429,43 @@ const NewsFeedPage: React.FC = () => {
                     sx={{
                       ...glassCardSx,
                       gridColumn: { xs: '1 / -1', md: 'span 7' },
-                      p: { xs: 2, md: 3 },
+                      p: { xs: 1.6, md: 3 },
                       borderRadius: 5,
                       textDecoration: 'none',
                       color: 'inherit',
                       background: isDark
-                        ? 'linear-gradient(135deg, rgba(17, 24, 30, 0.92), rgba(10, 16, 20, 0.9))'
-                        : 'linear-gradient(135deg, rgba(233, 243, 255, 0.95), rgba(255, 255, 255, 0.95))',
+                        ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.92)}, ${alpha(
+                            theme.palette.background.default,
+                            0.9
+                          )})`
+                        : `linear-gradient(135deg, ${alpha(theme.palette.info.light, 0.2)}, ${alpha(
+                            theme.palette.background.paper,
+                            0.98
+                          )})`,
                     }}
                   >
-                    <Stack spacing={1.4}>
-                      <Stack direction="row" spacing={1.2} alignItems="center">
-                        <Avatar sx={{ width: 42, height: 42, bgcolor: 'var(--accent-soft)', color: 'var(--accent-strong)' }}>
+                    <Stack spacing={{ xs: 1, md: 1.4 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1.2}
+                        alignItems="center"
+                        sx={{ flexWrap: { xs: 'wrap', sm: 'nowrap' }, rowGap: { xs: 0.4, sm: 0 } }}
+                      >
+                        <Avatar
+                          sx={{
+                            width: { xs: 36, md: 42 },
+                            height: { xs: 36, md: 42 },
+                            bgcolor: 'var(--accent-soft)',
+                            color: 'var(--accent-strong)',
+                          }}
+                        >
                           {forumHighlight.author?.charAt(0)?.toUpperCase() || '?'}
                         </Avatar>
                         <Box>
-                          <Typography variant="overline" sx={{ letterSpacing: '0.22em', color: 'var(--accent-strong)' }}>
+                          <Typography
+                            variant="overline"
+                            sx={{ letterSpacing: { xs: '0.16em', md: '0.22em' }, color: 'var(--accent-strong)' }}
+                          >
                             Top Diskussion
                           </Typography>
                           <Typography variant="caption" sx={{ color: 'var(--muted)' }}>
@@ -1373,13 +1473,20 @@ const NewsFeedPage: React.FC = () => {
                           </Typography>
                         </Box>
                       </Stack>
-                      <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                      <Typography
+                        variant="h4"
+                        sx={{
+                          fontWeight: 700,
+                          lineHeight: 1.2,
+                          fontSize: { xs: '1.35rem', sm: '1.6rem', md: '2rem' },
+                        }}
+                      >
                         {forumHighlight.title}
                       </Typography>
                       <Typography variant="body2" sx={{ color: 'var(--muted)' }}>
                         {forumHighlight.replies} Antworten
                       </Typography>
-                      <Stack direction="row" spacing={0.4} alignItems="center">
+                      <Stack direction="row" spacing={0.4} alignItems="center" sx={{ flexWrap: 'wrap', rowGap: 0.2 }}>
                         <Typography variant="caption" sx={{ color: 'var(--accent-strong)', fontWeight: 600 }}>
                           Zum Beitrag
                         </Typography>
@@ -1388,7 +1495,7 @@ const NewsFeedPage: React.FC = () => {
                     </Stack>
                   </Paper>
 
-                  <Stack spacing={1.4} sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' } }}>
+                  <Stack spacing={{ xs: 1, md: 1.4 }} sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' } }}>
                     {forumRest.length ? (
                       forumRest.map((post) => (
                         <Box
@@ -1397,7 +1504,7 @@ const NewsFeedPage: React.FC = () => {
                           to="/forum"
                           sx={{
                             ...glassCardSx,
-                            p: 1.6,
+                            p: { xs: 1.2, md: 1.6 },
                             borderRadius: 3,
                             textDecoration: 'none',
                             color: 'inherit',
@@ -1406,11 +1513,21 @@ const NewsFeedPage: React.FC = () => {
                           }}
                         >
                           <Stack direction="row" spacing={1} alignItems="center">
-                            <Avatar sx={{ width: 34, height: 34, fontSize: '0.8rem' }}>
+                            <Avatar sx={{ width: { xs: 30, md: 34 }, height: { xs: 30, md: 34 }, fontSize: '0.8rem' }}>
                               {post.author?.charAt(0)?.toUpperCase() || '?'}
                             </Avatar>
                             <Box sx={{ minWidth: 0 }}>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 600 }} noWrap>
+                              <Typography
+                                variant="subtitle1"
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: { xs: 2, md: 1 },
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                }}
+                              >
                                 {post.title}
                               </Typography>
                               <Typography variant="caption" sx={{ color: 'var(--muted)' }}>
@@ -1448,7 +1565,7 @@ const NewsFeedPage: React.FC = () => {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            background: isDark ? '#0f1512' : '#fff',
+            background: theme.palette.background.paper,
           },
         }}
       >
