@@ -79,15 +79,7 @@ const navItems = [
   { label: 'Team', href: '/team', icon: <PeopleRounded />, isRoute: true },
 ];
 
-type SidebarProps = {
-  user?: User | null;
-  children: React.ReactNode;
-  title?: string;
-  headerActions?: React.ReactNode;
-  fullBleed?: boolean;
-};
-
-const Sidebar = ({ user, children, title = 'Dashboard', fullBleed = false }: SidebarProps) => {
+const Sidebar = ({ user, children, title = 'Dashboard' }: { user?: User | null; children: React.ReactNode; title?: string; headerActions?: React.ReactNode }) => {
   const { mode, toggleMode } = useThemeMode();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
@@ -305,29 +297,11 @@ const Sidebar = ({ user, children, title = 'Dashboard', fullBleed = false }: Sid
         {drawerContent}
       </Drawer>
 
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: fullBleed ? 0 : 3,
-          width: '100%',
-          '--page-max-width': { xs: '100%', md: '1320px' },
-          '--page-gutter': { xs: theme.spacing(2), sm: theme.spacing(3), md: theme.spacing(4) },
-          '--grid-columns': 12,
-          '--grid-gap': { xs: theme.spacing(2), md: theme.spacing(3) },
-          '--section-gap': { xs: theme.spacing(3), md: theme.spacing(4) },
-        }}
-      >
+      <Box component="main" sx={{ flexGrow: 1, p: 3, width: '100%' }}>
         <Toolbar />
-        {fullBleed ? (
-          <Box sx={{ width: '100%' }}>
+        <Container maxWidth="xl" disableGutters>
             {children}
-          </Box>
-        ) : (
-          <Container maxWidth="xl" disableGutters>
-            {children}
-          </Container>
-        )}
+        </Container>
       </Box>
     </Box>
   );
