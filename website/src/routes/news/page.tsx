@@ -42,7 +42,7 @@ export const newsDaten: NewsItem[] = [
     content: "Lorem ipsum dolor sit amet...",
     links: ["https://conference2025.com", "https://more-info.com"],
     tags: ["Events", "Jobs"],
-    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 //  1 Tag alt → wird NEU sein
+    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 
   },
   {
     id: 2,
@@ -53,7 +53,7 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: ["https://conference2025.com"],
     tags: ["Prüfungen", "Studium"],
-    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 //  1 Tag alt → wird NEU sein
+    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 
   },
   {
     id: 3,
@@ -64,7 +64,7 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: [],
     tags: ["Events", "Studium"],
-    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 //  20 Tage → NICHT NEU
+    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 
   },
   {
     id: 4,
@@ -75,7 +75,7 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: [],
     tags: ["Studium"],
-    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 //  20 Tage → NICHT NEU
+    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 
   },
   {
     id: 5,
@@ -86,7 +86,7 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: [],
     tags: ["Events", "Studium"],
-    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 //  20 Tage → NICHT NEU
+    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 
   },
 ];
 
@@ -204,7 +204,6 @@ function ReviewCard({ id, title, date, image, summary, isLiked, tags, isNew, isA
           )}
         </Box>
         
-        {/* FIX: Lösch-Button ist jetzt aktiv und nur für Admins sichtbar */}
         {isAdmin && (
           <Button
             variant="text"
@@ -293,7 +292,6 @@ export default function NewsLayout() {
   const handleDelete = (id: number) => {
     const updated = allNews.filter(item => item.id !== id);
     setAllNews(updated);
-    // nur Custom-News löschen, Hardcoded bleiben unangetastet
     const stored = JSON.parse(localStorage.getItem("custom-news") || "[]");
     const filteredStored = stored.filter((item: any) => item.id !== id);
     localStorage.setItem("custom-news", JSON.stringify(filteredStored));
@@ -303,20 +301,24 @@ export default function NewsLayout() {
     const custom = JSON.parse(localStorage.getItem("custom-news") || "[]");
     const merged = [...newsDaten, ...custom];
     const now = Date.now();
+    
     const updatedNews = merged.map(item => {
-      // Falls kein createdAt existiert → alten Beiträgen ein Datum geben
-      const created = item.createdAt ?? now;
+      const created = item.createdAt ?? now; // Fallback, falls kein createdAt
       const ageInDays = (now - created) / (1000 * 60 * 60 * 24);
       return {
         ...item,
-        isNew: ageInDays <= 7,  // NEU nur 7 Tage sichtbar
+        isNew: ageInDays <= 7,
       };
     });
+
     updatedNews.sort((a, b) => {
-      if (a.isNew && !b.isNew) return -1;
-      if (!a.isNew && b.isNew) return 1;
-      return b.id - a.id;
+    
+      const timeA = a.createdAt || new Date(a.date).getTime();
+      const timeB = b.createdAt || new Date(b.date).getTime();
+
+      return timeB - timeA;
     });
+
     setAllNews(updatedNews);
   }, []);
 
@@ -345,7 +347,6 @@ export default function NewsLayout() {
                 setSelectedTag={setSelectedTag}
               />
 
-              {/* FIX: Erstellen-Button nur für Admins */}
               {isAdmin && (
                 <Button
                   component={Link}
