@@ -31,6 +31,7 @@ export type NewsItem = {
   pdfName?: string | null;
   createdAt?: number; 
 };
+
 export const newsDaten: NewsItem[] = [
   {
     id: 1,
@@ -41,7 +42,7 @@ export const newsDaten: NewsItem[] = [
     content: "Lorem ipsum dolor sit amet...",
     links: ["https://conference2025.com", "https://more-info.com"],
     tags: ["Events", "Jobs"],
-    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 // 🟢 1 Tag alt → wird NEU sein
+    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 //  1 Tag alt → wird NEU sein
   },
   {
     id: 2,
@@ -52,7 +53,7 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: ["https://conference2025.com"],
     tags: ["Prüfungen", "Studium"],
-    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 // 🟢 1 Tag alt → wird NEU sein
+    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 //  1 Tag alt → wird NEU sein
   },
   {
     id: 3,
@@ -63,7 +64,7 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: [],
     tags: ["Events", "Studium"],
-    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 // 🔴 20 Tage → NICHT NEU
+    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 //  20 Tage → NICHT NEU
   },
   {
     id: 4,
@@ -74,7 +75,7 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: [],
     tags: ["Studium"],
-    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 // 🔴 20 Tage → NICHT NEU
+    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 //  20 Tage → NICHT NEU
   },
   {
     id: 5,
@@ -85,9 +86,10 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: [],
     tags: ["Events", "Studium"],
-    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 // 🔴 20 Tage → NICHT NEU
+    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 //  20 Tage → NICHT NEU
   },
 ];
+
 // --- COMPONENTS ---
 function CustomizedInputBase() {
   return (
@@ -107,6 +109,7 @@ function CustomizedInputBase() {
     </Paper>
   );
 }
+
 function ClickableChips({ selectedTag, setSelectedTag }: { selectedTag: string, setSelectedTag: (tag: string) => void}) {
   const tags = ["Alle", "Events", "Studium", "Prüfungen", "Jobs"];
   return (
@@ -123,14 +126,15 @@ function ClickableChips({ selectedTag, setSelectedTag }: { selectedTag: string, 
     </Stack>
   );
 }
+
 type CardProps = NewsItem & {
   isLiked: boolean;
   onToggleLike: (id: number) => void;
   onDelete: (id: number) => void;
-  isAdmin:boolean;
+  isAdmin: boolean;
 };
+
 function ReviewCard({ id, title, date, image, summary, isLiked, tags, isNew, isAdmin, onToggleLike, onDelete }: CardProps) {
-  //const { user } = useAuth();  
   const navigate = useNavigate();
   return (
     <Card sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 3 }}>
@@ -199,8 +203,9 @@ function ReviewCard({ id, title, date, image, summary, isLiked, tags, isNew, isA
             />
           )}
         </Box>
-        {/* 🔥 Lösch-Button NUR für Admins */}
-        {/* {isAdmin && ( */}
+        
+        {/* FIX: Lösch-Button ist jetzt aktiv und nur für Admins sichtbar */}
+        {isAdmin && (
           <Button
             variant="text"
             color="error"
@@ -210,15 +215,18 @@ function ReviewCard({ id, title, date, image, summary, isLiked, tags, isNew, isA
           >
             Löschen
           </Button>
-          {/* )} */}
+        )}
+        
       </CardActions>
     </Card>
   );
 }
+
 type FavoriteListProps = {
   likedIds: number[];
   allNews: NewsItem[];
 };
+
 function FavoriteList({ likedIds, allNews }: FavoriteListProps) {
   const likedItems = allNews.filter((item) => likedIds.includes(item.id));
   return (
@@ -257,13 +265,13 @@ function FavoriteList({ likedIds, allNews }: FavoriteListProps) {
   );
 }
 
-
 export default function NewsLayout() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [selectedTag, setSelectedTag] = useState<string>("Alle");
   const [likedNewsIds, setLikedNewsIds] = useState<number[]>([]);
   const [allNews, setAllNews] = useState<NewsItem[]>([]);
+  
   // Likes laden
   useEffect(() => {
     const savedLikes = localStorage.getItem('likedNews');
@@ -271,6 +279,7 @@ export default function NewsLayout() {
       setLikedNewsIds(JSON.parse(savedLikes));
     }
   }, []);
+
   const handleToggleLike = (id: number) => {
     setLikedNewsIds((prev) => {
       const updatedLikes = prev.includes(id)
@@ -280,40 +289,40 @@ export default function NewsLayout() {
       return updatedLikes;
     });
   };
+
   const handleDelete = (id: number) => {
-  const updated = allNews.filter(item => item.id !== id);
-  setAllNews(updated);
-  // nur Custom-News löschen, Hardcoded bleiben unangetastet
-  const stored = JSON.parse(localStorage.getItem("custom-news") || "[]");
-  const filteredStored = stored.filter((item: any) => item.id !== id);
-  localStorage.setItem("custom-news", JSON.stringify(filteredStored));
-};
- 
+    const updated = allNews.filter(item => item.id !== id);
+    setAllNews(updated);
+    // nur Custom-News löschen, Hardcoded bleiben unangetastet
+    const stored = JSON.parse(localStorage.getItem("custom-news") || "[]");
+    const filteredStored = stored.filter((item: any) => item.id !== id);
+    localStorage.setItem("custom-news", JSON.stringify(filteredStored));
+  };
  
   useEffect(() => {
-  const custom = JSON.parse(localStorage.getItem("custom-news") || "[]");
-  const merged = [...newsDaten, ...custom];
-  const now = Date.now();
-  const updatedNews = merged.map(item => {
-    // Falls kein createdAt existiert → alten Beiträgen ein Datum geben
-    const created = item.createdAt ?? now;
-    const ageInDays = (now - created) / (1000 * 60 * 60 * 24);
-    return {
-      ...item,
-      isNew: ageInDays <= 7,  // NEU nur 7 Tage sichtbar
-    };
-  });
-  updatedNews.sort((a, b) => {
-    if (a.isNew && !b.isNew) return -1;
-    if (!a.isNew && b.isNew) return 1;
-    return b.id - a.id;
-  });
-  setAllNews(updatedNews);
-}, []);
+    const custom = JSON.parse(localStorage.getItem("custom-news") || "[]");
+    const merged = [...newsDaten, ...custom];
+    const now = Date.now();
+    const updatedNews = merged.map(item => {
+      // Falls kein createdAt existiert → alten Beiträgen ein Datum geben
+      const created = item.createdAt ?? now;
+      const ageInDays = (now - created) / (1000 * 60 * 60 * 24);
+      return {
+        ...item,
+        isNew: ageInDays <= 7,  // NEU nur 7 Tage sichtbar
+      };
+    });
+    updatedNews.sort((a, b) => {
+      if (a.isNew && !b.isNew) return -1;
+      if (!a.isNew && b.isNew) return 1;
+      return b.id - a.id;
+    });
+    setAllNews(updatedNews);
+  }, []);
+
   const filteredNews = selectedTag === "Alle"
     ? allNews
     : allNews.filter((n) => n.tags?.includes(selectedTag));
-
 
   return (
     <Sidebar user={user} title="Beiträge">
@@ -321,45 +330,46 @@ export default function NewsLayout() {
         {/* Hauptinhalt */}
         <Box sx={{ flex: 1, maxWidth: "1200px", mr: { lg: 4 }, mb: 4 }}>
           <Container sx={{ pt: 4, pb: 2 }}>
-           <Box
-  sx={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    mb: 2,
-    flexWrap: "wrap",
-    gap: 2,
-  }}
->
-  <ClickableChips
-    selectedTag={selectedTag}
-    setSelectedTag={setSelectedTag}
-  />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 2,
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
+              <ClickableChips
+                selectedTag={selectedTag}
+                setSelectedTag={setSelectedTag}
+              />
 
-  <Button
-    component={Link}
-    to="/news/create"
-    variant="contained"
-    color="success"
-    startIcon={<AddIcon />}
-    sx={{
-      borderRadius: 2,
-      px: 2.5,
-      py: 1,
-      fontWeight: 600,
-      textTransform: "none",
-      whiteSpace: "nowrap",
-    }}
-  >
-    Beitrag erstellen
-  </Button>
-</Box>
+              {/* FIX: Erstellen-Button nur für Admins */}
+              {isAdmin && (
+                <Button
+                  component={Link}
+                  to="/news/create"
+                  variant="contained"
+                  color="success"
+                  startIcon={<AddIcon />}
+                  sx={{
+                    borderRadius: 2,
+                    px: 2.5,
+                    py: 1,
+                    fontWeight: 600,
+                    textTransform: "none",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Beitrag erstellen
+                </Button>
+              )}
+            </Box>
 
-{/* 🔹 ZEILE 2: Suche volle Breite */}
-<Box sx={{ mb: 6 }}>
-  <CustomizedInputBase />
-</Box>
-
+            <Box sx={{ mb: 6 }}>
+              <CustomizedInputBase />
+            </Box>
 
             <Grid container spacing={3}>
               {filteredNews.map((item) => (
@@ -376,6 +386,7 @@ export default function NewsLayout() {
             </Grid>
           </Container>
         </Box>
+        
         {/* Sidebar Rechts (Favoriten) */}
         <Box
           sx={{
