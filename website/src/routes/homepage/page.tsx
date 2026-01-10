@@ -291,11 +291,16 @@ const NewsFeedPage: React.FC = () => {
 
   return (
     <Sidebar user={user} title="Startseite" fullBleed>
-      {/* 1. Page Wrapper (Styles from Theme) */}
-      <Box sx={custom.pageWrapper}>
+
+      <Box sx={{
+        ...custom.pageWrapper,
+        backgroundColor: 'transparent',
+        boxShadow: 'none',
+        borderRadius: 0,
+        border: 'none',
+      }}>
         <Box sx={custom.gridContainer}>
           
-          {/* 2. Hero Section */}
           <Box
             component="section"
             sx={{
@@ -331,7 +336,7 @@ const NewsFeedPage: React.FC = () => {
                   zIndex: 1,
                   maxWidth: { xs: '100%', md: 'calc(var(--page-max-width) + (var(--grid-gap) * 12))' },
                   mx: 'auto',
-                  px: 'var(--page-gutter)',
+                  px: { xs: 8, md: 12 },
                   py: { xs: 3, md: 4 },
                   display: 'grid',
                   gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' },
@@ -398,7 +403,7 @@ const NewsFeedPage: React.FC = () => {
                   <Box sx={{
                     gridColumn: { xs: '1 / -1', md: '9 / -1' },
                     justifySelf: { md: 'end' },
-                    alignSelf: { md: 'flex-end' }, // LAYOUT FIX: Karte klebt unten rechts
+                    alignSelf: { md: 'flex-end' },
                     mt: { xs: 2, md: 0 },
                     width: '100%'
                   }}>
