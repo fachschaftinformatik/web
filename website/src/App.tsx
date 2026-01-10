@@ -19,6 +19,7 @@ import MediaPage from '@routes/media/page';
 import TeamPage from '@routes/team/page';
 import NewsPage from '@routes/news/page';
 import NewsDetail from '@routes/news/details';
+import CreateNewsPage from '@routes/news/create'; 
 import ExamsPage from '@routes/exams/page';
 import ExamDetailsPage from '@routes/exams/extensions';
 import ForumPage from '@routes/forum/page';
@@ -50,11 +51,11 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegistrationPage />} />
             </Route>
-
             <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/exams" element={<ExamsPage />} />
                 <Route path="/rekos/klausuren/modul" element={<ExamDetailsPage />} />
+                <Route path="/news/create" element={<CreateNewsPage />} />
             </Route>
 
             <Route path="/forum" element={<ForumPage />} />
