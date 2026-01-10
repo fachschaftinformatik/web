@@ -291,7 +291,6 @@ const NewsFeedPage: React.FC = () => {
 
   return (
     <Sidebar user={user} title="Startseite" fullBleed>
-
       <Box sx={{
         ...custom.pageWrapper,
         backgroundColor: 'transparent',
@@ -301,10 +300,12 @@ const NewsFeedPage: React.FC = () => {
       }}>
         <Box sx={custom.gridContainer}>
           
+         
           <Box
             component="section"
             sx={{
               gridColumn: '1 / -1',
+              mb: { xs: 6, md: 10 } 
             }}
           >
             <Paper
@@ -340,8 +341,8 @@ const NewsFeedPage: React.FC = () => {
                   py: { xs: 3, md: 4 },
                   display: 'grid',
                   gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' },
-                  columnGap: 'var(--grid-gap)',
-                  rowGap: 'var(--grid-gap)',
+                  columnGap: { xs: 2, md: 4 }, 
+                  rowGap: { xs: 3, md: 4 },   
                 }}
               >
                 <Stack spacing={1} sx={{ gridColumn: { xs: '1 / -1', md: '1 / 9' }, justifyContent: 'center' }}>
@@ -448,7 +449,13 @@ const NewsFeedPage: React.FC = () => {
             </Paper>
           </Box>
 
-          <Box component="section" data-reveal="true" sx={{ ...custom.sectionShell, gridColumn: '1 / -1', background: custom.sectionGradients.newsroom }}>
+          <Box component="section" data-reveal="true" 
+            sx={{ 
+              ...custom.sectionShell, 
+              gridColumn: '1 / -1', 
+              background: custom.sectionGradients.newsroom,
+              mb: { xs: 6, md: 10 } 
+            }}>
             <Box sx={{ position: 'relative', zIndex: 1 }}>
               <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
                 <Stack direction="row" spacing={1} alignItems="center">
@@ -459,7 +466,12 @@ const NewsFeedPage: React.FC = () => {
                   Alle News
                 </Button>
               </Stack>
-              <Box sx={{ display: 'grid', gap: 'var(--grid-gap)', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' }, alignItems: 'stretch' }}>
+              <Box sx={{ 
+                display: 'grid', 
+                gap: { xs: 3, md: 4 }, 
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' }, 
+                alignItems: 'stretch' 
+              }}>
                 <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 7' } }}>
                   {leadNews ? (
                     <Paper
@@ -495,7 +507,7 @@ const NewsFeedPage: React.FC = () => {
                   )}
                 </Box>
                 <Paper elevation={0} sx={{ ...custom.glassCard, gridColumn: { xs: '1 / -1', md: 'span 5' }, p: { xs: 1.8, md: 2.2 }, borderRadius: 4, background: alpha(theme.palette.background.paper, isDark ? 0.72 : 0.9) }}>
-                  <Stack spacing={1.2}>
+                  <Stack spacing={2}> 
                     <Typography variant="overline" sx={{ letterSpacing: '0.24em', color: 'var(--accent-strong)', fontWeight: 700 }}>Kurz &amp; Knapp</Typography>
                     {secondaryNews.length ? secondaryNews.map((item) => (
                       <Box key={item.id} component={RouterLink} to={`/news/${item.id}`} sx={custom.newsCardLink}>
@@ -510,7 +522,7 @@ const NewsFeedPage: React.FC = () => {
                 </Paper>
               </Box>
               {railItems.length ? (
-                <Box data-reveal="rail" sx={{ mt: { xs: 2.5, md: 3.5 }, ...custom.railReveal }}>
+                <Box data-reveal="rail" sx={{ mt: { xs: 3, md: 5 }, ...custom.railReveal }}> 
                   <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.6 }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Mehr Stories</Typography>
                   </Stack>
@@ -531,7 +543,14 @@ const NewsFeedPage: React.FC = () => {
             </Box>
           </Box>
 
-          <Box component="section" id="events" data-reveal="true" sx={{ ...custom.sectionShell, gridColumn: '1 / -1', scrollMarginTop: { xs: 80, md: 100 }, background: custom.sectionGradients.agenda }}>
+          <Box component="section" id="events" data-reveal="true" 
+            sx={{ 
+              ...custom.sectionShell, 
+              gridColumn: '1 / -1', 
+              scrollMarginTop: { xs: 80, md: 100 }, 
+              background: custom.sectionGradients.agenda,
+              mb: { xs: 6, md: 10 } 
+            }}>
             <Box sx={{ position: 'relative', zIndex: 1 }}>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between" sx={{ mb: 2 }}>
                 <Stack direction="row" spacing={1} alignItems="center">
@@ -551,12 +570,17 @@ const NewsFeedPage: React.FC = () => {
                   </Button>
                 )}
               </Stack>
-              <Box sx={{ display: 'grid', gap: 'var(--grid-gap)', gridTemplateColumns: { xs: '1fr', lg: '7fr 5fr' }, alignItems: 'start' }}>
+              <Box sx={{ 
+                display: 'grid', 
+                gap: { xs: 3, md: 4 }, 
+                gridTemplateColumns: { xs: '1fr', lg: '7fr 5fr' }, 
+                alignItems: 'start' 
+              }}>
                 <Box>
                   <Typography variant="caption" sx={{ color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', display: 'block', mb: 1.2 }}>KOMMENDE TERMINE</Typography>
                   <Box sx={{ position: 'relative', pl: { xs: 2.5, md: 3.5 } }}>
                     <Box sx={{ position: 'absolute', left: { xs: 10, md: 14 }, top: 6, bottom: 6, width: 2, bgcolor: 'var(--card-border)', borderRadius: 999 }} />
-                    <Stack spacing={1.6}>
+                    <Stack spacing={2.5}> 
                       {upcomingPreview.length ? upcomingPreview.map((event) => {
                         const accent = getCategoryColor(event.category);
                         const eventDate = parseDateKey(event.date);
@@ -637,7 +661,11 @@ const NewsFeedPage: React.FC = () => {
                 </Button>
               </Stack>
               {forumHighlight ? (
-                <Box sx={{ display: 'grid', gap: 'var(--grid-gap)', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' } }}>
+                <Box sx={{ 
+                  display: 'grid', 
+                  gap: { xs: 3, md: 4 }, 
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' } 
+                }}>
                   <Paper component={RouterLink} to="/forum" elevation={0} sx={{ ...custom.glassCard, gridColumn: { xs: '1 / -1', md: 'span 7' }, p: { xs: 1.6, md: 3 }, borderRadius: 5, textDecoration: 'none', color: 'inherit', background: isDark ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.92)}, ${alpha(theme.palette.background.default, 0.9)})` : `linear-gradient(135deg, ${alpha(theme.palette.info.light, 0.2)}, ${alpha(theme.palette.background.paper, 0.98)})` }}>
                     <Stack spacing={{ xs: 1, md: 1.4 }}>
                       <Stack direction="row" spacing={1.2} alignItems="center" sx={{ flexWrap: { xs: 'wrap', sm: 'nowrap' }, rowGap: { xs: 0.4, sm: 0 } }}>
@@ -657,7 +685,7 @@ const NewsFeedPage: React.FC = () => {
                       </Stack>
                     </Stack>
                   </Paper>
-                  <Stack spacing={{ xs: 1, md: 1.4 }} sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' } }}>
+                  <Stack spacing={{ xs: 2, md: 2.5 }} sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' } }}> 
                     {forumRest.length ? forumRest.map((post) => (
                       <Box key={post.id} component={RouterLink} to="/forum" sx={{ ...custom.glassCard, p: { xs: 1.2, md: 1.6 }, borderRadius: 3, textDecoration: 'none', color: 'inherit', display: 'grid', gap: 0.6 }}>
                         <Stack direction="row" spacing={1} alignItems="center">
