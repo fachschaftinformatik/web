@@ -92,10 +92,10 @@ export default function ExamDetailsPage() {
 
     useEffect(() => {
         if (!selectedExam) {
-            if (previewUrl) {
-                URL.revokeObjectURL(previewUrl);
-                setPreviewUrl(null);
-            }
+            setPreviewUrl(prev => {
+                if (prev) URL.revokeObjectURL(prev);
+                return null;
+            });
             return;
         }
 
@@ -127,7 +127,10 @@ export default function ExamDetailsPage() {
                 if (active && data) {
                     const blob = data instanceof Blob ? data : new Blob([data as BlobPart]);
                     const url = URL.createObjectURL(blob);
-                    setPreviewUrl(url);
+                    setPreviewUrl(prev => {
+                        if (prev) URL.revokeObjectURL(prev);
+                        return url;
+                    });
                 }
             })
             .catch(console.error);
@@ -135,7 +138,7 @@ export default function ExamDetailsPage() {
         return () => {
             active = false;
         };
-    }, [selectedExam, previewUrl]);
+    }, [selectedExam]);
 
     useEffect(() => {
         if (!isEditing || !formProgram || formProgram.id === undefined) return;
@@ -299,7 +302,7 @@ export default function ExamDetailsPage() {
                     {selectedExam && (
                         <>
                             <DialogTitle sx={{ m: 0, p: 3, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="h6" fontWeight={700}>
+                                <Typography variant="h6" component="span" fontWeight={700}>
                                     {isEditing ? "Reko bearbeiten" : "Details zur Reko"}
                                 </Typography>
                                 <Box>
@@ -389,7 +392,13 @@ export default function ExamDetailsPage() {
                                         }}
                                         disabled={!isEditing}
                                     >
+                                        {programs.length === 0 && formProgram?.id ? (
+                                            <MenuItem value={formProgram.id}>{formProgram.name}</MenuItem>
+                                        ) : null}
                                         {programs.map((p) => (<MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>))}
+                                        {programs.length === 0 && !formProgram && (
+                                            <MenuItem value=""><em>Wähle einen Studiengang</em></MenuItem>
+                                        )}
                                     </TextField>
 
                                     <Stack direction="row" spacing={2}>
@@ -404,7 +413,13 @@ export default function ExamDetailsPage() {
                                             sx={{ minWidth: 120 }}
                                             size="small"
                                         >
+                                            {(!formProgram?.versions || formProgram.versions.length === 0) && formPo ? (
+                                                <MenuItem value={formPo}>{formPo}</MenuItem>
+                                            ) : null}
                                             {formProgram?.versions && formProgram.versions.map((v) => (<MenuItem key={v} value={v}>{v}</MenuItem>))}
+                                            {(!formProgram?.versions || formProgram.versions.length === 0) && !formPo && (
+                                                <MenuItem value=""><em>PO</em></MenuItem>
+                                            )}
                                         </TextField>
 
                                         <Autocomplete
