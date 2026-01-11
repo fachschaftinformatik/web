@@ -98,7 +98,7 @@ const Sidebar = ({
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
 
-  // -- Persistent Sidebar State Logic --
+  
   const [desktopOpen, setDesktopOpen] = useState(() => {
     const stored = localStorage.getItem('sidebar_desktop_open');
     return stored !== null ? stored === 'true' : true;
@@ -116,7 +116,7 @@ const Sidebar = ({
   };
 
   const navOpen = isMdUp ? desktopOpen : mobileOpen;
-  // ------------------------------------
+  
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);

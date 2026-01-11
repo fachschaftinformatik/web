@@ -107,7 +107,7 @@ const loadEvents = (): CalendarEvent[] => {
   try {
     const stored = JSON.parse(window.localStorage.getItem(STORAGE_EVENTS_KEY) || '[]');
     if (Array.isArray(stored) && stored.length) return stored;
-  } catch { /* ignore */ }
+  } catch { void 0; }
   return buildSeedEvents();
 };
 const loadNews = (): NewsItem[] => {
@@ -153,7 +153,7 @@ const NewsFeedPage: React.FC = () => {
   const isAdmin = user?.role === 'admin';
 
   const theme = useTheme();
-  // @ts-expect-error - custom property exists on theme
+
   const custom = theme.custom;
   const isDark = theme.palette.mode === 'dark';
 

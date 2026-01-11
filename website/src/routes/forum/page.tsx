@@ -189,7 +189,7 @@ function renderTextWithMentions(text: string) {
   return nodes.length ? nodes : text;
 }
 
-/* Seeds */
+
 const SEED_POSTS: Post[] = forumDemoPosts.map((post, index) => ({
   id: post.id,
   title: post.title,
@@ -204,7 +204,7 @@ const SEED_POSTS: Post[] = forumDemoPosts.map((post, index) => ({
 }));
 export const FORUM_SEED_POSTS = SEED_POSTS;
 
-/* Kommentare (rekursiv) */
+
 function CommentThread({
   node,
   onReply,
@@ -1019,7 +1019,7 @@ function PostItem({
   );
 }
 
-/* Hauptkomponente */
+
 export default function ForumStandalone() {
   const { user } = useAuth();
   const theme = useTheme();
@@ -1089,7 +1089,7 @@ export default function ForumStandalone() {
     [isDark, theme]
   );
 
-  // WICHTIG: Hier fehlte eine sichere Prüfung, falls theme undefiniert wäre (unwahrscheinlich aber möglich)
+  
   const programChipSx = React.useMemo(
     () =>
       isDark
@@ -1481,7 +1481,7 @@ export default function ForumStandalone() {
             )
           ) : (
             <>
-              {/* Filterleiste */}
+              
               <Paper
                 elevation={0}
                 sx={{
@@ -1581,7 +1581,7 @@ export default function ForumStandalone() {
                 </Stack>
               </Paper>
 
-              {/* Liste */}
+              
               <Stack spacing={2}>
                 {paginatedPosts.map((p) => (
                   <PostItem
@@ -1818,7 +1818,7 @@ export default function ForumStandalone() {
             </>
           )}
         </Dialog>
-        {/* Create Dialog */}
+        
         <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
           <DialogTitle>Beitrag erstellen</DialogTitle>
           <DialogContent dividers>
@@ -1845,7 +1845,7 @@ export default function ForumStandalone() {
                 onChange={(e) => setTagsInput(e.target.value)}
                 sx={inputStyles}
               />
-              {/* Für alle + einzelne Checkboxen in einer Reihe */}
+              
               <FormGroup row>
                 <FormControlLabel
                   control={
@@ -1888,7 +1888,7 @@ export default function ForumStandalone() {
             </Button>
           </DialogActions>
         </Dialog>
-        {/* Report Dialog */}
+        
         <Dialog open={!!reportFor} onClose={closeReport} maxWidth="xs" fullWidth>
           <DialogTitle>Beitrag melden</DialogTitle>
           <DialogContent dividers>

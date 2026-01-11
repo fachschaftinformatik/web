@@ -225,26 +225,26 @@ export const mockForumPosts: ForumPost[] = forumDemoPosts.map((post) => ({
   category: post.tags[0] ?? "Allgemein",
 }));
 
-// data.ts
+
 
 export type EventItem = { id: number; title: string; src: string };
 export type Bild = { id: number; title: string; thumb: string; full: string };
 
-// --- HILFSFUNKTION FÜR BEISPIELBILDER ---
+
 const pic = (seed: number, w: number, h: number) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 
-// --- HIER SIND DEINE LOKALEN BILDER & BEISPIELBILDER ---
+
 
 export const events: EventItem[] = [
-  // --- EVENT 1 (DEIN ORDNER 1) ---
-  // Ersetze DEIN_ORDNER_1 und den Dateinamen
+  
+  
   { id: 1, title: "LAN-Party 2023", src: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg" },
 
-  // --- EVENT 2 (DEIN ORDNER 2) ---
-  // Ersetze DEIN_ORDNER_2 und den Dateinamen
+  
+  
   { id: 2, title: "LAN-Party 2024", src: "/LAN-Party 2024/2024-11-29_23.07.08-_PHI1930-klaushardt.com.jpg" },
 
-  // --- EVENTS 3-6 (BEISPIELBILDER) ---
+  
   { id: 3, title: "Weinprobe", src: pic(103, 400, 600) },
   { id: 4, title: "Kulturabend", src: pic(104, 400, 600) },
   { id: 5, title: "Weihnachtsfeier", src: pic(105, 400, 600) },
@@ -254,8 +254,8 @@ export const events: EventItem[] = [
 export const IMAGES_PER_PAGE = 20;
 
 export const bilderByEvent: Record<number, Bild[]> = {
-  // --- EVENT 1 (DEIN ORDNER 1) ---
-  // Ersetze DEIN_ORDNER_1 und die Dateinamen
+  
+  
   1: [
     { id: 101, title: "", thumb: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg", full: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg" },
     { id: 102, title: "", thumb: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg", full: "/LAN-Party 2023/1688fad1-29d5-48c3-9167-9af3553ef10f.jpg" },
@@ -271,11 +271,11 @@ export const bilderByEvent: Record<number, Bild[]> = {
     { id: 112, title: "", thumb: "/LAN-Party 2023/DSC00170.jpg", full: "/LAN-Party 2023/DSC00170.jpg" },
     { id: 113, title: "", thumb: "/LAN-Party 2023/DSC00173.jpg", full: "/LAN-Party 2023/DSC00173.jpg" },
 
-    // ...
+    
   ],
 
-  // --- EVENT 2 (DEIN ORDNER 2) ---
-  // Ersetze DEIN_ORDNER_2 und die Dateinamen
+  
+  
   2: [
     { id: 201, title: "", thumb: "/LAN-Party 2024/1.jpg", full: "/LAN-Party 2024/1.jpg" },
     { id: 202, title: "", thumb: "/LAN-Party 2024/2.jpg", full: "/LAN-Party 2024/2.jpg" },
@@ -291,12 +291,12 @@ export const bilderByEvent: Record<number, Bild[]> = {
     { id: 212, title: "", thumb: "/LAN-Party 2024/12.jpg", full: "/LAN-Party 2024/12.jpg" },
     { id: 213, title: "", thumb: "/LAN-Party 2024/13.jpg", full: "/LAN-Party 2024/13.jpg" },
     { id: 214, title: "", thumb: "/LAN-Party 2024/14.jpg", full: "/LAN-Party 2024/14.jpg" },
-    // ...
+    
   ],
 };
 
-// --- EVENTS 3-6 (BEISPIELBILDER) ---
-// Füllt `bilderByEvent` für alle Events > 2 automatisch mit picsum-Bildern
+
+
 events.forEach((event) => {
   if (event.id > 2) {
     bilderByEvent[event.id] = Array.from({ length: 30 }).map((_, i) => {
@@ -311,7 +311,7 @@ events.forEach((event) => {
   }
 });
 
-// --- HELPER FUNKTIONEN ---
+
 
 export const getImageTitle = (image?: Bild) => {
   if (!image) return "";
@@ -327,7 +327,7 @@ export const defaultTitleForFile = (file: File) => {
   return withoutExtension || name;
 };
 
-// --- TEAMDATEN ---
+
 
 export type TeamMember = {
   id: number;
@@ -412,5 +412,5 @@ export const teamSections: TeamSection[] = [
   },
 ];
 
-// Export der pic-Funktion für die Verwendung im Komponenten-State, falls nötig
+
 export { pic };

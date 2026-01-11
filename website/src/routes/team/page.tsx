@@ -70,11 +70,11 @@ export default function Team() {
         prev.map((s) =>
           s.id === sectionId
             ? {
-                ...s,
-                members: s.members.map((m) =>
-                  m.id === memberId ? { ...m, img } : m
-                ),
-              }
+              ...s,
+              members: s.members.map((m) =>
+                m.id === memberId ? { ...m, img } : m
+              ),
+            }
             : s
         )
       );
@@ -97,7 +97,7 @@ export default function Team() {
         const dataUrl = await readFileAsDataUrl(file);
         updateMemberImage(sectionId, memberId, dataUrl);
       } catch {
-        // ignore read errors
+        void 0;
       }
     },
     [readFileAsDataUrl, updateMemberImage]
@@ -119,9 +119,9 @@ export default function Team() {
       prev.map((s) =>
         s.id === deleteTarget.sectionId
           ? {
-              ...s,
-              members: s.members.filter((m) => m.id !== deleteTarget.memberId),
-            }
+            ...s,
+            members: s.members.filter((m) => m.id !== deleteTarget.memberId),
+          }
           : s
       )
     );
@@ -158,22 +158,22 @@ export default function Team() {
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(260px, 320px))",
           justifyContent: "flex-start",
-          gap: 4, 
+          gap: 4,
         }}
       >
         {members.map((m) => (
           <Card key={m.id} sx={{ borderRadius: 2, overflow: "hidden", height: "100%" }}>
-            
+
             {m.img ? (
-              <CardMedia 
-                component="img" 
+              <CardMedia
+                component="img"
                 height="320"
-                image={m.img} 
-                alt={m.name} 
-                sx={{ objectFit: "contain", backgroundColor: "grey.100" }} 
+                image={m.img}
+                alt={m.name}
+                sx={{ objectFit: "contain", backgroundColor: "grey.100" }}
               />
             ) : (
-              <Box 
+              <Box
                 sx={{
                   height: 320,
                   display: 'flex',
@@ -182,11 +182,11 @@ export default function Team() {
                   backgroundColor: 'grey.200',
                 }}
               >
-                <AccountCircleIcon 
-                  sx={{ 
-                    fontSize: 200, 
-                    color: 'grey.400' 
-                  }} 
+                <AccountCircleIcon
+                  sx={{
+                    fontSize: 200,
+                    color: 'grey.400'
+                  }}
                 />
               </Box>
             )}
@@ -255,12 +255,12 @@ export default function Team() {
                         return prev.map((s) =>
                           s.id === section.id
                             ? {
-                                ...s,
-                                members: [
-                                  ...s.members,
-                                  { id: maxId + 1, name: "", email: "", img: null },
-                                ],
-                              }
+                              ...s,
+                              members: [
+                                ...s.members,
+                                { id: maxId + 1, name: "", email: "", img: null },
+                              ],
+                            }
                             : s
                         );
                       });
@@ -292,11 +292,11 @@ export default function Team() {
                                 prev.map((s) =>
                                   s.id === section.id
                                     ? {
-                                        ...s,
-                                        members: s.members.map((m) =>
-                                          m.id === member.id ? { ...m, name: e.target.value } : m
-                                        ),
-                                      }
+                                      ...s,
+                                      members: s.members.map((m) =>
+                                        m.id === member.id ? { ...m, name: e.target.value } : m
+                                      ),
+                                    }
                                     : s
                                 )
                               )
@@ -313,18 +313,18 @@ export default function Team() {
                                 prev.map((s) =>
                                   s.id === section.id
                                     ? {
-                                        ...s,
-                                        members: s.members.map((m) =>
-                                          m.id === member.id
-                                            ? {
-                                                ...m,
-                                                email: normalizeLocalPart(e.target.value)
-                                                  ? `${normalizeLocalPart(e.target.value)}${EMAIL_DOMAIN}`
-                                                  : "",
-                                              }
-                                            : m
-                                        ),
-                                      }
+                                      ...s,
+                                      members: s.members.map((m) =>
+                                        m.id === member.id
+                                          ? {
+                                            ...m,
+                                            email: normalizeLocalPart(e.target.value)
+                                              ? `${normalizeLocalPart(e.target.value)}${EMAIL_DOMAIN}`
+                                              : "",
+                                          }
+                                          : m
+                                      ),
+                                    }
                                     : s
                                 )
                               )
