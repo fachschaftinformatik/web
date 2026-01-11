@@ -510,7 +510,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: {
       setTitle("");
       setDescription("");
     } catch (e: unknown) {
-      console.error("Upload error:", e);
+      console.error("Fehler beim Upload:", e);
       setError(getFriendlyErrorMessage(e));
     } finally {
       setUploading(false);

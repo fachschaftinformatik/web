@@ -29,6 +29,10 @@ const DashboardPage: React.FC = () => {
   const [programs, setPrograms] = useState<Record<number, string>>({});
   const [programLoading, setProgramLoading] = useState(false);
 
+  if (!user) {
+    return null; // Or a loading spinner
+  }
+
   useEffect(() => {
     if (!user) return;
     let isMounted = true;
@@ -67,7 +71,7 @@ const DashboardPage: React.FC = () => {
 
   const programLabel = programLoading
     ? 'Studiengang wird geladen...'
-    : programs[user.programid]
+    : (user.programid !== undefined && programs[user.programid])
     ?? `Studiengang #${user.programid ?? 'unbekannt'}`;
 
   const visibleForumPosts = mockForumPosts.slice(0, MAX_VISIBLE_FORUM_POSTS);
@@ -115,13 +119,13 @@ const DashboardPage: React.FC = () => {
               </Avatar>
               <Box flex={1}>
                 <Typography variant="h4" fontWeight={600}>
-                  Schön, dass du da bist, {user.name.split(' ')[0] ?? user.name}
+                  Schön, dass du da bist, {(user.name ?? 'Gast').split(' ')[0]}
                 </Typography>
                 <Typography variant="body1" sx={{ opacity: 0.9 }}>
                   {user.email}
                 </Typography>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mt={2}>
-                  <Chip label={user.role.toUpperCase()} color="default" sx={{ bgcolor: 'rgba(255,255,255,0.16)' }} />
+                  <Chip label={(user.role ?? 'USER').toUpperCase()} color="default" sx={{ bgcolor: 'rgba(255,255,255,0.16)' }} />
                   <Chip
                     label={user.verified ? 'Verifiziert' : 'Nicht verifiziert'}
                     sx={{ bgcolor: 'rgba(255,255,255,0.16)' }}
@@ -131,7 +135,7 @@ const DashboardPage: React.FC = () => {
               </Box>
               <Stack spacing={1} alignItems="flex-end">
                 <Button variant="contained" color="secondary" startIcon={<LogoutIcon />} onClick={handleLogout}>
-                  Logout
+                  Abmelden
                 </Button>
               </Stack>
             </Stack>
@@ -162,7 +166,7 @@ const DashboardPage: React.FC = () => {
                   Erstellt am
                 </Typography>
                 <Typography variant="body1" fontWeight={500}>
-                  {new Date(user.created_at).toLocaleString()}
+                  {user.created_at ? new Date(user.created_at).toLocaleString() : 'Unbekannt'}
                 </Typography>
               </Grid>
               <Grid
