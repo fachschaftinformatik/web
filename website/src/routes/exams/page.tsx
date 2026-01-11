@@ -533,7 +533,11 @@ export default function Exams() {
                                 sx={{ flex: 1, minWidth: 120 }}
                                 disabled={!selectedProgram}
                             >
-                                {selectedProgram?.versions && selectedProgram.versions.map((ver) => (<MenuItem key={ver} value={ver}>{ver}</MenuItem>))}
+                                {selectedProgram?.versions && selectedProgram.versions.length > 0 ? (
+                                    selectedProgram.versions.map((ver) => (<MenuItem key={ver} value={ver}>{ver}</MenuItem>))
+                                ) : (
+                                    <MenuItem disabled value="">-</MenuItem>
+                                )}
                             </TextField>
                         </Box>
                     </Stack>
