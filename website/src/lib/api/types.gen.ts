@@ -26,6 +26,9 @@ export type AuthExamResponse = {
     uploaded_at?: string;
     uploader_name?: string;
     version?: string;
+    group_id?: string;
+    edit_version?: number;
+    is_latest?: number;
 };
 
 export type AuthLoginRequest = {
@@ -40,6 +43,7 @@ export type AuthModuleResponse = {
     id?: number;
     name?: string;
     programid?: number;
+    alias?: string;
 };
 
 /**
@@ -358,6 +362,27 @@ export type GetExamsFileResponses = {
      */
     200: unknown;
 };
+
+export type GetExamVersionsData = {
+    body?: never;
+    path: {
+        /**
+         * Exam Group ID
+         */
+        groupId: string;
+    };
+    query?: never;
+    url: '/exams/versions/{groupId}';
+};
+
+export type GetExamVersionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<AuthExamResponse>;
+};
+
+export type GetExamVersionsResponse = GetExamVersionsResponses[keyof GetExamVersionsResponses];
 
 export type GetProgramsData = {
     body?: never;

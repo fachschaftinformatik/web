@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteExamsIdData, DeleteExamsIdResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthVerifyData, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileResponses, GetExamsResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetUsersByIdData, GetUsersByIdResponses, GetUsersData, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PutExamsIdData, PutExamsIdResponses } from './types.gen';
+import type { DeleteExamsIdData, DeleteExamsIdResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthVerifyData, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileResponses, GetExamsResponses, GetExamVersionsData, GetExamVersionsResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetUsersByIdData, GetUsersByIdResponses, GetUsersData, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PutExamsIdData, PutExamsIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -103,6 +103,11 @@ export const putExamsId = <ThrowOnError extends boolean = false>(options: Option
  * Download file
  */
 export const getExamsFile = <ThrowOnError extends boolean = false>(options: Options<GetExamsFileData, ThrowOnError>) => (options.client ?? client).get<GetExamsFileResponses, unknown, ThrowOnError>({ url: '/exams/{id}/file', ...options });
+
+/**
+ * List exam versions
+ */
+export const getExamVersions = <ThrowOnError extends boolean = false>(options: Options<GetExamVersionsData, ThrowOnError>) => (options.client ?? client).get<GetExamVersionsResponses, unknown, ThrowOnError>({ url: '/exams/versions/{groupId}', ...options });
 
 /**
  * List all programs

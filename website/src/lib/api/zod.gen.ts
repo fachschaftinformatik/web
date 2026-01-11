@@ -23,7 +23,10 @@ export const zAuthExamResponse = z.object({
     programid: z.optional(z.int()),
     uploaded_at: z.optional(z.string()),
     uploader_name: z.optional(z.string()),
-    version: z.optional(z.string())
+    version: z.optional(z.string()),
+    group_id: z.optional(z.string()),
+    edit_version: z.optional(z.int()),
+    is_latest: z.optional(z.int())
 });
 
 export const zAuthLoginRequest = z.object({
@@ -37,7 +40,8 @@ export const zAuthLoginRequest = z.object({
 export const zAuthModuleResponse = z.object({
     id: z.optional(z.int()),
     name: z.optional(z.string()),
-    programid: z.optional(z.int())
+    programid: z.optional(z.int()),
+    alias: z.optional(z.string())
 });
 
 /**
@@ -206,6 +210,19 @@ export const zGetExamsFileData = z.object({
     }),
     query: z.optional(z.never())
 });
+
+export const zGetExamVersionsData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        groupId: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetExamVersionsResponse = z.array(zAuthExamResponse);
 
 export const zGetProgramsData = z.object({
     body: z.optional(z.never()),
