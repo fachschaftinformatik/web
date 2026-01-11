@@ -224,11 +224,15 @@ export default function RegistrationPage() {
               error={!!errors.programid}
               helperText={errors.programid}
             >
-              {programs.map((option) => (
-                <MenuItem key={option.id} value={option.id}>
-                  {option.name}
-                </MenuItem>
-              ))}
+              {programs.length > 0 ? (
+                programs.map((option) => (
+                  <MenuItem key={option.id} value={option.id}>
+                    {option.name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled value="">Lädt...</MenuItem>
+              )}
             </TextField>
 
             <FormControl variant="outlined" required error={!!errors.password} fullWidth>
