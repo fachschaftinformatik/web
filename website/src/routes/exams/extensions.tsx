@@ -361,6 +361,8 @@ export default function ExamDetailsPage() {
                             <DialogContent sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
                                 <TextField
+                                    id="edit-exam-date"
+                                    name="date"
                                     label="Prüfungsdatum"
                                     type="date"
                                     fullWidth
@@ -374,6 +376,8 @@ export default function ExamDetailsPage() {
 
                                 <Stack spacing={2}>
                                     <TextField
+                                        id="edit-exam-program"
+                                        name="program"
                                         select
                                         label="Studiengang"
                                         fullWidth
@@ -390,6 +394,8 @@ export default function ExamDetailsPage() {
 
                                     <Stack direction="row" spacing={2}>
                                         <TextField
+                                            id="edit-exam-version"
+                                            name="version"
                                             select
                                             label="PO"
                                             value={formPo}
@@ -411,6 +417,8 @@ export default function ExamDetailsPage() {
                                             renderInput={(params) => (
                                                 <TextField
                                                     {...params}
+                                                    id="edit-exam-module"
+                                                    name="module"
                                                     label="Modul auswählen"
                                                     size="small"
                                                 />
@@ -447,6 +455,8 @@ export default function ExamDetailsPage() {
                                 </Box>
 
                                 <TextField
+                                    id="edit-exam-comment"
+                                    name="comment"
                                     label="Anmerkungen"
                                     multiline
                                     maxRows={4}
