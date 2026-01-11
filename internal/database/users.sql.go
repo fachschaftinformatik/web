@@ -20,7 +20,7 @@ INSERT INTO users (
   ?7,
   ?8
 )
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token, theme
 `
 
 type CreateUserParams struct {
@@ -60,12 +60,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.VerificationToken,
+		&i.Theme,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
+SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token, theme
 FROM users
 WHERE id = ?1
 LIMIT 1
@@ -88,12 +89,13 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.VerificationToken,
+		&i.Theme,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
+SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token, theme
 FROM users
 WHERE lower(email) = lower(?1)
 LIMIT 1
@@ -116,12 +118,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.VerificationToken,
+		&i.Theme,
 	)
 	return i, err
 }
 
 const getUserByVerificationToken = `-- name: GetUserByVerificationToken :one
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
+SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token, theme
 FROM users
 WHERE verification_token = ?1
 LIMIT 1
@@ -144,12 +147,13 @@ func (q *Queries) GetUserByVerificationToken(ctx context.Context, verificationTo
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.VerificationToken,
+		&i.Theme,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
+SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token, theme
 FROM users
 ORDER BY created_at DESC
 LIMIT ?2 OFFSET ?1
@@ -183,6 +187,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.VerificationToken,
+			&i.Theme,
 		); err != nil {
 			return nil, err
 		}
@@ -201,7 +206,7 @@ const setUserActive = `-- name: SetUserActive :one
 UPDATE users
 SET active = ?1
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token, theme
 `
 
 type SetUserActiveParams struct {
@@ -226,6 +231,7 @@ func (q *Queries) SetUserActive(ctx context.Context, arg SetUserActiveParams) (U
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.VerificationToken,
+		&i.Theme,
 	)
 	return i, err
 }
@@ -234,7 +240,7 @@ const setUserRole = `-- name: SetUserRole :one
 UPDATE users
 SET role = ?1
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token, theme
 `
 
 type SetUserRoleParams struct {
@@ -259,6 +265,7 @@ func (q *Queries) SetUserRole(ctx context.Context, arg SetUserRoleParams) (User,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.VerificationToken,
+		&i.Theme,
 	)
 	return i, err
 }
@@ -280,7 +287,7 @@ const unverifyUser = `-- name: UnverifyUser :one
 UPDATE users
 SET verified = 0
 WHERE id = ?1
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token, theme
 `
 
 func (q *Queries) UnverifyUser(ctx context.Context, id string) (User, error) {
@@ -300,6 +307,51 @@ func (q *Queries) UnverifyUser(ctx context.Context, id string) (User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.VerificationToken,
+		&i.Theme,
+	)
+	return i, err
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users
+SET name = ?1,
+    programid = ?2,
+    theme = ?3,
+    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+WHERE id = ?4
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token, theme
+`
+
+type UpdateUserParams struct {
+	Name      string `json:"name"`
+	Programid int64  `json:"programid"`
+	Theme     string `json:"theme"`
+	ID        string `json:"id"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUser,
+		arg.Name,
+		arg.Programid,
+		arg.Theme,
+		arg.ID,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Password,
+		&i.Role,
+		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerifiedUntil,
+		&i.Programid,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.VerificationToken,
+		&i.Theme,
 	)
 	return i, err
 }
@@ -324,7 +376,7 @@ const updateUserVerificationWindow = `-- name: UpdateUserVerificationWindow :one
 UPDATE users
 SET verified_until = ?1
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token, theme
 `
 
 type UpdateUserVerificationWindowParams struct {
@@ -349,6 +401,7 @@ func (q *Queries) UpdateUserVerificationWindow(ctx context.Context, arg UpdateUs
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.VerificationToken,
+		&i.Theme,
 	)
 	return i, err
 }
@@ -360,7 +413,7 @@ SET verified = 1,
     verified_until = ?1,
     verification_token = NULL
 WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token
+RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, created_at, updated_at, verification_token, theme
 `
 
 type VerifyUserParams struct {
@@ -385,6 +438,7 @@ func (q *Queries) VerifyUser(ctx context.Context, arg VerifyUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.VerificationToken,
+		&i.Theme,
 	)
 	return i, err
 }

@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	ClearLatestFlag(ctx context.Context, groupID string) error
 	CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error)
 	CreateExam(ctx context.Context, arg CreateExamParams) (Exam, error)
 	CreateMedia(ctx context.Context, arg CreateMediaParams) (Medium, error)
@@ -22,6 +23,7 @@ type Querier interface {
 	DeleteUserSessions(ctx context.Context, userid string) error
 	GetEvent(ctx context.Context, id int64) (Event, error)
 	GetExam(ctx context.Context, id string) (Exam, error)
+	GetLatestByGroupId(ctx context.Context, groupID string) (Exam, error)
 	GetMedia(ctx context.Context, id string) (Medium, error)
 	GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error)
 	GetSession(ctx context.Context, id string) (Session, error)
@@ -29,6 +31,7 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByVerificationToken(ctx context.Context, verificationToken *string) (User, error)
 	ListEvents(ctx context.Context) ([]Event, error)
+	ListExamVersions(ctx context.Context, groupID string) ([]ListExamVersionsRow, error)
 	ListExams(ctx context.Context, arg ListExamsParams) ([]ListExamsRow, error)
 	ListMediaByEvent(ctx context.Context, eventID int64) ([]ListMediaByEventRow, error)
 	ListModulesByProgram(ctx context.Context, programid int64) ([]Module, error)
@@ -41,6 +44,7 @@ type Querier interface {
 	TouchSession(ctx context.Context, id string) (Session, error)
 	UnverifyUser(ctx context.Context, id string) (User, error)
 	UpdateExam(ctx context.Context, arg UpdateExamParams) (Exam, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserToken(ctx context.Context, arg UpdateUserTokenParams) error
 	UpdateUserVerificationWindow(ctx context.Context, arg UpdateUserVerificationWindowParams) (User, error)
 	VerifyUser(ctx context.Context, arg VerifyUserParams) (User, error)

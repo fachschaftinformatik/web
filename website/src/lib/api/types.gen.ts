@@ -18,8 +18,11 @@ export type AuthErrorResponse = {
  */
 export type AuthExamResponse = {
     comment?: string;
+    edit_version?: number;
     exam_date?: string;
+    group_id?: string;
     id?: string;
+    is_latest?: number;
     module_name?: string;
     moduleid?: number;
     programid?: number;
@@ -37,6 +40,7 @@ export type AuthLoginRequest = {
  * A study module
  */
 export type AuthModuleResponse = {
+    alias?: string;
     id?: number;
     name?: string;
     programid?: number;
@@ -49,6 +53,17 @@ export type AuthProgramResponse = {
     id?: number;
     name?: string;
     versions?: Array<string>;
+};
+
+export type AuthPublicUserResponse = {
+    active?: number;
+    created_at?: string;
+    id?: string;
+    name?: string;
+    programid?: number;
+    role?: string;
+    theme?: string;
+    verified?: number;
 };
 
 export type AuthRegisterRequest = {
@@ -66,6 +81,12 @@ export type AuthUpdateExamRequest = {
     version?: string;
 };
 
+export type AuthUpdateProfileRequest = {
+    name?: string;
+    programid?: number;
+    theme?: string;
+};
+
 /**
  * User account information
  */
@@ -78,6 +99,7 @@ export type AuthUserResponse = {
     password?: string;
     programid?: number;
     role?: string;
+    theme?: string;
     updated_at?: string;
     verification_token?: string;
     verified?: number;
@@ -164,6 +186,34 @@ export type GetAuthMeResponses = {
 };
 
 export type GetAuthMeResponse = GetAuthMeResponses[keyof GetAuthMeResponses];
+
+export type PutAuthMeData = {
+    /**
+     * Update Profile Info
+     */
+    body: AuthUpdateProfileRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/me';
+};
+
+export type PutAuthMeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: AuthErrorResponse;
+};
+
+export type PutAuthMeError = PutAuthMeErrors[keyof PutAuthMeErrors];
+
+export type PutAuthMeResponses = {
+    /**
+     * OK
+     */
+    200: AuthUserResponse;
+};
+
+export type PutAuthMeResponse = PutAuthMeResponses[keyof PutAuthMeResponses];
 
 export type PostAuthRegisterData = {
     /**
@@ -359,6 +409,36 @@ export type GetExamsFileResponses = {
     200: unknown;
 };
 
+export type GetExamVersionsData = {
+    body?: never;
+    path: {
+        /**
+         * Exam Group ID
+         */
+        groupId: string;
+    };
+    query?: never;
+    url: '/exams/versions/{groupId}';
+};
+
+export type GetExamVersionsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: AuthErrorResponse;
+};
+
+export type GetExamVersionsError = GetExamVersionsErrors[keyof GetExamVersionsErrors];
+
+export type GetExamVersionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<AuthExamResponse>;
+};
+
+export type GetExamVersionsResponse = GetExamVersionsResponses[keyof GetExamVersionsResponses];
+
 export type GetProgramsData = {
     body?: never;
     path?: never;
@@ -489,7 +569,7 @@ export type GetUsersByIdResponses = {
     /**
      * OK
      */
-    200: AuthUserResponse;
+    200: AuthPublicUserResponse;
 };
 
 export type GetUsersByIdResponse = GetUsersByIdResponses[keyof GetUsersByIdResponses];

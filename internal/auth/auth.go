@@ -30,8 +30,20 @@ const (
 type UserResponse struct {
 	database.User
 
-  // Do not export the password hash
-	Password string `json:"-"`
+	// Do not export the password hash
+	Password          string  `json:"-"`
+	VerificationToken *string `json:"verification_token,omitempty"`
+}
+
+type PublicUserResponse struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Role      string `json:"role"`
+	Active    int64  `json:"active"`
+	Verified  int64  `json:"verified"`
+	Programid int64  `json:"programid"`
+	CreatedAt string `json:"created_at"`
+	Theme     string `json:"theme"`
 }
 
 type LoginRequest struct {
@@ -44,6 +56,12 @@ type RegisterRequest struct {
 	Name      string `json:"name" example:"Max Mustermann"`
 	Password  string `json:"password" example:"secret123"`
 	Programid int    `json:"programid" example:"1"`
+}
+
+type UpdateProfileRequest struct {
+	Name      string `json:"name" example:"Max Mustermann"`
+	Programid int    `json:"programid" example:"1"`
+	Theme     string `json:"theme" example:"dark"`
 }
 
 type ErrorResponse struct {
@@ -306,6 +324,48 @@ func (s *Server) GetAuthMe(w http.ResponseWriter, r *http.Request) {
 	s.respondJSON(w, http.StatusOK, UserResponse{User: dbUser})
 }
 
+// PutAuthMe updates the current user's profile
+// @Summary Update current user profile
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body UpdateProfileRequest true "Update Profile Info"
+// @Success 200 {object} UserResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /auth/me [put]
+func (s *Server) PutAuthMe(w http.ResponseWriter, r *http.Request) {
+	_, authUser, err := s.authenticate(w, r)
+	if err != nil {
+		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if err := s.checkCSRF(r); err != nil {
+		s.jsonError(w, "invalid_csrf", err.Error(), http.StatusForbidden)
+		return
+	}
+
+	var payload UpdateProfileRequest
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		s.jsonError(w, "invalid_request_body", "Could not decode JSON body", http.StatusBadRequest)
+		return
+	}
+
+	updatedUser, err := s.DB.UpdateUser(r.Context(), database.UpdateUserParams{
+		ID:        authUser.ID,
+		Name:      payload.Name,
+		Programid: int64(payload.Programid),
+		Theme:     payload.Theme,
+	})
+	if err != nil {
+		s.Log.Printf("Failed to update user profile: %v", err)
+		s.jsonError(w, "database_error", "Could not update user profile", http.StatusInternalServerError)
+		return
+	}
+
+	s.respondJSON(w, http.StatusOK, UserResponse{User: updatedUser})
+}
+
 // PostAuthLogout logs out
 // @Summary Log out
 // @Tags Auth
@@ -389,21 +449,17 @@ func (s *Server) GetUsers(w http.ResponseWriter, r *http.Request) {
 // @Summary Get user by ID
 // @Tags Users
 // @Param id path string true "User ID"
-// @Success 200 {object} UserResponse
+// @Summary Get user profile
+// @Tags Auth
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} PublicUserResponse
 // @Router /users/{id} [get]
 func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	_, authUser, err := s.authenticate(w, r)
-	if err != nil {
-		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	if authUser.ID != id && authUser.Role != "admin" {
-		s.jsonError(w, "forbidden", "Access denied", http.StatusForbidden)
-		return
-	}
+	// Optional authentication
+	_, authUser, authErr := s.authenticate(w, r)
 
 	dbUser, err := s.DB.GetUser(r.Context(), id)
 	if err != nil {
@@ -415,7 +471,29 @@ func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.respondJSON(w, http.StatusOK, UserResponse{User: dbUser})
+	// If the requester is the user themselves or an admin, return the full profile
+	if authErr == nil && (authUser.ID == id || authUser.Role == "admin") {
+		// Ensure token is hidden even for self if you want, but usually self can see it?
+		// Actually Model already has json tag for it. Let's just null it out if strictly private.
+		resp := UserResponse{User: dbUser}
+		if authUser.Role != "admin" {
+			resp.VerificationToken = nil // Hide token even from self if not needed
+		}
+		s.respondJSON(w, http.StatusOK, resp)
+		return
+	}
+
+	// Otherwise return public profile
+	s.respondJSON(w, http.StatusOK, PublicUserResponse{
+		ID:        dbUser.ID,
+		Name:      dbUser.Name,
+		Role:      dbUser.Role,
+		Active:    dbUser.Active,
+		Verified:  dbUser.Verified,
+		Programid: dbUser.Programid,
+		CreatedAt: dbUser.CreatedAt,
+		Theme:     dbUser.Theme,
+	})
 }
 
 func (s *Server) jsonError(w http.ResponseWriter, err, msg string, status int) {
