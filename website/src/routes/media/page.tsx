@@ -38,13 +38,13 @@ export default function Galerie() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
+
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const canUpload = user?.role === "admin" || user?.role === "editor";
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       const res = await client.request({ method: 'GET', url: '/events' });
       if (res.data) {
@@ -57,21 +57,25 @@ export default function Galerie() {
     } catch (e) {
       console.error("Fehler beim Laden der Events", e);
     }
-  };
+  }, [selectedEventId]);
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    void fetchEvents();
+  }, [fetchEvents]);
 
   useEffect(() => {
     if (selectedEventId) {
-      setLoadingMedia(true);
-      client.request({ method: 'GET', url: '/media', query: { event_id: selectedEventId } })
-        .then(res => {
+      const fetchMedia = async () => {
+        setLoadingMedia(true);
+        try {
+          const res = await client.request({ method: 'GET', url: '/media', query: { event_id: selectedEventId } });
           setMedia(res.data as MediaItem[] || []);
           setPage(1);
-        })
-        .finally(() => setLoadingMedia(false));
+        } finally {
+          setLoadingMedia(false);
+        }
+      };
+      void fetchMedia();
     }
   }, [selectedEventId]);
 
@@ -86,13 +90,13 @@ export default function Galerie() {
     setLightboxIndex(idx);
     setLightboxOpen(true);
   };
-  
+
   const closeLightbox = useCallback(() => setLightboxOpen(false), []);
-  
+
   const nextImage = useCallback(() => {
     setLightboxIndex((i) => (i + 1) % displayedMedia.length);
   }, [displayedMedia.length]);
-  
+
   const prevImage = useCallback(() => {
     setLightboxIndex((i) => (i - 1 + displayedMedia.length) % displayedMedia.length);
   }, [displayedMedia.length]);
@@ -123,40 +127,40 @@ export default function Galerie() {
   return (
     <Sidebar user={user} title="Galerie">
       <Container maxWidth="xl" sx={{ mt: 5, mb: 10 }}>
-        
+
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Box>
-                <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
-                    Galerie
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                    Fotos von Veranstaltungen, Partys und Events der Fachschaft.
-                </Typography>
-            </Box>
-            {canUpload && (
-              <Button
-                variant="contained"
-                startIcon={<CloudUploadIcon />}
-                onClick={() => setUploadOpen(true)}
-                sx={{ boxShadow: 2 }}
-              >
-                Bilder hochladen
-              </Button>
-            )}
+          <Box>
+            <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+              Galerie
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Fotos von Veranstaltungen, Partys und Events der Fachschaft.
+            </Typography>
+          </Box>
+          {canUpload && (
+            <Button
+              variant="contained"
+              startIcon={<CloudUploadIcon />}
+              onClick={() => setUploadOpen(true)}
+              sx={{ boxShadow: 2 }}
+            >
+              Bilder hochladen
+            </Button>
+          )}
         </Box>
 
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: 2, 
-            mb: 5, 
-            borderRadius: 3, 
-            bgcolor: "background.paper", 
-            border: "1px solid", 
-            borderColor: "divider" 
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            mb: 5,
+            borderRadius: 3,
+            bgcolor: "background.paper",
+            border: "1px solid",
+            borderColor: "divider"
           }}
         >
-          
+
           <Box sx={{ display: "flex", justifyContent: "flex-start", minWidth: 0 }}>
             {events.length > 0 ? (
               <ImageList
@@ -166,7 +170,7 @@ export default function Galerie() {
                   flexWrap: "nowrap",
                   justifyContent: "flex-start",
                   p: 3,
-                  pt: 1, 
+                  pt: 1,
                   overflowX: "auto",
                   overflowY: "visible",
                   "&::-webkit-scrollbar": { display: "none" },
@@ -179,7 +183,7 @@ export default function Galerie() {
               >
                 {events.map((ev) => {
                   const selected = ev.id === selectedEventId;
-                  
+
                   return (
                     <ImageListItem
                       key={ev.id}
@@ -242,18 +246,18 @@ export default function Galerie() {
         {loadingMedia ? (
           <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>
         ) : media.length === 0 ? (
-          <Box 
-            py={8} 
-            textAlign="center" 
-            sx={(theme) => ({ 
-                border: '1px dashed', 
-                borderColor: 'divider', 
-                borderRadius: 3,
-                bgcolor: alpha(theme.palette.text.primary, 0.04) 
+          <Box
+            py={8}
+            textAlign="center"
+            sx={(theme) => ({
+              border: '1px dashed',
+              borderColor: 'divider',
+              borderRadius: 3,
+              bgcolor: alpha(theme.palette.text.primary, 0.04)
             })}
           >
             <Typography color="text.secondary">
-                {selectedEventId ? "Keine Bilder in diesem Album." : "Bitte ein Event oben auswählen."}
+              {selectedEventId ? "Keine Bilder in diesem Album." : "Bitte ein Event oben auswählen."}
             </Typography>
           </Box>
         ) : (
@@ -309,27 +313,27 @@ export default function Galerie() {
         )}
 
         {canUpload && (
-          <UploadDialog 
-            open={uploadOpen} 
-            onClose={() => setUploadOpen(false)} 
+          <UploadDialog
+            open={uploadOpen}
+            onClose={() => setUploadOpen(false)}
             events={events}
-            onSuccess={() => { 
-              fetchEvents(); 
-              if(selectedEventId) {
+            onSuccess={() => {
+              fetchEvents();
+              if (selectedEventId) {
                 const current = selectedEventId;
-                setSelectedEventId(null); 
+                setSelectedEventId(null);
                 setTimeout(() => setSelectedEventId(current), 50);
               }
               setSuccessMessage("Bilder erfolgreich hochgeladen.");
-            }} 
+            }}
             onCreateEvent={() => setCreateEventOpen(true)}
           />
         )}
 
         {canUpload && (
-          <CreateEventDialog 
-            open={createEventOpen} 
-            onClose={() => setCreateEventOpen(false)} 
+          <CreateEventDialog
+            open={createEventOpen}
+            onClose={() => setCreateEventOpen(false)}
             onSuccess={() => { fetchEvents(); }}
           />
         )}
@@ -358,9 +362,9 @@ export default function Galerie() {
             sx={{ pr: 2, pl: 3, py: 1.5, position: "relative", zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
           >
             <Typography variant="h6" noWrap sx={{ flex: 1 }}>
-                {currentImage?.title || (currentImage && `Bild ${lightboxIndex + 1}`) || ""}
+              {currentImage?.title || (currentImage && `Bild ${lightboxIndex + 1}`) || ""}
             </Typography>
-            
+
             <Stack direction="row" spacing={1} alignItems="center">
               {canUpload && (
                 <Tooltip title="Bearbeiten">
@@ -396,7 +400,7 @@ export default function Galerie() {
                 }}
               />
             )}
-            
+
             {displayedMedia.length > 1 && (
               <>
                 <IconButton
@@ -439,8 +443,8 @@ export default function Galerie() {
   );
 }
 
-function getFriendlyErrorMessage(error: any): string {
-  const msg = error?.message || error?.error || (typeof error === 'string' ? error : "");
+function getFriendlyErrorMessage(error: { message?: string; error?: string } | string | unknown): string {
+  const msg = typeof error === 'string' ? error : (error as { message?: string })?.message || (error as { error?: string })?.error || "";
   const errorMap: Record<string, string> = {
     "File too large": "Die Datei ist zu groß (maximal 50MB erlaubt).",
     "File upload failed": "Der Upload ist fehlgeschlagen. Bitte versuche es erneut.",
@@ -453,7 +457,13 @@ function getFriendlyErrorMessage(error: any): string {
   return errorMap[msg] || `Ein Fehler ist aufgetreten: ${msg || "Unbekannter Fehler"}`;
 }
 
-function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: any) {
+function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: {
+  open: boolean;
+  onClose: () => void;
+  events: EventItem[];
+  onSuccess: () => void;
+  onCreateEvent: () => void;
+}) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -474,33 +484,32 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: any) 
     try {
       const { data } = await getAuthCsrf();
       const token = data?.csrf;
-      
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("event_id", String(eventId));
-      if(title) formData.append("title", title);
-      if(description) formData.append("description", description);
+      if (title) formData.append("title", title);
+      if (description) formData.append("description", description);
 
       const res = await client.request({
         method: 'POST',
         url: '/media',
         body: formData,
         bodySerializer: null,
-        // @ts-ignore
-        headers: { 
-            "X-CSRF-Token": token || "",
-            "Content-Type": null 
+        headers: {
+          "X-CSRF-Token": token || "",
+          "Content-Type": null
         }
       });
 
       if (res.error) throw res.error;
-      
+
       onSuccess();
       onClose();
       setFile(null);
       setTitle("");
       setDescription("");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Upload error:", e);
       setError(getFriendlyErrorMessage(e));
     } finally {
@@ -517,7 +526,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: any) 
       <DialogContent sx={{ pt: 1 }}>
         <Stack spacing={3} mt={1}>
           {error && <Alert severity="error">{error}</Alert>}
-          
+
           <Stack direction="row" spacing={1} alignItems="stretch">
             <TextField
               select
@@ -527,12 +536,12 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: any) 
               onChange={(e) => setEventId(Number(e.target.value))}
               size="small"
             >
-              {events.map((e: any) => <MenuItem key={e.id} value={e.id}>{e.title}</MenuItem>)}
+              {events.map((e) => <MenuItem key={e.id} value={e.id}>{e.title}</MenuItem>)}
             </TextField>
             <Tooltip title="Neues Event anlegen">
-              <Button 
-                variant="outlined" 
-                sx={{ minWidth: 40, px: 0, borderRadius: 2 }} 
+              <Button
+                variant="outlined"
+                sx={{ minWidth: 40, px: 0, borderRadius: 2 }}
                 onClick={onCreateEvent}
               >
                 <AddRoundedIcon />
@@ -554,8 +563,8 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: any) 
               cursor: 'pointer',
               transition: 'all 0.2s',
               '&:hover': {
-                  borderColor: 'text.primary',
-                  bgcolor: 'action.hover'
+                borderColor: 'text.primary',
+                bgcolor: 'action.hover'
               }
             }}
           >
@@ -591,7 +600,11 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: any) 
   );
 }
 
-function CreateEventDialog({ open, onClose, onSuccess }: any) {
+function CreateEventDialog({ open, onClose, onSuccess }: {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -609,7 +622,7 @@ function CreateEventDialog({ open, onClose, onSuccess }: any) {
     try {
       const { data } = await getAuthCsrf();
       const token = data?.csrf;
-      
+
       const formData = new FormData();
       formData.append("title", title);
       if (file) {
@@ -621,7 +634,6 @@ function CreateEventDialog({ open, onClose, onSuccess }: any) {
         url: '/events',
         body: formData,
         bodySerializer: null,
-        // @ts-ignore
         headers: { "X-CSRF-Token": token || "", "Content-Type": null }
       });
 
@@ -631,7 +643,7 @@ function CreateEventDialog({ open, onClose, onSuccess }: any) {
       onClose();
       setTitle("");
       setFile(null);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(getFriendlyErrorMessage(e));
     } finally {
       setLoading(false);
@@ -668,8 +680,8 @@ function CreateEventDialog({ open, onClose, onSuccess }: any) {
               cursor: 'pointer',
               transition: 'all 0.2s',
               '&:hover': {
-                  borderColor: 'text.primary',
-                  bgcolor: 'action.hover'
+                borderColor: 'text.primary',
+                bgcolor: 'action.hover'
               }
             }}
           >
