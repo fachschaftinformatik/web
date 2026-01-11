@@ -44,6 +44,7 @@ type Querier interface {
 	TouchSession(ctx context.Context, id string) (Session, error)
 	UnverifyUser(ctx context.Context, id string) (User, error)
 	UpdateExam(ctx context.Context, arg UpdateExamParams) (Exam, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserToken(ctx context.Context, arg UpdateUserTokenParams) error
 	UpdateUserVerificationWindow(ctx context.Context, arg UpdateUserVerificationWindowParams) (User, error)
 	VerifyUser(ctx context.Context, arg VerifyUserParams) (User, error)

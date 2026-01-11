@@ -106,6 +106,43 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Update current user profile",
+                "parameters": [
+                    {
+                        "description": "Update Profile Info",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.UpdateProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auth.UserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/auth/register": {
@@ -281,6 +318,41 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/exams/versions/{groupId}": {
+            "get": {
+                "tags": [
+                    "Exams"
+                ],
+                "summary": "List exam versions",
+                "operationId": "getExamVersions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Exam Group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/auth.ExamResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/auth.ErrorResponse"
                         }
@@ -511,11 +583,22 @@ const docTemplate = `{
         },
         "/users/{id}": {
             "get": {
-                "tags": [
-                    "Users"
+                "produces": [
+                    "application/json"
                 ],
-                "summary": "Get user by ID",
+                "tags": [
+                    "Users",
+                    "Auth"
+                ],
+                "summary": "Get user profile",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "User ID",
@@ -528,7 +611,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.UserResponse"
+                            "$ref": "#/definitions/auth.PublicUserResponse"
                         }
                     }
                 }
@@ -562,13 +645,22 @@ const docTemplate = `{
                 "comment": {
                     "type": "string"
                 },
+                "edit_version": {
+                    "type": "integer"
+                },
                 "exam_date": {
                     "type": "string",
                     "format": "date",
                     "example": "2023-01-15"
                 },
+                "group_id": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
+                },
+                "is_latest": {
+                    "type": "integer"
                 },
                 "module_name": {
                     "type": "string"
@@ -607,6 +699,9 @@ const docTemplate = `{
             "description": "A study module",
             "type": "object",
             "properties": {
+                "alias": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -633,6 +728,35 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "auth.PublicUserResponse": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "programid": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "theme": {
+                    "type": "string"
+                },
+                "verified": {
+                    "type": "integer"
                 }
             }
         },
@@ -677,6 +801,23 @@ const docTemplate = `{
                 }
             }
         },
+        "auth.UpdateProfileRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "Max Mustermann"
+                },
+                "programid": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "theme": {
+                    "type": "string",
+                    "example": "dark"
+                }
+            }
+        },
         "auth.UserResponse": {
             "description": "User account information",
             "type": "object",
@@ -703,6 +844,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "role": {
+                    "type": "string"
+                },
+                "theme": {
                     "type": "string"
                 },
                 "updated_at": {

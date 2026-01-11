@@ -17,12 +17,18 @@ definitions:
     properties:
       comment:
         type: string
+      edit_version:
+        type: integer
       exam_date:
         example: "2023-01-15"
         format: date
         type: string
+      group_id:
+        type: string
       id:
         type: string
+      is_latest:
+        type: integer
       module_name:
         type: string
       moduleid:
@@ -35,12 +41,6 @@ definitions:
         type: string
       version:
         type: string
-      group_id:
-        type: string
-      edit_version:
-        type: integer
-      is_latest:
-        type: integer
     type: object
   auth.LoginRequest:
     properties:
@@ -54,14 +54,14 @@ definitions:
   auth.ModuleResponse:
     description: A study module
     properties:
+      alias:
+        type: string
       id:
         type: integer
       name:
         type: string
       programid:
         type: integer
-      alias:
-        type: string
     type: object
   auth.ProgramResponse:
     description: A study program including valid PO versions
@@ -74,6 +74,25 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  auth.PublicUserResponse:
+    properties:
+      active:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      programid:
+        type: integer
+      role:
+        type: string
+      theme:
+        type: string
+      verified:
+        type: integer
     type: object
   auth.RegisterRequest:
     properties:
@@ -103,6 +122,18 @@ definitions:
       version:
         type: string
     type: object
+  auth.UpdateProfileRequest:
+    properties:
+      name:
+        example: Max Mustermann
+        type: string
+      programid:
+        example: 1
+        type: integer
+      theme:
+        example: dark
+        type: string
+    type: object
   auth.UserResponse:
     description: User account information
     properties:
@@ -121,6 +152,8 @@ definitions:
       programid:
         type: integer
       role:
+        type: string
+      theme:
         type: string
       updated_at:
         type: string
@@ -196,6 +229,30 @@ paths:
           schema:
             $ref: '#/definitions/auth.UserResponse'
       summary: Get current user
+      tags:
+      - Auth
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Update Profile Info
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: Update current user profile
       tags:
       - Auth
   /auth/register:
@@ -388,6 +445,10 @@ paths:
             items:
               $ref: '#/definitions/auth.ExamResponse'
             type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
       summary: List exam versions
       tags:
       - Exams
@@ -490,12 +551,20 @@ paths:
         name: id
         required: true
         type: string
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.UserResponse'
-      summary: Get user by ID
+            $ref: '#/definitions/auth.PublicUserResponse'
+      summary: Get user profile
       tags:
       - Users
+      - Auth
 swagger: "2.0"

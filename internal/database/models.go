@@ -101,4 +101,5 @@ type User struct {
 	CreatedAt         string  `json:"created_at"`
 	UpdatedAt         string  `json:"updated_at"`
 	VerificationToken *string `json:"verification_token"`
+	Theme             string  `json:"theme"`
 }
