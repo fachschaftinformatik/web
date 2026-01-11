@@ -35,6 +35,12 @@ definitions:
         type: string
       version:
         type: string
+      group_id:
+        type: string
+      edit_version:
+        type: integer
+      is_latest:
+        type: integer
     type: object
   auth.LoginRequest:
     properties:
@@ -54,6 +60,8 @@ definitions:
         type: string
       programid:
         type: integer
+      alias:
+        type: string
     type: object
   auth.ProgramResponse:
     description: A study program including valid PO versions
@@ -362,6 +370,25 @@ paths:
           schema:
             type: file
       summary: Download file
+      tags:
+      - Exams
+  /exams/versions/{groupId}:
+    get:
+      operationId: getExamVersions
+      parameters:
+      - description: Exam Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/auth.ExamResponse'
+            type: array
+      summary: List exam versions
       tags:
       - Exams
   /programs:

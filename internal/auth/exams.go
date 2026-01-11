@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
-	"errors"
 
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/go-chi/chi/v5"
@@ -31,6 +31,65 @@ type ExamResponse struct {
 	UploadedAt   time.Time `json:"uploaded_at"`
 	UploaderName string    `json:"uploader_name"`
 	Comment      string    `json:"comment,omitempty"`
+	EditVersion  int64     `json:"edit_version"`
+	GroupID      string    `json:"group_id"`
+	IsLatest     int64     `json:"is_latest"`
+}
+
+// GetExamVersions list exam versions
+// @Summary List exam versions
+// @Tags Exams
+// @ID getExamVersions
+// @Param groupId path string true "Exam Group ID"
+// @Success 200 {array} ExamResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /exams/versions/{groupId} [get]
+func (s *Server) GetExamVersions(w http.ResponseWriter, r *http.Request) {
+	groupID := chi.URLParam(r, "groupId")
+	_, _, err := s.authenticate(w, r)
+	if err != nil {
+		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	rows, err := s.DB.ListExamVersions(r.Context(), groupID)
+	if err != nil {
+		s.Log.Printf("Failed to list exam versions: %v", err)
+		s.jsonError(w, "database_error", "Could not fetch exam history", http.StatusInternalServerError)
+		return
+	}
+
+	apiExams := make([]ExamResponse, 0, len(rows))
+	for _, row := range rows {
+		uploaded, _ := time.Parse(time.RFC3339, row.UploadedAt)
+
+		var modID int64
+		if row.Moduleid != nil {
+			modID = *row.Moduleid
+		}
+		var comm string
+		if row.Comment != nil {
+			comm = *row.Comment
+		}
+
+		entry := ExamResponse{
+			ID:           row.ID,
+			ProgramID:    row.Programid,
+			Version:      row.Version,
+			ModuleID:     modID,
+			ModuleName:   row.ModuleName,
+			ExamDate:     row.ExamDate,
+			UploadedAt:   uploaded,
+			UploaderName: row.UploaderName,
+			Comment:      comm,
+			EditVersion:  row.EditVersion,
+			GroupID:      row.GroupID,
+			IsLatest:     row.IsLatest,
+		}
+		apiExams = append(apiExams, entry)
+	}
+
+	s.respondJSON(w, http.StatusOK, apiExams)
 }
 
 type ExamAssignment struct {
@@ -142,18 +201,22 @@ func (s *Server) PostExams(w http.ResponseWriter, r *http.Request) {
 
 	for _, assign := range assignments {
 		modID := assign.ModuleID
+		id := uuid.NewString()
 		paramsDB := database.CreateExamParams{
-			ID:        uuid.NewString(),
-			Userid:    user.ID,
-			Programid: assign.ProgramID,
-			Version:   assign.Version,
-			Moduleid:  &modID,
-			ExamDate:  examDate,
-			Accesskey: accessKey,
-			MimeType:  "application/pdf",
-			Nbytes:    header.Size,
-			Checksum:  checksum,
-			Comment:   commentPtr,
+			ID:          id,
+			Userid:      user.ID,
+			Programid:   assign.ProgramID,
+			Version:     assign.Version,
+			Moduleid:    &modID,
+			ExamDate:    examDate,
+			Accesskey:   accessKey,
+			MimeType:    "application/pdf",
+			Nbytes:      header.Size,
+			Checksum:    checksum,
+			Comment:     commentPtr,
+			GroupID:     id, // Use ID as group_id for new exams
+			EditVersion: 1,
+			IsLatest:    1,
 		}
 
 		_, err = s.DB.CreateExam(ctx, paramsDB)
@@ -208,7 +271,7 @@ func (s *Server) GetExams(w http.ResponseWriter, r *http.Request) {
 	apiExams := make([]ExamResponse, 0, len(rows))
 	for _, row := range rows {
 		uploaded, _ := time.Parse(time.RFC3339, row.UploadedAt)
-		
+
 		var modID int64
 		if row.Moduleid != nil {
 			modID = *row.Moduleid
@@ -228,6 +291,9 @@ func (s *Server) GetExams(w http.ResponseWriter, r *http.Request) {
 			UploadedAt:   uploaded,
 			UploaderName: row.UploaderName,
 			Comment:      comm,
+			EditVersion:  row.EditVersion,
+			GroupID:      row.GroupID,
+			IsLatest:     row.IsLatest,
 		}
 		apiExams = append(apiExams, entry)
 	}
@@ -262,29 +328,65 @@ func (s *Server) PutExamsId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx := r.Context()
+	// 1. Get current version
+	oldExam, err := s.DB.GetExam(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			s.jsonError(w, "not_found", "Exam not found", http.StatusNotFound)
+		} else {
+			s.Log.Printf("DB GetExam error: %v", err)
+			s.jsonError(w, "database_error", "Failed to fetch exam", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// 2. Prepare new access key and duplicate file
+	newAccessKey := uuid.NewString()
+	oldPath := fmt.Sprintf("exams/%s.pdf", oldExam.Accesskey)
+	newPath := fmt.Sprintf("exams/%s.pdf", newAccessKey)
+
+	if err := s.Store.CopyObject(ctx, oldPath, newPath); err != nil {
+		s.Log.Printf("Storage CopyObject error: %v", err)
+		s.jsonError(w, "server_error", "Failed to duplicate attachment", http.StatusInternalServerError)
+		return
+	}
+
+	// 3. Clear latest flag for this group and create new version
+	if err := s.DB.ClearLatestFlag(ctx, oldExam.GroupID); err != nil {
+		s.Log.Printf("DB ClearLatestFlag error: %v", err)
+		s.jsonError(w, "database_error", "Failed to update version status", http.StatusInternalServerError)
+		return
+	}
+
 	modID := payload.ModuleID
 	var commentPtr *string
 	if payload.Comment != "" {
 		commentPtr = &payload.Comment
 	}
 
-	params := database.UpdateExamParams{
-		ID:        id,
-		Programid: payload.ProgramID,
-		Version:   payload.Version,
-		Moduleid:  &modID,
-		ExamDate:  payload.Date,
-		Comment:   commentPtr,
+	newID := uuid.NewString()
+	params := database.CreateExamParams{
+		ID:          newID,
+		Userid:      user.ID,
+		Programid:   payload.ProgramID,
+		Version:     payload.Version,
+		Moduleid:    &modID,
+		ExamDate:    payload.Date,
+		Checksum:    oldExam.Checksum,
+		Nbytes:      oldExam.Nbytes,
+		MimeType:    oldExam.MimeType,
+		Accesskey:   newAccessKey,
+		Comment:     commentPtr,
+		GroupID:     oldExam.GroupID,
+		EditVersion: oldExam.EditVersion + 1,
+		IsLatest:    1,
 	}
 
-	updated, err := s.DB.UpdateExam(r.Context(), params)
+	updated, err := s.DB.CreateExam(ctx, params)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			s.jsonError(w, "not_found", "Exam not found", http.StatusNotFound)
-		} else {
-			s.Log.Printf("DB UpdateExam error: %v", err)
-			s.jsonError(w, "database_error", "Failed to update exam", http.StatusInternalServerError)
-		}
+		s.Log.Printf("DB CreateExam (version) error: %v", err)
+		s.jsonError(w, "database_error", "Failed to create new version", http.StatusInternalServerError)
 		return
 	}
 
@@ -296,17 +398,21 @@ func (s *Server) PutExamsId(w http.ResponseWriter, r *http.Request) {
 	if updated.Comment != nil {
 		uComm = *updated.Comment
 	}
-	
+
 	uploaded, _ := time.Parse(time.RFC3339, updated.UploadedAt)
 
 	entry := ExamResponse{
-		ID:         updated.ID,
-		ProgramID:  updated.Programid,
-		Version:    updated.Version,
-		ModuleID:   uModID,
-		ExamDate:   updated.ExamDate,
-		UploadedAt: uploaded,
-		Comment:    uComm,
+		ID:           updated.ID,
+		ProgramID:    updated.Programid,
+		Version:      updated.Version,
+		ModuleID:     uModID,
+		ExamDate:     updated.ExamDate,
+		UploadedAt:   uploaded,
+		UploaderName: user.Name, // New record is by current user
+		Comment:      uComm,
+		EditVersion:  updated.EditVersion,
+		GroupID:      updated.GroupID,
+		IsLatest:     updated.IsLatest,
 	}
 
 	s.respondJSON(w, http.StatusOK, entry)
