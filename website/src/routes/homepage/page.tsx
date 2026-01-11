@@ -713,13 +713,13 @@ const NewsFeedPage: React.FC = () => {
         <DialogTitle>Event eintragen</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Titel" value={eventDraft.title} onChange={(e) => setEventDraft((p) => ({ ...p, title: e.target.value }))} fullWidth />
+            <TextField id="event-title" name="title" label="Titel" value={eventDraft.title} onChange={(e) => setEventDraft((p) => ({ ...p, title: e.target.value }))} fullWidth />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField label="Datum" type="date" value={eventDraft.date} onChange={(e) => setEventDraft((p) => ({ ...p, date: e.target.value }))} fullWidth InputLabelProps={{ shrink: true }} />
-              <TextField label="Uhrzeit" type="time" value={eventDraft.time} onChange={(e) => setEventDraft((p) => ({ ...p, time: e.target.value }))} fullWidth InputLabelProps={{ shrink: true }} />
+              <TextField id="event-date" name="date" label="Datum" type="date" value={eventDraft.date} onChange={(e) => setEventDraft((p) => ({ ...p, date: e.target.value }))} fullWidth InputLabelProps={{ shrink: true }} />
+              <TextField id="event-time" name="time" label="Uhrzeit" type="time" value={eventDraft.time} onChange={(e) => setEventDraft((p) => ({ ...p, time: e.target.value }))} fullWidth InputLabelProps={{ shrink: true }} />
             </Stack>
-            <TextField label="Ort" value={eventDraft.location} onChange={(e) => setEventDraft((p) => ({ ...p, location: e.target.value }))} fullWidth />
-            <TextField label="Kategorie" select value={eventDraft.category} onChange={(e) => setEventDraft((p) => ({ ...p, category: e.target.value }))} fullWidth>
+            <TextField id="event-location" name="location" label="Ort" value={eventDraft.location} onChange={(e) => setEventDraft((p) => ({ ...p, location: e.target.value }))} fullWidth />
+            <TextField id="event-category" name="category" label="Kategorie" select value={eventDraft.category} onChange={(e) => setEventDraft((p) => ({ ...p, category: e.target.value }))} fullWidth>
               {EVENT_CATEGORIES.map((cat) => <MenuItem key={cat.value} value={cat.value}>{cat.label}</MenuItem>)}
             </TextField>
           </Stack>

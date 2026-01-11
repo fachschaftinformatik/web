@@ -529,6 +529,8 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: {
 
           <Stack direction="row" spacing={1} alignItems="stretch">
             <TextField
+              id="media-event-select"
+              name="event_id"
               select
               fullWidth
               label="Event auswählen"
@@ -590,8 +592,8 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: {
             )}
           </Box>
 
-          <TextField label="Titel (Optional)" size="small" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <TextField label="Beschreibung (Optional)" size="small" multiline rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+          <TextField id="media-title" name="title" label="Titel (Optional)" size="small" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <TextField id="media-description" name="description" label="Beschreibung (Optional)" size="small" multiline rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: 3 }}>
@@ -664,6 +666,8 @@ function CreateEventDialog({ open, onClose, onSuccess }: {
         <Stack spacing={3} mt={1}>
           {error && <Alert severity="error">{error}</Alert>}
           <TextField
+            id="create-event-title"
+            name="title"
             autoFocus
             label="Event Titel"
             fullWidth
