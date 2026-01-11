@@ -4,7 +4,6 @@ import {
   Breadcrumbs,
   Button,
   Chip,
-  Container,
   Divider,
   Link,
   List,
@@ -38,14 +37,19 @@ const ForumPostsPage: React.FC = () => {
   }, [page, pageCount]);
 
   if (!user) {
-    return null;
+    return (
+      <Box sx={{ mt: 5, textAlign: 'center' }}>
+        <Typography variant="h5">Dieser Nutzer existiert nicht.</Typography>
+        <Button component={RouterLink} to="/" sx={{ mt: 2 }}>Zurück zur Startseite</Button>
+      </Box>
+    );
   }
 
   return (
-    <Sidebar user={user} title="Forum">
-      <Container maxWidth="md" sx={{ py: 4 }}>
+    <Sidebar user={user} title="Forum" maxWidth="md">
+      <Box sx={{ py: 0 }}>
         <Breadcrumbs aria-label="breadcrumb trail" sx={{ mb: 2 }}>
-          <Link component={RouterLink} underline="hover" color="inherit" to="/dashboard">
+          <Link component={RouterLink} underline="hover" color="inherit" to={`/user/${user.id}`}>
             Dashboard
           </Link>
           <Typography color="text.primary">Forum</Typography>
@@ -60,7 +64,7 @@ const ForumPostsPage: React.FC = () => {
               Blättere durch alle Beiträge dieses Profils. Pagination sorgt für Übersicht bei vielen Posts.
             </Typography>
           </Box>
-          <Button variant="contained" component={RouterLink} to="/dashboard">
+          <Button variant="contained" component={RouterLink} to={`/user/${user.id}`}>
             Zurück
           </Button>
         </Stack>
@@ -111,7 +115,7 @@ const ForumPostsPage: React.FC = () => {
             />
           </Box>
         </Paper>
-      </Container>
+      </Box>
     </Sidebar>
   );
 };

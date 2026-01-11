@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
     Box,
-    Container,
     Typography,
     Paper,
     Button,
@@ -26,10 +25,18 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
+import {
+    List,
+    ListItem,
+    ListItemText,
+    ListItemButton,
+    ListItemSecondaryAction,
+    Divider
+} from "@mui/material";
 
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
-import { getExams, getExamsFile, getPrograms, getProgramModules } from "@lib/api";
+import { getExams, getExamsFile, getPrograms, getProgramModules, getExamVersions } from "@lib/api";
 import { client } from "@lib/api/client.gen";
 import type { AuthExamResponse as ExamListEntry, AuthProgramResponse as Program, AuthModuleResponse as Module } from "@lib/api";
 
@@ -58,11 +65,14 @@ export default function ExamDetailsPage() {
     const [formDate, setFormDate] = useState("");
     const [formComment, setFormComment] = useState("");
     const [formProgram, setFormProgram] = useState<Program | null>(null);
-    const [formPo, setFormPo] = useState("");
-    const [formModule, setFormModule] = useState<Module | null>(null);
 
     const [programs, setPrograms] = useState<Program[]>([]);
     const [programModules, setProgramModules] = useState<Module[]>([]);
+    const [examVersions, setExamVersions] = useState<ExamListEntry[]>([]);
+    const [fetchingVersions, setFetchingVersions] = useState(false);
+
+    const [formPo, setFormPo] = useState("");
+    const [formModule, setFormModule] = useState<Module | null>(null);
 
     const canEdit = user?.role === "admin" || user?.role === "editor";
 
@@ -88,14 +98,17 @@ export default function ExamDetailsPage() {
 
     useEffect(() => {
         fetchExams();
+        getPrograms().then(({ data }) => {
+            if (data) setPrograms(data);
+        });
     }, [fetchExams]);
 
     useEffect(() => {
         if (!selectedExam) {
-            if (previewUrl) {
-                URL.revokeObjectURL(previewUrl);
-                setPreviewUrl(null);
-            }
+            setPreviewUrl(prev => {
+                if (prev) URL.revokeObjectURL(prev);
+                return null;
+            });
             return;
         }
 
@@ -121,13 +134,23 @@ export default function ExamDetailsPage() {
             }
         });
 
+        if (selectedExam.group_id) {
+            setFetchingVersions(true);
+            getExamVersions({ path: { groupId: selectedExam.group_id } })
+                .then(({ data }) => setExamVersions(data || []))
+                .finally(() => setFetchingVersions(false));
+        }
+
         let active = true;
         getExamsFile({ path: { id: String(selectedExam.id) } })
             .then(({ data }) => {
                 if (active && data) {
                     const blob = data instanceof Blob ? data : new Blob([data as BlobPart]);
                     const url = URL.createObjectURL(blob);
-                    setPreviewUrl(url);
+                    setPreviewUrl(prev => {
+                        if (prev) URL.revokeObjectURL(prev);
+                        return url;
+                    });
                 }
             })
             .catch(console.error);
@@ -135,7 +158,7 @@ export default function ExamDetailsPage() {
         return () => {
             active = false;
         };
-    }, [selectedExam, previewUrl]);
+    }, [selectedExam]);
 
     useEffect(() => {
         if (!isEditing || !formProgram || formProgram.id === undefined) return;
@@ -215,10 +238,10 @@ export default function ExamDetailsPage() {
     };
 
     return (
-        <Sidebar user={user} title={"Reko: " + modulName}>
-            <Container maxWidth="md" sx={{ mt: 5, mb: 10 }}>
+        <Sidebar user={user} title="Rekos" maxWidth="lg">
+            <Box>
 
-                <Box sx={{ mb: 4 }}>
+                <Box>
                     <Button
                         startIcon={<ArrowBackRoundedIcon />}
                         onClick={() => navigate(-1)}
@@ -228,11 +251,11 @@ export default function ExamDetailsPage() {
                         Zurück
                     </Button>
                     <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
-                        Reko: {modulName}
+                        {modulName}
                     </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                        Alle Gedächtnisprotokolle und Altklausuren für dieses Modul.
-                    </Typography>
+                    {/* <Typography variant="body1" color="text.secondary">
+                       Beschreibung 
+                    </Typography> */}
                 </Box>
 
                 {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
@@ -244,49 +267,51 @@ export default function ExamDetailsPage() {
                         <Typography color="text.secondary">Keine Rekonstruktionen für dieses Modul gefunden.</Typography>
                     </Paper>
                 ) : (
-                    <Stack spacing={2}>
-                        {exams.map((entry) => (
-                            <Paper
-                                key={entry.id}
-                                onClick={() => setSelectedExam(entry)}
-                                sx={{
-                                    p: 2.5,
-                                    borderRadius: 3,
-                                    transition: "all 0.2s",
-                                    cursor: "pointer",
-                                    border: "1px solid",
-                                    borderColor: "divider",
-                                    "&:hover": {
-                                        borderColor: "primary.main",
-                                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)"
-                                    },
-                                }}
-                            >
-                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                                    <Box>
-                                        <Stack direction="row" alignItems="baseline" spacing={1} mb={0.5}>
-                                            <Typography variant="h6" fontWeight={600}>
-                                                {modulName}
-                                            </Typography>
-                                            {entry.version && (
-                                                <Typography variant="body2" color="text.secondary" fontWeight={400}>
-                                                    {entry.version}
-                                                </Typography>
-                                            )}
-                                        </Stack>
-
-                                        <Typography variant="body2" color="text.secondary">
-                                            Prüfungsdatum: {entry.exam_date ? new Date(entry.exam_date).toLocaleDateString('de-DE') : 'Unbekannt'}
-                                        </Typography>
-
-                                        <Typography variant="caption" color="text.disabled" display="block" mt={0.5}>
-                                            Hochgeladen von {entry.uploader_name || "Unbekannt"} am {entry.uploaded_at ? new Date(entry.uploaded_at).toLocaleDateString('de-DE') : '-'}
-                                        </Typography>
+                    <Paper elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3, overflow: 'hidden' }}>
+                        <List disablePadding>
+                            {exams.map((exam, idx) => {
+                                const prog = programs.find(p => p.id === exam.programid);
+                                const poLabel = prog ? `${prog.name} (${exam.version})` : (exam.version || "");
+                                return (
+                                    <Box key={exam.id}>
+                                        {idx > 0 && <Divider />}
+                                        <ListItem disablePadding>
+                                            <ListItemButton onClick={() => setSelectedExam(exam)} sx={{ py: 2 }}>
+                                                <ListItemText
+                                                    primary={poLabel}
+                                                    secondary={
+                                                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 0.5 }}>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {exam.exam_date ? new Date(exam.exam_date).toLocaleDateString('de-DE') : "Datum unbekannt"}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">•</Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                von {exam.uploader_name || "Anonym"}
+                                                            </Typography>
+                                                            {exam.comment && (
+                                                                <>
+                                                                    <Typography variant="caption" color="text.secondary">•</Typography>
+                                                                    <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 200, fontStyle: 'italic' }}>
+                                                                        "{exam.comment}"
+                                                                    </Typography>
+                                                                </>
+                                                            )}
+                                                        </Stack>
+                                                    }
+                                                    primaryTypographyProps={{ fontWeight: 600 }}
+                                                />
+                                                {/* <ListItemSecondaryAction sx={{ right: 24 }}>
+                                                    <Typography variant="caption" sx={{ bgcolor: 'action.hover', px: 1, py: 0.5, borderRadius: 1, fontWeight: 500 }}>
+                                                        Revision {exam.edit_version}
+                                                    </Typography>
+                                                </ListItemSecondaryAction> */}
+                                            </ListItemButton>
+                                        </ListItem>
                                     </Box>
-                                </Box>
-                            </Paper>
-                        ))}
-                    </Stack>
+                                );
+                            })}
+                        </List>
+                    </Paper>
                 )}
 
                 <Dialog
@@ -299,7 +324,7 @@ export default function ExamDetailsPage() {
                     {selectedExam && (
                         <>
                             <DialogTitle sx={{ m: 0, p: 3, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="h6" fontWeight={700}>
+                                <Typography variant="h6" component="span" fontWeight={700}>
                                     {isEditing ? "Reko bearbeiten" : "Details zur Reko"}
                                 </Typography>
                                 <Box>
@@ -360,6 +385,7 @@ export default function ExamDetailsPage() {
 
                             <DialogContent sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
+
                                 <TextField
                                     id="edit-exam-date"
                                     name="date"
@@ -375,23 +401,6 @@ export default function ExamDetailsPage() {
                                 />
 
                                 <Stack spacing={2}>
-                                    <TextField
-                                        id="edit-exam-program"
-                                        name="program"
-                                        select
-                                        label="Studiengang"
-                                        fullWidth
-                                        size="small"
-                                        value={formProgram?.id || ""}
-                                        onChange={(e) => {
-                                            const prog = programs.find(p => p.id === Number(e.target.value));
-                                            setFormProgram(prog || null);
-                                        }}
-                                        disabled={!isEditing}
-                                    >
-                                        {programs.map((p) => (<MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>))}
-                                    </TextField>
-
                                     <Stack direction="row" spacing={2}>
                                         <TextField
                                             id="edit-exam-version"
@@ -401,10 +410,67 @@ export default function ExamDetailsPage() {
                                             value={formPo}
                                             disabled={!isEditing || !formProgram}
                                             onChange={(e) => setFormPo(e.target.value)}
-                                            sx={{ minWidth: 120 }}
+                                            sx={{ width: 150 }}
                                             size="small"
                                         >
+                                            {(!formProgram?.versions || formProgram.versions.length === 0) && formPo ? (
+                                                <MenuItem value={formPo}>{formPo}</MenuItem>
+                                            ) : null}
                                             {formProgram?.versions && formProgram.versions.map((v) => (<MenuItem key={v} value={v}>{v}</MenuItem>))}
+                                            {(!formProgram?.versions || formProgram.versions.length === 0) && !formPo && (
+                                                <MenuItem value=""><em>PO</em></MenuItem>
+                                            )}
+                                        </TextField>
+
+                                        <TextField
+                                            id="edit-exam-program"
+                                            name="program"
+                                            select
+                                            label="Studiengang"
+                                            fullWidth
+                                            size="small"
+                                            value={formProgram?.id || ""}
+                                            onChange={(e) => {
+                                                const prog = programs.find(p => p.id === Number(e.target.value));
+                                                setFormProgram(prog || null);
+                                            }}
+                                            disabled={!isEditing}
+                                            sx={{ flexGrow: 1 }}
+                                        >
+                                            {programs.length === 0 && formProgram?.id ? (
+                                                <MenuItem value={formProgram.id}>{formProgram.name}</MenuItem>
+                                            ) : null}
+                                            {programs.map((p) => (<MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>))}
+                                            {programs.length === 0 && !formProgram && (
+                                                <MenuItem value=""><em>Wähle einen Studiengang</em></MenuItem>
+                                            )}
+                                        </TextField>
+                                    </Stack>
+
+                                    <Stack direction="row" spacing={2}>
+                                        <TextField
+                                            select
+                                            label="Revision"
+                                            size="small"
+                                            sx={{ width: 150 }}
+                                            value={selectedExam.id}
+                                            disabled={isEditing || fetchingVersions}
+                                            onChange={(e) => {
+                                                const version = examVersions.find(v => v.id === e.target.value);
+                                                if (version) setSelectedExam(version);
+                                            }}
+                                        >
+                                            {examVersions.length === 0 ? (
+                                                <MenuItem value={selectedExam.id}>
+                                                    {selectedExam.edit_version}
+                                                </MenuItem>
+                                            ) : (
+                                                examVersions.map((v) => (
+                                                    <MenuItem key={v.id} value={v.id}>
+                                                        {v.edit_version} {v.is_latest ? "(neu)" : ""}
+                                                    </MenuItem>
+                                                ))
+                                            )}
                                         </TextField>
 
                                         <Autocomplete
@@ -413,6 +479,7 @@ export default function ExamDetailsPage() {
                                             value={formModule}
                                             onChange={(_, newValue) => setFormModule(newValue)}
                                             disabled={!isEditing || !formProgram}
+                                            noOptionsText="Keine Ergebnisse"
                                             fullWidth
                                             renderInput={(params) => (
                                                 <TextField
@@ -491,7 +558,7 @@ export default function ExamDetailsPage() {
                     </DialogActions>
                 </Dialog>
 
-            </Container>
+            </Box>
         </Sidebar>
     );
 }

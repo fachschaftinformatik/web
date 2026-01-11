@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 
 import { getAuthMe, postAuthLogout, getAuthCsrf } from '@lib/api';
-import type { User } from '@lib/api';
+import type { AuthUserResponse as User } from '@lib/api';
+import { useThemeMode, type ThemePreference } from '@lib/theme';
 
 const REMEMBERED_USER_KEY = 'fs_remembered_user';
 export const REMEMBERED_FLAG_KEY = 'fs_remember_flag';
@@ -55,6 +56,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => readRememberedUser());
   const [isLoading, setIsLoading] = useState(true);
+  const { setPreference } = useThemeMode();
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -62,9 +64,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const { data, error } = await getAuthMe();
         if (error || !data) {
-            throw new Error('Not authenticated');
+          throw new Error('Nicht authentifiziert');
         }
         setUser(data);
+        if ((data as any).theme) {
+          setPreference((data as any).theme as ThemePreference);
+        }
         if (typeof window !== 'undefined' && window.localStorage.getItem(REMEMBERED_FLAG_KEY) === 'true') {
           persistRememberedUser(data);
         }
@@ -76,10 +81,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
     checkAuthStatus();
-  }, []);
+  }, [setPreference]);
+
+  // Ensure theme precedence: if the user object changes, force sync the theme
+  useEffect(() => {
+    if (user && (user as any).theme) {
+      setPreference((user as any).theme as ThemePreference);
+    }
+  }, [user, setPreference]);
 
   const login = (loggedInUser: User, rememberMe?: boolean) => {
     setUser(loggedInUser);
+    if ((loggedInUser as any).theme) {
+      setPreference((loggedInUser as any).theme as ThemePreference);
+    }
     if (rememberMe) {
       persistRememberedUser(loggedInUser);
     } else {
@@ -89,19 +104,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      
+
       const { data } = await getAuthCsrf();
       const token = data?.csrf ?? '';
 
       await postAuthLogout({
         headers: {
-            'X-CSRF-Token': token
+          'X-CSRF-Token': token
         }
       });
       setUser(null);
       clearRememberedUser();
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Abmeldung fehlgeschlagen:', error);
       setUser(null);
       clearRememberedUser();
     }
@@ -117,7 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth muss innerhalb eines AuthProviders verwendet werden');
   }
   return context;
 };

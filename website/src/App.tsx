@@ -1,7 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
 
 import { client } from '@lib/api/client.gen';
 
@@ -19,25 +20,38 @@ import MediaPage from '@routes/media/page';
 import TeamPage from '@routes/team/page';
 import NewsPage from '@routes/news/page';
 import NewsDetail from '@routes/news/details';
-import CreateNewsPage from '@routes/news/create'; 
+import CreateNewsPage from '@routes/news/create';
 import ExamsPage from '@routes/exams/page';
 import ExamDetailsPage from '@routes/exams/extensions';
 import ForumPage from '@routes/forum/page';
 import NewsFeedPage from '@routes/homepage/page';
+import LegalPage from '@routes/legal/page';
+import PrivacyPage from '@routes/privacy/page';
+import SettingsPage from '@routes/settings/page';
 
 client.setConfig({
-  baseUrl: '/api', 
-  credentials: 'include', 
+  baseUrl: '/api',
+  credentials: 'include',
 });
 
-const AuthRedirector: React.FC = () => {
-    const { user, isLoading } = useAuth();
-    if (isLoading)
-        return null;
-    if (user)
-        return <Navigate to="/" replace />;
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
 
-    return <Outlet />;
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
+const AuthRedirector: React.FC = () => {
+  const { user, isLoading } = useAuth();
+  if (isLoading)
+    return null;
+  if (user)
+    return <Navigate to="/" replace />;
+
+  return <Outlet />;
 };
 
 function App() {
@@ -45,24 +59,29 @@ function App() {
     <ThemeModeProvider>
       <AuthProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
 
             <Route element={<AuthRedirector />}>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegistrationPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegistrationPage />} />
             </Route>
             <Route element={<ProtectedRoute />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/exams" element={<ExamsPage />} />
-                <Route path="/rekos/klausuren/modul" element={<ExamDetailsPage />} />
-                <Route path="/news/create" element={<CreateNewsPage />} />
+              <Route path="/exams" element={<ExamsPage />} />
+              <Route path="/rekos/klausuren/modul" element={<ExamDetailsPage />} />
+              <Route path="/news/create" element={<CreateNewsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
+
+            <Route path="/user/:userId" element={<DashboardPage />} />
 
             <Route path="/forum" element={<ForumPage />} />
             <Route path="/media" element={<MediaPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/news" element={<NewsPage />} />
             <Route path="/news/:id" element={<NewsDetail />} />
+            <Route path="/legal" element={<LegalPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
 
             <Route path="/" element={<NewsFeedPage />} />
             <Route path="*" element={<Navigate to="/login" replace />} />

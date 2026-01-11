@@ -4,7 +4,6 @@ import {
   TextField,
   Button,
   Typography,
-  Container,
   Chip,
   Stack,
   Paper
@@ -50,8 +49,8 @@ export default function CreateNews() {
     navigate("/news");
   }
   return (
-    <Sidebar user={user} title="News erstellen">
-      <Container maxWidth="md" sx={{ py: 4 }}>
+    <Sidebar user={user} title="News erstellen" maxWidth="md">
+      <Box>
         <Typography variant="h4" mb={3} fontWeight={600}>
           Neuen Beitrag erstellen
         </Typography>
@@ -278,7 +277,7 @@ export default function CreateNews() {
             </Button>
           </Stack>
         </Paper>
-      </Container>
+      </Box>
     </Sidebar>
   );
 }

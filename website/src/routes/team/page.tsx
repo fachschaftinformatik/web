@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  Container,
   Typography,
   Card,
   CardMedia,
@@ -209,8 +208,8 @@ export default function Team() {
     </Box>
   );
   return (
-    <Sidebar user={user} title="Team">
-      <Container sx={{ py: 4 }}>
+    <Sidebar user={user} title="Team" maxWidth="lg">
+      <Box>
         {canEdit && (
           <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
             <Button
@@ -233,7 +232,7 @@ export default function Team() {
         {sections.map((section) => (
           <Section key={section.id} title={section.title} members={section.members} />
         ))}
-      </Container>
+      </Box>
 
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} fullWidth maxWidth="md">
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>

@@ -10,30 +10,32 @@ import (
 )
 
 const createModule = `-- name: CreateModule :one
-INSERT INTO modules (programid, name) 
-VALUES (?1, ?2) 
-RETURNING id, programid, name, created_at
+INSERT INTO modules (programid, name, alias) 
+VALUES (?1, ?2, ?3) 
+RETURNING id, programid, name, created_at, alias
 `
 
 type CreateModuleParams struct {
-	Programid int64  `json:"programid"`
-	Name      string `json:"name"`
+	Programid int64   `json:"programid"`
+	Name      string  `json:"name"`
+	Alias     *string `json:"alias"`
 }
 
 func (q *Queries) CreateModule(ctx context.Context, arg CreateModuleParams) (Module, error) {
-	row := q.db.QueryRowContext(ctx, createModule, arg.Programid, arg.Name)
+	row := q.db.QueryRowContext(ctx, createModule, arg.Programid, arg.Name, arg.Alias)
 	var i Module
 	err := row.Scan(
 		&i.ID,
 		&i.Programid,
 		&i.Name,
 		&i.CreatedAt,
+		&i.Alias,
 	)
 	return i, err
 }
 
 const listModulesByProgram = `-- name: ListModulesByProgram :many
-SELECT id, programid, name, created_at FROM modules 
+SELECT id, programid, name, created_at, alias FROM modules 
 WHERE programid = ?1 
 ORDER BY name
 `
@@ -52,6 +54,7 @@ func (q *Queries) ListModulesByProgram(ctx context.Context, programid int64) ([]
 			&i.Programid,
 			&i.Name,
 			&i.CreatedAt,
+			&i.Alias,
 		); err != nil {
 			return nil, err
 		}

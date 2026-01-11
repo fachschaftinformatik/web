@@ -12,6 +12,7 @@ type ModuleResponse struct {
 	ID        int    `json:"id"`
 	ProgramID int    `json:"programid"`
 	Name      string `json:"name"`
+	Alias     string `json:"alias"`
 }
 
 // GetProgramModules lists modules
@@ -35,10 +36,15 @@ func (s *Server) GetProgramModules(w http.ResponseWriter, r *http.Request) {
 
 	apiModules := make([]ModuleResponse, 0, len(modules))
 	for _, m := range modules {
+		alias := ""
+		if m.Alias != nil {
+			alias = *m.Alias
+		}
 		apiModules = append(apiModules, ModuleResponse{
 			ID:        int(m.ID),
 			ProgramID: int(m.Programid),
 			Name:      m.Name,
+			Alias:     alias,
 		})
 	}
 

@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import {
     Box,
-    Container,
     Typography,
     MenuItem,
     TextField,
@@ -161,7 +160,7 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                 setCurrentModule(null);
             }
         } catch (err) {
-            console.error("Upload error:", err);
+            console.error("Fehler beim Hochladen:", err);
             setError(err instanceof Error ? err.message : "Netzwerkfehler.");
         } finally {
             setLoading(false);
@@ -262,6 +261,13 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                             <Autocomplete
                                 options={programModules}
                                 getOptionLabel={(option) => option.name || ""}
+                                filterOptions={(options, state) => {
+                                    const s = state.inputValue.toLowerCase();
+                                    return options.filter(o =>
+                                        (o.name && o.name.toLowerCase().includes(s)) ||
+                                        (o.alias && o.alias.toLowerCase().includes(s))
+                                    );
+                                }}
                                 value={currentModule}
                                 onChange={(_, newValue) => setCurrentModule(newValue)}
                                 disabled={!currentProgram}
@@ -390,8 +396,8 @@ export default function Exams() {
 
     const [uploadOpen, setUploadOpen] = useState(false);
     const [programs, setPrograms] = useState<Program[]>([]);
-    const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
-    const [selectedPo, setSelectedPo] = useState("");
+    const [selectedPrograms, setSelectedPrograms] = useState<Program[]>([]);
+    const [selectedPo, setSelectedPo] = useState("all");
     const [modules, setModules] = useState<Module[]>([]);
     const [search, setSearch] = useState("");
 
@@ -399,9 +405,13 @@ export default function Exams() {
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const sortedPos = useMemo(() => {
-        if (!selectedProgram || !selectedProgram.versions) return [];
-        return [...selectedProgram.versions].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-    }, [selectedProgram]);
+        if (selectedPrograms.length === 0) return [];
+        const allVersions = new Set<string>();
+        selectedPrograms.forEach(p => {
+            p.versions?.forEach(v => allVersions.add(v));
+        });
+        return Array.from(allVersions).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    }, [selectedPrograms]);
 
     useEffect(() => {
         getPrograms().then(({ data }) => {
@@ -414,58 +424,76 @@ export default function Exams() {
                     if (userProg) defaultProg = userProg;
                 }
 
-                setSelectedProgram(defaultProg);
+                setSelectedPrograms([defaultProg]);
 
                 if (defaultProg.versions && defaultProg.versions.length > 0) {
-                    const sortedVersions = [...defaultProg.versions].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-                    setSelectedPo(sortedVersions[0]);
+                    if (!selectedPo) {
+                        setSelectedPo("all");
+                    }
                 }
             }
         });
     }, [user?.programid]);
 
     useEffect(() => {
-        if (selectedProgram && selectedProgram.id !== undefined) {
-            getProgramModules({ path: { id: selectedProgram.id as number } })
-                .then(({ data }) => setModules(data || []));
+        if (selectedPrograms.length > 0) {
+            Promise.all(selectedPrograms.map(p => getProgramModules({ path: { id: p.id as number } })))
+                .then(results => {
+                    const allModules = results.flatMap(r => r.data || []);
+                    // Filter duplicates by ID
+                    const uniqueModules = Array.from(new Map(allModules.map(m => [m.id, m])).values());
+                    setModules(uniqueModules);
+                });
 
-            const defaultPo = sortedPos[0] || "";
-            if (selectedProgram.versions && !selectedProgram.versions.includes(selectedPo)) {
-                if (selectedPo !== defaultPo) {
-                    void Promise.resolve().then(() => {
-                        setSelectedPo(defaultPo);
-                    });
-                }
+            const defaultPo = "all";
+            // Reset to "all" if current selection is no longer valid for ANY of the selected programs
+            if (selectedPo !== "all" && !sortedPos.includes(selectedPo)) {
+                void Promise.resolve().then(() => {
+                    setSelectedPo(defaultPo);
+                });
             }
+        } else {
+            setModules([]);
         }
-    }, [selectedProgram, selectedPo, sortedPos]);
+    }, [selectedPrograms, selectedPo, sortedPos]);
 
     useEffect(() => {
-        if (selectedProgram && selectedProgram.id !== undefined && selectedPo) {
-            getExams({ query: { programid: selectedProgram.id as number, version: selectedPo } })
-                .then(({ data }) => {
-                    if (data) {
-                        const ids = new Set(data.map(e => e.moduleid).filter((id): id is number => id !== undefined));
-                        setActiveModuleIds(ids);
-                    } else {
-                        setActiveModuleIds(new Set());
-                    }
+        if (selectedPrograms.length > 0 && selectedPo) {
+            const fetchExams = selectedPrograms.map(p => {
+                const query: { programid: number; version?: string } = { programid: p.id as number };
+                if (selectedPo !== "all") {
+                    query.version = selectedPo;
+                }
+                return getExams({ query });
+            });
+
+            Promise.all(fetchExams)
+                .then(results => {
+                    const allExams = results.flatMap(r => r.data || []);
+                    const ids = new Set(allExams.map(e => e.moduleid).filter((id): id is number => id !== undefined));
+                    setActiveModuleIds(ids);
                 })
                 .catch(() => setActiveModuleIds(new Set()));
+        } else {
+            setActiveModuleIds(new Set());
         }
-    }, [selectedProgram, selectedPo, refreshTrigger]);
+    }, [selectedPrograms, selectedPo, refreshTrigger]);
 
     const filteredModules = useMemo(() => {
         let res = modules.filter(m => m.id !== undefined && activeModuleIds.has(m.id as number));
         if (search) {
-            res = res.filter(m => m.name && m.name.toLowerCase().includes(search.toLowerCase()));
+            const s = search.toLowerCase();
+            res = res.filter(m =>
+                (m.name && m.name.toLowerCase().includes(s)) ||
+                (m.alias && m.alias.toLowerCase().includes(s))
+            );
         }
         return res;
     }, [modules, search, activeModuleIds]);
 
     return (
-        <Sidebar user={user} title="Rekos">
-            <Container maxWidth="md" sx={{ mt: 5, mb: 10 }}>
+        <Sidebar user={user} title="Rekos" maxWidth="lg">
+            <Box>
 
                 <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box>
@@ -511,26 +539,27 @@ export default function Exams() {
                             )}
                         </Stack>
 
-                        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                            <TextField
+                        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', width: '100%', alignItems: 'center' }}>
+                            <Autocomplete
+                                multiple
                                 id="main-program-select"
-                                name="program"
-                                select
-                                label="Studiengang"
-                                value={selectedProgram?.id || ""}
-                                onChange={(e) => {
-                                    const prog = programs.find(p => p.id === Number(e.target.value));
-                                    if (prog) setSelectedProgram(prog);
-                                }}
-                                size="small"
-                                sx={{ flex: 2, minWidth: 220 }}
-                            >
-                                {programs.length > 0 ? (
-                                    programs.map((prog) => (<MenuItem key={prog.id} value={prog.id}>{prog.name}</MenuItem>))
-                                ) : (
-                                    <MenuItem disabled value="">Lädt...</MenuItem>
+                                options={programs}
+                                getOptionLabel={(option) => option.name || ""}
+                                value={selectedPrograms}
+                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                onChange={(_, newValue) => setSelectedPrograms(newValue)}
+                                noOptionsText="Keine Ergebnisse"
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Studiengang"
+                                        size="small"
+                                        placeholder="Wählen..."
+                                    />
                                 )}
-                            </TextField>
+                                size="small"
+                                sx={{ flex: 2, minWidth: 300 }}
+                            />
 
                             <TextField
                                 id="main-po-select"
@@ -541,13 +570,12 @@ export default function Exams() {
                                 onChange={(e) => setSelectedPo(e.target.value)}
                                 size="small"
                                 sx={{ flex: 1, minWidth: 120 }}
-                                disabled={!selectedProgram}
+                                disabled={selectedPrograms.length === 0}
                             >
-                                {selectedProgram?.versions && selectedProgram.versions.length > 0 ? (
-                                    selectedProgram.versions.map((ver) => (<MenuItem key={ver} value={ver}>{ver}</MenuItem>))
-                                ) : (
-                                    <MenuItem disabled value="">-</MenuItem>
-                                )}
+                                <MenuItem value="all">Alle</MenuItem>
+                                {sortedPos.map((ver) => (
+                                    <MenuItem key={ver} value={ver}>{ver}</MenuItem>
+                                ))}
                             </TextField>
                         </Box>
                     </Stack>
@@ -563,10 +591,18 @@ export default function Exams() {
                                         <ListItemButton
                                             component={RouterLink}
                                             to="/rekos/klausuren/modul"
-                                            state={{ studiengang: selectedProgram?.name, po: selectedPo, modul: mod.name, modulId: mod.id }}
+                                            state={{
+                                                studiengang: selectedPrograms.length === 1 ? selectedPrograms[0].name : "Mehrere",
+                                                po: selectedPo,
+                                                modul: mod.name,
+                                                modulId: mod.id
+                                            }}
                                             sx={{ borderRadius: 1, py: 1.5 }}
                                         >
-                                            <ListItemText primary={mod.name} primaryTypographyProps={{ fontWeight: 500 }} />
+                                            <ListItemText
+                                                primary={mod.name}
+                                                primaryTypographyProps={{ fontWeight: 500 }}
+                                            />
                                         </ListItemButton>
                                     </ListItem>
                                 ))}
@@ -586,7 +622,7 @@ export default function Exams() {
                     />
                 )}
 
-            </Container>
+            </Box>
         </Sidebar>
     );
 }

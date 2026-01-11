@@ -74,6 +74,15 @@ WHERE verified = 1
   AND verified_until IS NOT NULL
   AND verified_until < strftime('%Y-%m-%dT%H:%M:%fZ','now');
 
+-- name: UpdateUser :one
+UPDATE users
+SET name = sqlc.arg(name),
+    programid = sqlc.arg(programid),
+    theme = sqlc.arg(theme),
+    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+WHERE id = sqlc.arg(id)
+RETURNING *;
+
 -- name: ListUsers :many
 SELECT *
 FROM users

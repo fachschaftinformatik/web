@@ -1,6 +1,6 @@
 ﻿import * as React from "react";
 import {
-  Container, Box, Stack, Paper, Typography, TextField, Button,
+  Box, Stack, Paper, Typography, TextField, Button,
   Card, CardContent, IconButton, Chip, Divider, Dialog, DialogTitle, DialogContent,
   DialogActions, InputAdornment, Checkbox, FormGroup, FormControlLabel, Menu, MenuItem,
   Select, Drawer, Grid, Tooltip, SxProps, Pagination
@@ -1051,20 +1051,18 @@ export default function ForumStandalone() {
       if (!Array.isArray(parsed)) return SEED_POSTS;
 
 
-      return parsed.map((p: Record<string, unknown>) => ({
-        id: p?.id ?? uuid(),
-        title: p?.title ?? "Kein Titel",
-        body: p?.body ?? "",
-        tags: Array.isArray(p?.tags) ? p.tags : [],
-        author: p?.author ?? "Anonym",
-        createdAt: p?.createdAt ?? new Date().toISOString(),
-        votes: typeof p?.votes === 'number' ? p.votes : 0,
-
+      return parsed.map((p: any) => ({
+        id: String(p?.id ?? uuid()),
+        title: String(p?.title ?? "Kein Titel"),
+        body: String(p?.body ?? ""),
+        tags: Array.isArray(p?.tags) ? p.tags.map(String) : [],
+        author: String(p?.author ?? "Anonym"),
+        createdAt: String(p?.createdAt ?? new Date().toISOString()),
+        votes: Number(p?.votes ?? 0),
         programs: Array.isArray(p?.programs) ? normalizeProgramList(p.programs) : [PROGRAMS[0]],
-
         comments: Array.isArray(p?.comments) ? p.comments : [],
-        pinned: !!p?.pinned
-      }));
+        pinned: Boolean(p?.pinned)
+      })) as Post[];
     } catch (e) {
       console.error("Fehler beim Laden der Posts:", e);
       return SEED_POSTS;
@@ -1441,7 +1439,7 @@ export default function ForumStandalone() {
   );
 
   return (
-    <Sidebar user={user} title="Forum" headerActions={createButton}>
+    <Sidebar user={user} title="Forum" headerActions={createButton} maxWidth={fullPageMode ? "md" : "lg"}>
       <Box
         sx={{
           minHeight: "100vh",
@@ -1451,7 +1449,7 @@ export default function ForumStandalone() {
           color: theme.palette.text.primary,
         }}
       >
-        <Container maxWidth={fullPageMode ? "md" : "lg"} sx={{ py: fullPageMode ? 4 : 3 }}>
+        <Box sx={{ flexGrow: 1 }}>
           {fullPageMode ? (
             focusedPost ? (
               <FocusedPost
@@ -1642,7 +1640,7 @@ export default function ForumStandalone() {
               )}
             </>
           )}
-        </Container>
+        </Box>
         {!fullPageMode && (
           <Drawer
             anchor="right"

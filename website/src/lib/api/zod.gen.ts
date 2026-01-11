@@ -16,8 +16,11 @@ export const zAuthErrorResponse = z.object({
  */
 export const zAuthExamResponse = z.object({
     comment: z.optional(z.string()),
+    edit_version: z.optional(z.int()),
     exam_date: z.optional(z.iso.date()),
+    group_id: z.optional(z.string()),
     id: z.optional(z.string()),
+    is_latest: z.optional(z.int()),
     module_name: z.optional(z.string()),
     moduleid: z.optional(z.int()),
     programid: z.optional(z.int()),
@@ -35,6 +38,7 @@ export const zAuthLoginRequest = z.object({
  * A study module
  */
 export const zAuthModuleResponse = z.object({
+    alias: z.optional(z.string()),
     id: z.optional(z.int()),
     name: z.optional(z.string()),
     programid: z.optional(z.int())
@@ -47,6 +51,17 @@ export const zAuthProgramResponse = z.object({
     id: z.optional(z.int()),
     name: z.optional(z.string()),
     versions: z.optional(z.array(z.string()))
+});
+
+export const zAuthPublicUserResponse = z.object({
+    active: z.optional(z.int()),
+    created_at: z.optional(z.string()),
+    id: z.optional(z.string()),
+    name: z.optional(z.string()),
+    programid: z.optional(z.int()),
+    role: z.optional(z.string()),
+    theme: z.optional(z.string()),
+    verified: z.optional(z.int())
 });
 
 export const zAuthRegisterRequest = z.object({
@@ -64,6 +79,12 @@ export const zAuthUpdateExamRequest = z.object({
     version: z.optional(z.string())
 });
 
+export const zAuthUpdateProfileRequest = z.object({
+    name: z.optional(z.string()),
+    programid: z.optional(z.int()),
+    theme: z.optional(z.string())
+});
+
 /**
  * User account information
  */
@@ -76,6 +97,7 @@ export const zAuthUserResponse = z.object({
     password: z.optional(z.string()),
     programid: z.optional(z.int()),
     role: z.optional(z.string()),
+    theme: z.optional(z.string()),
     updated_at: z.optional(z.string()),
     verification_token: z.optional(z.string()),
     verified: z.optional(z.int()),
@@ -124,6 +146,17 @@ export const zGetAuthMeData = z.object({
  * OK
  */
 export const zGetAuthMeResponse = zAuthUserResponse;
+
+export const zPutAuthMeData = z.object({
+    body: zAuthUpdateProfileRequest,
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zPutAuthMeResponse = zAuthUserResponse;
 
 export const zPostAuthRegisterData = z.object({
     body: zAuthRegisterRequest,
@@ -207,6 +240,19 @@ export const zGetExamsFileData = z.object({
     query: z.optional(z.never())
 });
 
+export const zGetExamVersionsData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        groupId: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetExamVersionsResponse = z.array(zAuthExamResponse);
+
 export const zGetProgramsData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),
@@ -269,4 +315,4 @@ export const zGetUsersByIdData = z.object({
 /**
  * OK
  */
-export const zGetUsersByIdResponse = zAuthUserResponse;
+export const zGetUsersByIdResponse = zAuthPublicUserResponse;
