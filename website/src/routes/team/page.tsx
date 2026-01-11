@@ -285,6 +285,8 @@ export default function Team() {
                       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-start">
                         <Box sx={{ width: { xs: "100%", sm: 240 } }}>
                           <TextField
+                            id={`name-${member.id}`}
+                            name="name"
                             label="Name"
                             value={member.name}
                             onChange={(e) =>
@@ -306,6 +308,8 @@ export default function Team() {
                         </Box>
                         <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: 280 } }}>
                           <TextField
+                            id={`email-${member.id}`}
+                            name="email"
                             label="E-Mail"
                             value={getLocalPart(member.email)}
                             onChange={(e) =>

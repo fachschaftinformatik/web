@@ -208,6 +208,8 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                     {error && <Alert severity="error">{error}</Alert>}
 
                     <TextField
+                        id="examDate"
+                        name="examDate"
                         type="date"
                         label="Prüfungsdatum"
                         InputLabelProps={{ shrink: true }}
@@ -219,6 +221,8 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
 
                     <Stack spacing={2}>
                         <TextField
+                            id="upload-program-select"
+                            name="program"
                             select
                             label="Studiengang"
                             fullWidth
@@ -238,6 +242,8 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
 
                         <Stack direction="row" spacing={2} alignItems="stretch">
                             <TextField
+                                id="upload-po-select"
+                                name="po"
                                 select
                                 label="PO"
                                 size="small"
@@ -507,6 +513,8 @@ export default function Exams() {
 
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                             <TextField
+                                id="main-program-select"
+                                name="program"
                                 select
                                 label="Studiengang"
                                 value={selectedProgram?.id || ""}
@@ -525,6 +533,8 @@ export default function Exams() {
                             </TextField>
 
                             <TextField
+                                id="main-po-select"
+                                name="po"
                                 select
                                 label="Prüfungsordnung"
                                 value={selectedPo}
