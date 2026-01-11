@@ -404,7 +404,7 @@ export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 export const useThemeMode = () => {
   const context = React.useContext(ThemeModeContext);
   if (!context) {
-    throw new Error('useThemeMode must be used within a ThemeModeProvider');
+    throw new Error('useThemeMode muss innerhalb eines ThemeModeProviders verwendet werden');
   }
   return context;
 };

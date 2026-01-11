@@ -161,7 +161,7 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                 setCurrentModule(null);
             }
         } catch (err) {
-            console.error("Upload error:", err);
+            console.error("Fehler beim Hochladen:", err);
             setError(err instanceof Error ? err.message : "Netzwerkfehler.");
         } finally {
             setLoading(false);
@@ -262,6 +262,13 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                             <Autocomplete
                                 options={programModules}
                                 getOptionLabel={(option) => option.name || ""}
+                                filterOptions={(options, state) => {
+                                    const s = state.inputValue.toLowerCase();
+                                    return options.filter(o =>
+                                        (o.name && o.name.toLowerCase().includes(s)) ||
+                                        (o.alias && o.alias.toLowerCase().includes(s))
+                                    );
+                                }}
                                 value={currentModule}
                                 onChange={(_, newValue) => setCurrentModule(newValue)}
                                 disabled={!currentProgram}
@@ -476,7 +483,11 @@ export default function Exams() {
     const filteredModules = useMemo(() => {
         let res = modules.filter(m => m.id !== undefined && activeModuleIds.has(m.id as number));
         if (search) {
-            res = res.filter(m => m.name && m.name.toLowerCase().includes(search.toLowerCase()));
+            const s = search.toLowerCase();
+            res = res.filter(m =>
+                (m.name && m.name.toLowerCase().includes(s)) ||
+                (m.alias && m.alias.toLowerCase().includes(s))
+            );
         }
         return res;
     }, [modules, search, activeModuleIds]);
@@ -538,6 +549,7 @@ export default function Exams() {
                                 value={selectedPrograms}
                                 isOptionEqualToValue={(option, value) => option.id === value.id}
                                 onChange={(_, newValue) => setSelectedPrograms(newValue)}
+                                noOptionsText="Keine Ergebnisse"
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
@@ -581,14 +593,17 @@ export default function Exams() {
                                             component={RouterLink}
                                             to="/rekos/klausuren/modul"
                                             state={{
-                                                studiengang: selectedPrograms.length === 1 ? selectedPrograms[0].name : "Multi",
+                                                studiengang: selectedPrograms.length === 1 ? selectedPrograms[0].name : "Mehrere",
                                                 po: selectedPo,
                                                 modul: mod.name,
                                                 modulId: mod.id
                                             }}
                                             sx={{ borderRadius: 1, py: 1.5 }}
                                         >
-                                            <ListItemText primary={mod.name} primaryTypographyProps={{ fontWeight: 500 }} />
+                                            <ListItemText
+                                                primary={mod.name}
+                                                primaryTypographyProps={{ fontWeight: 500 }}
+                                            />
                                         </ListItemButton>
                                     </ListItem>
                                 ))}

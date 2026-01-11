@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 
 import { getAuthMe, postAuthLogout, getAuthCsrf } from '@lib/api';
-import type { User } from '@lib/api';
+import type { AuthUserResponse as User } from '@lib/api';
 
 const REMEMBERED_USER_KEY = 'fs_remembered_user';
 export const REMEMBERED_FLAG_KEY = 'fs_remember_flag';
@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const { data, error } = await getAuthMe();
         if (error || !data) {
-            throw new Error('Not authenticated');
+          throw new Error('Nicht authentifiziert');
         }
         setUser(data);
         if (typeof window !== 'undefined' && window.localStorage.getItem(REMEMBERED_FLAG_KEY) === 'true') {
@@ -89,19 +89,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      
+
       const { data } = await getAuthCsrf();
       const token = data?.csrf ?? '';
 
       await postAuthLogout({
         headers: {
-            'X-CSRF-Token': token
+          'X-CSRF-Token': token
         }
       });
       setUser(null);
       clearRememberedUser();
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Abmeldung fehlgeschlagen:', error);
       setUser(null);
       clearRememberedUser();
     }
@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth muss innerhalb eines AuthProviders verwendet werden');
   }
   return context;
 };
