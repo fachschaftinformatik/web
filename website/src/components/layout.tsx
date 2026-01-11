@@ -98,7 +98,7 @@ const Sidebar = ({
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
 
-  
+
   const [desktopOpen, setDesktopOpen] = useState(() => {
     const stored = localStorage.getItem('sidebar_desktop_open');
     return stored !== null ? stored === 'true' : true;
@@ -116,7 +116,7 @@ const Sidebar = ({
   };
 
   const navOpen = isMdUp ? desktopOpen : mobileOpen;
-  
+
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -270,7 +270,7 @@ const Sidebar = ({
                   },
                 }}
               >
-                <MenuItem component={RouterLink} to="/profile">
+                <MenuItem component={RouterLink} to="/dashboard">
                   <ListItemIcon>
                     <PersonRounded fontSize="small" />
                   </ListItemIcon>
