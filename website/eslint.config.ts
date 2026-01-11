@@ -9,7 +9,7 @@ const reactRefreshRules = reactRefresh.configs.vite.rules ?? {};
 
 export default [
   {
-    ignores: ['dist'],
+    ignores: ['dist', 'src/lib/api'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
