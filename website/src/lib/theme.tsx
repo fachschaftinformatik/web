@@ -1,7 +1,9 @@
 import React from 'react';
 import { Fab, Tooltip, alpha } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
-import { PaletteMode, PaletteOptions, ThemeOptions, ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
+import { PaletteMode, PaletteOptions, Theme, ThemeOptions, ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
+
+export type CustomThemeStyles = ReturnType<typeof getCustomStyles>;
 import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
 import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
 
@@ -90,7 +92,7 @@ const components: ThemeOptions['components'] = {
 };
 
 
-const getCustomStyles = (theme: any) => {
+const getCustomStyles = (theme: Theme) => {
   const isDark = theme.palette.mode === 'dark';
 
   return {
@@ -308,8 +310,8 @@ const getCustomStyles = (theme: any) => {
       borderColor: isSelected
         ? 'var(--accent-strong)'
         : isToday
-        ? alpha(theme.palette.success.main, 0.4)
-        : 'transparent',
+          ? alpha(theme.palette.success.main, 0.4)
+          : 'transparent',
       bgcolor: isSelected ? 'var(--accent-soft)' : 'transparent',
       borderRadius: 1.6,
       height: { xs: 24, md: 28 },
