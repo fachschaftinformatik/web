@@ -52,6 +52,7 @@ export default function LoginPage() {
   const { login } = useAuth();
 
   useEffect(() => {
+    document.title = "Anmelden | FSV Informatik";
     if (searchParams.get('verified') === 'true') {
       setSuccess('Deine E-Mail wurde erfolgreich bestätigt! Du kannst dich jetzt anmelden.');
     }
@@ -108,7 +109,7 @@ export default function LoginPage() {
       }
 
       login(user, rememberMe);
-      navigate('/dashboard');
+      navigate(`/user/${user.id}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Anmeldung fehlgeschlagen.';
       setErrors({ global: message });
