@@ -17,9 +17,9 @@ import (
 	"github.com/fachschaftinformatik/web/internal/email"
 	"github.com/fachschaftinformatik/web/internal/middleware"
 
+	_ "github.com/fachschaftinformatik/web/docs"
 	"github.com/go-chi/chi/v5"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
-	_ "github.com/fachschaftinformatik/web/docs"
 
 	_ "modernc.org/sqlite"
 )
@@ -45,7 +45,7 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Storage client creation failed: %v", err)
 	}
-	
+
 	startupCtx, cancelStartup := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelStartup()
 	if err := store.EnsureBucket(startupCtx); err != nil {
@@ -72,7 +72,7 @@ func main() {
 		r.Get("/auth/me", authServer.GetAuthMe)
 		r.Post("/auth/register", authServer.PostAuthRegister)
 		r.Get("/auth/verify", authServer.GetAuthVerify)
-		
+
 		r.Get("/users", authServer.GetUsers)
 		r.Get("/users/{id}", authServer.GetUsersId)
 
@@ -85,6 +85,7 @@ func main() {
 		r.Put("/exams/{id}", authServer.PutExamsId)
 		r.Delete("/exams/{id}", authServer.DeleteExamsId)
 		r.Get("/exams/{id}/file", authServer.GetExamsFile)
+		r.Get("/exams/versions/{groupId}", authServer.GetExamVersions)
 
 		r.Get("/events", authServer.GetEvents)
 		r.Post("/events", authServer.PostEvents)
@@ -96,8 +97,8 @@ func main() {
 	})
 
 	httpServer := &http.Server{
-		Addr:         ":" + cfg.HTTPPort,
-		Handler:      r,
+		Addr:    ":" + cfg.HTTPPort,
+		Handler: r,
 		// Erhöht auf 5 Minuten für große Uploads
 		ReadTimeout:  5 * time.Minute,
 		WriteTimeout: 5 * time.Minute,
@@ -119,7 +120,7 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	logger.Println("Shutting down server...")
-	
+
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer shutdownCancel()
 
