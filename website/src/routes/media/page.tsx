@@ -536,7 +536,11 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: {
               onChange={(e) => setEventId(Number(e.target.value))}
               size="small"
             >
-              {events.map((e) => <MenuItem key={e.id} value={e.id}>{e.title}</MenuItem>)}
+              {events.length > 0 ? (
+                events.map((e) => <MenuItem key={e.id} value={e.id}>{e.title}</MenuItem>)
+              ) : (
+                <MenuItem disabled value="">Keine Events verfügbar</MenuItem>
+              )}
             </TextField>
             <Tooltip title="Neues Event anlegen">
               <Button
