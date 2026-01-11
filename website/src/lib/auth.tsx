@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-// Import directly from the generated API module
+
 import { getAuthMe, postAuthLogout, getAuthCsrf } from '@lib/api';
 import type { User } from '@lib/api';
 
@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Fetch CSRF token first
+      
       const { data } = await getAuthCsrf();
       const token = data?.csrf ?? '';
 

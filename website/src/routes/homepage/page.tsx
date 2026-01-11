@@ -72,7 +72,7 @@ const buildCalendarDays = (date: Date) => {
   const start = new Date(year, month, 1);
   const end = new Date(year, month + 1, 0);
   const prevEnd = new Date(year, month, 0);
-  const offset = (start.getDay() + 6) % 7; 
+  const offset = (start.getDay() + 6) % 7;
   const days: Array<{ date: Date; day: number; inMonth: boolean }> = [];
   for (let i = 0; i < offset; i++) {
     const day = prevEnd.getDate() - offset + i + 1;
@@ -107,7 +107,7 @@ const loadEvents = (): CalendarEvent[] => {
   try {
     const stored = JSON.parse(window.localStorage.getItem(STORAGE_EVENTS_KEY) || '[]');
     if (Array.isArray(stored) && stored.length) return stored;
-  } catch { /* ignore */ }
+  } catch { void 0; }
   return buildSeedEvents();
 };
 const loadNews = (): NewsItem[] => {
@@ -118,7 +118,7 @@ const loadNews = (): NewsItem[] => {
   } catch { return newsDaten; }
 };
 const loadForumPosts = (): ForumPostSummary[] => {
-  const normalize = (post: any): ForumPostSummary => ({
+  const normalize = (post: { id: number | string; title?: string; author?: string; createdAt?: string; comments?: Array<{ id: number | string }>; replies?: number }): ForumPostSummary => ({
     id: String(post.id),
     title: String(post.title ?? 'Neuer Beitrag'),
     author: String(post.author ?? 'Unbekannt'),
@@ -149,11 +149,12 @@ const toNewsTimestamp = (item: NewsItem) => {
 
 const NewsFeedPage: React.FC = () => {
   const { user } = useAuth();
-  
+
   const isAdmin = user?.role === 'admin';
 
   const theme = useTheme();
-  const custom = (theme as any).custom;
+
+  const custom = theme.custom;
   const isDark = theme.palette.mode === 'dark';
 
   const categoryColors = useMemo(() => {
@@ -174,9 +175,21 @@ const NewsFeedPage: React.FC = () => {
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()));
-  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
-  const [forumPosts, setForumPosts] = useState<ForumPostSummary[]>([]);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>(() => {
+    const loaded = loadEvents();
+    return [...loaded].sort((a, b) => toEventTimestamp(a) - toEventTimestamp(b));
+  });
+
+  const newsItems = useMemo(() => {
+    const items = loadNews();
+    return [...items].sort((a, b) => toNewsTimestamp(b) - toNewsTimestamp(a));
+  }, []);
+
+  const forumPosts = useMemo(() => {
+    const posts = loadForumPosts();
+    return [...posts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, []);
+
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [eventDraft, setEventDraft] = useState<EventDraft>({
     title: '',
@@ -186,17 +199,6 @@ const NewsFeedPage: React.FC = () => {
     category: EVENT_CATEGORIES[0].value,
   });
 
-  useEffect(() => {
-    const mergedNews = [...loadNews()];
-    mergedNews.sort((a, b) => toNewsTimestamp(b) - toNewsTimestamp(a));
-    setNewsItems(mergedNews);
-    const posts = loadForumPosts();
-    posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setForumPosts(posts);
-    const loadedEvents = loadEvents();
-    loadedEvents.sort((a, b) => toEventTimestamp(a) - toEventTimestamp(b));
-    setEvents(loadedEvents);
-  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -206,8 +208,8 @@ const NewsFeedPage: React.FC = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!('IntersectionObserver' in window)) {
-        document.querySelectorAll('[data-reveal]').forEach(el => el.setAttribute('data-visible', 'true'));
-        return;
+      document.querySelectorAll('[data-reveal]').forEach(el => el.setAttribute('data-visible', 'true'));
+      return;
     }
     const revealOnce = (entries: IntersectionObserverEntry[], observer: IntersectionObserver) => {
       entries.forEach((entry) => {
@@ -292,20 +294,20 @@ const NewsFeedPage: React.FC = () => {
   return (
     <Sidebar user={user} title="Startseite" fullBleed>
       <Box sx={{
-        ...custom.pageWrapper,
+        ...custom?.pageWrapper,
         backgroundColor: 'transparent',
         boxShadow: 'none',
         borderRadius: 0,
         border: 'none',
       }}>
-        <Box sx={custom.gridContainer}>
-          
-         
+        <Box sx={custom?.gridContainer}>
+
+
           <Box
             component="section"
             sx={{
               gridColumn: '1 / -1',
-              mb: { xs: 6, md: 10 } 
+              mb: { xs: 6, md: 10 }
             }}
           >
             <Paper
@@ -341,8 +343,8 @@ const NewsFeedPage: React.FC = () => {
                   py: { xs: 3, md: 4 },
                   display: 'grid',
                   gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' },
-                  columnGap: { xs: 2, md: 4 }, 
-                  rowGap: { xs: 3, md: 4 },   
+                  columnGap: { xs: 2, md: 4 },
+                  rowGap: { xs: 3, md: 4 },
                 }}
               >
                 <Stack spacing={1} sx={{ gridColumn: { xs: '1 / -1', md: '1 / 9' }, justifyContent: 'center' }}>
@@ -449,12 +451,12 @@ const NewsFeedPage: React.FC = () => {
             </Paper>
           </Box>
 
-          <Box component="section" data-reveal="true" 
-            sx={{ 
-              ...custom.sectionShell, 
-              gridColumn: '1 / -1', 
+          <Box component="section" data-reveal="true"
+            sx={{
+              ...custom.sectionShell,
+              gridColumn: '1 / -1',
               background: custom.sectionGradients.newsroom,
-              mb: { xs: 6, md: 10 } 
+              mb: { xs: 6, md: 10 }
             }}>
             <Box sx={{ position: 'relative', zIndex: 1 }}>
               <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
@@ -466,11 +468,11 @@ const NewsFeedPage: React.FC = () => {
                   Alle News
                 </Button>
               </Stack>
-              <Box sx={{ 
-                display: 'grid', 
-                gap: { xs: 3, md: 4 }, 
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' }, 
-                alignItems: 'stretch' 
+              <Box sx={{
+                display: 'grid',
+                gap: { xs: 3, md: 4 },
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' },
+                alignItems: 'stretch'
               }}>
                 <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 7' } }}>
                   {leadNews ? (
@@ -507,7 +509,7 @@ const NewsFeedPage: React.FC = () => {
                   )}
                 </Box>
                 <Paper elevation={0} sx={{ ...custom.glassCard, gridColumn: { xs: '1 / -1', md: 'span 5' }, p: { xs: 1.8, md: 2.2 }, borderRadius: 4, background: alpha(theme.palette.background.paper, isDark ? 0.72 : 0.9) }}>
-                  <Stack spacing={2}> 
+                  <Stack spacing={2}>
                     <Typography variant="overline" sx={{ letterSpacing: '0.24em', color: 'var(--accent-strong)', fontWeight: 700 }}>Kurz &amp; Knapp</Typography>
                     {secondaryNews.length ? secondaryNews.map((item) => (
                       <Box key={item.id} component={RouterLink} to={`/news/${item.id}`} sx={custom.newsCardLink}>
@@ -522,7 +524,7 @@ const NewsFeedPage: React.FC = () => {
                 </Paper>
               </Box>
               {railItems.length ? (
-                <Box data-reveal="rail" sx={{ mt: { xs: 3, md: 5 }, ...custom.railReveal }}> 
+                <Box data-reveal="rail" sx={{ mt: { xs: 3, md: 5 }, ...custom.railReveal }}>
                   <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.6 }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Mehr Stories</Typography>
                   </Stack>
@@ -543,13 +545,13 @@ const NewsFeedPage: React.FC = () => {
             </Box>
           </Box>
 
-          <Box component="section" id="events" data-reveal="true" 
-            sx={{ 
-              ...custom.sectionShell, 
-              gridColumn: '1 / -1', 
-              scrollMarginTop: { xs: 80, md: 100 }, 
+          <Box component="section" id="events" data-reveal="true"
+            sx={{
+              ...custom.sectionShell,
+              gridColumn: '1 / -1',
+              scrollMarginTop: { xs: 80, md: 100 },
               background: custom.sectionGradients.agenda,
-              mb: { xs: 6, md: 10 } 
+              mb: { xs: 6, md: 10 }
             }}>
             <Box sx={{ position: 'relative', zIndex: 1 }}>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between" sx={{ mb: 2 }}>
@@ -570,17 +572,17 @@ const NewsFeedPage: React.FC = () => {
                   </Button>
                 )}
               </Stack>
-              <Box sx={{ 
-                display: 'grid', 
-                gap: { xs: 3, md: 4 }, 
-                gridTemplateColumns: { xs: '1fr', lg: '7fr 5fr' }, 
-                alignItems: 'start' 
+              <Box sx={{
+                display: 'grid',
+                gap: { xs: 3, md: 4 },
+                gridTemplateColumns: { xs: '1fr', lg: '7fr 5fr' },
+                alignItems: 'start'
               }}>
                 <Box>
                   <Typography variant="caption" sx={{ color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', display: 'block', mb: 1.2 }}>KOMMENDE TERMINE</Typography>
                   <Box sx={{ position: 'relative', pl: { xs: 2.5, md: 3.5 } }}>
                     <Box sx={{ position: 'absolute', left: { xs: 10, md: 14 }, top: 6, bottom: 6, width: 2, bgcolor: 'var(--card-border)', borderRadius: 999 }} />
-                    <Stack spacing={2.5}> 
+                    <Stack spacing={2.5}>
                       {upcomingPreview.length ? upcomingPreview.map((event) => {
                         const accent = getCategoryColor(event.category);
                         const eventDate = parseDateKey(event.date);
@@ -661,10 +663,10 @@ const NewsFeedPage: React.FC = () => {
                 </Button>
               </Stack>
               {forumHighlight ? (
-                <Box sx={{ 
-                  display: 'grid', 
-                  gap: { xs: 3, md: 4 }, 
-                  gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' } 
+                <Box sx={{
+                  display: 'grid',
+                  gap: { xs: 3, md: 4 },
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' }
                 }}>
                   <Paper component={RouterLink} to="/forum" elevation={0} sx={{ ...custom.glassCard, gridColumn: { xs: '1 / -1', md: 'span 7' }, p: { xs: 1.6, md: 3 }, borderRadius: 5, textDecoration: 'none', color: 'inherit', background: isDark ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.92)}, ${alpha(theme.palette.background.default, 0.9)})` : `linear-gradient(135deg, ${alpha(theme.palette.info.light, 0.2)}, ${alpha(theme.palette.background.paper, 0.98)})` }}>
                     <Stack spacing={{ xs: 1, md: 1.4 }}>
@@ -685,7 +687,7 @@ const NewsFeedPage: React.FC = () => {
                       </Stack>
                     </Stack>
                   </Paper>
-                  <Stack spacing={{ xs: 2, md: 2.5 }} sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' } }}> 
+                  <Stack spacing={{ xs: 2, md: 2.5 }} sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' } }}>
                     {forumRest.length ? forumRest.map((post) => (
                       <Box key={post.id} component={RouterLink} to="/forum" sx={{ ...custom.glassCard, p: { xs: 1.2, md: 1.6 }, borderRadius: 3, textDecoration: 'none', color: 'inherit', display: 'grid', gap: 0.6 }}>
                         <Stack direction="row" spacing={1} alignItems="center">
@@ -711,13 +713,13 @@ const NewsFeedPage: React.FC = () => {
         <DialogTitle>Event eintragen</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Titel" value={eventDraft.title} onChange={(e) => setEventDraft((p) => ({ ...p, title: e.target.value }))} fullWidth />
+            <TextField id="event-title" name="title" label="Titel" value={eventDraft.title} onChange={(e) => setEventDraft((p) => ({ ...p, title: e.target.value }))} fullWidth />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField label="Datum" type="date" value={eventDraft.date} onChange={(e) => setEventDraft((p) => ({ ...p, date: e.target.value }))} fullWidth InputLabelProps={{ shrink: true }} />
-              <TextField label="Uhrzeit" type="time" value={eventDraft.time} onChange={(e) => setEventDraft((p) => ({ ...p, time: e.target.value }))} fullWidth InputLabelProps={{ shrink: true }} />
+              <TextField id="event-date" name="date" label="Datum" type="date" value={eventDraft.date} onChange={(e) => setEventDraft((p) => ({ ...p, date: e.target.value }))} fullWidth InputLabelProps={{ shrink: true }} />
+              <TextField id="event-time" name="time" label="Uhrzeit" type="time" value={eventDraft.time} onChange={(e) => setEventDraft((p) => ({ ...p, time: e.target.value }))} fullWidth InputLabelProps={{ shrink: true }} />
             </Stack>
-            <TextField label="Ort" value={eventDraft.location} onChange={(e) => setEventDraft((p) => ({ ...p, location: e.target.value }))} fullWidth />
-            <TextField label="Kategorie" select value={eventDraft.category} onChange={(e) => setEventDraft((p) => ({ ...p, category: e.target.value }))} fullWidth>
+            <TextField id="event-location" name="location" label="Ort" value={eventDraft.location} onChange={(e) => setEventDraft((p) => ({ ...p, location: e.target.value }))} fullWidth />
+            <TextField id="event-category" name="category" label="Kategorie" select value={eventDraft.category} onChange={(e) => setEventDraft((p) => ({ ...p, category: e.target.value }))} fullWidth>
               {EVENT_CATEGORIES.map((cat) => <MenuItem key={cat.value} value={cat.value}>{cat.label}</MenuItem>)}
             </TextField>
           </Stack>
