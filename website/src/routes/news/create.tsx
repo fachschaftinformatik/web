@@ -69,7 +69,7 @@ export default function CreateNews() {
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
-            {/* Bild Upload */}
+            
             <Box>
               <Typography variant="subtitle2" mb={1}>Bild auswählen:</Typography>
               <Box
@@ -98,11 +98,11 @@ export default function CreateNews() {
                   }}
                 />
               </Box>
-              {/* Vorschau anzeigen */}
+              
               {imagePreview && (
                 <Box sx={{ mt: 2, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
 
-                  {/* Bild */}
+                  
                   <Box
                     component="img"
                     src={imagePreview}
@@ -113,10 +113,10 @@ export default function CreateNews() {
                       borderRadius: 2,
                       objectFit: "cover",
                       boxShadow: 2,
-                      mb: 1  // Abstand zum Button
+                      mb: 1  
                     }}
                   />
-                  {/* Entfernen Button */}
+                  
                   <Button
                     variant="outlined"
                     color="error"
@@ -132,7 +132,7 @@ export default function CreateNews() {
                 </Box>
               )}
             </Box>
-            {/* PDF Upload + löshen */}
+            
             <Box>
               <Typography variant="subtitle2" mb={1}>PDF / Datei auswählen:</Typography>
               <Button
@@ -166,7 +166,7 @@ export default function CreateNews() {
                 </Box>
               )}
             </Box>
-            {/* Beschreibung */}
+            
             <TextField
               fullWidth
               multiline
@@ -175,7 +175,7 @@ export default function CreateNews() {
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
             />
-            {/* Inhalt */}
+            
             <TextField
               fullWidth
               multiline
@@ -184,7 +184,7 @@ export default function CreateNews() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
-            {/* Tags */}
+            
             <Box>
               <Typography variant="subtitle2" mb={1}>Tags:</Typography>
               <Stack direction="row" spacing={1}>
@@ -203,10 +203,10 @@ export default function CreateNews() {
                 ))}
               </Stack>
             </Box>
-            {/* Links */}
+            
             <Box>
               <Typography variant="subtitle2" mb={1}>Links:</Typography>
-              {/* Link-Eingabe + Hinzufügen */}
+              
               <Stack direction="row" spacing={2}>
                 <TextField
                   fullWidth
@@ -227,7 +227,7 @@ export default function CreateNews() {
                   Hinzufügen
                 </Button>
               </Stack>
-              {/* Liste der Links */}
+              
               <Stack mt={2} spacing={1}>
                 {links.map((l, index) => (
                   <Box
@@ -259,7 +259,7 @@ export default function CreateNews() {
                 ))}
               </Stack>
             </Box>
-            {/* Speichern Button */}
+            
             <Button
               variant="contained"
               size="large"

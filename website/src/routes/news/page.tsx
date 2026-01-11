@@ -14,7 +14,7 @@ import { useNavigate, Link, Outlet } from 'react-router-dom';
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
 
-// --- DATEN (Exportiert für details.tsx) ---
+
 export type NewsItem = {
   id: number;
   title: string;
@@ -89,7 +89,7 @@ export const newsDaten: NewsItem[] = [
   },
 ];
 
-// --- COMPONENTS ---
+
 function CustomizedInputBase() {
   return (
     <Paper
@@ -268,7 +268,7 @@ export default function NewsLayout() {
   const isAdmin = user?.role === "admin";
   const [selectedTag, setSelectedTag] = useState<string>("Alle");
 
-  // Lokale Daten für Likes und eigene Beiträge (um Re-Renders zu triggern)
+  
   const [localLikes, setLocalLikes] = useState<number[]>(() => {
     const saved = localStorage.getItem('likedNews');
     return saved ? JSON.parse(saved) : [];
@@ -325,7 +325,7 @@ export default function NewsLayout() {
   return (
     <Sidebar user={user} title="Beiträge">
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, px: 2 }}>
-        {/* Hauptinhalt */}
+        
         <Box sx={{ flex: 1, maxWidth: "1200px", mr: { lg: 4 }, mb: 4 }}>
           <Container sx={{ pt: 4, pb: 2 }}>
             <Box
@@ -384,7 +384,7 @@ export default function NewsLayout() {
           </Container>
         </Box>
 
-        {/* Sidebar Rechts (Favoriten) */}
+        
         <Box
           sx={{
             width: { xs: '100%', lg: 350 },
