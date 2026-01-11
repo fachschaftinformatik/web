@@ -187,6 +187,7 @@ export default function LoginPage() {
             <FormControlLabel
               control={
                 <Checkbox
+                  id="remember-me-checkbox"
                   color="primary"
                   checked={rememberMe}
                   onChange={(event) => setRememberMe(event.target.checked)}

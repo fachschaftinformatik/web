@@ -277,6 +277,8 @@ function CommentThread({
           {replyOpen && (
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
               <TextField
+                id={`reply-${node.id}`}
+                name="reply"
                 size="small"
                 fullWidth
                 placeholder="Antwort schreiben…"
@@ -533,12 +535,15 @@ function FocusedPost({
               disabledHelper={commentDisabledReason}
               flat={fullPageMode}
               disableCollapse={fullPageMode}
+              idPrefix={`focused-${post.id}`}
             />
 
             <Divider />
 
             <Stack direction={{ xs: "column", md: "row" }} spacing={1} alignItems="stretch">
               <TextField
+                id="share-link-focused"
+                name="link"
                 label="Link teilen"
                 value={focusShareUrl}
                 fullWidth
@@ -570,6 +575,7 @@ function CommentsSection({
   disabledHelper,
   flat = false,
   disableCollapse = false,
+  idPrefix = "comment",
 }: {
   comments: Comment[];
   onAdd: (parentId: string | null, text: string) => void;
@@ -578,6 +584,7 @@ function CommentsSection({
   disabledHelper?: string;
   flat?: boolean;
   disableCollapse?: boolean;
+  idPrefix?: string;
 }) {
   const safeComments = React.useMemo(() => (Array.isArray(comments) ? comments : []), [comments]);
   const totalComments = safeComments.length;
@@ -668,6 +675,8 @@ function CommentsSection({
       {flat ? (
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
           <TextField
+            id={`${idPrefix}-input-flat`}
+            name="comment"
             size="small"
             fullWidth
             multiline
@@ -720,6 +729,8 @@ function CommentsSection({
         >
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
             <TextField
+              id={`${idPrefix}-input-contained`}
+              name="comment"
               size="small"
               fullWidth
               multiline
@@ -959,6 +970,7 @@ function PostItem({
               disabledHelper={commentDisabledReason}
               flat={false}
               disableCollapse={false}
+              idPrefix={`post-${post.id}`}
             />
           </Stack>
         </Stack>
@@ -1089,7 +1101,7 @@ export default function ForumStandalone() {
     [isDark, theme]
   );
 
-  
+
   const programChipSx = React.useMemo(
     () =>
       isDark
@@ -1481,7 +1493,7 @@ export default function ForumStandalone() {
             )
           ) : (
             <>
-              
+
               <Paper
                 elevation={0}
                 sx={{
@@ -1498,6 +1510,8 @@ export default function ForumStandalone() {
                 <Stack spacing={2}>
                   <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "stretch", md: "center" }}>
                     <TextField
+                      id="forum-search"
+                      name="q"
                       placeholder="Suche in Titel, Text oder Tags…"
                       value={q}
                       onChange={(e) => setQ(e.target.value)}
@@ -1514,6 +1528,8 @@ export default function ForumStandalone() {
                       }}
                     />
                     <Select
+                      id="forum-sort-select"
+                      name="sort"
                       size="small"
                       value={sort}
                       onChange={(e) => setSort(e.target.value as "new" | "votes")}
@@ -1581,7 +1597,7 @@ export default function ForumStandalone() {
                 </Stack>
               </Paper>
 
-              
+
               <Stack spacing={2}>
                 {paginatedPosts.map((p) => (
                   <PostItem
@@ -1652,6 +1668,8 @@ export default function ForumStandalone() {
                     sx={{ mt: 1 }}
                     control={
                       <Checkbox
+                        id="all-programs-filter-checkbox"
+                        name="allProgramsOnly"
                         checked={allProgramsOnly}
                         onChange={(e) => setAllProgramsOnly(e.target.checked)}
                       />
@@ -1775,19 +1793,22 @@ export default function ForumStandalone() {
 
                   <Divider />
 
-                  <Typography variant="h6">Diskussion</Typography>
+                  <Typography variant="h6" sx={{ mb: 1.5 }}>Diskussion</Typography>
                   <CommentsSection
                     comments={detailPost.comments}
                     onAdd={(parentId, text) => handleAddComment(detailPost.id, parentId, text)}
                     appearance={commentAppearance}
                     canComment={canComment}
                     disabledHelper="Bitte einloggen, um zu kommentieren."
+                    idPrefix={`dialog-${detailPost.id}`}
                   />
 
                   <Divider />
 
                   <Stack direction={{ xs: "column", md: "row" }} spacing={1} alignItems="stretch">
                     <TextField
+                      id="share-link-dialog"
+                      name="link"
                       label="Link teilen"
                       value={shareUrl}
                       fullWidth
@@ -1818,12 +1839,14 @@ export default function ForumStandalone() {
             </>
           )}
         </Dialog>
-        
+
         <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
           <DialogTitle>Beitrag erstellen</DialogTitle>
           <DialogContent dividers>
             <Stack spacing={2} mt={1}>
               <TextField
+                id="post-title"
+                name="title"
                 label="Titel"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -1831,6 +1854,8 @@ export default function ForumStandalone() {
                 sx={inputStyles}
               />
               <TextField
+                id="post-body"
+                name="body"
                 label="Inhalt"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
@@ -1839,17 +1864,21 @@ export default function ForumStandalone() {
                 sx={inputStyles}
               />
               <TextField
+                id="post-tags"
+                name="tags"
                 label="Tags (kommagetrennt)"
                 placeholder="react, typescript, mui"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
                 sx={inputStyles}
               />
-              
+
               <FormGroup row>
                 <FormControlLabel
                   control={
                     <Checkbox
+                      id="create-post-all-programs"
+                      name="allPrograms"
                       checked={allPrograms}
                       onChange={(e) => setAllPrograms(e.target.checked)}
                     />
@@ -1862,6 +1891,8 @@ export default function ForumStandalone() {
                     key={p}
                     control={
                       <Checkbox
+                        id={`create-post-program-${p}`}
+                        name={`program-${p}`}
                         checked={allPrograms ? true : programsInput[p]}
                         disabled={allPrograms}
                         onChange={(e) =>
@@ -1888,7 +1919,7 @@ export default function ForumStandalone() {
             </Button>
           </DialogActions>
         </Dialog>
-        
+
         <Dialog open={!!reportFor} onClose={closeReport} maxWidth="xs" fullWidth>
           <DialogTitle>Beitrag melden</DialogTitle>
           <DialogContent dividers>
@@ -1896,6 +1927,8 @@ export default function ForumStandalone() {
               Wähle einen Grund:
             </Typography>
             <Select
+              id="report-reason-select"
+              name="reason"
               fullWidth
               size="small"
               value={reportReason}
@@ -1908,6 +1941,8 @@ export default function ForumStandalone() {
               <MenuItem value="Sonstiges">Sonstiges</MenuItem>
             </Select>
             <TextField
+              id="report-note"
+              name="note"
               label="Zusätzliche Hinweise (optional)"
               multiline
               minRows={2}
