@@ -74,6 +74,7 @@ export default function RegistrationPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
+    document.title = "Registrieren | FSV Informatik";
     getPrograms()
       .then(({ data }) => {
         if (data) setPrograms(data);

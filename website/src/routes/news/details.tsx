@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useParams, useNavigate } from "react-router-dom";
-import { Box, Typography, Container, Link, Button, Chip, Stack } from "@mui/material";
+import { Box, Typography, Link, Button, Chip, Stack } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
@@ -20,20 +20,20 @@ export default function NewsDetail() {
 
   if (!news) {
     return (
-      <Sidebar user={user} title="Beitrag nicht gefunden">
-        <Container sx={{ pt: 10 }}>
+      <Sidebar user={user} title="Beitrag nicht gefunden" maxWidth="md">
+        <Box>
           <Typography variant="h5">Beitrag nicht gefunden.</Typography>
           <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/news")} sx={{ mt: 2 }}>
             Zurück zur Übersicht
           </Button>
-        </Container>
+        </Box>
       </Sidebar>
     );
   }
 
   return (
-    <Sidebar user={user} title={news.title}>
-      <Container maxWidth="md" sx={{ pt: 4, pb: 10 }}>
+    <Sidebar user={user} title={news.title} maxWidth="md">
+      <Box>
         <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/news")} sx={{ mb: 3 }}>
           Zurück
         </Button>
@@ -103,7 +103,7 @@ export default function NewsDetail() {
             </Button>
           </Box>
         )}
-      </Container>
+      </Box>
     </Sidebar>
   );
 }

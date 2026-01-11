@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
     Box,
-    Container,
     Typography,
     Paper,
     Button,
@@ -239,10 +238,10 @@ export default function ExamDetailsPage() {
     };
 
     return (
-        <Sidebar user={user} title={"Reko: " + modulName}>
-            <Container maxWidth="md" sx={{ mt: 5, mb: 10 }}>
+        <Sidebar user={user} title="Rekos" maxWidth="lg">
+            <Box>
 
-                <Box sx={{ mb: 4 }}>
+                <Box>
                     <Button
                         startIcon={<ArrowBackRoundedIcon />}
                         onClick={() => navigate(-1)}
@@ -301,11 +300,11 @@ export default function ExamDetailsPage() {
                                                     }
                                                     primaryTypographyProps={{ fontWeight: 600 }}
                                                 />
-                                                <ListItemSecondaryAction sx={{ right: 24 }}>
+                                                {/* <ListItemSecondaryAction sx={{ right: 24 }}>
                                                     <Typography variant="caption" sx={{ bgcolor: 'action.hover', px: 1, py: 0.5, borderRadius: 1, fontWeight: 500 }}>
-                                                        v{exam.edit_version}
+                                                        Revision {exam.edit_version}
                                                     </Typography>
-                                                </ListItemSecondaryAction>
+                                                </ListItemSecondaryAction> */}
                                             </ListItemButton>
                                         </ListItem>
                                     </Box>
@@ -451,7 +450,7 @@ export default function ExamDetailsPage() {
                                     <Stack direction="row" spacing={2}>
                                         <TextField
                                             select
-                                            label="Fassung"
+                                            label="Revision"
                                             size="small"
                                             sx={{ width: 150 }}
                                             value={selectedExam.id}
@@ -463,12 +462,12 @@ export default function ExamDetailsPage() {
                                         >
                                             {examVersions.length === 0 ? (
                                                 <MenuItem value={selectedExam.id}>
-                                                    v{selectedExam.edit_version}
+                                                    {selectedExam.edit_version}
                                                 </MenuItem>
                                             ) : (
                                                 examVersions.map((v) => (
                                                     <MenuItem key={v.id} value={v.id}>
-                                                        v{v.edit_version} {v.is_latest ? "(Neu)" : ""}
+                                                        {v.edit_version} {v.is_latest ? "(neu)" : ""}
                                                     </MenuItem>
                                                 ))
                                             )}
@@ -559,7 +558,7 @@ export default function ExamDetailsPage() {
                     </DialogActions>
                 </Dialog>
 
-            </Container>
+            </Box>
         </Sidebar>
     );
 }
