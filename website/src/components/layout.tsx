@@ -280,12 +280,12 @@ const Sidebar = ({
                   <ListItemIcon>
                     <LogoutRounded fontSize="small" />
                   </ListItemIcon>
-                  Logout
+                  Abmelden
                 </MenuItem>
               </Menu>
             </>
           ) : (
-            <Button color="inherit" component={RouterLink} to="/login">Login</Button>
+            <Button color="inherit" component={RouterLink} to="/login">Anmelden</Button>
           )}
         </Toolbar>
       </AppBar>
