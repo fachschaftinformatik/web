@@ -13,7 +13,7 @@ import (
 type Client struct {
 	minioClient *minio.Client
 	bucket      string
-	domain   string
+	domain      string
 }
 
 func NewClient(cfg *config.Config) (*Client, error) {
@@ -28,7 +28,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	return &Client{
 		minioClient: client,
 		bucket:      cfg.S3Bucket,
-		domain:   cfg.Domain,
+		domain:      cfg.Domain,
 	}, nil
 }
 
@@ -60,4 +60,14 @@ func (c *Client) GetObject(ctx context.Context, objectName string) (*minio.Objec
 
 func (c *Client) Delete(ctx context.Context, objectName string) error {
 	return c.minioClient.RemoveObject(ctx, c.bucket, objectName, minio.RemoveObjectOptions{})
+}
+func (c *Client) CopyObject(ctx context.Context, srcKey, dstKey string) error {
+	_, err := c.minioClient.CopyObject(ctx, minio.CopyDestOptions{
+		Bucket: c.bucket,
+		Object: dstKey,
+	}, minio.CopySrcOptions{
+		Bucket: c.bucket,
+		Object: srcKey,
+	})
+	return err
 }
