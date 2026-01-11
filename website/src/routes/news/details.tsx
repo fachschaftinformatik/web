@@ -1,22 +1,21 @@
+import { useMemo } from 'react';
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Typography, Container, Link, Button, Chip, Stack } from "@mui/material";
-import { useEffect, useState } from "react";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
-import { newsDaten, type NewsItem } from "./page";
+import { newsDaten } from "./page";
 
 export default function NewsDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [news, setNews] = useState<NewsItem | null>(null);
 
-  useEffect(() => {
-    const custom = JSON.parse(localStorage.getItem("custom-news") || "[]");
+  const news = useMemo(() => {
+    const customStr = localStorage.getItem("custom-news");
+    const custom = customStr ? JSON.parse(customStr) : [];
     const allNews = [...newsDaten, ...custom];
-    const found = allNews.find((item) => item.id === Number(id));
-    setNews(found || null);
+    return allNews.find((item) => item.id === Number(id)) || null;
   }, [id]);
 
   if (!news) {
@@ -47,7 +46,7 @@ export default function NewsDetail() {
           <Typography variant="subtitle1" color="text.secondary">
             {news.date}
           </Typography>
-          {news.tags?.map(tag => (
+          {news.tags?.map((tag: string) => (
             <Chip key={tag} label={tag} size="small" variant="outlined" />
           ))}
         </Stack>

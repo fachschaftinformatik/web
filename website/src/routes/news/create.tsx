@@ -27,9 +27,9 @@ export default function CreateNews() {
   const [tags, setTags] = useState<string[]>([]);
   const [links, setLinks] = useState<string[]>([]);
   const [currentLink, setCurrentLink] = useState("");
-  
+
   const availableTags = ["Studium", "Prüfungen", "Events", "Jobs"];
-  
+
   function saveToLocalStorage() {
     const newNews = {
       id: Date.now(),
@@ -43,16 +43,12 @@ export default function CreateNews() {
       content,
       tags,
       links,
-      createdAt: Date.now(),
+      isNewAt: Date.now(),
     };
     const stored = JSON.parse(localStorage.getItem("custom-news") || "[]");
     localStorage.setItem("custom-news", JSON.stringify([...stored, newNews]));
     navigate("/news");
   }
-     function removeImage() {
-     setImageFile(null);
-     setImagePreview(null);
-   }
   return (
     <Sidebar user={user} title="News erstellen">
       <Container maxWidth="md" sx={{ py: 4 }}>
@@ -62,18 +58,22 @@ export default function CreateNews() {
         <Paper variant="outlined" sx={{ p: 4 }}>
           <Stack spacing={3}>
             <TextField
+              id="news-title"
+              name="title"
               fullWidth
               label="Titel*"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
             <TextField
+              id="news-date"
+              name="date"
               fullWidth
               label="Datum (z.B. 12.10.2025)*"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
-            {/* Bild Upload */}
+
             <Box>
               <Typography variant="subtitle2" mb={1}>Bild auswählen:</Typography>
               <Box
@@ -102,41 +102,41 @@ export default function CreateNews() {
                   }}
                 />
               </Box>
-              {/* Vorschau anzeigen */}
-             {imagePreview && (
-              <Box sx={{ mt: 2, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                
-                {/* Bild */}
-                <Box
-                  component="img"
-                  src={imagePreview}
-                  alt="Bildvorschau"
-                  sx={{
-                    width: 150,
-                    height: "auto",
-                    borderRadius: 2,
-                    objectFit: "cover",
-                    boxShadow: 2,
-                    mb: 1  // Abstand zum Button
-                  }}
-                />
-                {/* Entfernen Button */}
-                <Button
-                  variant="outlined"
-                  color="error"
-                  size="small"
-                  endIcon={<DeleteIcon />}
-                  onClick={() => {
-                    setImageFile(null);
-                    setImagePreview(null);
-                  }}
-                >
-                  Bild entfernen
-                </Button>
-              </Box>
-            )}
-          </Box>
-            {/* PDF Upload + löshen */}
+
+              {imagePreview && (
+                <Box sx={{ mt: 2, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+
+
+                  <Box
+                    component="img"
+                    src={imagePreview}
+                    alt="Bildvorschau"
+                    sx={{
+                      width: 150,
+                      height: "auto",
+                      borderRadius: 2,
+                      objectFit: "cover",
+                      boxShadow: 2,
+                      mb: 1
+                    }}
+                  />
+
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    endIcon={<DeleteIcon />}
+                    onClick={() => {
+                      setImageFile(null);
+                      setImagePreview(null);
+                    }}
+                  >
+                    Bild entfernen
+                  </Button>
+                </Box>
+              )}
+            </Box>
+
             <Box>
               <Typography variant="subtitle2" mb={1}>PDF / Datei auswählen:</Typography>
               <Button
@@ -151,12 +151,12 @@ export default function CreateNews() {
                   onChange={(e) => setPdf(e.target.files?.[0] || null)}
                 />
               </Button>
-              
+
               {pdf && (
-              <Box sx={{ mt: 2, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography variant="body1">📄 {pdf.name}</Typography>
-                </Stack>
+                <Box sx={{ mt: 2, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Typography variant="body1">📄 {pdf.name}</Typography>
+                  </Stack>
                   <Button
                     variant="outlined"
                     color="error"
@@ -165,13 +165,15 @@ export default function CreateNews() {
                     sx={{ mt: 1 }}
                     onClick={() => setPdf(null)}
                   >
-                     Datei entfernen
+                    Datei entfernen
                   </Button>
-              </Box>
+                </Box>
               )}
             </Box>
-            {/* Beschreibung */}
+
             <TextField
+              id="news-summary"
+              name="summary"
               fullWidth
               multiline
               minRows={3}
@@ -179,8 +181,10 @@ export default function CreateNews() {
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
             />
-            {/* Inhalt */}
+
             <TextField
+              id="news-content"
+              name="content"
               fullWidth
               multiline
               minRows={6}
@@ -188,7 +192,7 @@ export default function CreateNews() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
-            {/* Tags */}
+
             <Box>
               <Typography variant="subtitle2" mb={1}>Tags:</Typography>
               <Stack direction="row" spacing={1}>
@@ -207,10 +211,10 @@ export default function CreateNews() {
                 ))}
               </Stack>
             </Box>
-            {/* Links */}
+
             <Box>
               <Typography variant="subtitle2" mb={1}>Links:</Typography>
-              {/* Link-Eingabe + Hinzufügen */}
+
               <Stack direction="row" spacing={2}>
                 <TextField
                   fullWidth
@@ -231,7 +235,7 @@ export default function CreateNews() {
                   Hinzufügen
                 </Button>
               </Stack>
-              {/* Liste der Links */}
+
               <Stack mt={2} spacing={1}>
                 {links.map((l, index) => (
                   <Box
@@ -263,7 +267,7 @@ export default function CreateNews() {
                 ))}
               </Stack>
             </Box>
-            {/* Speichern Button */}
+
             <Button
               variant="contained"
               size="large"

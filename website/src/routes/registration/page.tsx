@@ -24,7 +24,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 import { getPrograms, postAuthRegister } from '@lib/api';
-import type { Program } from '@lib/api';
+import type { AuthProgramResponse as Program } from '@lib/api';
 
 const EMAIL_SUFFIX = '@studmail.w-hs.de';
 
@@ -38,11 +38,7 @@ const registrationSchema = z.object({
     .regex(/[0-9]/, "Das Passwort muss mindestens eine Zahl enthalten.")
     .regex(/[^A-Za-z0-9]/, "Das Passwort muss mindestens ein Sonderzeichen enthalten."),
   confirmPassword: z.string(),
-  programid: z.number({ 
-    invalid_type_error: "Bitte wähle einen Studiengang aus." 
-  })
-  .int()
-  .positive({ message: "Bitte wähle einen Studiengang aus." }),
+  programid: z.coerce.number().min(1, "Bitte wähle einen Studiengang aus."),
 }).superRefine((data, ctx) => {
   if (data.password !== data.confirmPassword) {
     ctx.addIssue({
@@ -87,7 +83,7 @@ export default function RegistrationPage() {
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleClickShowConfirmPassword = () => setShowConfirmPassword((show) => !show);
-  
+
   const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
   };
@@ -99,7 +95,7 @@ export default function RegistrationPage() {
     setSuccess('');
 
     const formData = new FormData(event.currentTarget);
-    
+
     const rawData = {
       name: formData.get('name') as string,
       emailPrefix: formData.get('emailPrefix') as string,
@@ -135,9 +131,9 @@ export default function RegistrationPage() {
       });
 
       if (apiError) {
-        // @ts-ignore
-        const msg = (apiError as any)?.message || "Die Registrierung konnte nicht abgeschlossen werden.";
+        const msg = (apiError as { message?: string })?.message || "Die Registrierung konnte nicht abgeschlossen werden.";
         setErrors({ global: msg });
+        setLoading(false);
         return;
       }
 
@@ -173,7 +169,7 @@ export default function RegistrationPage() {
         </Typography>
 
         <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3, width: '100%' }}>
-          
+
           {errors.global && <Alert severity="error" sx={{ mb: 2 }}>{errors.global}</Alert>}
           {success && (
             <Alert severity="success" sx={{ mb: 2 }}>
@@ -228,11 +224,15 @@ export default function RegistrationPage() {
               error={!!errors.programid}
               helperText={errors.programid}
             >
-              {programs.map((option) => (
-                <MenuItem key={option.id} value={option.id}>
-                  {option.name}
-                </MenuItem>
-              ))}
+              {programs.length > 0 ? (
+                programs.map((option) => (
+                  <MenuItem key={option.id} value={option.id}>
+                    {option.name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled value="">Lädt...</MenuItem>
+              )}
             </TextField>
 
             <FormControl variant="outlined" required error={!!errors.password} fullWidth>
