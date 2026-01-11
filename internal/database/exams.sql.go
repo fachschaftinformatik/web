@@ -9,29 +9,43 @@ import (
 	"context"
 )
 
+const clearLatestFlag = `-- name: ClearLatestFlag :exec
+UPDATE exams SET is_latest = 0 WHERE group_id = ?1
+`
+
+func (q *Queries) ClearLatestFlag(ctx context.Context, groupID string) error {
+	_, err := q.db.ExecContext(ctx, clearLatestFlag, groupID)
+	return err
+}
+
 const createExam = `-- name: CreateExam :one
 INSERT INTO exams (
   id, userid, programid, version, moduleid, exam_date, 
-  accesskey, mime_type, nbytes, checksum, comment
+  accesskey, mime_type, nbytes, checksum, comment,
+  group_id, edit_version, is_latest
 ) VALUES (
   ?1, ?2, ?3, ?4, 
   ?5, ?6, ?7, 
-  ?8, ?9, ?10, ?11
-) RETURNING id, userid, programid, version, moduleid, comment, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum
+  ?8, ?9, ?10, ?11,
+  ?12, ?13, ?14
+) RETURNING id, userid, programid, version, moduleid, comment, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum, group_id, edit_version, is_latest
 `
 
 type CreateExamParams struct {
-	ID        string  `json:"id"`
-	Userid    string  `json:"userid"`
-	Programid int64   `json:"programid"`
-	Version   string  `json:"version"`
-	Moduleid  *int64  `json:"moduleid"`
-	ExamDate  string  `json:"exam_date"`
-	Accesskey string  `json:"accesskey"`
-	MimeType  string  `json:"mime_type"`
-	Nbytes    int64   `json:"nbytes"`
-	Checksum  string  `json:"checksum"`
-	Comment   *string `json:"comment"`
+	ID          string  `json:"id"`
+	Userid      string  `json:"userid"`
+	Programid   int64   `json:"programid"`
+	Version     string  `json:"version"`
+	Moduleid    *int64  `json:"moduleid"`
+	ExamDate    string  `json:"exam_date"`
+	Accesskey   string  `json:"accesskey"`
+	MimeType    string  `json:"mime_type"`
+	Nbytes      int64   `json:"nbytes"`
+	Checksum    string  `json:"checksum"`
+	Comment     *string `json:"comment"`
+	GroupID     string  `json:"group_id"`
+	EditVersion int64   `json:"edit_version"`
+	IsLatest    int64   `json:"is_latest"`
 }
 
 func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, error) {
@@ -47,6 +61,9 @@ func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, e
 		arg.Nbytes,
 		arg.Checksum,
 		arg.Comment,
+		arg.GroupID,
+		arg.EditVersion,
+		arg.IsLatest,
 	)
 	var i Exam
 	err := row.Scan(
@@ -62,6 +79,9 @@ func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, e
 		&i.MimeType,
 		&i.Nbytes,
 		&i.Checksum,
+		&i.GroupID,
+		&i.EditVersion,
+		&i.IsLatest,
 	)
 	return i, err
 }
@@ -76,7 +96,7 @@ func (q *Queries) DeleteExam(ctx context.Context, id string) error {
 }
 
 const getExam = `-- name: GetExam :one
-SELECT id, userid, programid, version, moduleid, comment, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum FROM exams WHERE id = ?1 LIMIT 1
+SELECT id, userid, programid, version, moduleid, comment, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum, group_id, edit_version, is_latest FROM exams WHERE id = ?1 LIMIT 1
 `
 
 func (q *Queries) GetExam(ctx context.Context, id string) (Exam, error) {
@@ -95,19 +115,111 @@ func (q *Queries) GetExam(ctx context.Context, id string) (Exam, error) {
 		&i.MimeType,
 		&i.Nbytes,
 		&i.Checksum,
+		&i.GroupID,
+		&i.EditVersion,
+		&i.IsLatest,
 	)
 	return i, err
 }
 
+const getLatestByGroupId = `-- name: GetLatestByGroupId :one
+SELECT id, userid, programid, version, moduleid, comment, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum, group_id, edit_version, is_latest FROM exams WHERE group_id = ?1 AND is_latest = 1 LIMIT 1
+`
+
+func (q *Queries) GetLatestByGroupId(ctx context.Context, groupID string) (Exam, error) {
+	row := q.db.QueryRowContext(ctx, getLatestByGroupId, groupID)
+	var i Exam
+	err := row.Scan(
+		&i.ID,
+		&i.Userid,
+		&i.Programid,
+		&i.Version,
+		&i.Moduleid,
+		&i.Comment,
+		&i.ExamDate,
+		&i.UploadedAt,
+		&i.Accesskey,
+		&i.MimeType,
+		&i.Nbytes,
+		&i.Checksum,
+		&i.GroupID,
+		&i.EditVersion,
+		&i.IsLatest,
+	)
+	return i, err
+}
+
+const listExamVersions = `-- name: ListExamVersions :many
+SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
+       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+FROM exams e
+JOIN modules m ON e.moduleid = m.id
+JOIN users u ON e.userid = u.id
+WHERE e.group_id = ?1
+ORDER BY e.edit_version DESC
+`
+
+type ListExamVersionsRow struct {
+	ID           string  `json:"id"`
+	Programid    int64   `json:"programid"`
+	Version      string  `json:"version"`
+	ExamDate     string  `json:"exam_date"`
+	UploadedAt   string  `json:"uploaded_at"`
+	Moduleid     *int64  `json:"moduleid"`
+	Comment      *string `json:"comment"`
+	ModuleName   string  `json:"module_name"`
+	UploaderName string  `json:"uploader_name"`
+	GroupID      string  `json:"group_id"`
+	EditVersion  int64   `json:"edit_version"`
+	IsLatest     int64   `json:"is_latest"`
+}
+
+func (q *Queries) ListExamVersions(ctx context.Context, groupID string) ([]ListExamVersionsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listExamVersions, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListExamVersionsRow
+	for rows.Next() {
+		var i ListExamVersionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Programid,
+			&i.Version,
+			&i.ExamDate,
+			&i.UploadedAt,
+			&i.Moduleid,
+			&i.Comment,
+			&i.ModuleName,
+			&i.UploaderName,
+			&i.GroupID,
+			&i.EditVersion,
+			&i.IsLatest,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listExams = `-- name: ListExams :many
 SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
-       m.name as module_name, u.name as uploader_name
+       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
 FROM exams e
 JOIN modules m ON e.moduleid = m.id
 JOIN users u ON e.userid = u.id
 WHERE (?1 IS NULL OR e.programid = ?1)
   AND (?2 IS NULL OR e.version = ?2)
   AND (?3 IS NULL OR e.moduleid = ?3)
+  AND e.is_latest = 1
 ORDER BY e.exam_date DESC
 `
 
@@ -127,6 +239,9 @@ type ListExamsRow struct {
 	Comment      *string `json:"comment"`
 	ModuleName   string  `json:"module_name"`
 	UploaderName string  `json:"uploader_name"`
+	GroupID      string  `json:"group_id"`
+	EditVersion  int64   `json:"edit_version"`
+	IsLatest     int64   `json:"is_latest"`
 }
 
 func (q *Queries) ListExams(ctx context.Context, arg ListExamsParams) ([]ListExamsRow, error) {
@@ -148,6 +263,9 @@ func (q *Queries) ListExams(ctx context.Context, arg ListExamsParams) ([]ListExa
 			&i.Comment,
 			&i.ModuleName,
 			&i.UploaderName,
+			&i.GroupID,
+			&i.EditVersion,
+			&i.IsLatest,
 		); err != nil {
 			return nil, err
 		}
@@ -170,7 +288,7 @@ SET programid = ?1,
     exam_date = ?4,
     comment = ?5
 WHERE id = ?6
-RETURNING id, userid, programid, version, moduleid, comment, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum
+RETURNING id, userid, programid, version, moduleid, comment, exam_date, uploaded_at, accesskey, mime_type, nbytes, checksum, group_id, edit_version, is_latest
 `
 
 type UpdateExamParams struct {
@@ -205,6 +323,9 @@ func (q *Queries) UpdateExam(ctx context.Context, arg UpdateExamParams) (Exam, e
 		&i.MimeType,
 		&i.Nbytes,
 		&i.Checksum,
+		&i.GroupID,
+		&i.EditVersion,
+		&i.IsLatest,
 	)
 	return i, err
 }
