@@ -16,7 +16,7 @@ import LinkIcon from "@mui/icons-material/Link";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { Sidebar } from "@components/layout"; 
+import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
 import { forumDemoPosts } from "@lib/data";
 
@@ -132,13 +132,6 @@ function isoToShort(iso: string) {
   }
 }
 
-const escapeHtml = (value: string) =>
-  value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 
 type CommentNode = Comment & { children: CommentNode[] };
 function buildCommentTree(comments: Comment[]): CommentNode[] {
@@ -196,7 +189,7 @@ function renderTextWithMentions(text: string) {
   return nodes.length ? nodes : text;
 }
 
-/* Seeds */
+
 const SEED_POSTS: Post[] = forumDemoPosts.map((post, index) => ({
   id: post.id,
   title: post.title,
@@ -211,7 +204,7 @@ const SEED_POSTS: Post[] = forumDemoPosts.map((post, index) => ({
 }));
 export const FORUM_SEED_POSTS = SEED_POSTS;
 
-/* Kommentare (rekursiv) */
+
 function CommentThread({
   node,
   onReply,
@@ -236,15 +229,15 @@ function CommentThread({
         position: "relative",
         "&::before": depth
           ? {
-              content: '""',
-              position: "absolute",
-              left: 8,
-              top: 0,
-              bottom: 0,
-              width: 2,
-              bgcolor: appearance.border,
-              borderRadius: 1,
-            }
+            content: '""',
+            position: "absolute",
+            left: 8,
+            top: 0,
+            bottom: 0,
+            width: 2,
+            bgcolor: appearance.border,
+            borderRadius: 1,
+          }
           : {}
       }, depth ? {
         pl: 3
@@ -284,6 +277,8 @@ function CommentThread({
           {replyOpen && (
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
               <TextField
+                id={`reply-${node.id}`}
+                name="reply"
                 size="small"
                 fullWidth
                 placeholder="Antwort schreiben…"
@@ -392,8 +387,8 @@ function FocusedPost({
         boxShadow: fullPageMode
           ? "none"
           : isDark
-          ? "0px 12px 28px rgba(0,0,0,0.32)"
-          : "0px 12px 28px rgba(15,110,46,0.12)",
+            ? "0px 12px 28px rgba(0,0,0,0.32)"
+            : "0px 12px 28px rgba(15,110,46,0.12)",
       }}
     >
       <Stack spacing={fullPageMode ? 3 : 2.5}>
@@ -472,33 +467,33 @@ function FocusedPost({
             </IconButton>
           </Stack>
           <Stack spacing={1.5} sx={{ flex: 1 }}>
-              <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                <Stack spacing={0.75}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant={titleVariant} sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                      {post.title}
-                    </Typography>
-                    {post.pinned && (
-                      <Tooltip title="Angepinnt">
-                        <PushPinOutlinedIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
-                      </Tooltip>
-                    )}
-                  </Stack>
-                  <Typography variant={bodyVariant} sx={{ color: mutedColor }}>
-                    {post.body}
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Stack spacing={0.75}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant={titleVariant} sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                    {post.title}
                   </Typography>
+                  {post.pinned && (
+                    <Tooltip title="Angepinnt">
+                      <PushPinOutlinedIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
+                    </Tooltip>
+                  )}
                 </Stack>
-                <Stack direction="row" spacing={1}>
-                  <Tooltip title="Im neuen Tab öffnen">
-                    <IconButton size="small" onClick={() => openPostWindow(post, { view: "full" })}>
-                      <OpenInNewIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Button size="small" onClick={onCloseFocus}>
-                    Schließen
-                  </Button>
-                </Stack>
+                <Typography variant={bodyVariant} sx={{ color: mutedColor }}>
+                  {post.body}
+                </Typography>
               </Stack>
+              <Stack direction="row" spacing={1}>
+                <Tooltip title="Im neuen Tab öffnen">
+                  <IconButton size="small" onClick={() => openPostWindow(post, { view: "full" })}>
+                    <OpenInNewIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Button size="small" onClick={onCloseFocus}>
+                  Schließen
+                </Button>
+              </Stack>
+            </Stack>
 
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
               {post.tags.map((t) => (
@@ -540,12 +535,15 @@ function FocusedPost({
               disabledHelper={commentDisabledReason}
               flat={fullPageMode}
               disableCollapse={fullPageMode}
+              idPrefix={`focused-${post.id}`}
             />
 
             <Divider />
 
             <Stack direction={{ xs: "column", md: "row" }} spacing={1} alignItems="stretch">
               <TextField
+                id="share-link-focused"
+                name="link"
                 label="Link teilen"
                 value={focusShareUrl}
                 fullWidth
@@ -577,6 +575,7 @@ function CommentsSection({
   disabledHelper,
   flat = false,
   disableCollapse = false,
+  idPrefix = "comment",
 }: {
   comments: Comment[];
   onAdd: (parentId: string | null, text: string) => void;
@@ -585,8 +584,9 @@ function CommentsSection({
   disabledHelper?: string;
   flat?: boolean;
   disableCollapse?: boolean;
+  idPrefix?: string;
 }) {
-  const safeComments = Array.isArray(comments) ? comments : [];
+  const safeComments = React.useMemo(() => (Array.isArray(comments) ? comments : []), [comments]);
   const totalComments = safeComments.length;
   const [expanded, setExpanded] = React.useState(false);
   const collapseLimit = disableCollapse ? Number.MAX_SAFE_INTEGER : COMMENT_COLLAPSE_LIMIT;
@@ -609,7 +609,7 @@ function CommentsSection({
       }
       onAdd(parentId, t);
     },
-    [expanded, hiddenCount, totalComments, onAdd]
+    [expanded, hiddenCount, totalComments, onAdd, collapseLimit]
   );
   const renderNodes = React.useCallback(
     () =>
@@ -675,6 +675,8 @@ function CommentsSection({
       {flat ? (
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
           <TextField
+            id={`${idPrefix}-input-flat`}
+            name="comment"
             size="small"
             fullWidth
             multiline
@@ -727,6 +729,8 @@ function CommentsSection({
         >
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
             <TextField
+              id={`${idPrefix}-input-contained`}
+              name="comment"
               size="small"
               fullWidth
               multiline
@@ -966,6 +970,7 @@ function PostItem({
               disabledHelper={commentDisabledReason}
               flat={false}
               disableCollapse={false}
+              idPrefix={`post-${post.id}`}
             />
           </Stack>
         </Stack>
@@ -1026,7 +1031,7 @@ function PostItem({
   );
 }
 
-/* Hauptkomponente */
+
 export default function ForumStandalone() {
   const { user } = useAuth();
   const theme = useTheme();
@@ -1041,12 +1046,12 @@ export default function ForumStandalone() {
       if (typeof window === "undefined") return SEED_POSTS;
       const raw = localStorage.getItem(LS_KEY);
       if (!raw) return SEED_POSTS;
-      
+
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return SEED_POSTS;
 
-     
-      return parsed.map((p: any) => ({
+
+      return parsed.map((p: Record<string, unknown>) => ({
         id: p?.id ?? uuid(),
         title: p?.title ?? "Kein Titel",
         body: p?.body ?? "",
@@ -1054,9 +1059,9 @@ export default function ForumStandalone() {
         author: p?.author ?? "Anonym",
         createdAt: p?.createdAt ?? new Date().toISOString(),
         votes: typeof p?.votes === 'number' ? p.votes : 0,
-      
+
         programs: Array.isArray(p?.programs) ? normalizeProgramList(p.programs) : [PROGRAMS[0]],
-        
+
         comments: Array.isArray(p?.comments) ? p.comments : [],
         pinned: !!p?.pinned
       }));
@@ -1095,24 +1100,24 @@ export default function ForumStandalone() {
     }),
     [isDark, theme]
   );
-  
-  // WICHTIG: Hier fehlte eine sichere Prüfung, falls theme undefiniert wäre (unwahrscheinlich aber möglich)
+
+
   const programChipSx = React.useMemo(
     () =>
       isDark
         ? {
-            bgcolor: alpha(theme.palette.secondary.light, 0.2),
-            borderColor: alpha(theme.palette.secondary.light, 0.5),
-            color: theme.palette.secondary.contrastText,
-          }
+          bgcolor: alpha(theme.palette.secondary.light, 0.2),
+          borderColor: alpha(theme.palette.secondary.light, 0.5),
+          color: theme.palette.secondary.contrastText,
+        }
         : {
-            bgcolor: alpha(theme.palette.secondary.main, 0.1),
-            borderColor: alpha(theme.palette.secondary.main, 0.4),
-            color: theme.palette.secondary.main,
-          },
+          bgcolor: alpha(theme.palette.secondary.main, 0.1),
+          borderColor: alpha(theme.palette.secondary.main, 0.4),
+          color: theme.palette.secondary.main,
+        },
     [isDark, theme]
   );
-  
+
   const inputStyles = React.useMemo(
     () => ({
       "& .MuiInputBase-root": {
@@ -1125,7 +1130,7 @@ export default function ForumStandalone() {
   const [detailPost, setDetailPost] = React.useState<Post | null>(null);
   const [shareCopied, setShareCopied] = React.useState(false);
   const [focusedPostId, setFocusedPostId] = React.useState<string | null>(null);
-  const [fullPageMode, setFullPageMode] = React.useState(false); 
+  const [fullPageMode, setFullPageMode] = React.useState(false);
   const openedFromUrl = React.useRef(false);
 
   const shareUrl = React.useMemo(() => {
@@ -1178,7 +1183,7 @@ export default function ForumStandalone() {
 
   React.useEffect(() => { localStorage.setItem(LS_KEY, JSON.stringify(posts)); }, [posts]);
   React.useEffect(() => { localStorage.setItem(LS_VOTES_KEY, JSON.stringify(votes)); }, [votes]);
-  
+
   React.useEffect(() => {
     if (!detailPost) return;
     const updated = posts.find((p) => p.id === detailPost.id);
@@ -1442,10 +1447,10 @@ export default function ForumStandalone() {
           minHeight: "100vh",
           bgcolor: palette.background,
           "--card-bg": palette.card,
-      "--card-border": palette.border,
-      color: theme.palette.text.primary,
-    }}
-  >
+          "--card-border": palette.border,
+          color: theme.palette.text.primary,
+        }}
+      >
         <Container maxWidth={fullPageMode ? "md" : "lg"} sx={{ py: fullPageMode ? 4 : 3 }}>
           {fullPageMode ? (
             focusedPost ? (
@@ -1488,7 +1493,7 @@ export default function ForumStandalone() {
             )
           ) : (
             <>
-              {/* Filterleiste */}
+
               <Paper
                 elevation={0}
                 sx={{
@@ -1505,6 +1510,8 @@ export default function ForumStandalone() {
                 <Stack spacing={2}>
                   <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "stretch", md: "center" }}>
                     <TextField
+                      id="forum-search"
+                      name="q"
                       placeholder="Suche in Titel, Text oder Tags…"
                       value={q}
                       onChange={(e) => setQ(e.target.value)}
@@ -1521,6 +1528,8 @@ export default function ForumStandalone() {
                       }}
                     />
                     <Select
+                      id="forum-sort-select"
+                      name="sort"
                       size="small"
                       value={sort}
                       onChange={(e) => setSort(e.target.value as "new" | "votes")}
@@ -1551,8 +1560,8 @@ export default function ForumStandalone() {
                           bgcolor: activeFiltersCount
                             ? undefined
                             : isDark
-                            ? alpha(theme.palette.common.white, 0.1)
-                            : alpha(theme.palette.primary.main, 0.04),
+                              ? alpha(theme.palette.common.white, 0.1)
+                              : alpha(theme.palette.primary.main, 0.04),
                           borderColor: isDark ? alpha(theme.palette.common.white, 0.5) : undefined,
                         }
                       }}
@@ -1588,7 +1597,7 @@ export default function ForumStandalone() {
                 </Stack>
               </Paper>
 
-              {/* Liste */}
+
               <Stack spacing={2}>
                 {paginatedPosts.map((p) => (
                   <PostItem
@@ -1634,302 +1643,321 @@ export default function ForumStandalone() {
             </>
           )}
         </Container>
-      {!fullPageMode && (
-        <Drawer
-          anchor="right"
-          open={filtersOpen}
-          onClose={() => setFiltersOpen(false)}
-          slotProps={{
-            paper: { sx: { bgcolor: palette.surface, color: theme.palette.text.primary } }
-          }}
-        >
-          <Box sx={{ width: { xs: 340, sm: 420 }, p: 3 }}>
-            <Stack spacing={2}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6">Filter</Typography>
-                <Button size="small" onClick={clearAllFilters}>
-                  Zurücksetzen
-                </Button>
-              </Stack>
-              <Box>
-                <Typography variant="subtitle2" sx={{ color: palette.textSecondary }}>
-                  Beiträge
-                </Typography>
-                <FormControlLabel
-                  sx={{ mt: 1 }}
-                  control={
-                    <Checkbox
-                      checked={allProgramsOnly}
-                      onChange={(e) => setAllProgramsOnly(e.target.checked)}
-                    />
-                  }
-                  label="Nur Beiträge anzeigen, die alle Studiengänge adressieren"
-                />
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" sx={{ color: palette.textSecondary }}>
-                  Studiengänge
-                </Typography>
-                <Grid container spacing={2} mt={1}>
-                  {PROGRAM_CATALOG.map((meta) => {
-                    const active = activeProgramFilters.includes(meta.id);
-                    return (
-                      <Grid component="div" key={meta.id} size={6}>
-                        <Paper
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => toggleProgramFilter(meta.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              toggleProgramFilter(meta.id);
-                            }
-                          }}
-                          sx={[{
-                            p: 1.5,
-                            border: 2,
-                            cursor: "pointer",
-                            transition: "all .2s ease",
-                            minHeight: 96,
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "space-between",
-                            "&:hover": {
-                              borderColor: "secondary.main",
-                              boxShadow: 2,
-                            }
-                          }, active ? {
-                            borderColor: "secondary.main"
-                          } : {
-                            borderColor: palette.border
-                          }, active ? {
-                            bgcolor: "rgba(15,110,46,0.12)"
-                          } : {
-                            bgcolor: palette.surface
-                          }]}
-                        >
-                          <Typography variant="body2" fontWeight={600}>
-                            {meta.label}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {meta.level}
-                          </Typography>
-                        </Paper>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
-              </Box>
-
-              <Stack direction="row" justifyContent="space-between" pt={1}>
-                <Button onClick={clearAllFilters}>Alle löschen</Button>
-                <Button variant="contained" onClick={() => setFiltersOpen(false)}>
-                  Anwenden
-                </Button>
-              </Stack>
-            </Stack>
-          </Box>
-        </Drawer>
-      )}
-      <Dialog open={!!detailPost} onClose={closeDetail} fullWidth maxWidth="md">
-        {detailPost && (
-          <>
-            <DialogTitle>
-              <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Typography variant="h6">{detailPost.title}</Typography>
-                  {detailPost.pinned && (
-                    <Tooltip title="Angepinnt">
-                      <PushPinOutlinedIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
-                    </Tooltip>
-                  )}
-                </Stack>
-                <Tooltip title="Im neuen Tab öffnen">
-                  <IconButton onClick={() => openPostWindow(detailPost, { view: "full" })}>
-                    <OpenInNewIcon />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            </DialogTitle>
-            <DialogContent dividers>
+        {!fullPageMode && (
+          <Drawer
+            anchor="right"
+            open={filtersOpen}
+            onClose={() => setFiltersOpen(false)}
+            slotProps={{
+              paper: { sx: { bgcolor: palette.surface, color: theme.palette.text.primary } }
+            }}
+          >
+            <Box sx={{ width: { xs: 340, sm: 420 }, p: 3 }}>
               <Stack spacing={2}>
-                <Typography variant="body1">{detailPost.body}</Typography>
-
-                {detailPost.tags.length > 0 && (
-                  <Stack direction="row" spacing={1} flexWrap="wrap">
-                    {detailPost.tags.map((tag) => (
-                      <Chip key={tag} label={tag} size="small" variant="outlined" />
-                    ))}
-                  </Stack>
-                )}
-
-                <Stack direction="row" spacing={1} flexWrap="wrap">
-                  {detailPost.programs.map((program) => (
-                    <Chip
-                      key={program}
-                      label={PROGRAM_META_MAP[program]?.label ?? program}
-                      size="small"
-                      variant="outlined"
-                      sx={programChipSx}
-                    />
-                  ))}
-                </Stack>
-
-                <Typography variant="body2" sx={{ color: palette.textSecondary }}>
-                  von {detailPost.author} · {isoToShort(detailPost.createdAt)} ·{" "}
-                  {detailPost.votes + (votes[detailPost.id] || 0)} Votes
-                </Typography>
-
-                <Divider />
-
-                <Typography variant="h6">Diskussion</Typography>
-                <CommentsSection
-                  comments={detailPost.comments}
-                  onAdd={(parentId, text) => handleAddComment(detailPost.id, parentId, text)}
-                  appearance={commentAppearance}
-                  canComment={canComment}
-                  disabledHelper="Bitte einloggen, um zu kommentieren."
-                />
-
-                <Divider />
-
-                <Stack direction={{ xs: "column", md: "row" }} spacing={1} alignItems="stretch">
-                  <TextField
-                    label="Link teilen"
-                    value={shareUrl}
-                    fullWidth
-                    sx={inputStyles}
-                    slotProps={{
-                      input: { readOnly: true }
-                    }}
-                  />
-                  <Button
-                    variant="contained"
-                    startIcon={<LinkIcon />}
-                    onClick={copyShareUrl}
-                    sx={{ whiteSpace: "nowrap" }}
-                  >
-                    {shareCopied ? "Kopiert!" : "Link kopieren"}
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="h6">Filter</Typography>
+                  <Button size="small" onClick={clearAllFilters}>
+                    Zurücksetzen
                   </Button>
                 </Stack>
-                {shareCopied && (
-                  <Typography variant="caption" color="success.main">
-                    Link in der Zwischenablage gespeichert.
+                <Box>
+                  <Typography variant="subtitle2" sx={{ color: palette.textSecondary }}>
+                    Beiträge
                   </Typography>
-                )}
-              </Stack>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={closeDetail}>Schließen</Button>
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
-      {/* Create Dialog */}
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Beitrag erstellen</DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2} mt={1}>
-            <TextField
-              label="Titel"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              autoFocus
-              sx={inputStyles}
-            />
-            <TextField
-              label="Inhalt"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              multiline
-              minRows={5}
-              sx={inputStyles}
-            />
-            <TextField
-              label="Tags (kommagetrennt)"
-              placeholder="react, typescript, mui"
-              value={tagsInput}
-              onChange={(e) => setTagsInput(e.target.value)}
-              sx={inputStyles}
-            />
-            {/* Für alle + einzelne Checkboxen in einer Reihe */}
-            <FormGroup row>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={allPrograms}
-                    onChange={(e) => setAllPrograms(e.target.checked)}
+                  <FormControlLabel
+                    sx={{ mt: 1 }}
+                    control={
+                      <Checkbox
+                        id="all-programs-filter-checkbox"
+                        name="allProgramsOnly"
+                        checked={allProgramsOnly}
+                        onChange={(e) => setAllProgramsOnly(e.target.checked)}
+                      />
+                    }
+                    label="Nur Beiträge anzeigen, die alle Studiengänge adressieren"
                   />
-                }
-                label="Für alle Studiengänge"
-                sx={{ mr: 2 }}
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ color: palette.textSecondary }}>
+                    Studiengänge
+                  </Typography>
+                  <Grid container spacing={2} mt={1}>
+                    {PROGRAM_CATALOG.map((meta) => {
+                      const active = activeProgramFilters.includes(meta.id);
+                      return (
+                        <Grid component="div" key={meta.id} size={6}>
+                          <Paper
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => toggleProgramFilter(meta.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                toggleProgramFilter(meta.id);
+                              }
+                            }}
+                            sx={[{
+                              p: 1.5,
+                              border: 2,
+                              cursor: "pointer",
+                              transition: "all .2s ease",
+                              minHeight: 96,
+                              display: "flex",
+                              flexDirection: "column",
+                              justifyContent: "space-between",
+                              "&:hover": {
+                                borderColor: "secondary.main",
+                                boxShadow: 2,
+                              }
+                            }, active ? {
+                              borderColor: "secondary.main"
+                            } : {
+                              borderColor: palette.border
+                            }, active ? {
+                              bgcolor: "rgba(15,110,46,0.12)"
+                            } : {
+                              bgcolor: palette.surface
+                            }]}
+                          >
+                            <Typography variant="body2" fontWeight={600}>
+                              {meta.label}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {meta.level}
+                            </Typography>
+                          </Paper>
+                        </Grid>
+                      );
+                    })}
+                  </Grid>
+                </Box>
+
+                <Stack direction="row" justifyContent="space-between" pt={1}>
+                  <Button onClick={clearAllFilters}>Alle löschen</Button>
+                  <Button variant="contained" onClick={() => setFiltersOpen(false)}>
+                    Anwenden
+                  </Button>
+                </Stack>
+              </Stack>
+            </Box>
+          </Drawer>
+        )}
+        <Dialog open={!!detailPost} onClose={closeDetail} fullWidth maxWidth="md">
+          {detailPost && (
+            <>
+              <DialogTitle>
+                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant="h6">{detailPost.title}</Typography>
+                    {detailPost.pinned && (
+                      <Tooltip title="Angepinnt">
+                        <PushPinOutlinedIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
+                      </Tooltip>
+                    )}
+                  </Stack>
+                  <Tooltip title="Im neuen Tab öffnen">
+                    <IconButton onClick={() => openPostWindow(detailPost, { view: "full" })}>
+                      <OpenInNewIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              </DialogTitle>
+              <DialogContent dividers>
+                <Stack spacing={2}>
+                  <Typography variant="body1">{detailPost.body}</Typography>
+
+                  {detailPost.tags.length > 0 && (
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                      {detailPost.tags.map((tag) => (
+                        <Chip key={tag} label={tag} size="small" variant="outlined" />
+                      ))}
+                    </Stack>
+                  )}
+
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                    {detailPost.programs.map((program) => (
+                      <Chip
+                        key={program}
+                        label={PROGRAM_META_MAP[program]?.label ?? program}
+                        size="small"
+                        variant="outlined"
+                        sx={programChipSx}
+                      />
+                    ))}
+                  </Stack>
+
+                  <Typography variant="body2" sx={{ color: palette.textSecondary }}>
+                    von {detailPost.author} · {isoToShort(detailPost.createdAt)} ·{" "}
+                    {detailPost.votes + (votes[detailPost.id] || 0)} Votes
+                  </Typography>
+
+                  <Divider />
+
+                  <Typography variant="h6" sx={{ mb: 1.5 }}>Diskussion</Typography>
+                  <CommentsSection
+                    comments={detailPost.comments}
+                    onAdd={(parentId, text) => handleAddComment(detailPost.id, parentId, text)}
+                    appearance={commentAppearance}
+                    canComment={canComment}
+                    disabledHelper="Bitte einloggen, um zu kommentieren."
+                    idPrefix={`dialog-${detailPost.id}`}
+                  />
+
+                  <Divider />
+
+                  <Stack direction={{ xs: "column", md: "row" }} spacing={1} alignItems="stretch">
+                    <TextField
+                      id="share-link-dialog"
+                      name="link"
+                      label="Link teilen"
+                      value={shareUrl}
+                      fullWidth
+                      sx={inputStyles}
+                      slotProps={{
+                        input: { readOnly: true }
+                      }}
+                    />
+                    <Button
+                      variant="contained"
+                      startIcon={<LinkIcon />}
+                      onClick={copyShareUrl}
+                      sx={{ whiteSpace: "nowrap" }}
+                    >
+                      {shareCopied ? "Kopiert!" : "Link kopieren"}
+                    </Button>
+                  </Stack>
+                  {shareCopied && (
+                    <Typography variant="caption" color="success.main">
+                      Link in der Zwischenablage gespeichert.
+                    </Typography>
+                  )}
+                </Stack>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={closeDetail}>Schließen</Button>
+              </DialogActions>
+            </>
+          )}
+        </Dialog>
+
+        <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+          <DialogTitle>Beitrag erstellen</DialogTitle>
+          <DialogContent dividers>
+            <Stack spacing={2} mt={1}>
+              <TextField
+                id="post-title"
+                name="title"
+                label="Titel"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                autoFocus
+                sx={inputStyles}
               />
-              {PROGRAMS.map((p) => (
+              <TextField
+                id="post-body"
+                name="body"
+                label="Inhalt"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                multiline
+                minRows={5}
+                sx={inputStyles}
+              />
+              <TextField
+                id="post-tags"
+                name="tags"
+                label="Tags (kommagetrennt)"
+                placeholder="react, typescript, mui"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                sx={inputStyles}
+              />
+
+              <FormGroup row>
                 <FormControlLabel
-                  key={p}
                   control={
                     <Checkbox
-                      checked={allPrograms ? true : programsInput[p]}
-                      disabled={allPrograms}
-                      onChange={(e) =>
-                        setProgramsInput((prev) => ({ ...prev, [p]: e.target.checked }))
-                      }
+                      id="create-post-all-programs"
+                      name="allPrograms"
+                      checked={allPrograms}
+                      onChange={(e) => setAllPrograms(e.target.checked)}
                     />
                   }
-                  label={PROGRAM_META_MAP[p].label}
+                  label="Für alle Studiengänge"
+                  sx={{ mr: 2 }}
                 />
-              ))}
-            </FormGroup>
+                {PROGRAMS.map((p) => (
+                  <FormControlLabel
+                    key={p}
+                    control={
+                      <Checkbox
+                        id={`create-post-program-${p}`}
+                        name={`program-${p}`}
+                        checked={allPrograms ? true : programsInput[p]}
+                        disabled={allPrograms}
+                        onChange={(e) =>
+                          setProgramsInput((prev) => ({ ...prev, [p]: e.target.checked }))
+                        }
+                      />
+                    }
+                    label={PROGRAM_META_MAP[p].label}
+                  />
+                ))}
+              </FormGroup>
 
-            {noProgramSelected && (
-              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                Bitte mindestens einen Studiengang auswählen (oder "Für alle Studiengänge" aktivieren).
-              </Typography>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Abbrechen</Button>
-          <Button variant="contained" onClick={createPost} disabled={noProgramSelected || !title.trim()}>
-            Speichern
-          </Button>
-        </DialogActions>
-      </Dialog>
-      {/* Report Dialog */}
-      <Dialog open={!!reportFor} onClose={closeReport} maxWidth="xs" fullWidth>
-        <DialogTitle>Beitrag melden</DialogTitle>
-        <DialogContent dividers>
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            Wähle einen Grund:
-          </Typography>
-          <Select
-            fullWidth
-            size="small"
-            value={reportReason}
-            onChange={(e) => setReportReason(e.target.value as string)}
-          >
-            <MenuItem value="Spam / Werbung">Spam / Werbung</MenuItem>
-            <MenuItem value="Beleidigung / Hate">Beleidigung / Hate</MenuItem>
-            <MenuItem value="Falsche Kategorie">Falsche Kategorie</MenuItem>
-            <MenuItem value="Urheberrechtsverletzung">Urheberrechtsverletzung</MenuItem>
-            <MenuItem value="Sonstiges">Sonstiges</MenuItem>
-          </Select>
-          <TextField
-            label="Zusätzliche Hinweise (optional)"
-            multiline
-            minRows={2}
-            value={reportNote}
-            onChange={(e) => setReportNote(e.target.value)}
-            fullWidth
-            sx={{ mt: 2 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeReport}>Abbrechen</Button>
-          <Button variant="contained" onClick={sendReport}>Melden</Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+              {noProgramSelected && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                  Bitte mindestens einen Studiengang auswählen (oder "Für alle Studiengänge" aktivieren).
+                </Typography>
+              )}
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpen(false)}>Abbrechen</Button>
+            <Button variant="contained" onClick={createPost} disabled={noProgramSelected || !title.trim()}>
+              Speichern
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={!!reportFor} onClose={closeReport} maxWidth="xs" fullWidth>
+          <DialogTitle>Beitrag melden</DialogTitle>
+          <DialogContent dividers>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              Wähle einen Grund:
+            </Typography>
+            <Select
+              id="report-reason-select"
+              name="reason"
+              fullWidth
+              size="small"
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value as string)}
+            >
+              <MenuItem value="Spam / Werbung">Spam / Werbung</MenuItem>
+              <MenuItem value="Beleidigung / Hate">Beleidigung / Hate</MenuItem>
+              <MenuItem value="Falsche Kategorie">Falsche Kategorie</MenuItem>
+              <MenuItem value="Urheberrechtsverletzung">Urheberrechtsverletzung</MenuItem>
+              <MenuItem value="Sonstiges">Sonstiges</MenuItem>
+            </Select>
+            <TextField
+              id="report-note"
+              name="note"
+              label="Zusätzliche Hinweise (optional)"
+              multiline
+              minRows={2}
+              value={reportNote}
+              onChange={(e) => setReportNote(e.target.value)}
+              fullWidth
+              sx={{ mt: 2 }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeReport}>Abbrechen</Button>
+            <Button variant="contained" onClick={sendReport}>Melden</Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
     </Sidebar>
   );
 }

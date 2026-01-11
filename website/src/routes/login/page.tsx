@@ -58,7 +58,7 @@ export default function LoginPage() {
   }, [searchParams]);
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
-  
+
   const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
   };
@@ -97,8 +97,7 @@ export default function LoginPage() {
       });
 
       if (apiError) {
-        // @ts-ignore
-        const msg = (apiError as any)?.message || 'Anmeldung fehlgeschlagen. Bitte überprüfe deine Daten.';
+        const msg = (apiError as { message?: string })?.message || 'Anmeldung fehlgeschlagen. Bitte überprüfe deine Daten.';
         setErrors({ global: msg });
         setLoading(false);
         return;
@@ -137,7 +136,7 @@ export default function LoginPage() {
         </Typography>
 
         <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3, width: '100%' }}>
-          
+
           {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
           {errors.global && <Alert severity="error" sx={{ mb: 2 }}>{errors.global}</Alert>}
 
@@ -159,7 +158,7 @@ export default function LoginPage() {
                 },
               }}
             />
-            
+
             <FormControl variant="outlined" required error={!!errors.password} fullWidth>
               <InputLabel htmlFor="outlined-adornment-password">Passwort</InputLabel>
               <OutlinedInput
@@ -188,6 +187,7 @@ export default function LoginPage() {
             <FormControlLabel
               control={
                 <Checkbox
+                  id="remember-me-checkbox"
                   color="primary"
                   checked={rememberMe}
                   onChange={(event) => setRememberMe(event.target.checked)}
@@ -196,7 +196,7 @@ export default function LoginPage() {
                 />
               }
               label="Angemeldet bleiben"
-              sx={{ width: '100%', ml: -1 }} 
+              sx={{ width: '100%', ml: -1 }}
             />
           </Stack>
 
@@ -209,7 +209,7 @@ export default function LoginPage() {
           >
             {loading ? 'Melde an...' : 'Anmelden'}
           </Button>
-          
+
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Link component={RouterLink} to="/register" variant="body2">
               Noch kein Konto? Jetzt registrieren

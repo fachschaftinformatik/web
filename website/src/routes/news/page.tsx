@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card, Button, CardMedia, CardContent, CardActions, Avatar, IconButton, Typography,
   Container, List, ListItem, Divider, ListItemText, ListItemAvatar,
@@ -10,12 +10,11 @@ import StarBorderIcon from '@mui/icons-material/StarBorder';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Outlet } from 'react-router-dom';
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
-import { Outlet } from "react-router-dom";
 
-// --- DATEN (Exportiert für details.tsx) ---
+
 export type NewsItem = {
   id: number;
   title: string;
@@ -29,7 +28,7 @@ export type NewsItem = {
   tags: string[];
   pdf?: string | null;
   pdfName?: string | null;
-  createdAt?: number; 
+  isNewAt?: number;
 };
 
 export const newsDaten: NewsItem[] = [
@@ -42,7 +41,7 @@ export const newsDaten: NewsItem[] = [
     content: "Lorem ipsum dolor sit amet...",
     links: ["https://conference2025.com", "https://more-info.com"],
     tags: ["Events", "Jobs"],
-    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 
+    isNewAt: Date.now() - 1 * 24 * 60 * 60 * 1000
   },
   {
     id: 2,
@@ -53,7 +52,7 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: ["https://conference2025.com"],
     tags: ["Prüfungen", "Studium"],
-    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000 
+    isNewAt: Date.now() - 1 * 24 * 60 * 60 * 1000
   },
   {
     id: 3,
@@ -64,7 +63,7 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: [],
     tags: ["Events", "Studium"],
-    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 
+    isNewAt: Date.now() - 20 * 24 * 60 * 60 * 1000
   },
   {
     id: 4,
@@ -75,7 +74,7 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: [],
     tags: ["Studium"],
-    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 
+    isNewAt: Date.now() - 20 * 24 * 60 * 60 * 1000
   },
   {
     id: 5,
@@ -86,21 +85,23 @@ export const newsDaten: NewsItem[] = [
     content: "",
     links: [],
     tags: ["Events", "Studium"],
-    createdAt: Date.now() - 20 * 24 * 60 * 60 * 1000 
+    isNewAt: Date.now() - 20 * 24 * 60 * 60 * 1000
   },
 ];
 
-// --- COMPONENTS ---
+
 function CustomizedInputBase() {
   return (
     <Paper
       component="form"
-      sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: "100%", borderRadius:2}}
-    > 
-     <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
+      sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: "100%", borderRadius: 2 }}
+    >
+      <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
         <SearchIcon />
       </IconButton>
       <InputBase
+        id="news-search"
+        name="q"
         sx={{ ml: 1, flex: 1 }}
         placeholder="Suche"
         inputProps={{ 'aria-label': 'search' }}
@@ -110,7 +111,7 @@ function CustomizedInputBase() {
   );
 }
 
-function ClickableChips({ selectedTag, setSelectedTag }: { selectedTag: string, setSelectedTag: (tag: string) => void}) {
+function ClickableChips({ selectedTag, setSelectedTag }: { selectedTag: string, setSelectedTag: (tag: string) => void }) {
   const tags = ["Alle", "Events", "Studium", "Prüfungen", "Jobs"];
   return (
     <Stack direction="row" spacing={1}>
@@ -165,32 +166,32 @@ function ReviewCard({ id, title, date, image, summary, isLiked, tags, isNew, isA
               {date}
             </Typography>
           </Box>
-         <Box>
-          <Stack direction="row" spacing={1} mb={1}>
-            {tags && tags.length > 0 ? (
-              tags.map((tag) => <Chip key={tag} label={tag} size="small" />)
-            ) : (
-              <Chip label="Allgemein" size="small" variant="filled" />
-            )}
-          </Stack>
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'text.secondary',
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
-            {summary}
-          </Typography>
-        </Box>
+          <Box>
+            <Stack direction="row" spacing={1} mb={1}>
+              {tags && tags.length > 0 ? (
+                tags.map((tag) => <Chip key={tag} label={tag} size="small" />)
+              ) : (
+                <Chip label="Allgemein" size="small" variant="filled" />
+              )}
+            </Stack>
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {summary}
+            </Typography>
+          </Box>
         </CardContent>
       </CardActionArea>
       <CardActions disableSpacing sx={{ justifyContent: "space-between" }}>
         <Box>
-          <IconButton onClick={() => onToggleLike(id)} aria-label="add to favorites">
+          <IconButton onClick={(e) => { e.stopPropagation(); onToggleLike(id); }} aria-label="add to favorites">
             {isLiked ? <FavoriteIcon color="error" /> : <FavoriteIcon />}
           </IconButton>
           {isNew && (
@@ -203,19 +204,19 @@ function ReviewCard({ id, title, date, image, summary, isLiked, tags, isNew, isA
             />
           )}
         </Box>
-        
+
         {isAdmin && (
           <Button
             variant="text"
             color="error"
             endIcon={<DeleteIcon />}
-            onClick={() => onDelete(id)}
+            onClick={(e) => { e.stopPropagation(); onDelete(id); }}
             sx={{ fontSize: "0.75rem" }}
           >
             Löschen
           </Button>
         )}
-        
+
       </CardActions>
     </Card>
   );
@@ -268,19 +269,42 @@ export default function NewsLayout() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [selectedTag, setSelectedTag] = useState<string>("Alle");
-  const [likedNewsIds, setLikedNewsIds] = useState<number[]>([]);
-  const [allNews, setAllNews] = useState<NewsItem[]>([]);
-  
-  // Likes laden
-  useEffect(() => {
-    const savedLikes = localStorage.getItem('likedNews');
-    if (savedLikes) {
-      setLikedNewsIds(JSON.parse(savedLikes));
-    }
-  }, []);
+
+
+  const [localLikes, setLocalLikes] = useState<number[]>(() => {
+    const saved = localStorage.getItem('likedNews');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [localCustomNews, setLocalCustomNews] = useState<NewsItem[]>(() => {
+    return JSON.parse(localStorage.getItem("custom-news") || "[]");
+  });
+
+  const [now] = useState(() => Date.now());
+
+  const allNews = useMemo(() => {
+    const merged = [...newsDaten, ...localCustomNews];
+
+    const updatedNews = merged.map(item => {
+      const created = item.isNewAt ?? (typeof item.createdAt === 'string' ? new Date(item.createdAt).getTime() : now);
+      const ageInDays = (now - created) / (1000 * 60 * 60 * 24);
+      return {
+        ...item,
+        isNew: ageInDays <= 7,
+      };
+    });
+
+    updatedNews.sort((a, b) => {
+      const timeA = typeof a.isNewAt === 'number' ? a.isNewAt : (typeof a.createdAt === 'string' ? new Date(a.createdAt).getTime() : new Date(a.date).getTime());
+      const timeB = typeof b.isNewAt === 'number' ? b.isNewAt : (typeof b.createdAt === 'string' ? new Date(b.createdAt).getTime() : new Date(b.date).getTime());
+      return timeB - timeA;
+    });
+
+    return updatedNews;
+  }, [localCustomNews, now]);
 
   const handleToggleLike = (id: number) => {
-    setLikedNewsIds((prev) => {
+    setLocalLikes((prev) => {
       const updatedLikes = prev.includes(id)
         ? prev.filter((itemId) => itemId !== id)
         : [...prev, id];
@@ -290,37 +314,11 @@ export default function NewsLayout() {
   };
 
   const handleDelete = (id: number) => {
-    const updated = allNews.filter(item => item.id !== id);
-    setAllNews(updated);
     const stored = JSON.parse(localStorage.getItem("custom-news") || "[]");
-    const filteredStored = stored.filter((item: any) => item.id !== id);
+    const filteredStored = stored.filter((item: NewsItem) => item.id !== id);
     localStorage.setItem("custom-news", JSON.stringify(filteredStored));
+    setLocalCustomNews(filteredStored);
   };
- 
-  useEffect(() => {
-    const custom = JSON.parse(localStorage.getItem("custom-news") || "[]");
-    const merged = [...newsDaten, ...custom];
-    const now = Date.now();
-    
-    const updatedNews = merged.map(item => {
-      const created = item.createdAt ?? now; // Fallback, falls kein createdAt
-      const ageInDays = (now - created) / (1000 * 60 * 60 * 24);
-      return {
-        ...item,
-        isNew: ageInDays <= 7,
-      };
-    });
-
-    updatedNews.sort((a, b) => {
-    
-      const timeA = a.createdAt || new Date(a.date).getTime();
-      const timeB = b.createdAt || new Date(b.date).getTime();
-
-      return timeB - timeA;
-    });
-
-    setAllNews(updatedNews);
-  }, []);
 
   const filteredNews = selectedTag === "Alle"
     ? allNews
@@ -329,7 +327,7 @@ export default function NewsLayout() {
   return (
     <Sidebar user={user} title="Beiträge">
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, px: 2 }}>
-        {/* Hauptinhalt */}
+
         <Box sx={{ flex: 1, maxWidth: "1200px", mr: { lg: 4 }, mb: 4 }}>
           <Container sx={{ pt: 4, pb: 2 }}>
             <Box
@@ -374,10 +372,10 @@ export default function NewsLayout() {
 
             <Grid container spacing={3}>
               {filteredNews.map((item) => (
-                <Grid key={item.id} size={{ xs: 12, sm: 6, md:6 }}>
+                <Grid key={item.id} size={{ xs: 12, sm: 6, md: 6 }}>
                   <ReviewCard
                     {...item}
-                    isLiked={likedNewsIds.includes(item.id)}
+                    isLiked={localLikes.includes(item.id)}
                     onToggleLike={handleToggleLike}
                     onDelete={handleDelete}
                     isAdmin={isAdmin}
@@ -387,8 +385,8 @@ export default function NewsLayout() {
             </Grid>
           </Container>
         </Box>
-        
-        {/* Sidebar Rechts (Favoriten) */}
+
+
         <Box
           sx={{
             width: { xs: '100%', lg: 350 },
@@ -403,7 +401,7 @@ export default function NewsLayout() {
             Favoriten
           </Typography>
           <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
-            <FavoriteList likedIds={likedNewsIds} allNews={allNews} />
+            <FavoriteList likedIds={localLikes} allNews={allNews} />
           </Paper>
         </Box>
       </Box>
