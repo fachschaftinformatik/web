@@ -100,6 +100,8 @@ function CustomizedInputBase() {
         <SearchIcon />
       </IconButton>
       <InputBase
+        id="news-search"
+        name="q"
         sx={{ ml: 1, flex: 1 }}
         placeholder="Suche"
         inputProps={{ 'aria-label': 'search' }}
@@ -268,7 +270,7 @@ export default function NewsLayout() {
   const isAdmin = user?.role === "admin";
   const [selectedTag, setSelectedTag] = useState<string>("Alle");
 
-  
+
   const [localLikes, setLocalLikes] = useState<number[]>(() => {
     const saved = localStorage.getItem('likedNews');
     return saved ? JSON.parse(saved) : [];
@@ -325,7 +327,7 @@ export default function NewsLayout() {
   return (
     <Sidebar user={user} title="Beiträge">
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, px: 2 }}>
-        
+
         <Box sx={{ flex: 1, maxWidth: "1200px", mr: { lg: 4 }, mb: 4 }}>
           <Container sx={{ pt: 4, pb: 2 }}>
             <Box
@@ -384,7 +386,7 @@ export default function NewsLayout() {
           </Container>
         </Box>
 
-        
+
         <Box
           sx={{
             width: { xs: '100%', lg: 350 },
