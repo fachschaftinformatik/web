@@ -4,329 +4,257 @@ import {
   Box,
   Button,
   Chip,
-  Divider,
   Grid,
-  List,
-  ListItem,
   Paper,
   Stack,
   Typography,
+  CircularProgress,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import { Link as RouterLink } from 'react-router-dom';
+import { alpha, useTheme } from '@mui/material/styles';
+import { Link as RouterLink, useParams } from 'react-router-dom';
+import { client } from '@lib/api/client.gen';
 import LogoutIcon from '@mui/icons-material/Logout';
-import SchoolIcon from '@mui/icons-material/School';
-import { mockForumPosts } from '@lib/data';
 
 import { useAuth } from '@lib/auth';
 import { Sidebar } from '@components/layout';
 import { getPrograms } from '@lib/api';
 
-const MAX_VISIBLE_FORUM_POSTS = 3;
 
-const DashboardPage: React.FC = () => {
-  const { user, logout } = useAuth();
+const ProfilePage: React.FC = () => {
+  const { userId } = useParams<{ userId: string }>();
+  const { user: currentUser, logout } = useAuth();
+  const theme = useTheme();
+
+  const [profileUser, setProfileUser] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [programs, setPrograms] = useState<Record<number, string>>({});
-  const [programLoading, setProgramLoading] = useState(false);
+  const [programsLoading, setProgramsLoading] = useState(false);
+
+  const isOwnProfile = currentUser?.id === userId;
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
+
+    const fetchProfile = async () => {
+      setProfileLoading(true);
+      try {
+        const res = await client.request({
+          method: 'GET',
+          url: `/users/${userId}`
+        });
+        if (res.data) {
+          setProfileUser(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile", err);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [userId]);
+
+  useEffect(() => {
     let isMounted = true;
     const fetchPrograms = async () => {
-      setProgramLoading(true);
+      setProgramsLoading(true);
       try {
         const { data } = await getPrograms();
         if (!isMounted) return;
         if (data) {
-          const mapped = (Array.isArray(data) ? data : []).reduce<Record<number, string>>((acc, program) => {
-            if (program.id !== undefined) {
-              acc[program.id] = program.name ?? "Unbekannt";
-            }
+          const mapped = (Array.isArray(data) ? data : []).reduce<Record<number, string>>((acc, p) => {
+            if (p.id !== undefined) acc[p.id] = p.name ?? "Unbekannt";
             return acc;
           }, {});
           setPrograms(mapped);
         }
       } catch (error) {
         console.error('Studiengänge konnten nicht geladen werden', error);
-        if (isMounted) {
-          setPrograms({});
-        }
       } finally {
-        if (isMounted) {
-          setProgramLoading(false);
-        }
+        if (isMounted) setProgramsLoading(false);
       }
     };
 
     fetchPrograms();
+    return () => { isMounted = false; };
+  }, []);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
+  if (profileLoading) {
+    return (
+      <Sidebar user={currentUser} title="Profil">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+          <CircularProgress />
+        </Box>
+      </Sidebar>
+    );
+  }
 
-  const programLabel = programLoading
-    ? 'Studiengang wird geladen...'
-    : programs[user.programid]
-    ?? `Studiengang #${user.programid ?? 'unbekannt'}`;
+  if (!profileUser) {
+    return (
+      <Sidebar user={currentUser} title="Profil nicht gefunden">
+        <Box sx={{ mt: 5, textAlign: 'center' }}>
+          <Typography variant="h5">Dieser Nutzer existiert nicht.</Typography>
+          <Button component={RouterLink} to="/" sx={{ mt: 2 }}>Zurück zur Startseite</Button>
+        </Box>
+      </Sidebar>
+    );
+  }
 
-  const visibleForumPosts = mockForumPosts.slice(0, MAX_VISIBLE_FORUM_POSTS);
-  const canToggleForumPosts = mockForumPosts.length > MAX_VISIBLE_FORUM_POSTS;
+  const programLabel = programsLoading
+    ? 'Lädt...'
+    : (profileUser.programid !== undefined && programs[profileUser.programid])
+    ?? `Studiengang #${profileUser.programid ?? 'unbekannt'}`;
+
 
   const handleLogout = async () => {
     await logout();
   };
 
   return (
-    <Sidebar user={user} title="Dashboard">
+    <Sidebar user={currentUser} title={`Profil von ${profileUser.name}`} maxWidth="lg">
       <Box
         sx={(theme) => ({
           background: theme.palette.mode === 'light'
-            ? 'linear-gradient(180deg, rgba(76, 175, 80, 0.18), rgba(255,255,255,0.9))'
-            : 'linear-gradient(180deg, rgba(56, 142, 60, 0.3), rgba(11, 25, 18, 0.95))',
-          borderRadius: 3,
-          px: { xs: 1, sm: 2 },
-          py: 2,
+            ? 'linear-gradient(180deg, rgba(76, 175, 80, 0.08), rgba(255,255,255,0.95))'
+            : 'linear-gradient(180deg, rgba(56, 142, 60, 0.15), rgba(11, 25, 18, 0.98))',
+          borderRadius: 4,
         })}
       >
-        <Stack spacing={3}>
+        <Stack spacing={4}>
           <Paper
-            variant="outlined"
+            elevation={0}
             sx={(theme) => ({
-              p: { xs: 3, md: 4 },
-              border: 'none',
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${alpha(theme.palette.primary.dark, 0.9)})`,
-              color: theme.palette.common.white,
+              p: { xs: 4, md: 5 },
+              borderRadius: 4,
+              border: '1px solid',
+              borderColor: alpha(theme.palette.divider, 0.1),
+              background: theme.palette.mode === 'dark'
+                ? alpha(theme.palette.background.paper, 0.6)
+                : alpha(theme.palette.background.paper, 0.8),
+              backdropFilter: 'blur(20px)',
               position: 'relative',
               overflow: 'hidden',
             })}
           >
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                background: 'radial-gradient(circle at top right, rgba(255,255,255,0.35), transparent 45%)',
-                pointerEvents: 'none',
-              }}
-            />
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center" sx={{ position: 'relative' }}>
-              <Avatar sx={{ width: 80, height: 80, bgcolor: 'rgba(255,255,255,0.18)', fontSize: 36 }}>
-                {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="center">
+              <Avatar
+                sx={{
+                  width: 120,
+                  height: 120,
+                  bgcolor: theme.palette.primary.main,
+                  fontSize: 48,
+                  fontWeight: 700,
+                  boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.25)}`
+                }}
+              >
+                {profileUser.name ? profileUser.name.charAt(0).toUpperCase() : '?'}
               </Avatar>
-              <Box flex={1}>
-                <Typography variant="h4" fontWeight={600}>
-                  Schön, dass du da bist, {user.name.split(' ')[0] ?? user.name}
+              <Box flex={1} textAlign={{ xs: 'center', md: 'left' }}>
+                <Typography variant="h3" fontWeight={800} letterSpacing="-0.02em" gutterBottom>
+                  {profileUser.name}
                 </Typography>
-                <Typography variant="body1" sx={{ opacity: 0.9 }}>
-                  {user.email}
-                </Typography>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mt={2}>
-                  <Chip label={user.role.toUpperCase()} color="default" sx={{ bgcolor: 'rgba(255,255,255,0.16)' }} />
+                <Stack direction="row" spacing={1} justifyContent={{ xs: 'center', md: 'flex-start' }} alignItems="center">
                   <Chip
-                    label={user.verified ? 'Verifiziert' : 'Nicht verifiziert'}
-                    sx={{ bgcolor: 'rgba(255,255,255,0.16)' }}
-                    color={user.verified ? 'success' : 'default'}
+                    label={(profileUser.role ?? 'USER').toUpperCase()}
+                    size="small"
+                    sx={{
+                      fontWeight: 700,
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      color: 'primary.main',
+                      border: '1px solid',
+                      borderColor: alpha(theme.palette.primary.main, 0.2)
+                    }}
                   />
+                  {profileUser.verified === 1 && (
+                    <Chip
+                      label="Verfiziert"
+                      size="small"
+                      color="success"
+                      sx={{ fontWeight: 700 }}
+                    />
+                  )}
                 </Stack>
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 2, maxWidth: 600 }}>
+                  Studierende/r im Bereich {programLabel}. Seit {profileUser.created_at ? new Date(profileUser.created_at).toLocaleDateString() : 'Anfang an'} dabei.
+                </Typography>
               </Box>
-              <Stack spacing={1} alignItems="flex-end">
-                <Button variant="contained" color="secondary" startIcon={<LogoutIcon />} onClick={handleLogout}>
-                  Logout
-                </Button>
-              </Stack>
+              {isOwnProfile && (
+                <Stack direction="row" spacing={2} alignSelf={{ xs: 'stretch', md: 'flex-start' }}>
+                  <Button
+                    variant="outlined"
+                    component={RouterLink}
+                    to="/settings"
+                    sx={{ borderRadius: 2, fontWeight: 700 }}
+                  >
+                    Profil bearbeiten
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<LogoutIcon />}
+                    onClick={handleLogout}
+                    sx={{ borderRadius: 2, fontWeight: 700, boxShadow: 'none' }}
+                  >
+                    Abmelden
+                  </Button>
+                </Stack>
+              )}
             </Stack>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Account-Details
+          <Paper variant="outlined" sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="h6" fontWeight={700} gutterBottom sx={{ mb: 3 }}>
+              Informationen
             </Typography>
-            <Grid container spacing={2}>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6
-                }}>
-                <Typography variant="caption" color="text.secondary">
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Studiengang
                 </Typography>
-                <Typography variant="body1" fontWeight={500}>
+                <Typography variant="body1" fontWeight={600} sx={{ mt: 0.5 }}>
                   {programLabel}
                 </Typography>
               </Grid>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6
-                }}>
-                <Typography variant="caption" color="text.secondary">
-                  Erstellt am
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Mitglied seit
                 </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {new Date(user.created_at).toLocaleString()}
+                <Typography variant="body1" fontWeight={600} sx={{ mt: 0.5 }}>
+                  {profileUser.created_at ? new Date(profileUser.created_at).toLocaleDateString() : 'Unbekannt'}
                 </Typography>
               </Grid>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6
-                }}>
-                <Typography variant="caption" color="text.secondary">
-                  E-Mail
+              {isOwnProfile && (
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    E-Mail (Privat)
+                  </Typography>
+                  <Typography variant="body1" fontWeight={600} sx={{ mt: 0.5 }}>
+                    {profileUser.email}
+                  </Typography>
+                </Grid>
+              )}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Status
                 </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {user.email}
-                </Typography>
-              </Grid>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6
-                }}>
-                <Typography variant="caption" color="text.secondary">
-                  Name
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {user.name}
-                </Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip
+                    label={profileUser.active === 1 ? "Aktiv" : "Inaktiv"}
+                    size="small"
+                    color={profileUser.active === 1 ? "success" : "default"}
+                    variant="outlined"
+                    sx={{ fontWeight: 600 }}
+                  />
+                </Box>
               </Grid>
             </Grid>
           </Paper>
 
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', sm: 'center' }} mb={2}>
-              <Box flex={1}>
-                <Typography variant="h6">Neueste Forenbeiträge</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Vorschau auf deine letzten Aktivitäten im Forum.
-                </Typography>
-              </Box>
-              {canToggleForumPosts && (
-                <Button
-                  variant="outlined"
-                  component={RouterLink}
-                  to="/forum"
-                  color="primary"
-                  sx={(theme) => ({
-                    borderColor:
-                      theme.palette.primary.main,
-                    color:
-                      theme.palette.primary.main,
-                    fontWeight: 600,
-                    '&:hover': {
-                      borderColor: theme.palette.primary.main,
-                      bgcolor:
-                        alpha(theme.palette.primary.main, 0.08),
-                      ...theme.applyStyles("dark", {
-                        bgcolor: alpha(theme.palette.primary.main, 0.2)
-                      })
-                    },
-                    ...theme.applyStyles("dark", {
-                      borderColor: alpha(theme.palette.primary.light, 0.8),
-                      color: theme.palette.primary.light
-                    })
-                  })}
-                >
-                  Alle anzeigen
-                </Button>
-              )}
-            </Stack>
-            <List disablePadding>
-              {visibleForumPosts.map((post, index) => (
-                <React.Fragment key={post.id}>
-                  {index > 0 && (
-                    <Divider
-                      sx={(theme) => ({
-                        my: 1.5,
-                        borderColor:
-                          alpha(theme.palette.grey[500], 0.3),
-                        ...theme.applyStyles("dark", {
-                          borderColor: alpha(theme.palette.common.white, 0.08)
-                        })
-                      })}
-                    />
-                  )}
-                  <ListItem
-                    alignItems="flex-start"
-                    sx={(theme) => ({
-                      px: { xs: 1.5, sm: 2 },
-                      py: 1.75,
-                      flexDirection: { xs: 'column', sm: 'row' },
-                      gap: { xs: 1, sm: 0 },
-                      borderRadius: 2,
-                      border: `1px solid ${alpha(theme.palette.grey[400], 0.6)
-                        }`,
-                      bgcolor: theme.palette.background.paper,
-                      boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.25)
-                        }`,
-                      transition: theme.transitions.create(['transform', 'box-shadow', 'border-color'], {
-                        duration: theme.transitions.duration.short,
-                      }),
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: `0 14px 30px ${alpha(theme.palette.primary.main, 0.35)}`,
-                        borderColor: theme.palette.primary.main,
-                      },
-                      ...theme.applyStyles("dark", {
-                        border: `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
-                        boxShadow: `0 6px 18px ${alpha(theme.palette.primary.dark, 0.45)}`,
-                        '&:hover': {
-                          boxShadow: `0 14px 30px ${alpha(theme.palette.primary.dark, 0.6)}`,
-                          borderColor: theme.palette.primary.light,
-                        },
-                      }),
-                    })}
-                  >
-                    <Box flex={1}>
-                      <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
-                        <Typography variant="subtitle1" fontWeight={600}>
-                          {post.title}
-                        </Typography>
-                        <Chip label={post.category} size="small" variant="outlined" />
-                      </Stack>
-                      <Typography variant="body2" color="text.secondary" mb={0.5}>
-                        {post.excerpt}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {new Date(post.createdAt).toLocaleString()} · {post.replies} Antworten
-                      </Typography>
-                    </Box>
-                  </ListItem>
-                </React.Fragment>
-              ))}
-            </List>
-          </Paper>
 
-          <Paper
-            variant="outlined"
-            sx={(theme) => ({
-              p: { xs: 3, md: 4 },
-              borderStyle: 'dashed',
-              borderColor: alpha(theme.palette.primary.main, 0.3),
-              bgcolor: alpha(theme.palette.primary.main, 0.04),
-            })}
-          >
-            <Typography variant="subtitle2" color="text.secondary">
-              Lass uns wachsen
-            </Typography>
-            <Typography variant="h6" gutterBottom>
-              Teile dein Prüfungswissen
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={2}>
-              Lade neue Rekos hoch oder kommentiere vorhandene Skripte. Jede Ergänzung hilft und macht den Wissenspool stärker.
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<SchoolIcon />}
-              component={RouterLink}
-              to="/exams"
-            >
-              Jetzt beitragen
-            </Button>
-          </Paper>
         </Stack>
       </Box>
     </Sidebar>
   );
 };
 
-export default DashboardPage;
+export default ProfilePage;

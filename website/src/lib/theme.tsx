@@ -4,6 +4,15 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { PaletteMode, PaletteOptions, Theme, ThemeOptions, ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
 
 export type CustomThemeStyles = ReturnType<typeof getCustomStyles>;
+
+declare module '@mui/material/styles' {
+  interface Theme {
+    custom: CustomThemeStyles;
+  }
+  interface ThemeOptions {
+    custom?: CustomThemeStyles;
+  }
+}
 import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
 import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
 
@@ -70,6 +79,32 @@ const typography: ThemeOptions['typography'] = {
 };
 
 const components: ThemeOptions['components'] = {
+  MuiCssBaseline: {
+    styleOverrides: (theme: Theme) => ({
+      html: {
+        scrollBehavior: 'smooth',
+      },
+      body: {
+        scrollbarColor: theme.palette.mode === 'dark' ? `${theme.palette.grey[700]} transparent` : `${theme.palette.grey[400]} transparent`,
+        '&::-webkit-scrollbar, & *::-webkit-scrollbar': {
+          width: 8,
+          height: 8,
+        },
+        '&::-webkit-scrollbar-track, & *::-webkit-scrollbar-track': {
+          background: 'transparent',
+        },
+        '&::-webkit-scrollbar-thumb, & *::-webkit-scrollbar-thumb': {
+          backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[300],
+          borderRadius: 10,
+          border: '2px solid transparent',
+          backgroundClip: 'content-box',
+        },
+        '&::-webkit-scrollbar-thumb:hover, & *::-webkit-scrollbar-thumb:hover': {
+          backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[700] : theme.palette.grey[400],
+        },
+      },
+    }),
+  },
   MuiAppBar: {
     styleOverrides: {
       root: ({ theme }) => ({
@@ -354,45 +389,65 @@ const theme = createAppTheme('light');
 export default theme;
 
 
+export type ThemePreference = 'light' | 'dark' | 'system';
+
 type ThemeModeContextValue = {
+  preference: ThemePreference;
   mode: PaletteMode;
   toggleMode: () => void;
-  setMode: (mode: PaletteMode) => void;
+  setPreference: (pref: ThemePreference) => void;
 };
 
 const ThemeModeContext = React.createContext<ThemeModeContextValue | undefined>(undefined);
 
 const STORAGE_KEY = 'app-theme-mode';
 
-const getStoredMode = (): PaletteMode => {
+const getStoredPreference = (): ThemePreference => {
   if (typeof window === 'undefined') {
-    return 'light';
+    return 'system';
   }
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored === 'dark' ? 'dark' : 'light';
+  if (stored === 'dark' || stored === 'light' || stored === 'system') {
+    return stored;
+  }
+  return 'system';
 };
 
 export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [mode, setModeState] = React.useState<PaletteMode>(() => getStoredMode());
+  const [preference, setPreferenceState] = React.useState<ThemePreference>(() => getStoredPreference());
+  const [resolvedMode, setResolvedMode] = React.useState<PaletteMode>('light');
 
-  const setMode = React.useCallback((nextMode: PaletteMode) => {
-    setModeState(nextMode);
+  const setPreference = React.useCallback((nextPref: ThemePreference) => {
+    setPreferenceState(nextPref);
   }, []);
 
   const toggleMode = React.useCallback(() => {
-    setModeState((prev) => (prev === 'light' ? 'dark' : 'light'));
+    setPreferenceState((prev) => (prev === 'light' ? 'dark' : 'light'));
   }, []);
 
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, mode);
-    }
-  }, [mode]);
+    if (preference === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => setResolvedMode(mediaQuery.matches ? 'dark' : 'light');
 
-  const theme = React.useMemo(() => createAppTheme(mode), [mode]);
+      setResolvedMode(mediaQuery.matches ? 'dark' : 'light');
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    } else {
+      setResolvedMode(preference);
+    }
+  }, [preference]);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(STORAGE_KEY, preference);
+    }
+  }, [preference]);
+
+  const theme = React.useMemo(() => createAppTheme(resolvedMode), [resolvedMode]);
 
   return (
-    <ThemeModeContext.Provider value={{ mode, toggleMode, setMode }}>
+    <ThemeModeContext.Provider value={{ preference, mode: resolvedMode, toggleMode, setPreference }}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         {children}
@@ -404,7 +459,7 @@ export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 export const useThemeMode = () => {
   const context = React.useContext(ThemeModeContext);
   if (!context) {
-    throw new Error('useThemeMode must be used within a ThemeModeProvider');
+    throw new Error('useThemeMode muss innerhalb eines ThemeModeProviders verwendet werden');
   }
   return context;
 };

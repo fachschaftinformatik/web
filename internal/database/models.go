@@ -21,18 +21,21 @@ type Event struct {
 }
 
 type Exam struct {
-	ID         string  `json:"id"`
-	Userid     string  `json:"userid"`
-	Programid  int64   `json:"programid"`
-	Version    string  `json:"version"`
-	Moduleid   *int64  `json:"moduleid"`
-	Comment    *string `json:"comment"`
-	ExamDate   string  `json:"exam_date"`
-	UploadedAt string  `json:"uploaded_at"`
-	Accesskey  string  `json:"accesskey"`
-	MimeType   string  `json:"mime_type"`
-	Nbytes     int64   `json:"nbytes"`
-	Checksum   string  `json:"checksum"`
+	ID          string  `json:"id"`
+	Userid      string  `json:"userid"`
+	Programid   int64   `json:"programid"`
+	Version     string  `json:"version"`
+	Moduleid    *int64  `json:"moduleid"`
+	Comment     *string `json:"comment"`
+	ExamDate    string  `json:"exam_date"`
+	UploadedAt  string  `json:"uploaded_at"`
+	Accesskey   string  `json:"accesskey"`
+	MimeType    string  `json:"mime_type"`
+	Nbytes      int64   `json:"nbytes"`
+	Checksum    string  `json:"checksum"`
+	GroupID     string  `json:"group_id"`
+	EditVersion int64   `json:"edit_version"`
+	IsLatest    int64   `json:"is_latest"`
 }
 
 type Medium struct {
@@ -48,10 +51,11 @@ type Medium struct {
 }
 
 type Module struct {
-	ID        int64  `json:"id"`
-	Programid int64  `json:"programid"`
-	Name      string `json:"name"`
-	CreatedAt string `json:"created_at"`
+	ID        int64   `json:"id"`
+	Programid int64   `json:"programid"`
+	Name      string  `json:"name"`
+	CreatedAt string  `json:"created_at"`
+	Alias     *string `json:"alias"`
 }
 
 type Post struct {
@@ -97,4 +101,5 @@ type User struct {
 	CreatedAt         string  `json:"created_at"`
 	UpdatedAt         string  `json:"updated_at"`
 	VerificationToken *string `json:"verification_token"`
+	Theme             string  `json:"theme"`
 }

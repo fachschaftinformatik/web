@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteExamsIdData, DeleteExamsIdResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthVerifyData, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileResponses, GetExamsResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetUsersByIdData, GetUsersByIdResponses, GetUsersData, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PutExamsIdData, PutExamsIdResponses } from './types.gen';
+import type { DeleteExamsIdData, DeleteExamsIdResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthVerifyData, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileResponses, GetExamsResponses, GetExamVersionsData, GetExamVersionsErrors, GetExamVersionsResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetUsersByIdData, GetUsersByIdResponses, GetUsersData, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PutAuthMeData, PutAuthMeErrors, PutAuthMeResponses, PutExamsIdData, PutExamsIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -44,6 +44,18 @@ export const postAuthLogout = <ThrowOnError extends boolean = false>(options: Op
  * Get current user
  */
 export const getAuthMe = <ThrowOnError extends boolean = false>(options?: Options<GetAuthMeData, ThrowOnError>) => (options?.client ?? client).get<GetAuthMeResponses, unknown, ThrowOnError>({ url: '/auth/me', ...options });
+
+/**
+ * Update current user profile
+ */
+export const putAuthMe = <ThrowOnError extends boolean = false>(options: Options<PutAuthMeData, ThrowOnError>) => (options.client ?? client).put<PutAuthMeResponses, PutAuthMeErrors, ThrowOnError>({
+    url: '/auth/me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Register a user
@@ -105,6 +117,11 @@ export const putExamsId = <ThrowOnError extends boolean = false>(options: Option
 export const getExamsFile = <ThrowOnError extends boolean = false>(options: Options<GetExamsFileData, ThrowOnError>) => (options.client ?? client).get<GetExamsFileResponses, unknown, ThrowOnError>({ url: '/exams/{id}/file', ...options });
 
 /**
+ * List exam versions
+ */
+export const getExamVersions = <ThrowOnError extends boolean = false>(options: Options<GetExamVersionsData, ThrowOnError>) => (options.client ?? client).get<GetExamVersionsResponses, GetExamVersionsErrors, ThrowOnError>({ url: '/exams/versions/{groupId}', ...options });
+
+/**
  * List all programs
  *
  * Returns a list of study programs and their valid PO versions
@@ -127,6 +144,6 @@ export const getProgramModules = <ThrowOnError extends boolean = false>(options:
 export const getUsers = <ThrowOnError extends boolean = false>(options?: Options<GetUsersData, ThrowOnError>) => (options?.client ?? client).get<GetUsersResponses, unknown, ThrowOnError>({ url: '/users', ...options });
 
 /**
- * Get user by ID
+ * Get user profile
  */
 export const getUsersById = <ThrowOnError extends boolean = false>(options: Options<GetUsersByIdData, ThrowOnError>) => (options.client ?? client).get<GetUsersByIdResponses, unknown, ThrowOnError>({ url: '/users/{id}', ...options });

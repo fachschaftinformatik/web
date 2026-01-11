@@ -74,11 +74,12 @@ export default function RegistrationPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
+    document.title = "Registrieren | FSV Informatik";
     getPrograms()
       .then(({ data }) => {
         if (data) setPrograms(data);
       })
-      .catch((err) => console.error("Failed to fetch programs", err));
+      .catch((err) => console.error("Fehler beim Laden der Studiengänge", err));
   }, []);
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
@@ -143,7 +144,7 @@ export default function RegistrationPage() {
       }
 
     } catch (err: unknown) {
-      console.error('Network error:', err);
+      console.error('Netzwerkfehler:', err);
       setErrors({ global: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.' });
     } finally {
       setLoading(false);
