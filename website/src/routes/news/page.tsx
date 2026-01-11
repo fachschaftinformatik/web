@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   Card, Button, CardMedia, CardContent, CardActions, Avatar, IconButton, Typography,
-  Container, List, ListItem, Divider, ListItemText, ListItemAvatar,
+  List, ListItem, Divider, ListItemText, ListItemAvatar,
   Box, Chip, Stack, Paper, InputBase, CardActionArea
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
@@ -325,11 +325,11 @@ export default function NewsLayout() {
     : allNews.filter((n) => n.tags?.includes(selectedTag));
 
   return (
-    <Sidebar user={user} title="Beiträge">
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, px: 2 }}>
+    <Sidebar user={user} title="Beiträge" maxWidth="lg">
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' } }}>
 
-        <Box sx={{ flex: 1, maxWidth: "1200px", mr: { lg: 4 }, mb: 4 }}>
-          <Container sx={{ pt: 4, pb: 2 }}>
+        <Box sx={{ flex: 1, mr: { lg: 4 }, mb: 4 }}>
+          <Box sx={{ pt: 0, pb: 2 }}>
             <Box
               sx={{
                 display: "flex",
@@ -383,7 +383,7 @@ export default function NewsLayout() {
                 </Grid>
               ))}
             </Grid>
-          </Container>
+          </Box>
         </Box>
 
 

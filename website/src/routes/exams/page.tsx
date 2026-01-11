@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import {
     Box,
-    Container,
     Typography,
     MenuItem,
     TextField,
@@ -493,8 +492,8 @@ export default function Exams() {
     }, [modules, search, activeModuleIds]);
 
     return (
-        <Sidebar user={user} title="Rekos">
-            <Container maxWidth="md" sx={{ mt: 5, mb: 10 }}>
+        <Sidebar user={user} title="Rekos" maxWidth="lg">
+            <Box>
 
                 <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box>
@@ -623,7 +622,7 @@ export default function Exams() {
                     />
                 )}
 
-            </Container>
+            </Box>
         </Sidebar>
     );
 }

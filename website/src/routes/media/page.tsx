@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  Container, Typography, Card, CardMedia, Box, Dialog, DialogTitle, DialogContent,
+  Typography, Card, CardMedia, Box, Dialog, DialogTitle, DialogContent,
   DialogActions, IconButton, ImageList, ImageListItem, ImageListItemBar, Pagination,
   Button, Stack, TextField, MenuItem, Snackbar, Alert, CircularProgress, Tooltip, Paper
 } from "@mui/material";
@@ -8,6 +8,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import UploadRoundedIcon from "@mui/icons-material/UploadRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import InsertPhotoRoundedIcon from '@mui/icons-material/InsertPhotoRounded';
@@ -41,6 +42,8 @@ export default function Galerie() {
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const [preselectedEventId, setPreselectedEventId] = useState<number | null>(null);
 
   const canUpload = user?.role === "admin" || user?.role === "editor";
 
@@ -125,8 +128,8 @@ export default function Galerie() {
   };
 
   return (
-    <Sidebar user={user} title="Galerie">
-      <Container maxWidth="xl" sx={{ mt: 5, mb: 10 }}>
+    <Sidebar user={user} title="Galerie" maxWidth="lg">
+      <Box>
 
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
@@ -140,7 +143,7 @@ export default function Galerie() {
           {canUpload && (
             <Button
               variant="contained"
-              startIcon={<CloudUploadIcon />}
+              startIcon={<UploadRoundedIcon />}
               onClick={() => setUploadOpen(true)}
               sx={{ boxShadow: 2 }}
             >
@@ -315,8 +318,9 @@ export default function Galerie() {
         {canUpload && (
           <UploadDialog
             open={uploadOpen}
-            onClose={() => setUploadOpen(false)}
+            onClose={() => { setUploadOpen(false); setPreselectedEventId(null); }}
             events={events}
+            preselectedId={preselectedEventId}
             onSuccess={() => {
               fetchEvents();
               if (selectedEventId) {
@@ -334,7 +338,10 @@ export default function Galerie() {
           <CreateEventDialog
             open={createEventOpen}
             onClose={() => setCreateEventOpen(false)}
-            onSuccess={() => { fetchEvents(); }}
+            onSuccess={(id) => {
+              fetchEvents();
+              setPreselectedEventId(id);
+            }}
           />
         )}
 
@@ -438,7 +445,7 @@ export default function Galerie() {
           </DialogContent>
         </Dialog>
 
-      </Container>
+      </Box>
     </Sidebar>
   );
 }
@@ -457,17 +464,24 @@ function getFriendlyErrorMessage(error: { message?: string; error?: string } | s
   return errorMap[msg] || `Ein Fehler ist aufgetreten: ${msg || "Unbekannter Fehler"}`;
 }
 
-function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: {
+function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, preselectedId }: {
   open: boolean;
   onClose: () => void;
   events: EventItem[];
   onSuccess: () => void;
   onCreateEvent: () => void;
+  preselectedId?: number | null;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [eventId, setEventId] = useState<number | "">("");
+
+  useEffect(() => {
+    if (preselectedId) {
+      setEventId(preselectedId);
+    }
+  }, [preselectedId]);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -577,7 +591,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: {
             <input type="file" accept="image/*" hidden id="img-upload" onChange={(e) => setFile(e.target.files?.[0] || null)} />
             {!file ? (
               <label htmlFor="img-upload" style={{ width: '100%', display: 'block', cursor: 'pointer' }}>
-                <CloudUploadIcon sx={{ fontSize: 40, color: dragging ? "primary.main" : "text.secondary", mb: 1 }} />
+                <UploadRoundedIcon sx={{ fontSize: 40, color: dragging ? "primary.main" : "text.secondary", mb: 1 }} />
                 <Typography variant="body2" fontWeight={500}>Bild hier ablegen</Typography>
                 <Typography variant="caption" color="text.secondary">oder klicken zum Auswählen</Typography>
               </label>
@@ -609,7 +623,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent }: {
 function CreateEventDialog({ open, onClose, onSuccess }: {
   open: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (id: number) => void;
 }) {
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -645,7 +659,8 @@ function CreateEventDialog({ open, onClose, onSuccess }: {
 
       if (res.error) throw res.error;
 
-      onSuccess();
+      const newEvent = res.data as { id: number };
+      onSuccess(newEvent.id);
       onClose();
       setTitle("");
       setFile(null);
