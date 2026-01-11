@@ -1421,18 +1421,27 @@ export default function ForumStandalone() {
     closeReport();
   };
 
-  const createButton = (
+const createButton = (
     <Tooltip
       title="Auch als Gast nutzbar."
       disableHoverListener={false}
     >
       <span>
         <Button
-          startIcon={<AddIcon fontSize="small" />}
+          startIcon={<AddIcon />} 
           variant="contained"
-          size="small"
+          color="secondary" 
+          size="medium"     
           onClick={handleOpenCreate}
-          sx={{ borderRadius: 999, px: 2 }}
+          sx={{
+            borderRadius: 999, 
+            px: 3,             
+            py: 1,            
+            fontWeight: "bold", 
+            boxShadow: 4,       
+            fontSize: "1rem",   
+            textTransform: "none", 
+          }}
         >
           Beitrag erstellen
         </Button>
