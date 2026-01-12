@@ -63,6 +63,23 @@ definitions:
       programid:
         type: integer
     type: object
+  auth.NotificationResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      link:
+        type: string
+      message:
+        type: string
+      read:
+        type: boolean
+      title:
+        type: string
+      type:
+        type: string
+    type: object
   auth.ProgramResponse:
     description: A study program including valid PO versions
     properties:
@@ -108,6 +125,20 @@ definitions:
       programid:
         example: 1
         type: integer
+    type: object
+  auth.SearchResult:
+    properties:
+      id:
+        type: string
+      subtitle:
+        type: string
+      title:
+        type: string
+      type:
+        description: '"exam" or "module"'
+        type: string
+      url:
+        type: string
     type: object
   auth.UpdateExamRequest:
     properties:
@@ -253,6 +284,61 @@ paths:
           schema:
             $ref: '#/definitions/auth.ErrorResponse'
       summary: Update current user profile
+      tags:
+      - Auth
+  /auth/notifications:
+    get:
+      operationId: getAuthNotifications
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/auth.NotificationResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: List notifications
+      tags:
+      - Auth
+  /auth/notifications/{id}/read:
+    put:
+      operationId: putAuthNotificationsIdRead
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.NotificationResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: Mark notification as read
+      tags:
+      - Auth
+  /auth/notifications/read-all:
+    put:
+      operationId: putAuthNotificationsReadAll
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: Mark all notifications as read
       tags:
       - Auth
   /auth/register:
@@ -522,6 +608,25 @@ paths:
       summary: List modules for a program
       tags:
       - Programs
+  /search:
+    get:
+      operationId: getSearch
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/auth.SearchResult'
+            type: array
+      summary: Global search
+      tags:
+      - Search
   /users:
     get:
       parameters:
