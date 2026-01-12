@@ -25,8 +25,7 @@ import ExamsPage from '@routes/exams/page';
 import ExamDetailsPage from '@routes/exams/extensions';
 import ForumPage from '@routes/forum/page';
 import NewsFeedPage from '@routes/homepage/page';
-import LegalPage from '@routes/legal/page';
-import PrivacyPage from '@routes/privacy/page';
+import ContactPage from '@routes/contact/page';
 import SettingsPage from '@routes/settings/page';
 
 client.setConfig({
@@ -80,8 +79,7 @@ function App() {
             <Route path="/team" element={<TeamPage />} />
             <Route path="/news" element={<NewsPage />} />
             <Route path="/news/:id" element={<NewsDetail />} />
-            <Route path="/legal" element={<LegalPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/contact" element={<ContactPage />} />
 
             <Route path="/" element={<NewsFeedPage />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
