@@ -1,5 +1,7 @@
 package main
 
+//go:generate go tool swag init
+
 import (
 	"context"
 	"errors"
