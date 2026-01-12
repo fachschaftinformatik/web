@@ -222,6 +222,18 @@ func (s *Server) PostExams(w http.ResponseWriter, r *http.Request) {
 		_, err = s.DB.CreateExam(ctx, paramsDB)
 		if err != nil {
 			s.Log.Printf("DB CreateExam failed for assignment %+v: %v", assign, err)
+		} else {
+			// Create a notification for each module assignment
+			// We try to find the module name for a better message
+			moduleName := "einem Modul"
+			mod, err := s.DB.GetModule(ctx, modID)
+			if err == nil {
+				moduleName = mod.Name
+			}
+
+			msg := fmt.Sprintf("Eine neue Klausur für %s (%s) wurde hochgeladen.", moduleName, examDate)
+			link := fmt.Sprintf("/rekos/klausuren/modul?modulId=%d&mod=%s&examId=%s", modID, moduleName, id)
+			s.broadcastNotification(r, "Neue Klausur verfügbar", msg, "exam", link)
 		}
 	}
 

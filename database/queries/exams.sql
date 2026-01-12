@@ -52,3 +52,22 @@ JOIN modules m ON e.moduleid = m.id
 JOIN users u ON e.userid = u.id
 WHERE e.group_id = sqlc.arg(group_id)
 ORDER BY e.edit_version DESC;
+
+-- name: SearchExams :many
+SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
+       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+FROM exams e
+JOIN modules m ON e.moduleid = m.id
+JOIN users u ON e.userid = u.id
+WHERE e.is_latest = 1
+  AND (m.name LIKE '%' || sqlc.arg('query') || '%'
+       OR m.alias LIKE '%' || sqlc.arg('query') || '%'
+       OR e.comment LIKE '%' || sqlc.arg('query') || '%')
+ORDER BY e.exam_date DESC
+LIMIT 20;
+
+-- name: SearchModules :many
+SELECT * FROM modules
+WHERE name LIKE '%' || sqlc.arg('query') || '%'
+   OR alias LIKE '%' || sqlc.arg('query') || '%'
+LIMIT 20;

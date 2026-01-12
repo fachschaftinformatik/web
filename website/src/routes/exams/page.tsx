@@ -433,7 +433,7 @@ export default function Exams() {
                 }
             }
         });
-    }, [user?.programid]);
+    }, [user?.programid, selectedPo]);
 
     useEffect(() => {
         if (selectedPrograms.length > 0) {
@@ -453,7 +453,7 @@ export default function Exams() {
                 });
             }
         } else {
-            setModules([]);
+            Promise.resolve().then(() => setModules([]));
         }
     }, [selectedPrograms, selectedPo, sortedPos]);
 
@@ -475,7 +475,7 @@ export default function Exams() {
                 })
                 .catch(() => setActiveModuleIds(new Set()));
         } else {
-            setActiveModuleIds(new Set());
+            Promise.resolve().then(() => setActiveModuleIds(new Set()));
         }
     }, [selectedPrograms, selectedPo, refreshTrigger]);
 
