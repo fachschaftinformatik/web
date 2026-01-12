@@ -1,14 +1,17 @@
 networks:
   api:
 
+
 volumes:
   buckets:
   database:
+
 
 services:
   api:
     build:
       context: .
+      dockerfile: Dockerfile
     restart: always
     ports:
       - 8080:80
@@ -17,7 +20,7 @@ services:
     networks:
       - api
     environment:
-      - DOMAIN=http://localhost:5173
+      - DOMAIN=http://localhost:3000
       - SIGNUPS_VERIFY=true
       - SIGNUPS_DOMAINS_WHITELIST=studmail.w-hs.de
       - S3_ENDPOINT=minio:9000
@@ -34,6 +37,17 @@ services:
       # depends_on:
       #   minio:
       #     condition: service_healthy
+
+  website:
+    build:
+      context: .
+      dockerfile: website/Dockerfile
+    restart: always
+    ports:
+      - 3000:80
+    networks:
+      - api
+
   minio:
     image: minio/minio
     restart: on-failure
