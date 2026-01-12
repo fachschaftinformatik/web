@@ -20,7 +20,7 @@ import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
 import { getPrograms, getAuthCsrf, putAuthMe } from '@lib/api';
-import type { AuthProgramResponse as Program } from '@lib/api';
+import type { AuthProgramResponse as Program, AuthUserResponse as User } from '@lib/api';
 import { useThemeMode, type ThemePreference } from '@lib/theme';
 import { alpha } from '@mui/material/styles';
 
@@ -29,7 +29,7 @@ export default function SettingsPage() {
     const [programs, setPrograms] = useState<Program[]>([]);
     const [name, setName] = useState(user?.name || "");
     const [programId, setProgramId] = useState<number>(Number(user?.programid) || 0);
-    const [themePreference, setThemePreference] = useState<ThemePreference>((user as any)?.theme || 'system');
+    const [themePreference, setThemePreference] = useState<ThemePreference>(user?.theme as ThemePreference || 'system');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState("");
     const [error, setError] = useState("");
@@ -41,7 +41,7 @@ export default function SettingsPage() {
 
     const isDirty = name !== (user?.name || "") ||
         programId !== (Number(user?.programid) || 0) ||
-        themePreference !== ((user as any)?.theme || 'system');
+        themePreference !== (user?.theme || 'system');
 
     useEffect(() => {
         document.title = "Einstellungen | FSV Informatik";
@@ -55,7 +55,7 @@ export default function SettingsPage() {
         if (user) {
             setName(user.name || "");
             setProgramId(Number(user.programid));
-            setThemePreference((user as any).theme || 'system');
+            setThemePreference(user.theme as ThemePreference || 'system');
         }
     }, [user]);
 
@@ -68,7 +68,7 @@ export default function SettingsPage() {
             const token = csrfData?.csrf;
 
             const res = await putAuthMe({
-                body: { name, programid: programId, theme: themePreference } as any,
+                body: { name, programid: programId, theme: themePreference },
                 headers: { "X-CSRF-Token": token || "" }
             });
 
@@ -79,12 +79,12 @@ export default function SettingsPage() {
                 setSuccess("Einstellungen erfolgreich gespeichert.");
                 if (res.data) {
                     // Update the local user state
-                    login(res.data as any, window.localStorage.getItem('fs_remember_flag') === 'true');
+                    login(res.data as User, window.localStorage.getItem('fs_remember_flag') === 'true');
                     // Apply the theme after successful save
                     setPreference(themePreference);
                 }
             }
-        } catch (err) {
+        } catch {
             setError("Netzwerkfehler beim Speichern.");
         } finally {
             setLoading(false);

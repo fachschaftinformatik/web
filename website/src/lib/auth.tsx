@@ -67,8 +67,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           throw new Error('Nicht authentifiziert');
         }
         setUser(data);
-        if ((data as any).theme) {
-          setPreference((data as any).theme as ThemePreference);
+        if (data.theme) {
+          setPreference(data.theme as ThemePreference);
         }
         if (typeof window !== 'undefined' && window.localStorage.getItem(REMEMBERED_FLAG_KEY) === 'true') {
           persistRememberedUser(data);
@@ -85,15 +85,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Ensure theme precedence: if the user object changes, force sync the theme
   useEffect(() => {
-    if (user && (user as any).theme) {
-      setPreference((user as any).theme as ThemePreference);
+    if (user && user.theme) {
+      setPreference(user.theme as ThemePreference);
     }
   }, [user, setPreference]);
 
   const login = (loggedInUser: User, rememberMe?: boolean) => {
     setUser(loggedInUser);
-    if ((loggedInUser as any).theme) {
-      setPreference((loggedInUser as any).theme as ThemePreference);
+    if (loggedInUser.theme) {
+      setPreference(loggedInUser.theme as ThemePreference);
     }
     if (rememberMe) {
       persistRememberedUser(loggedInUser);
