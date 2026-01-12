@@ -73,6 +73,9 @@ func main() {
 		r.Put("/auth/me", authServer.PutAuthMe)
 		r.Post("/auth/register", authServer.PostAuthRegister)
 		r.Get("/auth/verify", authServer.GetAuthVerify)
+		r.Get("/auth/notifications", authServer.GetAuthNotifications)
+		r.Put("/auth/notifications/{id}/read", authServer.PutAuthNotificationsIdRead)
+		r.Put("/auth/notifications/read-all", authServer.PutAuthNotificationsReadAll)
 
 		r.Get("/users", authServer.GetUsers)
 		r.Get("/users/{id}", authServer.GetUsersId)
@@ -87,6 +90,7 @@ func main() {
 		r.Delete("/exams/{id}", authServer.DeleteExamsId)
 		r.Get("/exams/{id}/file", authServer.GetExamsFile)
 		r.Get("/exams/versions/{groupId}", authServer.GetExamVersions)
+		r.Get("/search", authServer.GetSearch)
 
 		r.Get("/events", authServer.GetEvents)
 		r.Post("/events", authServer.PostEvents)
