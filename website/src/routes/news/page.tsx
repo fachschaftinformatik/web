@@ -244,7 +244,7 @@ function FavoriteList({ likedIds, allNews }: FavoriteListProps) {
                 to={`/news/${item.id}`}
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
-                <Typography variant="body2" sx={{
+                <Typography component="span" variant="body2" sx={{
                   fontWeight: 'bold',
                   '&:hover': { textDecoration: 'underline' }
                 }}>
