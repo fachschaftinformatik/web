@@ -58,6 +58,17 @@ type Module struct {
 	Alias     *string `json:"alias"`
 }
 
+type Notification struct {
+	ID        string `json:"id"`
+	Userid    string `json:"userid"`
+	Title     string `json:"title"`
+	Message   string `json:"message"`
+	Type      string `json:"type"`
+	Link      string `json:"link"`
+	Read      int64  `json:"read"`
+	CreatedAt string `json:"created_at"`
+}
+
 type Post struct {
 	ID        string  `json:"id"`
 	Userid    string  `json:"userid"`

@@ -34,6 +34,23 @@ func (q *Queries) CreateModule(ctx context.Context, arg CreateModuleParams) (Mod
 	return i, err
 }
 
+const getModule = `-- name: GetModule :one
+SELECT id, programid, name, created_at, alias FROM modules WHERE id = ?1 LIMIT 1
+`
+
+func (q *Queries) GetModule(ctx context.Context, id int64) (Module, error) {
+	row := q.db.QueryRowContext(ctx, getModule, id)
+	var i Module
+	err := row.Scan(
+		&i.ID,
+		&i.Programid,
+		&i.Name,
+		&i.CreatedAt,
+		&i.Alias,
+	)
+	return i, err
+}
+
 const listModulesByProgram = `-- name: ListModulesByProgram :many
 SELECT id, programid, name, created_at, alias FROM modules 
 WHERE programid = ?1 
