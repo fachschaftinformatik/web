@@ -280,6 +280,107 @@ func (q *Queries) ListExams(ctx context.Context, arg ListExamsParams) ([]ListExa
 	return items, nil
 }
 
+const searchExams = `-- name: SearchExams :many
+SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
+       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+FROM exams e
+JOIN modules m ON e.moduleid = m.id
+JOIN users u ON e.userid = u.id
+WHERE e.is_latest = 1
+  AND (m.name LIKE '%' || ?1 || '%'
+       OR m.alias LIKE '%' || ?1 || '%'
+       OR e.comment LIKE '%' || ?1 || '%')
+ORDER BY e.exam_date DESC
+LIMIT 20
+`
+
+type SearchExamsRow struct {
+	ID           string  `json:"id"`
+	Programid    int64   `json:"programid"`
+	Version      string  `json:"version"`
+	ExamDate     string  `json:"exam_date"`
+	UploadedAt   string  `json:"uploaded_at"`
+	Moduleid     *int64  `json:"moduleid"`
+	Comment      *string `json:"comment"`
+	ModuleName   string  `json:"module_name"`
+	UploaderName string  `json:"uploader_name"`
+	GroupID      string  `json:"group_id"`
+	EditVersion  int64   `json:"edit_version"`
+	IsLatest     int64   `json:"is_latest"`
+}
+
+func (q *Queries) SearchExams(ctx context.Context, query *string) ([]SearchExamsRow, error) {
+	rows, err := q.db.QueryContext(ctx, searchExams, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchExamsRow
+	for rows.Next() {
+		var i SearchExamsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Programid,
+			&i.Version,
+			&i.ExamDate,
+			&i.UploadedAt,
+			&i.Moduleid,
+			&i.Comment,
+			&i.ModuleName,
+			&i.UploaderName,
+			&i.GroupID,
+			&i.EditVersion,
+			&i.IsLatest,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchModules = `-- name: SearchModules :many
+SELECT id, programid, name, created_at, alias FROM modules
+WHERE name LIKE '%' || ?1 || '%'
+   OR alias LIKE '%' || ?1 || '%'
+LIMIT 20
+`
+
+func (q *Queries) SearchModules(ctx context.Context, query *string) ([]Module, error) {
+	rows, err := q.db.QueryContext(ctx, searchModules, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Module
+	for rows.Next() {
+		var i Module
+		if err := rows.Scan(
+			&i.ID,
+			&i.Programid,
+			&i.Name,
+			&i.CreatedAt,
+			&i.Alias,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateExam = `-- name: UpdateExam :one
 UPDATE exams
 SET programid = ?1,

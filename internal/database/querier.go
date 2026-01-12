@@ -10,10 +10,12 @@ import (
 
 type Querier interface {
 	ClearLatestFlag(ctx context.Context, groupID string) error
+	CountUnreadNotifications(ctx context.Context, userid string) (int64, error)
 	CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error)
 	CreateExam(ctx context.Context, arg CreateExamParams) (Exam, error)
 	CreateMedia(ctx context.Context, arg CreateMediaParams) (Medium, error)
 	CreateModule(ctx context.Context, arg CreateModuleParams) (Module, error)
+	CreateNotification(ctx context.Context, arg CreateNotificationParams) (Notification, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteExam(ctx context.Context, id string) error
@@ -25,6 +27,7 @@ type Querier interface {
 	GetExam(ctx context.Context, id string) (Exam, error)
 	GetLatestByGroupId(ctx context.Context, groupID string) (Exam, error)
 	GetMedia(ctx context.Context, id string) (Medium, error)
+	GetModule(ctx context.Context, id int64) (Module, error)
 	GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error)
 	GetSession(ctx context.Context, id string) (Session, error)
 	GetUser(ctx context.Context, id string) (User, error)
@@ -35,8 +38,14 @@ type Querier interface {
 	ListExams(ctx context.Context, arg ListExamsParams) ([]ListExamsRow, error)
 	ListMediaByEvent(ctx context.Context, eventID int64) ([]ListMediaByEventRow, error)
 	ListModulesByProgram(ctx context.Context, programid int64) ([]Module, error)
+	ListNotifications(ctx context.Context, userid string) ([]Notification, error)
 	ListProgramsWithVersions(ctx context.Context) ([]ListProgramsWithVersionsRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
+	ListUsersForNotification(ctx context.Context) ([]string, error)
+	MarkAllNotificationsAsRead(ctx context.Context, userid string) error
+	MarkNotificationAsRead(ctx context.Context, arg MarkNotificationAsReadParams) (Notification, error)
+	SearchExams(ctx context.Context, query *string) ([]SearchExamsRow, error)
+	SearchModules(ctx context.Context, query *string) ([]Module, error)
 	SetUserActive(ctx context.Context, arg SetUserActiveParams) (User, error)
 	SetUserRole(ctx context.Context, arg SetUserRoleParams) (User, error)
 	SlideSession(ctx context.Context, arg SlideSessionParams) (Session, error)
