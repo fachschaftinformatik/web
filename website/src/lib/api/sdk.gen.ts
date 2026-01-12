@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteExamsIdData, DeleteExamsIdResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthVerifyData, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileResponses, GetExamsResponses, GetExamVersionsData, GetExamVersionsErrors, GetExamVersionsResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetUsersByIdData, GetUsersByIdResponses, GetUsersData, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PutAuthMeData, PutAuthMeErrors, PutAuthMeResponses, PutExamsIdData, PutExamsIdResponses } from './types.gen';
+import type { DeleteExamsIdData, DeleteExamsIdResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthNotificationsData, GetAuthNotificationsErrors, GetAuthNotificationsResponses, GetAuthVerifyData, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileResponses, GetExamsResponses, GetExamVersionsData, GetExamVersionsErrors, GetExamVersionsResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetSearchData, GetSearchResponses, GetUsersByIdData, GetUsersByIdResponses, GetUsersData, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PutAuthMeData, PutAuthMeErrors, PutAuthMeResponses, PutAuthNotificationsIdReadData, PutAuthNotificationsIdReadErrors, PutAuthNotificationsIdReadResponses, PutAuthNotificationsReadAllData, PutAuthNotificationsReadAllErrors, PutAuthNotificationsReadAllResponses, PutExamsIdData, PutExamsIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -56,6 +56,21 @@ export const putAuthMe = <ThrowOnError extends boolean = false>(options: Options
         ...options.headers
     }
 });
+
+/**
+ * List notifications
+ */
+export const getAuthNotifications = <ThrowOnError extends boolean = false>(options?: Options<GetAuthNotificationsData, ThrowOnError>) => (options?.client ?? client).get<GetAuthNotificationsResponses, GetAuthNotificationsErrors, ThrowOnError>({ url: '/auth/notifications', ...options });
+
+/**
+ * Mark notification as read
+ */
+export const putAuthNotificationsIdRead = <ThrowOnError extends boolean = false>(options: Options<PutAuthNotificationsIdReadData, ThrowOnError>) => (options.client ?? client).put<PutAuthNotificationsIdReadResponses, PutAuthNotificationsIdReadErrors, ThrowOnError>({ url: '/auth/notifications/{id}/read', ...options });
+
+/**
+ * Mark all notifications as read
+ */
+export const putAuthNotificationsReadAll = <ThrowOnError extends boolean = false>(options?: Options<PutAuthNotificationsReadAllData, ThrowOnError>) => (options?.client ?? client).put<PutAuthNotificationsReadAllResponses, PutAuthNotificationsReadAllErrors, ThrowOnError>({ url: '/auth/notifications/read-all', ...options });
 
 /**
  * Register a user
@@ -137,6 +152,11 @@ export const getProgramsId = <ThrowOnError extends boolean = false>(options: Opt
  * List modules for a program
  */
 export const getProgramModules = <ThrowOnError extends boolean = false>(options: Options<GetProgramModulesData, ThrowOnError>) => (options.client ?? client).get<GetProgramModulesResponses, GetProgramModulesErrors, ThrowOnError>({ url: '/programs/{id}/modules', ...options });
+
+/**
+ * Global search
+ */
+export const getSearch = <ThrowOnError extends boolean = false>(options: Options<GetSearchData, ThrowOnError>) => (options.client ?? client).get<GetSearchResponses, unknown, ThrowOnError>({ url: '/search', ...options });
 
 /**
  * List users
