@@ -44,6 +44,16 @@ export const zAuthModuleResponse = z.object({
     programid: z.optional(z.int())
 });
 
+export const zAuthNotificationResponse = z.object({
+    created_at: z.optional(z.string()),
+    id: z.optional(z.string()),
+    link: z.optional(z.string()),
+    message: z.optional(z.string()),
+    read: z.optional(z.boolean()),
+    title: z.optional(z.string()),
+    type: z.optional(z.string())
+});
+
 /**
  * A study program including valid PO versions
  */
@@ -69,6 +79,14 @@ export const zAuthRegisterRequest = z.object({
     name: z.optional(z.string()),
     password: z.optional(z.string()),
     programid: z.optional(z.int())
+});
+
+export const zAuthSearchResult = z.object({
+    id: z.optional(z.string()),
+    subtitle: z.optional(z.string()),
+    title: z.optional(z.string()),
+    type: z.optional(z.string()),
+    url: z.optional(z.string())
 });
 
 export const zAuthUpdateExamRequest = z.object({
@@ -157,6 +175,36 @@ export const zPutAuthMeData = z.object({
  * OK
  */
 export const zPutAuthMeResponse = zAuthUserResponse;
+
+export const zGetAuthNotificationsData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetAuthNotificationsResponse = z.array(zAuthNotificationResponse);
+
+export const zPutAuthNotificationsIdReadData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zPutAuthNotificationsIdReadResponse = zAuthNotificationResponse;
+
+export const zPutAuthNotificationsReadAllData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
 
 export const zPostAuthRegisterData = z.object({
     body: zAuthRegisterRequest,
@@ -289,6 +337,19 @@ export const zGetProgramModulesData = z.object({
  * OK
  */
 export const zGetProgramModulesResponse = z.array(zAuthModuleResponse);
+
+export const zGetSearchData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.object({
+        q: z.string()
+    })
+});
+
+/**
+ * OK
+ */
+export const zGetSearchResponse = z.array(zAuthSearchResult);
 
 export const zGetUsersData = z.object({
     body: z.optional(z.never()),
