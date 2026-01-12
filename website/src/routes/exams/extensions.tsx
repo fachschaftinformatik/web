@@ -30,7 +30,6 @@ import {
     ListItem,
     ListItemText,
     ListItemButton,
-    ListItemSecondaryAction,
     Divider
 } from "@mui/material";
 
@@ -102,6 +101,16 @@ export default function ExamDetailsPage() {
             if (data) setPrograms(data);
         });
     }, [fetchExams]);
+
+    useEffect(() => {
+        const examId = params.get("examId");
+        if (examId && exams.length > 0) {
+            const exam = exams.find(e => e.id === examId);
+            if (exam) {
+                setSelectedExam(exam);
+            }
+        }
+    }, [exams, params]);
 
     useEffect(() => {
         if (!selectedExam) {
@@ -476,6 +485,13 @@ export default function ExamDetailsPage() {
                                         <Autocomplete
                                             options={programModules}
                                             getOptionLabel={(option) => option.name || ""}
+                                            filterOptions={(options, state) => {
+                                                const s = state.inputValue.toLowerCase();
+                                                return options.filter(o =>
+                                                    (o.name && o.name.toLowerCase().includes(s)) ||
+                                                    (o.alias && o.alias.toLowerCase().includes(s))
+                                                );
+                                            }}
                                             value={formModule}
                                             onChange={(_, newValue) => setFormModule(newValue)}
                                             disabled={!isEditing || !formProgram}

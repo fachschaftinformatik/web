@@ -1051,7 +1051,7 @@ export default function ForumStandalone() {
       if (!Array.isArray(parsed)) return SEED_POSTS;
 
 
-      return parsed.map((p: any) => ({
+      return parsed.map((p: Record<string, unknown>) => ({
         id: String(p?.id ?? uuid()),
         title: String(p?.title ?? "Kein Titel"),
         body: String(p?.body ?? ""),
@@ -1419,26 +1419,26 @@ export default function ForumStandalone() {
     closeReport();
   };
 
-const createButton = (
+  const createButton = (
     <Tooltip
       title="Auch als Gast nutzbar."
       disableHoverListener={false}
     >
       <span>
         <Button
-          startIcon={<AddIcon />} 
+          startIcon={<AddIcon />}
           variant="contained"
-          color="secondary" 
-          size="medium"     
+          color="secondary"
+          size="medium"
           onClick={handleOpenCreate}
           sx={{
-            borderRadius: 999, 
-            px: 3,             
-            py: 1,            
-            fontWeight: "bold", 
-            boxShadow: 4,       
-            fontSize: "1rem",   
-            textTransform: "none", 
+            borderRadius: 999,
+            px: 3,
+            py: 1,
+            fontWeight: "bold",
+            boxShadow: 4,
+            fontSize: "1rem",
+            textTransform: "none",
           }}
         >
           Beitrag erstellen

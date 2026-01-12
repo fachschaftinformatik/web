@@ -18,6 +18,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '@lib/auth';
 import { Sidebar } from '@components/layout';
 import { getPrograms } from '@lib/api';
+import type { AuthUserResponse as User } from '@lib/api';
 
 
 const ProfilePage: React.FC = () => {
@@ -25,7 +26,7 @@ const ProfilePage: React.FC = () => {
   const { user: currentUser, logout } = useAuth();
   const theme = useTheme();
 
-  const [profileUser, setProfileUser] = useState<any>(null);
+  const [profileUser, setProfileUser] = useState<User | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [programs, setPrograms] = useState<Record<number, string>>({});
   const [programsLoading, setProgramsLoading] = useState(false);

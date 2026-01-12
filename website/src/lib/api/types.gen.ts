@@ -46,6 +46,16 @@ export type AuthModuleResponse = {
     programid?: number;
 };
 
+export type AuthNotificationResponse = {
+    created_at?: string;
+    id?: string;
+    link?: string;
+    message?: string;
+    read?: boolean;
+    title?: string;
+    type?: string;
+};
+
 /**
  * A study program including valid PO versions
  */
@@ -71,6 +81,17 @@ export type AuthRegisterRequest = {
     name?: string;
     password?: string;
     programid?: number;
+};
+
+export type AuthSearchResult = {
+    id?: string;
+    subtitle?: string;
+    title?: string;
+    /**
+     * "exam" or "module"
+     */
+    type?: string;
+    url?: string;
 };
 
 export type AuthUpdateExamRequest = {
@@ -214,6 +235,88 @@ export type PutAuthMeResponses = {
 };
 
 export type PutAuthMeResponse = PutAuthMeResponses[keyof PutAuthMeResponses];
+
+export type GetAuthNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/notifications';
+};
+
+export type GetAuthNotificationsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: AuthErrorResponse;
+};
+
+export type GetAuthNotificationsError = GetAuthNotificationsErrors[keyof GetAuthNotificationsErrors];
+
+export type GetAuthNotificationsResponses = {
+    /**
+     * OK
+     */
+    200: Array<AuthNotificationResponse>;
+};
+
+export type GetAuthNotificationsResponse = GetAuthNotificationsResponses[keyof GetAuthNotificationsResponses];
+
+export type PutAuthNotificationsIdReadData = {
+    body?: never;
+    path: {
+        /**
+         * Notification ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/auth/notifications/{id}/read';
+};
+
+export type PutAuthNotificationsIdReadErrors = {
+    /**
+     * Unauthorized
+     */
+    401: AuthErrorResponse;
+    /**
+     * Not Found
+     */
+    404: AuthErrorResponse;
+};
+
+export type PutAuthNotificationsIdReadError = PutAuthNotificationsIdReadErrors[keyof PutAuthNotificationsIdReadErrors];
+
+export type PutAuthNotificationsIdReadResponses = {
+    /**
+     * OK
+     */
+    200: AuthNotificationResponse;
+};
+
+export type PutAuthNotificationsIdReadResponse = PutAuthNotificationsIdReadResponses[keyof PutAuthNotificationsIdReadResponses];
+
+export type PutAuthNotificationsReadAllData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/notifications/read-all';
+};
+
+export type PutAuthNotificationsReadAllErrors = {
+    /**
+     * Unauthorized
+     */
+    401: AuthErrorResponse;
+};
+
+export type PutAuthNotificationsReadAllError = PutAuthNotificationsReadAllErrors[keyof PutAuthNotificationsReadAllErrors];
+
+export type PutAuthNotificationsReadAllResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
 
 export type PostAuthRegisterData = {
     /**
@@ -527,6 +630,27 @@ export type GetProgramModulesResponses = {
 };
 
 export type GetProgramModulesResponse = GetProgramModulesResponses[keyof GetProgramModulesResponses];
+
+export type GetSearchData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Search query
+         */
+        q: string;
+    };
+    url: '/search';
+};
+
+export type GetSearchResponses = {
+    /**
+     * OK
+     */
+    200: Array<AuthSearchResult>;
+};
+
+export type GetSearchResponse = GetSearchResponses[keyof GetSearchResponses];
 
 export type GetUsersData = {
     body?: never;
