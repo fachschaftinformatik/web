@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   AppBar,
   Avatar,
@@ -19,10 +19,13 @@ import {
   Tooltip,
   Typography,
   useMediaQuery,
+  Autocomplete,
+  CircularProgress,
+  ListItem,
 } from '@mui/material';
 import { useTheme, alpha, styled } from '@mui/material/styles';
 import InputBase from '@mui/material/InputBase';
-import SearchRounded from '@mui/icons-material/SearchRounded';
+import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneRounded from '@mui/icons-material/NotificationsNoneRounded';
 import MailRounded from '@mui/icons-material/MailRounded';
 import MenuRounded from '@mui/icons-material/MenuRounded';
@@ -38,15 +41,20 @@ import SettingsRounded from '@mui/icons-material/SettingsRounded';
 import LogoutRounded from '@mui/icons-material/LogoutRounded';
 import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
 import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
-import GavelRounded from '@mui/icons-material/GavelRounded';
-import PolicyRounded from '@mui/icons-material/PolicyRounded';
 import DoneAllRounded from '@mui/icons-material/DoneAllRounded';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
-import type { AuthUserResponse as User } from '@lib/api/types.gen';
+import type { AuthUserResponse as User, AuthNotificationResponse as Notification } from '@lib/api/types.gen';
 import { useThemeMode } from '@lib/theme';
 import { useAuth } from '@lib/auth';
-import { getAuthCsrf, putAuthMe } from '@lib/api';
+import {
+  getAuthCsrf,
+  putAuthMe,
+  getAuthNotifications,
+  putAuthNotificationsIdRead,
+  putAuthNotificationsReadAll
+} from '@lib/api';
+import { client } from '@lib/api/client.gen';
 
 const drawerWidthOpen = 240;
 const drawerWidthClosed = 72;
@@ -118,6 +126,121 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
+interface SearchResult {
+  type: 'exam' | 'module';
+  id: string;
+  title: string;
+  subtitle: string;
+  url: string;
+}
+
+const GlobalSearch = () => {
+  const [open, setOpen] = useState(false);
+  const [options, setOptions] = useState<readonly SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const navigate = useNavigate();
+  const isSearchOpen = open && inputValue.length >= 2;
+
+  useEffect(() => {
+    if (isSearchOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (inputValue.length < 2) {
+      Promise.resolve().then(() => {
+        setOptions([]);
+        setLoading(false);
+      });
+      return undefined;
+    }
+
+    Promise.resolve().then(() => {
+      setLoading(true);
+    });
+
+    const timer = setTimeout(() => {
+      client.request({
+        method: 'GET',
+        url: '/search',
+        query: { q: inputValue }
+      }).then(({ data }) => {
+        if (active && data) {
+          setOptions(data as SearchResult[]);
+        }
+      }).finally(() => {
+        if (active) setLoading(false);
+      });
+    }, 400);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [inputValue]);
+
+  return (
+    <Autocomplete
+      id="global-search"
+      sx={{ mr: 1 }}
+      open={open && inputValue.length >= 2}
+      onOpen={() => setOpen(true)}
+      onClose={() => setOpen(false)}
+      isOptionEqualToValue={(option, value) => option.id === value.id}
+      getOptionLabel={(option) => option.title}
+      filterOptions={(x) => x}
+      options={options}
+      loading={loading}
+      value={null}
+      onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
+      onChange={(_, value) => {
+        if (value) {
+          navigate(value.url);
+          setInputValue('');
+          setOptions([]);
+        }
+      }}
+      noOptionsText="Keine Ergebnisse"
+      loadingText="Wird geladen..."
+      clearIcon={null}
+      popupIcon={null}
+      renderInput={(params) => (
+        <Search ref={params.InputProps.ref}>
+          <SearchIconWrapper>
+            {loading ? <CircularProgress color="inherit" size={20} /> : <SearchIcon />}
+          </SearchIconWrapper>
+          <StyledInputBase
+            inputProps={params.inputProps}
+            placeholder="Suchen…"
+          />
+        </Search>
+      )}
+      renderOption={(props, option) => (
+        <ListItem {...props} key={option.id + option.type}>
+          <ListItemIcon sx={{ minWidth: 40 }}>
+            {option.type === 'module' ? <DashboardRounded fontSize="small" /> : <SchoolRounded fontSize="small" />}
+          </ListItemIcon>
+          <ListItemText
+            primary={option.title}
+            secondary={option.subtitle}
+            primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
+            secondaryTypographyProps={{ variant: 'caption' }}
+          />
+        </ListItem>
+      )}
+    />
+  );
+};
+
 const navItems = [
   { label: 'Startseite', href: '/', icon: <DashboardRounded />, isRoute: true },
   { label: 'Ankündigungen', href: '/news', icon: <CampaignRounded />, isRoute: true },
@@ -125,25 +248,10 @@ const navItems = [
   { label: 'Forum', href: '/forum', icon: <QuestionAnswerRounded />, isRoute: true },
   { label: 'Galerie', href: '/media', icon: <CollectionsRounded />, isRoute: true },
   { label: 'Team', href: '/team', icon: <PeopleRounded />, isRoute: true },
-  { label: 'Impressum', href: '/legal', icon: <GavelRounded />, isRoute: true },
-  { label: 'Datenschutz', href: '/privacy', icon: <PolicyRounded />, isRoute: true },
+  { label: 'Kontakt', href: '/contact', icon: <MailRounded />, isRoute: true },
 ];
 
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  time: string;
-  type: 'news' | 'forum' | 'exam';
-  read: boolean;
-}
 
-const mockNotifications: Notification[] = [
-  { id: '1', title: 'Neue News', message: 'Wichtige Infos zum Semesterstart wurden veröffentlicht.', time: 'Vor 5 Min', type: 'news', read: false },
-  { id: '2', title: 'Forumsantwort', message: 'Jemand hat auf deinen Beitrag "Prüfungsvorbereitung" geantwortet.', time: 'Vor 1 Std', type: 'forum', read: false },
-  { id: '3', title: 'Neue Reko', message: 'Eine neue Klausur-Rekonstruktion für "Lineare Algebra" ist verfügbar.', time: 'Gestern', type: 'exam', read: true },
-  { id: '4', title: 'News-Update', message: 'Der Termin für das Camp-Wochenende steht fest!', time: 'Vor 2 Tagen', type: 'news', read: true },
-];
 
 interface SidebarProps {
   user?: User | null;
@@ -165,6 +273,7 @@ const Sidebar = ({
   const { mode } = useThemeMode();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     document.title = `${title} | FSV Informatik`;
@@ -192,7 +301,7 @@ const Sidebar = ({
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notiAnchorEl, setNotiAnchorEl] = useState<null | HTMLElement>(null);
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const open = Boolean(anchorEl);
   const notiOpen = Boolean(notiAnchorEl);
@@ -202,9 +311,50 @@ const Sidebar = ({
   const { logout, login } = useAuth();
   const { setPreference } = useThemeMode();
 
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data } = await getAuthNotifications();
+      if (data) setNotifications(data as Notification[]);
+    } catch (err) {
+      console.error("Failed to fetch notifications", err);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    // Wrap in microtask to avoid synchronous setState warning in some linters
+    Promise.resolve().then(() => {
+      fetchNotifications();
+    });
+    // Refresh every minute
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      const { data: csrfData } = await getAuthCsrf();
+      await putAuthNotificationsReadAll({ headers: { 'X-CSRF-Token': csrfData?.csrf || '' } });
+      await fetchNotifications();
+    } catch (err) {
+      console.error("Failed to mark all read", err);
+    }
   };
+
+  const handleMarkRead = async (id: string) => {
+    try {
+      const { data: csrfData } = await getAuthCsrf();
+      await putAuthNotificationsIdRead({
+        path: { id },
+        headers: { 'X-CSRF-Token': csrfData?.csrf || '' }
+      });
+      await fetchNotifications();
+    } catch (err) {
+      console.error("Failed to mark notification as read", err);
+    }
+  };
+
+
 
   const handleNotiClick = (e: React.MouseEvent<HTMLElement>) => {
     setNotiAnchorEl(e.currentTarget);
@@ -229,12 +379,12 @@ const Sidebar = ({
             name: user.name,
             programid: user.programid,
             theme: nextMode
-          } as any,
+          },
           headers: { "X-CSRF-Token": token || "" }
         });
 
         if (res.data) {
-          login(res.data as any, window.localStorage.getItem('fs_remember_flag') === 'true');
+          login(res.data as User, window.localStorage.getItem('fs_remember_flag') === 'true');
         }
       } catch (err) {
         console.error("Failed to sync theme preference", err);
@@ -332,15 +482,7 @@ const Sidebar = ({
             {title}
           </Typography>
 
-          <Search sx={{ mr: 2 }}>
-            <SearchIconWrapper>
-              <SearchRounded />
-            </SearchIconWrapper>
-            <StyledInputBase
-              placeholder="Suchen…"
-              inputProps={{ 'aria-label': 'search' }}
-            />
-          </Search>
+          <GlobalSearch />
 
           {headerActions}
 
@@ -408,6 +550,7 @@ const Sidebar = ({
                       size="small"
                       startIcon={<DoneAllRounded fontSize="small" />}
                       onClick={handleMarkAllRead}
+                      disabled={unreadCount === 0}
                       sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0.5 }}
                     >
                       Alle gelesen
@@ -418,7 +561,11 @@ const Sidebar = ({
                   {notifications.map((noti) => (
                     <MenuItem
                       key={noti.id}
-                      onClick={handleNotiClose}
+                      onClick={() => {
+                        if (noti.id) handleMarkRead(noti.id);
+                        if (noti.link) navigate(noti.link);
+                        handleNotiClose();
+                      }}
                       sx={{
                         py: 2,
                         px: 2,
@@ -458,7 +605,12 @@ const Sidebar = ({
                           {noti.message}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>
-                          {noti.time}
+                          {noti.created_at ? new Date(noti.created_at).toLocaleString('de-DE', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : ''}
                         </Typography>
                       </Box>
                       {!noti.read && (
