@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/sid"
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 type NotificationResponse struct {
@@ -65,7 +65,7 @@ func (s *Server) GetAuthNotifications(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} ErrorResponse
 // @Router /auth/notifications/{id}/read [put]
 func (s *Server) PutAuthNotificationsIdRead(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	notificationID := chi.URLParam(r, "id")
 	_, user, err := s.authenticate(w, r)
 	if err != nil {
 		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
@@ -73,7 +73,7 @@ func (s *Server) PutAuthNotificationsIdRead(w http.ResponseWriter, r *http.Reque
 	}
 
 	row, err := s.DB.MarkNotificationAsRead(r.Context(), database.MarkNotificationAsReadParams{
-		ID:     id,
+		ID:     notificationID,
 		Userid: user.ID,
 	})
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *Server) PutAuthNotificationsReadAll(w http.ResponseWriter, r *http.Requ
 
 func (s *Server) createNotification(r *http.Request, userid, title, message, nType, link string) error {
 	_, err := s.DB.CreateNotification(r.Context(), database.CreateNotificationParams{
-		ID:      uuid.NewString(),
+		ID:      sid.New(),
 		Userid:  userid,
 		Title:   title,
 		Message: message,
