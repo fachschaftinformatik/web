@@ -102,12 +102,28 @@ func (q *Queries) GetEvent(ctx context.Context, id int64) (Event, error) {
 }
 
 const getMedia = `-- name: GetMedia :one
-SELECT id, event_id, userid, title, description, accesskey, mime_type, nbytes, uploaded_at FROM media WHERE id = ? LIMIT 1
+SELECT m.id, m.event_id, m.userid, m.title, m.description, m.accesskey, m.mime_type, m.nbytes, m.uploaded_at, u.name as uploader_name 
+FROM media m
+JOIN users u ON m.userid = u.id
+WHERE m.id = ? LIMIT 1
 `
 
-func (q *Queries) GetMedia(ctx context.Context, id string) (Medium, error) {
+type GetMediaRow struct {
+	ID           string  `json:"id"`
+	EventID      int64   `json:"event_id"`
+	Userid       string  `json:"userid"`
+	Title        *string `json:"title"`
+	Description  *string `json:"description"`
+	Accesskey    string  `json:"accesskey"`
+	MimeType     string  `json:"mime_type"`
+	Nbytes       int64   `json:"nbytes"`
+	UploadedAt   string  `json:"uploaded_at"`
+	UploaderName string  `json:"uploader_name"`
+}
+
+func (q *Queries) GetMedia(ctx context.Context, id string) (GetMediaRow, error) {
 	row := q.db.QueryRowContext(ctx, getMedia, id)
-	var i Medium
+	var i GetMediaRow
 	err := row.Scan(
 		&i.ID,
 		&i.EventID,
@@ -118,6 +134,7 @@ func (q *Queries) GetMedia(ctx context.Context, id string) (Medium, error) {
 		&i.MimeType,
 		&i.Nbytes,
 		&i.UploadedAt,
+		&i.UploaderName,
 	)
 	return i, err
 }

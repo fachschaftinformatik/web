@@ -23,7 +23,10 @@ WHERE event_id = ?
 ORDER BY uploaded_at DESC;
 
 -- name: GetMedia :one
-SELECT * FROM media WHERE id = ? LIMIT 1;
+SELECT m.*, u.name as uploader_name 
+FROM media m
+JOIN users u ON m.userid = u.id
+WHERE m.id = ? LIMIT 1;
 
 -- name: DeleteMedia :exec
 DELETE FROM media WHERE id = ?;

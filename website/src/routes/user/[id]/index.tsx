@@ -293,16 +293,16 @@ const ProfilePage: React.FC = () => {
                   const secondaryText = activity.created_at ? new Date(activity.created_at).toLocaleString() : '';
 
                   if (activity.type === 'POST_CREATED') {
-                    linkTarget = `/forum?postId=${activity.target_id}`;
+                    linkTarget = `/forum/${activity.target_id}`;
                     primaryText = activity.target_name || "Neuer Beitrag";
                   } else if (activity.type === 'COMMENT_ADDED') {
-                    linkTarget = `/forum?postId=${activity.target_id}`;
+                    linkTarget = `/forum/${activity.target_id}`;
                     primaryText = activity.target_name ? `Kommentar zu "${activity.target_name}"` : "Neuer Kommentar";
                   } else if (activity.type === 'EXAM_UPLOADED') {
-                    linkTarget = `/exams/resolve?examId=${activity.target_id}`;
+                    linkTarget = `/exams/detail?examId=${activity.target_id}`;
                     primaryText = activity.target_name ? `Klausur für ${activity.target_name}` : "Neue Altklausur";
                   } else if (activity.type === 'MEDIA_UPLOADED') {
-                    linkTarget = "/gallery"; // Assuming gallery route exists
+                    linkTarget = `/media?mediaId=${activity.target_id}`;
                     primaryText = activity.target_name || "Neues Bild";
                   }
 
