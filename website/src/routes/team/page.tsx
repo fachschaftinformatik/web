@@ -13,9 +13,9 @@ import {
   DialogActions,
   Stack,
   TextField,
+  Autocomplete,
   IconButton,
   Tooltip,
-  InputAdornment,
 } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
@@ -23,13 +23,9 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import { useLocation } from "react-router-dom";
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
-import { teamSections, TeamMember, TeamSection } from "@lib/data";
-
-const ADMIN_PREVIEW_KEY = "team_admin_preview";
-const EMAIL_DOMAIN = "@fsv-whs.de";
+import { teamEmailOptions, teamSections, TeamMember, TeamSection } from "@lib/data";
 
 const deepCloneSections = (sections: TeamSection[]) =>
   sections.map((s) => ({
@@ -37,19 +33,11 @@ const deepCloneSections = (sections: TeamSection[]) =>
     members: s.members.map((m) => ({ ...m })),
   }));
 
-const getLocalPart = (email: string) => {
-  if (!email) return "";
-  const atIndex = email.indexOf("@");
-  return atIndex > -1 ? email.slice(0, atIndex) : email;
-};
-
-const normalizeLocalPart = (value: string) => value.split("@")[0].trim();
+const EMAIL_OPTIONS = Array.from(teamEmailOptions).sort();
 
 export default function Team() {
   const { user } = useAuth();
-  const location = useLocation();
-  const [adminPreview, setAdminPreview] = React.useState(false);
-  const canEdit = adminPreview || user?.role === "admin" || user?.role === "editor";
+  const canEdit = user?.role === "admin" || user?.role === "editor";
   const [sections, setSections] = React.useState<TeamSection[]>(teamSections);
   const [editOpen, setEditOpen] = React.useState(false);
   const [draft, setDraft] = React.useState<TeamSection[]>([]);
@@ -127,31 +115,27 @@ export default function Team() {
     setDeleteTarget(null);
   };
 
-  React.useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const param = searchParams.get("admin");
-    if (param === "1") {
-      setAdminPreview(true);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(ADMIN_PREVIEW_KEY, "1");
-      }
-      return;
-    }
-    if (param === "0") {
-      setAdminPreview(false);
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem(ADMIN_PREVIEW_KEY);
-      }
-      return;
-    }
-    if (typeof window !== "undefined") {
-      setAdminPreview(window.localStorage.getItem(ADMIN_PREVIEW_KEY) === "1");
-    }
-  }, [location.search]);
+  const Section = ({ title, members }: { title: string; members: TeamMember[] }) => {
+    const sharedEmail =
+      members.length > 1 &&
+      members.every((member) => member.email && member.email === members[0]?.email)
+        ? members[0]?.email
+        : "";
 
-  const Section = ({ title, members }: { title: string; members: TeamMember[] }) => (
-    <Box sx={{ my: 4 }}>
-      <Typography variant="h5" gutterBottom>{title}</Typography>
+    return (
+      <Box sx={{ my: 4 }}>
+        <Typography variant="h5" gutterBottom>{title}</Typography>
+        {sharedEmail && (
+          <Link
+            href={`mailto:${sharedEmail}`}
+            variant="body2"
+            color="text.secondary"
+            underline="hover"
+            sx={{ display: "inline-block", mb: 2 }}
+          >
+            {sharedEmail}
+          </Link>
+        )}
       <Box
         sx={{
           display: "grid",
@@ -191,7 +175,7 @@ export default function Team() {
             )}
             <CardContent>
               <Typography variant="subtitle1">{m.name}</Typography>
-              {m.email && (
+              {!sharedEmail && m.email && (
                 <Link
                   href={`mailto:${m.email}`}
                   variant="body2"
@@ -207,6 +191,7 @@ export default function Team() {
       </Box>
     </Box>
   );
+  };
   return (
     <Sidebar user={user} title="Team" maxWidth="lg">
       <Box>
@@ -311,38 +296,51 @@ export default function Team() {
                           />
                         </Box>
                         <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: 280 } }}>
-                          <TextField
-                            id={`email-${member.id}`}
-                            name="email"
-                            label="E-Mail"
-                            value={getLocalPart(member.email)}
-                            onChange={(e) =>
+                          <Autocomplete
+                            freeSolo
+                            options={EMAIL_OPTIONS}
+                            value={member.email || ""}
+                            onChange={(_, value) => {
+                              const email = typeof value === "string" ? value : value || "";
                               setDraft((prev) =>
                                 prev.map((s) =>
                                   s.id === section.id
                                     ? {
-                                      ...s,
-                                      members: s.members.map((m) =>
-                                        m.id === member.id
-                                          ? {
-                                            ...m,
-                                            email: normalizeLocalPart(e.target.value)
-                                              ? `${normalizeLocalPart(e.target.value)}${EMAIL_DOMAIN}`
-                                              : "",
-                                          }
-                                          : m
-                                      ),
-                                    }
+                                        ...s,
+                                        members: s.members.map((m) =>
+                                          m.id === member.id ? { ...m, email } : m
+                                        ),
+                                      }
                                     : s
                                 )
-                              )
-                            }
-                            fullWidth
-                            InputProps={{
-                              endAdornment: (
-                                <InputAdornment position="end">{EMAIL_DOMAIN}</InputAdornment>
-                              ),
+                              );
                             }}
+                            onInputChange={(_, inputValue) => {
+                              setDraft((prev) =>
+                                prev.map((s) =>
+                                  s.id === section.id
+                                    ? {
+                                        ...s,
+                                        members: s.members.map((m) =>
+                                          m.id === member.id ? { ...m, email: inputValue } : m
+                                        ),
+                                      }
+                                    : s
+                                )
+                              );
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                id={`email-${member.id}`}
+                                name="email"
+                                label="E-Mail"
+                                fullWidth
+                              />
+                            )}
+                            getOptionLabel={(option) => option || "Keine E-Mail"}
+                            isOptionEqualToValue={(option, value) => option === value}
+                            clearOnEscape
                           />
                         </Box>
                         <Stack spacing={1} sx={{ minWidth: { xs: "100%", sm: 140 } }}>
