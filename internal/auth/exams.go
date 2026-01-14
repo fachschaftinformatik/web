@@ -9,12 +9,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/sid"
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 // TODO: Move to env
@@ -90,6 +91,62 @@ func (s *Server) GetExamVersions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.respondJSON(w, http.StatusOK, apiExams)
+}
+
+// GetExamsId gets a single exam
+// @Summary Get exam details
+// @Tags Exams
+// @ID getExamsId
+// @Param id path string true "Exam ID"
+// @Success 200 {object} ExamResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /exams/{id} [get]
+func (s *Server) GetExamsId(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	_, _, err := s.authenticate(w, r)
+	if err != nil {
+		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	row, err := s.DB.GetExamDetails(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			s.jsonError(w, "not_found", "Exam not found", http.StatusNotFound)
+		} else {
+			s.Log.Printf("DB GetExamDetails error: %v", err)
+			s.jsonError(w, "database_error", "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	uploaded, _ := time.Parse(time.RFC3339, row.UploadedAt)
+
+	var modID int64
+	if row.Moduleid != nil {
+		modID = *row.Moduleid
+	}
+	var comm string
+	if row.Comment != nil {
+		comm = *row.Comment
+	}
+
+	resp := ExamResponse{
+		ID:           row.ID,
+		ProgramID:    row.Programid,
+		Version:      row.Version,
+		ModuleID:     modID,
+		ModuleName:   row.ModuleName,
+		ExamDate:     row.ExamDate,
+		UploadedAt:   uploaded,
+		UploaderName: row.UploaderName,
+		Comment:      comm,
+		EditVersion:  row.EditVersion,
+		GroupID:      row.GroupID,
+		IsLatest:     row.IsLatest,
+	}
+
+	s.respondJSON(w, http.StatusOK, resp)
 }
 
 type ExamAssignment struct {
@@ -183,16 +240,6 @@ func (s *Server) PostExams(w http.ResponseWriter, r *http.Request) {
 	}
 	checksum := hex.EncodeToString(hasher.Sum(nil))
 
-	file.Seek(0, 0)
-	accessKey := uuid.NewString()
-	objectKey := fmt.Sprintf("exams/%s.pdf", accessKey)
-
-	if err := s.Store.Upload(r.Context(), objectKey, file, header.Size, "application/pdf"); err != nil {
-		s.Log.Printf("S3 Upload failed: %v", err)
-		s.jsonError(w, "server_error", "Failed to store file", http.StatusInternalServerError)
-		return
-	}
-
 	ctx := r.Context()
 	var commentPtr *string
 	if comment != "" {
@@ -201,20 +248,32 @@ func (s *Server) PostExams(w http.ResponseWriter, r *http.Request) {
 
 	for _, assign := range assignments {
 		modID := assign.ModuleID
-		id := uuid.NewString()
+		newExamID := sid.New()
+
+		// Upload per assignment: exams/<examid>/<version>.pdf
+		// Here examid is the GroupID (which creates the lineage).
+		// For a new exam, GroupID = newExamID. Version = 1.
+		objectKey := fmt.Sprintf("exams/%s/1.pdf", newExamID)
+
+		file.Seek(0, 0)
+		if err := s.Store.Upload(r.Context(), objectKey, file, header.Size, "application/pdf"); err != nil {
+			s.Log.Printf("S3 Upload failed for %s: %v", objectKey, err)
+			continue // Partial failure? Or should we abort?
+		}
+
 		paramsDB := database.CreateExamParams{
-			ID:          id,
+			ID:          newExamID,
 			Userid:      user.ID,
 			Programid:   assign.ProgramID,
 			Version:     assign.Version,
 			Moduleid:    &modID,
 			ExamDate:    examDate,
-			Accesskey:   accessKey,
+			Accesskey:   sid.New(), // Keeping random SID for DB constraint, but not used for path
 			MimeType:    "application/pdf",
 			Nbytes:      header.Size,
 			Checksum:    checksum,
 			Comment:     commentPtr,
-			GroupID:     id, // Use ID as group_id for new exams
+			GroupID:     newExamID,
 			EditVersion: 1,
 			IsLatest:    1,
 		}
@@ -231,9 +290,22 @@ func (s *Server) PostExams(w http.ResponseWriter, r *http.Request) {
 				moduleName = mod.Name
 			}
 
-			msg := fmt.Sprintf("Eine neue Klausur für %s (%s) wurde hochgeladen.", moduleName, examDate)
-			link := fmt.Sprintf("/rekos/klausuren/modul?modulId=%d&mod=%s&examId=%s", modID, moduleName, id)
-			s.broadcastNotification(r, "Neue Klausur verfügbar", msg, "exam", link)
+			msg := fmt.Sprintf("%s (%s)", moduleName, examDate)
+			link := fmt.Sprintf("/exams/%d?mod=%s&examId=%s", modID, url.QueryEscape(moduleName), url.QueryEscape(newExamID))
+			s.broadcastNotification(r, "Neue Klausur", msg, "exam", link)
+
+			// Log activity
+			var targetName *string
+			if moduleName != "" {
+				targetName = &moduleName
+			}
+			_, _ = s.DB.CreateActivity(r.Context(), database.CreateActivityParams{
+				ID:         sid.New(),
+				UserID:     user.ID,
+				Type:       "EXAM_UPLOADED",
+				TargetID:   newExamID,
+				TargetName: targetName,
+			})
 		}
 	}
 
@@ -322,7 +394,7 @@ func (s *Server) GetExams(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} ExamResponse
 // @Router /exams/{id} [put]
 func (s *Server) PutExamsId(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	examID := chi.URLParam(r, "id")
 	_, user, err := s.authenticate(w, r)
 	if err != nil {
 		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
@@ -342,7 +414,7 @@ func (s *Server) PutExamsId(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	// 1. Get current version
-	oldExam, err := s.DB.GetExam(ctx, id)
+	oldExam, err := s.DB.GetExam(ctx, examID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			s.jsonError(w, "not_found", "Exam not found", http.StatusNotFound)
@@ -354,9 +426,9 @@ func (s *Server) PutExamsId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Prepare new access key and duplicate file
-	newAccessKey := uuid.NewString()
-	oldPath := fmt.Sprintf("exams/%s.pdf", oldExam.Accesskey)
-	newPath := fmt.Sprintf("exams/%s.pdf", newAccessKey)
+	newAccessKey := sid.New()
+	oldPath := fmt.Sprintf("exams/%s/%d.pdf", oldExam.GroupID, oldExam.EditVersion)
+	newPath := fmt.Sprintf("exams/%s/%d.pdf", oldExam.GroupID, oldExam.EditVersion+1)
 
 	if err := s.Store.CopyObject(ctx, oldPath, newPath); err != nil {
 		s.Log.Printf("Storage CopyObject error: %v", err)
@@ -377,7 +449,7 @@ func (s *Server) PutExamsId(w http.ResponseWriter, r *http.Request) {
 		commentPtr = &payload.Comment
 	}
 
-	newID := uuid.NewString()
+	newID := sid.New()
 	params := database.CreateExamParams{
 		ID:          newID,
 		Userid:      user.ID,
@@ -438,7 +510,7 @@ func (s *Server) PutExamsId(w http.ResponseWriter, r *http.Request) {
 // @Success 204
 // @Router /exams/{id} [delete]
 func (s *Server) DeleteExamsId(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	examID := chi.URLParam(r, "id")
 	_, user, err := s.authenticate(w, r)
 	if err != nil {
 		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
@@ -450,7 +522,7 @@ func (s *Server) DeleteExamsId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exam, err := s.DB.GetExam(r.Context(), id)
+	exam, err := s.DB.GetExam(r.Context(), examID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			s.jsonError(w, "not_found", "Exam not found", http.StatusNotFound)
@@ -461,13 +533,13 @@ func (s *Server) DeleteExamsId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.DB.DeleteExam(r.Context(), id); err != nil {
+	if err := s.DB.DeleteExam(r.Context(), examID); err != nil {
 		s.Log.Printf("DB DeleteExam error: %v", err)
 		s.jsonError(w, "database_error", "Failed to delete exam", http.StatusInternalServerError)
 		return
 	}
 
-	objectKey := fmt.Sprintf("exams/%s.pdf", exam.Accesskey)
+	objectKey := fmt.Sprintf("exams/%s/%d.pdf", exam.GroupID, exam.EditVersion)
 	if err := s.Store.Delete(r.Context(), objectKey); err != nil {
 		s.Log.Printf("S3 Delete error (non-fatal): %v", err)
 	}
@@ -501,7 +573,7 @@ func (s *Server) GetExamsFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	objectKey := fmt.Sprintf("exams/%s.pdf", exam.Accesskey)
+	objectKey := fmt.Sprintf("exams/%s/%d.pdf", exam.GroupID, exam.EditVersion)
 	obj, err := s.Store.GetObject(r.Context(), objectKey)
 	if err != nil {
 		s.Log.Printf("S3 GetObject error: %v", err)

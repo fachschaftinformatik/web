@@ -30,9 +30,9 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
 import { newsDaten, type NewsItem } from '@routes/news/page';
-import { FORUM_SEED_POSTS, FORUM_STORAGE_KEY } from '@routes/forum/page';
+import type { AuthPostResponse } from '@lib/api';
 
-type ForumPostSummary = { id: string; title: string; author: string; createdAt: string; replies: number; };
+type ForumPostSummary = { id: string; title: string; author: string; authorAvatarUrl: string | undefined; createdAt: string; replies: number; };
 type CalendarEvent = { id: string; title: string; date: string; time?: string; location?: string; category: string; };
 type EventDraft = { title: string; date: string; time: string; location: string; category: string; };
 
@@ -62,7 +62,8 @@ const formatNewsDate = (dateString: string) => {
   const parsed = new Date(dateString);
   return isNaN(parsed.getTime()) ? dateString : formatShortDate(parsed);
 };
-const formatForumDate = (iso: string) => {
+const formatForumDate = (iso?: string) => {
+  if (!iso) return 'k.A.';
   const d = new Date(iso);
   return isNaN(d.getTime()) ? 'k.A.' : d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
 };
@@ -117,20 +118,16 @@ const loadNews = (): NewsItem[] => {
     return [...newsDaten, ...(Array.isArray(custom) ? custom : [])];
   } catch { return newsDaten; }
 };
-const loadForumPosts = (): ForumPostSummary[] => {
-  const normalize = (post: { id: number | string; title?: string; author?: string; createdAt?: string; comments?: Array<{ id: number | string }>; replies?: number }): ForumPostSummary => ({
-    id: String(post.id),
+const loadForumPosts = (apiPosts: AuthPostResponse[] = []): ForumPostSummary[] => {
+  const normalize = (post: AuthPostResponse): ForumPostSummary => ({
+    id: String(post.id ?? ''),
     title: String(post.title ?? 'Neuer Beitrag'),
-    author: String(post.author ?? 'Unbekannt'),
-    createdAt: String(post.createdAt ?? new Date().toISOString()),
-    replies: Array.isArray(post.comments) ? post.comments.length : Number(post.replies ?? 0),
+    author: String(post.author_name ?? 'Anonym'),
+    authorAvatarUrl: post.author_avatar_url || undefined,
+    createdAt: String(post.created_at ?? new Date().toISOString()),
+    replies: Number(post.comment_count ?? 0),
   });
-  if (typeof window === 'undefined') return FORUM_SEED_POSTS.map(normalize);
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(FORUM_STORAGE_KEY) || '[]');
-    const source = Array.isArray(stored) && stored.length ? stored : FORUM_SEED_POSTS;
-    return source.map(normalize);
-  } catch { return FORUM_SEED_POSTS.map(normalize); }
+  return apiPosts.map(normalize);
 };
 const toEventTimestamp = (event: CalendarEvent) => {
   const [year, month, day] = event.date.split('-').map(Number);
@@ -185,9 +182,14 @@ const NewsFeedPage: React.FC = () => {
     return [...items].sort((a, b) => toNewsTimestamp(b) - toNewsTimestamp(a));
   }, []);
 
-  const forumPosts = useMemo(() => {
-    const posts = loadForumPosts();
-    return [...posts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const [forumPosts, setForumPosts] = useState<ForumPostSummary[]>([]);
+
+  useEffect(() => {
+    import('@lib/api').then(({ getForumPosts }) => {
+      getForumPosts({ query: { limit: 5 } }).then(({ data }) => {
+        if (data) setForumPosts(loadForumPosts(data as AuthPostResponse[]));
+      });
+    });
   }, []);
 
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
@@ -672,9 +674,15 @@ const NewsFeedPage: React.FC = () => {
                 <Paper component={RouterLink} to="/forum" elevation={0} sx={{ ...custom.glassCard, gridColumn: { xs: '1 / -1', md: 'span 7' }, p: { xs: 1.6, md: 3 }, borderRadius: 5, textDecoration: 'none', color: 'inherit', background: isDark ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.92)}, ${alpha(theme.palette.background.default, 0.9)})` : `linear-gradient(135deg, ${alpha(theme.palette.info.light, 0.2)}, ${alpha(theme.palette.background.paper, 0.98)})` }}>
                   <Stack spacing={{ xs: 1, md: 1.4 }}>
                     <Stack direction="row" spacing={1.2} alignItems="center" sx={{ flexWrap: { xs: 'wrap', sm: 'nowrap' }, rowGap: { xs: 0.4, sm: 0 } }}>
-                      <Avatar sx={{ width: { xs: 36, md: 42 }, height: { xs: 36, md: 42 }, bgcolor: 'var(--accent-soft)', color: 'var(--accent-strong)' }}>
-                        {forumHighlight.author?.charAt(0)?.toUpperCase() || '?'}
-                      </Avatar>
+                      <Avatar
+                        src={forumHighlight.authorAvatarUrl}
+                        sx={{
+                          width: { xs: 36, md: 42 },
+                          height: { xs: 36, md: 42 },
+                          bgcolor: 'var(--accent-soft)',
+                          color: 'var(--accent-strong)'
+                        }}
+                      />
                       <Box>
                         <Typography variant="overline" sx={{ letterSpacing: { xs: '0.16em', md: '0.22em' }, color: 'var(--accent-strong)' }}>Top Diskussion</Typography>
                         <Typography variant="caption" sx={{ color: 'var(--muted)' }}>{forumHighlight.author} · {formatForumDate(forumHighlight.createdAt)}</Typography>
@@ -692,7 +700,14 @@ const NewsFeedPage: React.FC = () => {
                   {forumRest.length ? forumRest.map((post) => (
                     <Box key={post.id} component={RouterLink} to="/forum" sx={{ ...custom.glassCard, p: { xs: 1.2, md: 1.6 }, borderRadius: 3, textDecoration: 'none', color: 'inherit', display: 'grid', gap: 0.6 }}>
                       <Stack direction="row" spacing={1} alignItems="center">
-                        <Avatar sx={{ width: { xs: 30, md: 34 }, height: { xs: 30, md: 34 }, fontSize: '0.8rem' }}>{post.author?.charAt(0)?.toUpperCase() || '?'}</Avatar>
+                        <Avatar
+                          src={post.authorAvatarUrl}
+                          sx={{
+                            width: { xs: 30, md: 34 },
+                            height: { xs: 30, md: 34 },
+                            fontSize: '0.8rem'
+                          }}
+                        />
                         <Box sx={{ minWidth: 0 }}>
                           <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: { xs: '0.95rem', md: '1.05rem' }, display: '-webkit-box', WebkitLineClamp: { xs: 2, md: 1 }, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.title}</Typography>
                           <Typography variant="caption" sx={{ color: 'var(--muted)' }}>{post.author} · {formatForumDate(post.createdAt)}</Typography>

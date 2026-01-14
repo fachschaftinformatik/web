@@ -452,10 +452,18 @@ export default function Exams() {
                     setSelectedPo(defaultPo);
                 });
             }
+        } else if (programs.length > 0) {
+            // If no program selected, load modules from ALL programs so search works globally
+            Promise.all(programs.map(p => getProgramModules({ path: { id: p.id as number } })))
+                .then(results => {
+                    const allModules = results.flatMap(r => r.data || []);
+                    const uniqueModules = Array.from(new Map(allModules.map(m => [m.id, m])).values());
+                    setModules(uniqueModules);
+                });
         } else {
             Promise.resolve().then(() => setModules([]));
         }
-    }, [selectedPrograms, selectedPo, sortedPos]);
+    }, [selectedPrograms, selectedPo, sortedPos, programs]);
 
     useEffect(() => {
         if (selectedPrograms.length > 0 && selectedPo) {
@@ -471,6 +479,14 @@ export default function Exams() {
                 .then(results => {
                     const allExams = results.flatMap(r => r.data || []);
                     const ids = new Set(allExams.map(e => e.moduleid).filter((id): id is number => id !== undefined));
+                    setActiveModuleIds(ids);
+                })
+                .catch(() => setActiveModuleIds(new Set()));
+        } else if (selectedPrograms.length === 0) {
+            // Show all when no filter
+            getExams({ query: {} })
+                .then(({ data }) => {
+                    const ids = new Set((data || []).map(e => e.moduleid).filter((id): id is number => id !== undefined));
                     setActiveModuleIds(ids);
                 })
                 .catch(() => setActiveModuleIds(new Set()));
@@ -590,7 +606,7 @@ export default function Exams() {
                                     <ListItem key={mod.id} disablePadding divider={index < filteredModules.length - 1}>
                                         <ListItemButton
                                             component={RouterLink}
-                                            to="/rekos/klausuren/modul"
+                                            to={`/exams/${mod.id}`}
                                             state={{
                                                 studiengang: selectedPrograms.length === 1 ? selectedPrograms[0].name : "Mehrere",
                                                 po: selectedPo,
