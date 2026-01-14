@@ -5,15 +5,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/avatars"
 	"github.com/fachschaftinformatik/web/internal/buckets"
 	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/email"
+	"github.com/fachschaftinformatik/web/internal/sid"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -36,14 +39,16 @@ type UserResponse struct {
 }
 
 type PublicUserResponse struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Role      string `json:"role"`
-	Active    int64  `json:"active"`
-	Verified  int64  `json:"verified"`
-	Programid int64  `json:"programid"`
-	CreatedAt string `json:"created_at"`
-	Theme     string `json:"theme"`
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	Role      string  `json:"role"`
+	Active    int64   `json:"active"`
+	Verified  int64   `json:"verified"`
+	Programid int64   `json:"programid"`
+	CreatedAt string  `json:"created_at"`
+	Theme     string  `json:"theme"`
+	Private   int64   `json:"private"`
+	AvatarUrl *string `json:"avatar_url"`
 }
 
 type LoginRequest struct {
@@ -62,6 +67,7 @@ type UpdateProfileRequest struct {
 	Name      string `json:"name" example:"Max Mustermann"`
 	Programid int    `json:"programid" example:"1"`
 	Theme     string `json:"theme" example:"dark"`
+	Private   bool   `json:"private"`
 }
 
 type ErrorResponse struct {
@@ -78,17 +84,19 @@ type Server struct {
 	Log           *log.Logger
 	Config        *config.Config
 	Email         *email.Sender
+	Avatars       *avatars.Service
 	Store         *buckets.Client
 	SecureCookies bool
 }
 
-func NewServer(db database.Querier, logger *log.Logger, cfg *config.Config, emailSender *email.Sender, store *buckets.Client) *Server {
+func NewServer(db database.Querier, logger *log.Logger, cfg *config.Config, emailSender *email.Sender, store *buckets.Client, avatarService *avatars.Service) *Server {
 	return &Server{
 		DB:            db,
 		Log:           logger,
 		Config:        cfg,
 		Email:         emailSender,
 		Store:         store,
+		Avatars:       avatarService,
 		SecureCookies: cfg.SecureCookies,
 	}
 }
@@ -119,7 +127,7 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 	verificationToken := uuid.NewString()
 
 	params := database.CreateUserParams{
-		ID:                uuid.NewString(),
+		ID:                sid.New(),
 		Email:             string(payload.Email),
 		Name:              payload.Name,
 		Password:          string(hashedPassword),
@@ -127,6 +135,14 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 		Active:            1,
 		Programid:         int64(payload.Programid),
 		VerificationToken: &verificationToken,
+		AvatarUrl:         nil, // Updated via GenerateAndStoreAvatar
+	}
+
+	avatarPath, err := s.Avatars.GenerateAndStoreAvatar(r.Context(), params.ID)
+	if err != nil {
+		s.Log.Printf("Failed to generate avatar for %s: %v", params.ID, err)
+	} else {
+		params.AvatarUrl = &avatarPath
 	}
 
 	dbUser, err := s.DB.CreateUser(r.Context(), params)
@@ -183,6 +199,7 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 		dbUser = updatedUser
 	}
 
+	dbUser.AvatarUrl = s.formatAvatarURL(dbUser.AvatarUrl, dbUser.ID)
 	s.respondJSON(w, http.StatusCreated, UserResponse{User: dbUser})
 }
 
@@ -248,6 +265,7 @@ func (s *Server) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.setCookie(w, sessionCookieName, sessionID, sessionDuration, true)
+	dbUser.AvatarUrl = s.formatAvatarURL(dbUser.AvatarUrl, dbUser.ID)
 	s.respondJSON(w, http.StatusOK, UserResponse{User: dbUser})
 }
 
@@ -321,6 +339,7 @@ func (s *Server) GetAuthMe(w http.ResponseWriter, r *http.Request) {
 		s.jsonError(w, "unauthorized", err.Error(), http.StatusUnauthorized)
 		return
 	}
+	dbUser.AvatarUrl = s.formatAvatarURL(dbUser.AvatarUrl, dbUser.ID)
 	s.respondJSON(w, http.StatusOK, UserResponse{User: dbUser})
 }
 
@@ -356,6 +375,7 @@ func (s *Server) PutAuthMe(w http.ResponseWriter, r *http.Request) {
 		Name:      payload.Name,
 		Programid: int64(payload.Programid),
 		Theme:     payload.Theme,
+		Private:   s.boolToInt(payload.Private),
 	})
 	if err != nil {
 		s.Log.Printf("Failed to update user profile: %v", err)
@@ -439,6 +459,7 @@ func (s *Server) GetUsers(w http.ResponseWriter, r *http.Request) {
 
 	apiUsers := make([]UserResponse, 0, len(dbUsers))
 	for _, user := range dbUsers {
+		user.AvatarUrl = s.formatAvatarURL(user.AvatarUrl, user.ID)
 		apiUsers = append(apiUsers, UserResponse{User: user})
 	}
 
@@ -475,6 +496,7 @@ func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request) {
 	if authErr == nil && (authUser.ID == id || authUser.Role == "admin") {
 		// Ensure token is hidden even for self if you want, but usually self can see it?
 		// Actually Model already has json tag for it. Let's just null it out if strictly private.
+		dbUser.AvatarUrl = s.formatAvatarURL(dbUser.AvatarUrl, dbUser.ID)
 		resp := UserResponse{User: dbUser}
 		if authUser.Role != "admin" {
 			resp.VerificationToken = nil // Hide token even from self if not needed
@@ -483,7 +505,20 @@ func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Otherwise check for privacy
+	if dbUser.Private == 1 {
+		s.respondJSON(w, http.StatusOK, PublicUserResponse{
+			ID:        dbUser.ID,
+			Name:      dbUser.ID,
+			Role:      dbUser.Role,
+			Private:   1,
+			CreatedAt: dbUser.CreatedAt,
+		})
+		return
+	}
+
 	// Otherwise return public profile
+	dbUser.AvatarUrl = s.formatAvatarURL(dbUser.AvatarUrl, dbUser.ID)
 	s.respondJSON(w, http.StatusOK, PublicUserResponse{
 		ID:        dbUser.ID,
 		Name:      dbUser.Name,
@@ -493,6 +528,8 @@ func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request) {
 		Programid: dbUser.Programid,
 		CreatedAt: dbUser.CreatedAt,
 		Theme:     dbUser.Theme,
+		Private:   dbUser.Private,
+		AvatarUrl: dbUser.AvatarUrl,
 	})
 }
 
@@ -557,4 +594,134 @@ func (s *Server) checkCSRF(r *http.Request) error {
 		return errors.New("invalid CSRF token")
 	}
 	return nil
+}
+func (s *Server) boolToInt(b bool) int64 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// PostAuthAvatarGenerate regenerates the user's avatar
+// @Summary Regenerate user avatar
+// @Tags Auth
+// @Security Session
+// @Success 204 "No Content"
+// @Failure 401 {object} ErrorResponse
+// @Router /auth/me/avatar/generate [post]
+func (s *Server) PostAuthAvatarGenerate(w http.ResponseWriter, r *http.Request) {
+	_, user, err := s.authenticate(w, r)
+	if err != nil {
+		s.jsonError(w, "unauthorized", "Not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	avatarPath, err := s.Avatars.GenerateAndStoreAvatar(r.Context(), user.ID)
+	if err != nil {
+		s.Log.Printf("Failed to regenerate avatar for %s: %v", user.ID, err)
+		s.jsonError(w, "avatar_generation_error", "Failed to generate avatar", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = s.DB.UpdateUserAvatar(r.Context(), database.UpdateUserAvatarParams{
+		ID:        user.ID,
+		AvatarUrl: &avatarPath,
+	})
+	if err != nil {
+		s.Log.Printf("Failed to update avatar URL for %s: %v", user.ID, err)
+		s.jsonError(w, "database_error", "Failed to update user profile", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// GetAvatar serves the user avatar from the bucket
+// @Summary Get user avatar
+// @Tags Auth
+// @Param userId path string true "User ID"
+// @Param filename path string true "Filename"
+// @Produce image/svg+xml
+// @Success 200 {file} binary
+// @Router /auth/avatars/{userId}/{filename} [get]
+func (s *Server) GetAvatar(w http.ResponseWriter, r *http.Request) {
+	userID := chi.URLParam(r, "userId")
+	filename := chi.URLParam(r, "filename")
+	objectName := fmt.Sprintf("avatars/%s/%s", userID, filename)
+
+	obj, err := s.Store.GetObject(r.Context(), objectName)
+	if err != nil {
+		// If not found, generate it on the fly and store it
+		data, genErr := s.Avatars.FetchDicebearSVG(r.Context(), userID)
+		if genErr != nil {
+			s.Log.Printf("Failed to fetch default avatar for %s: %v", userID, genErr)
+			s.jsonError(w, "not_found", "Avatar not found and could not be generated", http.StatusNotFound)
+			return
+		}
+
+		// Store it in the bucket
+		uploadErr := s.Avatars.StoreAvatar(r.Context(), objectName, data)
+		if uploadErr != nil {
+			s.Log.Printf("Failed to store generated avatar for %s: %v", userID, uploadErr)
+			// Still serve the data even if storage failed
+		}
+
+		w.Header().Set("Content-Type", "image/svg+xml")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
+		w.Write(data)
+		return
+	}
+	defer obj.Close()
+
+	info, err := obj.Stat()
+	if err != nil {
+		// If Stat fails (e.g. object not found), generate it on the fly and store it
+		data, genErr := s.Avatars.FetchDicebearSVG(r.Context(), userID)
+		if genErr != nil {
+			s.Log.Printf("Failed to fetch default avatar for %s: %v", userID, genErr)
+			s.jsonError(w, "not_found", "Avatar not found and could not be generated", http.StatusNotFound)
+			return
+		}
+
+		// Store it in the bucket
+		// We use the same objectName that was requested
+		uploadErr := s.Avatars.StoreAvatar(r.Context(), objectName, data)
+		if uploadErr != nil {
+			s.Log.Printf("Failed to store generated avatar for %s: %v", userID, uploadErr)
+			// Still serve the data even if storage failed
+		}
+
+		w.Header().Set("Content-Type", "image/svg+xml")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
+		w.Write(data)
+		return
+	}
+
+	w.Header().Set("Content-Type", info.ContentType)
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", info.Size))
+	io.Copy(w, obj)
+}
+
+func (s *Server) formatAvatarURL(path *string, userID string) *string {
+	if path != nil && *path != "" {
+		// If it already starts with /api/auth/avatars, return as is (legacy or full url)
+		if strings.HasPrefix(*path, "/api/auth/avatars/") {
+			return path
+		}
+
+		// The path is stored as avatars/<userid>/<uuid>.svg
+		// The route is /api/auth/avatars/<userid>/<uuid>.svg which maps to GetAvatar handler
+		// Handler expects userID and filename param.
+		// Route: /auth/avatars/{userId}/{filename}
+		// We need to transform avatars/<userid>/<uuid>.svg -> /api/auth/avatars/<userid>/<uuid>.svg
+		// Simply removing "avatars/" prefix from stored path gives us <userid>/<uuid>.svg which fits URL structure
+
+		cleanPath := strings.TrimPrefix(*path, "avatars/")
+		url := fmt.Sprintf("/api/auth/avatars/%s", cleanPath)
+		return &url
+	}
+
+	// Fallback URL served by us, which will generate it on the fly if needed
+	url := fmt.Sprintf("/api/auth/avatars/%s/generated_v4.svg", userID)
+	return &url
 }
