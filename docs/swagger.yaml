@@ -1,5 +1,68 @@
 basePath: /api
 definitions:
+  auth.CommentRequest:
+    properties:
+      parent_id:
+        type: string
+      text:
+        type: string
+    type: object
+  auth.CommentResponse:
+    properties:
+      active:
+        type: integer
+      author_avatar_url:
+        type: string
+      author_id:
+        type: string
+      author_name:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      parent_id:
+        type: string
+      post_id:
+        type: string
+      text:
+        type: string
+      updated_at:
+        type: string
+      user_vote:
+        type: integer
+      votes:
+        type: integer
+    type: object
+  auth.CreatePostRequest:
+    properties:
+      body:
+        type: string
+      event_date:
+        type: string
+      image_url:
+        type: string
+      links:
+        items:
+          type: string
+        type: array
+      location:
+        type: string
+      pinned:
+        type: integer
+      programs:
+        items:
+          type: string
+        type: array
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      type:
+        type: string
+    type: object
   auth.CsrfResponse:
     properties:
       csrf:
@@ -80,6 +143,49 @@ definitions:
       type:
         type: string
     type: object
+  auth.PostResponse:
+    properties:
+      active:
+        type: integer
+      author_avatar_url:
+        type: string
+      author_id:
+        type: string
+      author_name:
+        type: string
+      body:
+        type: string
+      comment_count:
+        type: integer
+      created_at:
+        type: string
+      event_date:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      links:
+        type: string
+      location:
+        type: string
+      pinned:
+        type: integer
+      programs:
+        type: string
+      tags:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+      user_vote:
+        type: integer
+      votes:
+        type: integer
+    type: object
   auth.ProgramResponse:
     description: A study program including valid PO versions
     properties:
@@ -96,12 +202,16 @@ definitions:
     properties:
       active:
         type: integer
+      avatar_url:
+        type: string
       created_at:
         type: string
       id:
         type: string
       name:
         type: string
+      private:
+        type: integer
       programid:
         type: integer
       role:
@@ -158,6 +268,8 @@ definitions:
       name:
         example: Max Mustermann
         type: string
+      private:
+        type: boolean
       programid:
         example: 1
         type: integer
@@ -170,6 +282,8 @@ definitions:
     properties:
       active:
         type: integer
+      avatar_url:
+        type: string
       created_at:
         type: string
       email:
@@ -180,6 +294,8 @@ definitions:
         type: string
       password:
         type: string
+      private:
+        type: integer
       programid:
         type: integer
       role:
@@ -197,12 +313,129 @@ definitions:
       verified_until:
         type: string
     type: object
+  auth.VoteRequest:
+    properties:
+      vote:
+        description: 1 or -1
+        type: integer
+    type: object
+  database.Activity:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      target_id:
+        type: string
+      target_name:
+        type: string
+      type:
+        type: string
+      user_id:
+        type: string
+    type: object
+  database.ForumComment:
+    properties:
+      active:
+        type: integer
+      author_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      parent_id:
+        type: string
+      post_id:
+        type: string
+      text:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  database.ForumPost:
+    properties:
+      active:
+        type: integer
+      author_id:
+        type: string
+      body:
+        type: string
+      created_at:
+        type: string
+      event_date:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      links:
+        type: string
+      location:
+        type: string
+      pinned:
+        type: integer
+      programs:
+        type: string
+      tags:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+    type: object
 info:
   contact: {}
   description: API for the website of the FSV Informatik
   title: Fachschaft Informatik API
   version: "1.0"
 paths:
+  /activities:
+    get:
+      parameters:
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Activity'
+            type: array
+      summary: List all activities
+      tags:
+      - Activities
+  /auth/avatars/{userId}/{filename}:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Filename
+        in: path
+        name: filename
+        required: true
+        type: string
+      produces:
+      - image/svg+xml
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Get user avatar
+      tags:
+      - Auth
   /auth/csrf:
     get:
       responses:
@@ -284,6 +517,20 @@ paths:
           schema:
             $ref: '#/definitions/auth.ErrorResponse'
       summary: Update current user profile
+      tags:
+      - Auth
+  /auth/me/avatar/generate:
+    post:
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - Session: []
+      summary: Regenerate user avatar
       tags:
       - Auth
   /auth/notifications:
@@ -476,6 +723,26 @@ paths:
       summary: Delete exam
       tags:
       - Exams
+    get:
+      operationId: getExamsId
+      parameters:
+      - description: Exam ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.ExamResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: Get exam details
+      tags:
+      - Exams
     put:
       operationId: putExamsId
       parameters:
@@ -538,6 +805,218 @@ paths:
       summary: List exam versions
       tags:
       - Exams
+  /forum/comments/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Comment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Comment Content
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.CommentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.ForumComment'
+      summary: Update comment
+      tags:
+      - Forum
+  /forum/comments/{id}/vote:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Comment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Vote Value
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.VoteRequest'
+      responses:
+        "204":
+          description: No Content
+      summary: Vote for comment
+      tags:
+      - Forum
+  /forum/posts:
+    get:
+      parameters:
+      - description: Post type (forum, news, event)
+        in: query
+        name: type
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/auth.PostResponse'
+            type: array
+      summary: List forum posts
+      tags:
+      - Forum
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Post Content
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.CreatePostRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/database.ForumPost'
+      summary: Create forum post
+      tags:
+      - Forum
+  /forum/posts/{id}:
+    delete:
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete forum post
+      tags:
+      - Forum
+    get:
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.PostResponse'
+      summary: Get forum post
+      tags:
+      - Forum
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Post Content
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.CreatePostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.ForumPost'
+      summary: Update forum post
+      tags:
+      - Forum
+  /forum/posts/{id}/comments:
+    get:
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/auth.CommentResponse'
+            type: array
+      summary: List comments for post
+      tags:
+      - Forum
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Comment Content
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.CommentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/database.ForumComment'
+      summary: Add comment to post
+      tags:
+      - Forum
+  /forum/posts/{id}/vote:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Vote Value
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.VoteRequest'
+      responses:
+        "204":
+          description: No Content
+      summary: Vote for post
+      tags:
+      - Forum
   /programs:
     get:
       consumes:
@@ -672,4 +1151,30 @@ paths:
       tags:
       - Users
       - Auth
+  /users/{id}/activities:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Activity'
+            type: array
+      summary: List user activities
+      tags:
+      - Activities
 swagger: "2.0"
