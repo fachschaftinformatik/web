@@ -54,6 +54,10 @@ type Post = {
   pinned?: boolean;
 };
 
+type ReportTarget =
+  | { type: "post"; id: string }
+  | { type: "comment"; id: string; postId: string };
+
 type CommentAppearance = {
   surface: string;
   border: string;
@@ -153,6 +157,21 @@ function buildCommentTree(comments: Comment[]): CommentNode[] {
   return roots;
 }
 
+const removeCommentAndChildren = (comments: Comment[], commentId: string): Comment[] => {
+  const idsToRemove = new Set<string>([commentId]);
+  let foundNew = true;
+  while (foundNew) {
+    foundNew = false;
+    comments.forEach((comment) => {
+      if (comment.parentId && idsToRemove.has(comment.parentId) && !idsToRemove.has(comment.id)) {
+        idsToRemove.add(comment.id);
+        foundNew = true;
+      }
+    });
+  }
+  return comments.filter((comment) => !idsToRemove.has(comment.id));
+};
+
 const COMMENT_COLLAPSE_LIMIT = 6;
 const POSTS_PER_PAGE = 20;
 
@@ -207,19 +226,30 @@ export const FORUM_SEED_POSTS = SEED_POSTS;
 function CommentThread({
   node,
   onReply,
+  onReport,
+  onDelete,
   depth = 0,
   appearance,
   canReply,
+  currentAuthor,
+  canModerate,
 }: {
   node: CommentNode;
   onReply: (parentId: string, text: string) => void;
+  onReport: (commentId: string) => void;
+  onDelete: (commentId: string) => void;
   depth?: number;
   appearance: CommentAppearance;
   canReply: boolean;
+  currentAuthor: string;
+  canModerate: boolean;
 }) {
   const [replyOpen, setReplyOpen] = React.useState(false);
   const [text, setText] = React.useState("");
   const replyInputBg = appearance.surface === "#111a2a" ? "rgba(255,255,255,0.08)" : "#fff";
+  const [menuEl, setMenuEl] = React.useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(menuEl);
+  const canDelete = canModerate || (currentAuthor && node.author === currentAuthor);
 
   return (
     <Box
@@ -254,15 +284,48 @@ function CommentThread({
         }}
       >
         <Stack spacing={0.75}>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-            <Typography variant="subtitle2">{node.author}</Typography>
-            <Typography component="span" variant="caption" sx={{ color: appearance.textSecondary }}>
-              · {isoToShort(node.createdAt)}
-            </Typography>
+          <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+              <Typography variant="subtitle2">{node.author}</Typography>
+              <Typography component="span" variant="caption" sx={{ color: appearance.textSecondary }}>
+                · {isoToShort(node.createdAt)}
+              </Typography>
+            </Stack>
+            <IconButton
+              size="small"
+              aria-label="Kommentar-Aktionen"
+              onClick={(event) => setMenuEl(event.currentTarget)}
+            >
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+            <Menu
+              anchorEl={menuEl}
+              open={menuOpen}
+              onClose={() => setMenuEl(null)}
+            >
+              <MenuItem
+                onClick={() => {
+                  setMenuEl(null);
+                  onReport(node.id);
+                }}
+              >
+                Kommentar melden
+              </MenuItem>
+              {canDelete && (
+                <MenuItem
+                  onClick={() => {
+                    setMenuEl(null);
+                    onDelete(node.id);
+                  }}
+                >
+                  Kommentar löschen
+                </MenuItem>
+              )}
+            </Menu>
           </Stack>
           <Typography variant="body2">{renderTextWithMentions(node.text)}</Typography>
 
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} alignItems="center">
             <Button
               size="small"
               variant="text"
@@ -307,9 +370,13 @@ function CommentThread({
           key={child.id}
           node={child}
           onReply={onReply}
+          onReport={onReport}
+          onDelete={onDelete}
           depth={depth + 1}
           appearance={appearance}
           canReply={canReply}
+          currentAuthor={currentAuthor}
+          canModerate={canModerate}
         />
       ))}
     </Box>
@@ -330,6 +397,10 @@ function FocusedPost({
   onCloseFocus,
   fullPageMode,
   onBackToForum,
+  onReportComment,
+  onDeleteComment,
+  currentAuthor,
+  canModerate,
 }: {
   post: Post;
   onAddComment: (parentId: string | null, text: string) => void;
@@ -344,6 +415,10 @@ function FocusedPost({
   onCloseFocus: () => void;
   fullPageMode: boolean;
   onBackToForum?: () => void;
+  onReportComment: (commentId: string) => void;
+  onDeleteComment: (commentId: string) => void;
+  currentAuthor: string;
+  canModerate: boolean;
 }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -527,8 +602,12 @@ function FocusedPost({
             <CommentsSection
               comments={post.comments}
               onAdd={(parentId, text) => onAddComment(parentId, text)}
+              onReportComment={onReportComment}
+              onDeleteComment={onDeleteComment}
               appearance={commentAppearance}
               canComment={canComment}
+              currentAuthor={currentAuthor}
+              canModerate={canModerate}
               disabledHelper={commentDisabledReason}
               flat={fullPageMode}
               disableCollapse={fullPageMode}
@@ -564,16 +643,24 @@ function FocusedPost({
 function CommentsSection({
   comments,
   onAdd,
+  onReportComment,
+  onDeleteComment,
   appearance,
   canComment,
+  currentAuthor,
+  canModerate,
   disabledHelper,
   flat = false,
   disableCollapse = false,
 }: {
   comments: Comment[];
   onAdd: (parentId: string | null, text: string) => void;
+  onReportComment: (commentId: string) => void;
+  onDeleteComment: (commentId: string) => void;
   appearance: CommentAppearance;
   canComment: boolean;
+  currentAuthor: string;
+  canModerate: boolean;
   disabledHelper?: string;
   flat?: boolean;
   disableCollapse?: boolean;
@@ -609,11 +696,15 @@ function CommentsSection({
           key={root.id}
           node={root}
           onReply={(pid, t) => handleAdd(pid, t)}
+          onReport={onReportComment}
+          onDelete={onDeleteComment}
           appearance={appearance}
           canReply={canComment}
+          currentAuthor={currentAuthor}
+          canModerate={canModerate}
         />
       )),
-    [tree, handleAdd, appearance, canComment]
+    [tree, handleAdd, onReportComment, onDeleteComment, appearance, canComment, currentAuthor, canModerate]
   );
 
   return (
@@ -770,6 +861,8 @@ function PostItem({
   onAddComment,
   onDelete,
   onReport,
+  onReportComment,
+  onDeleteComment,
   onOpenDetail,
   onOpenInWindow,
   onTogglePin,
@@ -787,6 +880,8 @@ function PostItem({
   onAddComment: (postId: string, parentId: string | null, text: string) => void;
   onDelete: (id: string) => void;
   onReport: (id: string) => void;
+  onReportComment: (commentId: string) => void;
+  onDeleteComment: (commentId: string) => void;
   onOpenDetail: (post: Post) => void;
   onOpenInWindow: (post: Post, options?: { view?: "full" | null }) => void;
   onTogglePin: (id: string) => void;
@@ -802,7 +897,7 @@ function PostItem({
   const isDark = theme.palette.mode === "dark";
   const netVotes = post.votes + (vote as number);
   const canDelete = canModerate || (currentAuthor && post.author === currentAuthor);
-  const canPin = true;
+  const canPin = canModerate;
   const [menuEl, setMenuEl] = React.useState<null | HTMLElement>(null);
   const openMenu = Boolean(menuEl);
   const handleOpenDetail = () => onOpenDetail(post);
@@ -952,8 +1047,12 @@ function PostItem({
             <CommentsSection
               comments={post.comments}
               onAdd={(parentId, text) => onAddComment(post.id, parentId, text)}
+              onReportComment={onReportComment}
+              onDeleteComment={onDeleteComment}
               appearance={commentAppearance}
               canComment={canComment}
+              currentAuthor={currentAuthor}
+              canModerate={canModerate}
               disabledHelper={commentDisabledReason}
               flat={false}
               disableCollapse={false}
@@ -1299,6 +1398,7 @@ export default function ForumStandalone() {
 
   const handleVote = (id: string, v: Vote) => setVotes((prev) => ({ ...prev, [id]: v }));
   const togglePin = (id: string) => {
+    if (!isAdmin) return;
     setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, pinned: !p.pinned } : p)));
   };
 
@@ -1378,20 +1478,54 @@ export default function ForumStandalone() {
     }
   };
 
+  const handleDeleteComment = React.useCallback(
+    (postId: string, commentId: string) => {
+      setPosts((prev) =>
+        prev.map((post) => {
+          if (post.id !== postId) return post;
+          const target = post.comments.find((comment) => comment.id === commentId);
+          if (!target) return post;
+          const allowed = isAdmin || (activeUserName && target.author === activeUserName);
+          if (!allowed) return post;
+          return { ...post, comments: removeCommentAndChildren(post.comments, commentId) };
+        })
+      );
+    },
+    [isAdmin, activeUserName]
+  );
+
   // Report Dialog
-  const [reportFor, setReportFor] = React.useState<string | null>(null);
+  const [reportTarget, setReportTarget] = React.useState<ReportTarget | null>(null);
   const [reportReason, setReportReason] = React.useState("Spam / Werbung");
   const [reportNote, setReportNote] = React.useState("");
-  const openReport = (id: string) => setReportFor(id);
+  const openReport = (target: ReportTarget) => setReportTarget(target);
   const closeReport = () => {
-    setReportFor(null);
+    setReportTarget(null);
     setReportNote("");
   };
   const sendReport = () => {
     // hier würdest du an ein Backend schicken - wir loggen nur:
-    console.log("Report:", { postId: reportFor, reason: reportReason, note: reportNote });
+    if (!reportTarget) return;
+    const payload =
+      reportTarget.type === "comment"
+        ? {
+            type: "comment",
+            commentId: reportTarget.id,
+            postId: reportTarget.postId,
+            reason: reportReason,
+            note: reportNote,
+          }
+        : {
+            type: "post",
+            postId: reportTarget.id,
+            reason: reportReason,
+            note: reportNote,
+          };
+    console.log("Report:", payload);
     closeReport();
   };
+
+  const reportLabel = reportTarget?.type === "comment" ? "Kommentar" : "Beitrag";
 
   const createButton = (
     <Tooltip
@@ -1443,6 +1577,12 @@ export default function ForumStandalone() {
                 onCloseFocus={handleBackToForum}
                 fullPageMode
                 onBackToForum={handleBackToForum}
+                onReportComment={(commentId) =>
+                  openReport({ type: "comment", id: commentId, postId: focusedPost.id })
+                }
+                onDeleteComment={(commentId) => handleDeleteComment(focusedPost.id, commentId)}
+                currentAuthor={activeUserName}
+                canModerate={isAdmin}
               />
             ) : (
               <Paper
@@ -1578,7 +1718,9 @@ export default function ForumStandalone() {
                     onVote={handleVote}
                     onAddComment={handleAddComment}
                     onDelete={handleDelete}
-                    onReport={openReport}
+                    onReport={(id) => openReport({ type: "post", id })}
+                    onReportComment={(commentId) => openReport({ type: "comment", id: commentId, postId: p.id })}
+                    onDeleteComment={(commentId) => handleDeleteComment(p.id, commentId)}
                     onOpenDetail={openDetail}
                     onOpenInWindow={openPostWindow}
                     onTogglePin={togglePin}
@@ -1766,8 +1908,14 @@ export default function ForumStandalone() {
                 <CommentsSection
                   comments={detailPost.comments}
                   onAdd={(parentId, text) => handleAddComment(detailPost.id, parentId, text)}
+                  onReportComment={(commentId) =>
+                    openReport({ type: "comment", id: commentId, postId: detailPost.id })
+                  }
+                  onDeleteComment={(commentId) => handleDeleteComment(detailPost.id, commentId)}
                   appearance={commentAppearance}
                   canComment={canComment}
+                  currentAuthor={activeUserName}
+                  canModerate={isAdmin}
                   disabledHelper="Bitte einloggen, um zu kommentieren."
                 />
 
@@ -1876,8 +2024,8 @@ export default function ForumStandalone() {
         </DialogActions>
       </Dialog>
       {/* Report Dialog */}
-      <Dialog open={!!reportFor} onClose={closeReport} maxWidth="xs" fullWidth>
-        <DialogTitle>Beitrag melden</DialogTitle>
+      <Dialog open={!!reportTarget} onClose={closeReport} maxWidth="xs" fullWidth>
+        <DialogTitle>{reportLabel} melden</DialogTitle>
         <DialogContent dividers>
           <Typography variant="body2" sx={{ mb: 1 }}>
             Wähle einen Grund:
