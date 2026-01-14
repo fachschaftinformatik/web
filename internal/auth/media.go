@@ -273,6 +273,42 @@ func (s *Server) PostMedia(w http.ResponseWriter, r *http.Request) {
 	s.respondJSON(w, http.StatusCreated, map[string]string{"status": "created"})
 }
 
+func (s *Server) GetMediaById(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	m, err := s.DB.GetMedia(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			s.jsonError(w, "not_found", "Media not found", http.StatusNotFound)
+		} else {
+			s.Log.Printf("DB GetMedia error: %v", err)
+			s.jsonError(w, "database_error", "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	t, _ := time.Parse(time.RFC3339, m.UploadedAt)
+	var desc string
+	if m.Description != nil {
+		desc = *m.Description
+	}
+	var title string
+	if m.Title != nil {
+		title = *m.Title
+	}
+
+	res := MediaResponse{
+		ID:           m.ID,
+		EventID:      m.EventID,
+		Title:        title,
+		Description:  desc,
+		UploadedAt:   t,
+		UploaderName: m.UploaderName,
+		MimeType:     m.MimeType,
+	}
+	s.respondJSON(w, http.StatusOK, res)
+}
+
 func (s *Server) GetMediaFile(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
