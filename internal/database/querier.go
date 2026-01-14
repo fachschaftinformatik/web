@@ -35,7 +35,7 @@ type Querier interface {
 	GetForumComment(ctx context.Context, id string) (ForumComment, error)
 	GetForumPost(ctx context.Context, arg GetForumPostParams) (GetForumPostRow, error)
 	GetLatestByGroupId(ctx context.Context, groupID string) (Exam, error)
-	GetMedia(ctx context.Context, id string) (Medium, error)
+	GetMedia(ctx context.Context, id string) (GetMediaRow, error)
 	GetModule(ctx context.Context, id int64) (Module, error)
 	GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error)
 	GetSession(ctx context.Context, id string) (Session, error)

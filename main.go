@@ -104,6 +104,7 @@ func main() {
 		r.Get("/events/{id}/cover", authServer.GetEventCover)
 		r.Get("/media", authServer.GetMedia)
 		r.Post("/media", authServer.PostMedia)
+		r.Get("/media/{id}", authServer.GetMediaById)
 		r.Get("/media/{id}/file", authServer.GetMediaFile)
 
 		// Forum
