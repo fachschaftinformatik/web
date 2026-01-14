@@ -4,6 +4,15 @@
 
 package database
 
+type Activity struct {
+	ID         string  `json:"id"`
+	UserID     string  `json:"user_id"`
+	Type       string  `json:"type"`
+	TargetID   string  `json:"target_id"`
+	CreatedAt  string  `json:"created_at"`
+	TargetName *string `json:"target_name"`
+}
+
 type Comment struct {
 	ID        string `json:"id"`
 	Postid    string `json:"postid"`
@@ -36,6 +45,47 @@ type Exam struct {
 	GroupID     string  `json:"group_id"`
 	EditVersion int64   `json:"edit_version"`
 	IsLatest    int64   `json:"is_latest"`
+}
+
+type ForumComment struct {
+	ID        string  `json:"id"`
+	PostID    string  `json:"post_id"`
+	AuthorID  string  `json:"author_id"`
+	ParentID  *string `json:"parent_id"`
+	Text      string  `json:"text"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+	Active    int64   `json:"active"`
+}
+
+type ForumCommentVote struct {
+	CommentID string `json:"comment_id"`
+	UserID    string `json:"user_id"`
+	Vote      int64  `json:"vote"`
+}
+
+type ForumPost struct {
+	ID        string  `json:"id"`
+	Title     string  `json:"title"`
+	Body      string  `json:"body"`
+	AuthorID  string  `json:"author_id"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+	Pinned    int64   `json:"pinned"`
+	Type      string  `json:"type"`
+	Programs  string  `json:"programs"`
+	Tags      string  `json:"tags"`
+	EventDate *string `json:"event_date"`
+	Location  *string `json:"location"`
+	ImageUrl  *string `json:"image_url"`
+	Links     string  `json:"links"`
+	Active    int64   `json:"active"`
+}
+
+type ForumVote struct {
+	PostID string `json:"post_id"`
+	UserID string `json:"user_id"`
+	Vote   int64  `json:"vote"`
 }
 
 type Medium struct {
@@ -113,4 +163,6 @@ type User struct {
 	UpdatedAt         string  `json:"updated_at"`
 	VerificationToken *string `json:"verification_token"`
 	Theme             string  `json:"theme"`
+	Private           int64   `json:"private"`
+	AvatarUrl         *string `json:"avatar_url"`
 }

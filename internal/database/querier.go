@@ -11,8 +11,12 @@ import (
 type Querier interface {
 	ClearLatestFlag(ctx context.Context, groupID string) error
 	CountUnreadNotifications(ctx context.Context, userid string) (int64, error)
+	CountUserActivities(ctx context.Context, userID string) (int64, error)
+	CreateActivity(ctx context.Context, arg CreateActivityParams) (Activity, error)
 	CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error)
 	CreateExam(ctx context.Context, arg CreateExamParams) (Exam, error)
+	CreateForumComment(ctx context.Context, arg CreateForumCommentParams) (ForumComment, error)
+	CreateForumPost(ctx context.Context, arg CreateForumPostParams) (ForumPost, error)
 	CreateMedia(ctx context.Context, arg CreateMediaParams) (Medium, error)
 	CreateModule(ctx context.Context, arg CreateModuleParams) (Module, error)
 	CreateNotification(ctx context.Context, arg CreateNotificationParams) (Notification, error)
@@ -20,11 +24,16 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteExam(ctx context.Context, id string) error
 	DeleteExpiredSessions(ctx context.Context) error
+	DeleteForumComment(ctx context.Context, id string) error
+	DeleteForumPost(ctx context.Context, id string) error
 	DeleteMedia(ctx context.Context, id string) error
 	DeleteSession(ctx context.Context, id string) error
 	DeleteUserSessions(ctx context.Context, userid string) error
 	GetEvent(ctx context.Context, id int64) (Event, error)
 	GetExam(ctx context.Context, id string) (Exam, error)
+	GetExamDetails(ctx context.Context, id string) (GetExamDetailsRow, error)
+	GetForumComment(ctx context.Context, id string) (ForumComment, error)
+	GetForumPost(ctx context.Context, arg GetForumPostParams) (GetForumPostRow, error)
 	GetLatestByGroupId(ctx context.Context, groupID string) (Exam, error)
 	GetMedia(ctx context.Context, id string) (Medium, error)
 	GetModule(ctx context.Context, id int64) (Module, error)
@@ -33,19 +42,26 @@ type Querier interface {
 	GetUser(ctx context.Context, id string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByVerificationToken(ctx context.Context, verificationToken *string) (User, error)
+	ListAllActivities(ctx context.Context, arg ListAllActivitiesParams) ([]ListAllActivitiesRow, error)
 	ListEvents(ctx context.Context) ([]Event, error)
 	ListExamVersions(ctx context.Context, groupID string) ([]ListExamVersionsRow, error)
 	ListExams(ctx context.Context, arg ListExamsParams) ([]ListExamsRow, error)
+	ListForumComments(ctx context.Context, arg ListForumCommentsParams) ([]ListForumCommentsRow, error)
+	ListForumPosts(ctx context.Context, arg ListForumPostsParams) ([]ListForumPostsRow, error)
+	ListForumPostsTop(ctx context.Context, arg ListForumPostsTopParams) ([]ListForumPostsTopRow, error)
 	ListMediaByEvent(ctx context.Context, eventID int64) ([]ListMediaByEventRow, error)
 	ListModulesByProgram(ctx context.Context, programid int64) ([]Module, error)
 	ListNotifications(ctx context.Context, userid string) ([]Notification, error)
 	ListProgramsWithVersions(ctx context.Context) ([]ListProgramsWithVersionsRow, error)
+	ListUserActivities(ctx context.Context, arg ListUserActivitiesParams) ([]ListUserActivitiesRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	ListUsersForNotification(ctx context.Context) ([]string, error)
 	MarkAllNotificationsAsRead(ctx context.Context, userid string) error
 	MarkNotificationAsRead(ctx context.Context, arg MarkNotificationAsReadParams) (Notification, error)
 	SearchExams(ctx context.Context, query *string) ([]SearchExamsRow, error)
+	SearchForumPosts(ctx context.Context, arg SearchForumPostsParams) ([]SearchForumPostsRow, error)
 	SearchModules(ctx context.Context, query *string) ([]Module, error)
+	SearchUsers(ctx context.Context, query string) ([]User, error)
 	SetUserActive(ctx context.Context, arg SetUserActiveParams) (User, error)
 	SetUserRole(ctx context.Context, arg SetUserRoleParams) (User, error)
 	SlideSession(ctx context.Context, arg SlideSessionParams) (Session, error)
@@ -53,9 +69,14 @@ type Querier interface {
 	TouchSession(ctx context.Context, id string) (Session, error)
 	UnverifyUser(ctx context.Context, id string) (User, error)
 	UpdateExam(ctx context.Context, arg UpdateExamParams) (Exam, error)
+	UpdateForumComment(ctx context.Context, arg UpdateForumCommentParams) (ForumComment, error)
+	UpdateForumPost(ctx context.Context, arg UpdateForumPostParams) (ForumPost, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarParams) (User, error)
 	UpdateUserToken(ctx context.Context, arg UpdateUserTokenParams) error
 	UpdateUserVerificationWindow(ctx context.Context, arg UpdateUserVerificationWindowParams) (User, error)
+	UpsertForumCommentVote(ctx context.Context, arg UpsertForumCommentVoteParams) (ForumCommentVote, error)
+	UpsertForumVote(ctx context.Context, arg UpsertForumVoteParams) (ForumVote, error)
 	VerifyUser(ctx context.Context, arg VerifyUserParams) (User, error)
 }
 
