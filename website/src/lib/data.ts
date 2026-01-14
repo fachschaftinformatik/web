@@ -342,6 +342,18 @@ export type TeamSection = {
   members: TeamMember[];
 };
 
+export const teamEmailOptions = [
+  "vorsitz.informatik@fsv-whs.de",
+  "stellv.vorsitz.informatik@fsv-whs.de",
+  "finanzen.informatik@fsv-whs.de",
+  "kultur.informatik@fsv-whs.de",
+  "edv.informatik@fsv-whs.de",
+  "hopo.informatik@fsv-whs.de",
+  "oeffentlichkeit.informatik@fsv-whs.de",
+  "beschaffung.informatik@fsv-whs.de",
+  "kassenwart.informatik@fsv-whs.de",
+] as const;
+
 export const teamSections: TeamSection[] = [
   {
     id: "vorstand",
