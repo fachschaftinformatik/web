@@ -31,6 +31,7 @@ export default function SettingsPage() {
     const [programId, setProgramId] = useState<number>(Number(user?.programid) || 0);
     const [themePreference, setThemePreference] = useState<ThemePreference>(user?.theme as ThemePreference || 'system');
     const [loading, setLoading] = useState(false);
+    const [isPrivate, setIsPrivate] = useState(user?.private === 1);
     const [success, setSuccess] = useState("");
     const [error, setError] = useState("");
     const { setPreference } = useThemeMode();
@@ -41,6 +42,7 @@ export default function SettingsPage() {
 
     const isDirty = name !== (user?.name || "") ||
         programId !== (Number(user?.programid) || 0) ||
+        isPrivate !== (user?.private === 1) ||
         themePreference !== (user?.theme || 'system');
 
     useEffect(() => {
@@ -56,6 +58,7 @@ export default function SettingsPage() {
             setName(user.name || "");
             setProgramId(Number(user.programid));
             setThemePreference(user.theme as ThemePreference || 'system');
+            setIsPrivate(user.private === 1);
         }
     }, [user]);
 
@@ -68,7 +71,7 @@ export default function SettingsPage() {
             const token = csrfData?.csrf;
 
             const res = await putAuthMe({
-                body: { name, programid: programId, theme: themePreference },
+                body: { name, programid: programId, theme: themePreference, private: isPrivate },
                 headers: { "X-CSRF-Token": token || "" }
             });
 
@@ -196,6 +199,25 @@ export default function SettingsPage() {
                                     <MenuItem disabled value={0}>Lädt...</MenuItem>
                                 )}
                             </TextField>
+                        </Stack>
+                    </Paper>
+
+                    <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                        <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 2 }}>
+                            Privatsphäre
+                        </Typography>
+                        <Stack spacing={1}>
+                            <FormControlLabel
+                                control={<Switch checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} color="primary" />}
+                                label={
+                                    <Box>
+                                        <Typography variant="body2" fontWeight={600}>Privates Profil</Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Wenn aktiviert, sind deine Aktivitäten und Details für andere Nutzer verborgen.
+                                        </Typography>
+                                    </Box>
+                                }
+                            />
                         </Stack>
                     </Paper>
 

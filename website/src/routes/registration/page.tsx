@@ -20,8 +20,13 @@ import InputLabel from '@mui/material/InputLabel';
 import InputAdornment from '@mui/material/InputAdornment';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
+import Tooltip from '@mui/material/Tooltip';
+import { useTheme, alpha } from '@mui/material/styles';
+import { useThemeMode } from '@lib/theme';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
+import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
 
 import { getPrograms, postAuthRegister } from '@lib/api';
 import type { AuthProgramResponse as Program } from '@lib/api';
@@ -72,6 +77,32 @@ export default function RegistrationPage() {
   const [errors, setErrors] = useState<Partial<Record<keyof RegistrationFormData, string>> & { global?: string }>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { mode, setPreference } = useThemeMode();
+  const theme = useTheme();
+
+  const handleThemeToggle = () => {
+    const nextMode = mode === 'light' ? 'dark' : 'light';
+    setPreference(nextMode);
+  };
+
+  const toggleBtnStyle = {
+    border: '1px solid ' + alpha(theme.palette.primary.main, mode === 'dark' ? 0.5 : 0.25),
+    transition: theme.transitions.create(['background-color', 'border-color'], {
+      duration: theme.transitions.duration.shortest,
+    }),
+    '&:hover': {
+      borderColor: alpha(theme.palette.primary.main, 0.6),
+      bgcolor: mode === 'dark'
+        ? alpha(theme.palette.primary.dark, 0.55)
+        : alpha(theme.palette.primary.main, 0.2)
+    },
+    bgcolor: mode === 'dark'
+      ? alpha(theme.palette.primary.dark, 0.35)
+      : alpha(theme.palette.primary.main, 0.1),
+    color: mode === 'dark'
+      ? theme.palette.primary.contrastText
+      : theme.palette.primary.main
+  };
 
   useEffect(() => {
     document.title = "Registrieren | FSV Informatik";
@@ -302,6 +333,17 @@ export default function RegistrationPage() {
             <Link component={RouterLink} to="/login" variant="body2">
               Bereits registriert? Anmelden
             </Link>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <Tooltip title="Farbschema wechseln">
+              <IconButton
+                aria-label="toggle color mode"
+                onClick={handleThemeToggle}
+                sx={toggleBtnStyle}
+              >
+                {mode === 'dark' ? <Brightness7Rounded /> : <Brightness4Rounded />}
+              </IconButton>
+            </Tooltip>
           </Box>
         </Box>
       </Box>
