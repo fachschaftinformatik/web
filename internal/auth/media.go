@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/sid"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -232,11 +233,15 @@ func (s *Server) PostMedia(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var titlePtr, descPtr *string
-	if title != "" { titlePtr = &title }
-	if description != "" { descPtr = &description }
+	if title != "" {
+		titlePtr = &title
+	}
+	if description != "" {
+		descPtr = &description
+	}
 
 	params := database.CreateMediaParams{
-		ID:          uuid.NewString(),
+		ID:          sid.New(),
 		EventID:     eventId,
 		Userid:      user.ID,
 		Title:       titlePtr,
@@ -252,13 +257,25 @@ func (s *Server) PostMedia(w http.ResponseWriter, r *http.Request) {
 		s.jsonError(w, "database_error", "Failed to save metadata", http.StatusInternalServerError)
 		return
 	}
+	// Log activity
+	activityTargetName := "Bild in Galerie"
+	if title != "" {
+		activityTargetName = title
+	}
+	_, _ = s.DB.CreateActivity(r.Context(), database.CreateActivityParams{
+		ID:         sid.New(),
+		UserID:     user.ID,
+		Type:       "MEDIA_UPLOADED",
+		TargetID:   params.ID,
+		TargetName: &activityTargetName,
+	})
 
 	s.respondJSON(w, http.StatusCreated, map[string]string{"status": "created"})
 }
 
 func (s *Server) GetMediaFile(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	
+
 	media, err := s.DB.GetMedia(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
