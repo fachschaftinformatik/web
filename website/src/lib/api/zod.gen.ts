@@ -2,6 +2,39 @@
 
 import { z } from 'zod';
 
+export const zAuthCommentRequest = z.object({
+    parent_id: z.optional(z.string()),
+    text: z.optional(z.string())
+});
+
+export const zAuthCommentResponse = z.object({
+    active: z.optional(z.int()),
+    author_avatar_url: z.optional(z.string()),
+    author_id: z.optional(z.string()),
+    author_name: z.optional(z.string()),
+    created_at: z.optional(z.string()),
+    id: z.optional(z.string()),
+    parent_id: z.optional(z.string()),
+    post_id: z.optional(z.string()),
+    text: z.optional(z.string()),
+    updated_at: z.optional(z.string()),
+    user_vote: z.optional(z.int()),
+    votes: z.optional(z.int())
+});
+
+export const zAuthCreatePostRequest = z.object({
+    body: z.optional(z.string()),
+    event_date: z.optional(z.string()),
+    image_url: z.optional(z.string()),
+    links: z.optional(z.array(z.string())),
+    location: z.optional(z.string()),
+    pinned: z.optional(z.int()),
+    programs: z.optional(z.array(z.string())),
+    tags: z.optional(z.array(z.string())),
+    title: z.optional(z.string()),
+    type: z.optional(z.string())
+});
+
 export const zAuthCsrfResponse = z.object({
     csrf: z.optional(z.string())
 });
@@ -54,6 +87,29 @@ export const zAuthNotificationResponse = z.object({
     type: z.optional(z.string())
 });
 
+export const zAuthPostResponse = z.object({
+    active: z.optional(z.int()),
+    author_avatar_url: z.optional(z.string()),
+    author_id: z.optional(z.string()),
+    author_name: z.optional(z.string()),
+    body: z.optional(z.string()),
+    comment_count: z.optional(z.int()),
+    created_at: z.optional(z.string()),
+    event_date: z.optional(z.string()),
+    id: z.optional(z.string()),
+    image_url: z.optional(z.string()),
+    links: z.optional(z.string()),
+    location: z.optional(z.string()),
+    pinned: z.optional(z.int()),
+    programs: z.optional(z.string()),
+    tags: z.optional(z.string()),
+    title: z.optional(z.string()),
+    type: z.optional(z.string()),
+    updated_at: z.optional(z.string()),
+    user_vote: z.optional(z.int()),
+    votes: z.optional(z.int())
+});
+
 /**
  * A study program including valid PO versions
  */
@@ -65,9 +121,11 @@ export const zAuthProgramResponse = z.object({
 
 export const zAuthPublicUserResponse = z.object({
     active: z.optional(z.int()),
+    avatar_url: z.optional(z.string()),
     created_at: z.optional(z.string()),
     id: z.optional(z.string()),
     name: z.optional(z.string()),
+    private: z.optional(z.int()),
     programid: z.optional(z.int()),
     role: z.optional(z.string()),
     theme: z.optional(z.string()),
@@ -99,6 +157,7 @@ export const zAuthUpdateExamRequest = z.object({
 
 export const zAuthUpdateProfileRequest = z.object({
     name: z.optional(z.string()),
+    private: z.optional(z.boolean()),
     programid: z.optional(z.int()),
     theme: z.optional(z.string())
 });
@@ -108,11 +167,13 @@ export const zAuthUpdateProfileRequest = z.object({
  */
 export const zAuthUserResponse = z.object({
     active: z.optional(z.int()),
+    avatar_url: z.optional(z.string()),
     created_at: z.optional(z.string()),
     email: z.optional(z.string()),
     id: z.optional(z.string()),
     name: z.optional(z.string()),
     password: z.optional(z.string()),
+    private: z.optional(z.int()),
     programid: z.optional(z.int()),
     role: z.optional(z.string()),
     theme: z.optional(z.string()),
@@ -121,6 +182,71 @@ export const zAuthUserResponse = z.object({
     verified: z.optional(z.int()),
     verified_at: z.optional(z.string()),
     verified_until: z.optional(z.string())
+});
+
+export const zAuthVoteRequest = z.object({
+    vote: z.optional(z.int())
+});
+
+export const zDatabaseActivity = z.object({
+    created_at: z.optional(z.string()),
+    id: z.optional(z.string()),
+    target_id: z.optional(z.string()),
+    target_name: z.optional(z.string()),
+    type: z.optional(z.string()),
+    user_id: z.optional(z.string())
+});
+
+export const zDatabaseForumComment = z.object({
+    active: z.optional(z.int()),
+    author_id: z.optional(z.string()),
+    created_at: z.optional(z.string()),
+    id: z.optional(z.string()),
+    parent_id: z.optional(z.string()),
+    post_id: z.optional(z.string()),
+    text: z.optional(z.string()),
+    updated_at: z.optional(z.string())
+});
+
+export const zDatabaseForumPost = z.object({
+    active: z.optional(z.int()),
+    author_id: z.optional(z.string()),
+    body: z.optional(z.string()),
+    created_at: z.optional(z.string()),
+    event_date: z.optional(z.string()),
+    id: z.optional(z.string()),
+    image_url: z.optional(z.string()),
+    links: z.optional(z.string()),
+    location: z.optional(z.string()),
+    pinned: z.optional(z.int()),
+    programs: z.optional(z.string()),
+    tags: z.optional(z.string()),
+    title: z.optional(z.string()),
+    type: z.optional(z.string()),
+    updated_at: z.optional(z.string())
+});
+
+export const zGetActivitiesData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.object({
+        limit: z.optional(z.int()),
+        offset: z.optional(z.int())
+    }))
+});
+
+/**
+ * OK
+ */
+export const zGetActivitiesResponse = z.array(zDatabaseActivity);
+
+export const zGetAuthAvatarsByUserIdByFilenameData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        userId: z.string(),
+        filename: z.string()
+    }),
+    query: z.optional(z.never())
 });
 
 export const zGetAuthCsrfData = z.object({
@@ -175,6 +301,12 @@ export const zPutAuthMeData = z.object({
  * OK
  */
 export const zPutAuthMeResponse = zAuthUserResponse;
+
+export const zPostAuthMeAvatarGenerateData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
 
 export const zGetAuthNotificationsData = z.object({
     body: z.optional(z.never()),
@@ -267,6 +399,19 @@ export const zDeleteExamsIdData = z.object({
     query: z.optional(z.never())
 });
 
+export const zGetExamsIdData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetExamsIdResponse = zAuthExamResponse;
+
 export const zPutExamsIdData = z.object({
     body: zAuthUpdateExamRequest,
     path: z.object({
@@ -300,6 +445,121 @@ export const zGetExamVersionsData = z.object({
  * OK
  */
 export const zGetExamVersionsResponse = z.array(zAuthExamResponse);
+
+export const zPutForumCommentsByIdData = z.object({
+    body: zAuthCommentRequest,
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zPutForumCommentsByIdResponse = zDatabaseForumComment;
+
+export const zPostForumCommentsByIdVoteData = z.object({
+    body: zAuthVoteRequest,
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+export const zGetForumPostsData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.object({
+        type: z.optional(z.string()),
+        limit: z.optional(z.int()),
+        offset: z.optional(z.int())
+    }))
+});
+
+/**
+ * OK
+ */
+export const zGetForumPostsResponse = z.array(zAuthPostResponse);
+
+export const zPostForumPostsData = z.object({
+    body: zAuthCreatePostRequest,
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * Created
+ */
+export const zPostForumPostsResponse = zDatabaseForumPost;
+
+export const zDeleteForumPostsByIdData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+export const zGetForumPostsByIdData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetForumPostsByIdResponse = zAuthPostResponse;
+
+export const zPutForumPostsByIdData = z.object({
+    body: zAuthCreatePostRequest,
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zPutForumPostsByIdResponse = zDatabaseForumPost;
+
+export const zGetForumPostsByIdCommentsData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetForumPostsByIdCommentsResponse = z.array(zAuthCommentResponse);
+
+export const zPostForumPostsByIdCommentsData = z.object({
+    body: zAuthCommentRequest,
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
+
+/**
+ * Created
+ */
+export const zPostForumPostsByIdCommentsResponse = zDatabaseForumComment;
+
+export const zPostForumPostsByIdVoteData = z.object({
+    body: zAuthVoteRequest,
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.never())
+});
 
 export const zGetProgramsData = z.object({
     body: z.optional(z.never()),
@@ -377,3 +637,19 @@ export const zGetUsersByIdData = z.object({
  * OK
  */
 export const zGetUsersByIdResponse = zAuthPublicUserResponse;
+
+export const zGetUsersByIdActivitiesData = z.object({
+    body: z.optional(z.never()),
+    path: z.object({
+        id: z.string()
+    }),
+    query: z.optional(z.object({
+        limit: z.optional(z.int()),
+        offset: z.optional(z.int())
+    }))
+});
+
+/**
+ * OK
+ */
+export const zGetUsersByIdActivitiesResponse = z.array(zDatabaseActivity);

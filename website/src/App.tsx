@@ -15,15 +15,18 @@ import ProtectedRoute from '@lib/routes';
 
 import LoginPage from '@routes/login/page';
 import RegistrationPage from '@routes/registration/page';
-import DashboardPage from '@routes/dashboard/page';
+import DashboardPage from '@routes/user/[id]';
 import MediaPage from '@routes/media/page';
 import TeamPage from '@routes/team/page';
 import NewsPage from '@routes/news/page';
 import NewsDetail from '@routes/news/details';
 import CreateNewsPage from '@routes/news/create';
 import ExamsPage from '@routes/exams/page';
-import ExamDetailsPage from '@routes/exams/extensions';
+import ExamDetailsPage from '@routes/exams/[id]';
 import ForumPage from '@routes/forum/page';
+import CreateForumPost from '@routes/forum/create';
+import EditForumPost from '@routes/forum/[id]/edit';
+import ViewForumPost from '@routes/forum/[id]';
 import NewsFeedPage from '@routes/homepage/page';
 import ContactPage from '@routes/contact/page';
 import SettingsPage from '@routes/settings/page';
@@ -67,14 +70,17 @@ function App() {
             </Route>
             <Route element={<ProtectedRoute />}>
               <Route path="/exams" element={<ExamsPage />} />
-              <Route path="/rekos/klausuren/modul" element={<ExamDetailsPage />} />
+              <Route path="/exams/:id" element={<ExamDetailsPage />} />
               <Route path="/news/create" element={<CreateNewsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/forum/create" element={<CreateForumPost />} />
+              <Route path="/forum/:id/edit" element={<EditForumPost />} />
             </Route>
 
             <Route path="/user/:userId" element={<DashboardPage />} />
 
             <Route path="/forum" element={<ForumPage />} />
+            <Route path="/forum/:id" element={<ViewForumPost />} />
             <Route path="/media" element={<MediaPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/news" element={<NewsPage />} />

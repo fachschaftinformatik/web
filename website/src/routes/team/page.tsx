@@ -210,8 +210,16 @@ export default function Team() {
   return (
     <Sidebar user={user} title="Team" maxWidth="lg">
       <Box>
-        {canEdit && (
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Box>
+            <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+              FSV-Team
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Die aktuellen Mitglieder der Fachschaftsvertretung Informatik.
+            </Typography>
+          </Box>
+          {canEdit && (
             <Button
               variant="contained"
               startIcon={<EditRoundedIcon />}
@@ -224,11 +232,8 @@ export default function Team() {
             >
               Bearbeiten
             </Button>
-          </Box>
-        )}
-        <Typography variant="h4" align="center" gutterBottom>
-          FSV-Team
-        </Typography>
+          )}
+        </Box>
         {sections.map((section) => (
           <Section key={section.id} title={section.title} members={section.members} />
         ))}

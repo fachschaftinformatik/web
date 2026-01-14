@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteExamsIdData, DeleteExamsIdResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthNotificationsData, GetAuthNotificationsErrors, GetAuthNotificationsResponses, GetAuthVerifyData, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileResponses, GetExamsResponses, GetExamVersionsData, GetExamVersionsErrors, GetExamVersionsResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetSearchData, GetSearchResponses, GetUsersByIdData, GetUsersByIdResponses, GetUsersData, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PutAuthMeData, PutAuthMeErrors, PutAuthMeResponses, PutAuthNotificationsIdReadData, PutAuthNotificationsIdReadErrors, PutAuthNotificationsIdReadResponses, PutAuthNotificationsReadAllData, PutAuthNotificationsReadAllErrors, PutAuthNotificationsReadAllResponses, PutExamsIdData, PutExamsIdResponses } from './types.gen';
+import type { DeleteExamsIdData, DeleteExamsIdResponses, DeleteForumPostsByIdData, DeleteForumPostsByIdResponses, GetActivitiesData, GetActivitiesResponses, GetAuthAvatarsByUserIdByFilenameData, GetAuthAvatarsByUserIdByFilenameResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthNotificationsData, GetAuthNotificationsErrors, GetAuthNotificationsResponses, GetAuthVerifyData, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileResponses, GetExamsIdData, GetExamsIdErrors, GetExamsIdResponses, GetExamsResponses, GetExamVersionsData, GetExamVersionsErrors, GetExamVersionsResponses, GetForumPostsByIdCommentsData, GetForumPostsByIdCommentsResponses, GetForumPostsByIdData, GetForumPostsByIdResponses, GetForumPostsData, GetForumPostsResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetSearchData, GetSearchResponses, GetUsersByIdActivitiesData, GetUsersByIdActivitiesResponses, GetUsersByIdData, GetUsersByIdResponses, GetUsersData, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthMeAvatarGenerateData, PostAuthMeAvatarGenerateErrors, PostAuthMeAvatarGenerateResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PostForumCommentsByIdVoteData, PostForumCommentsByIdVoteResponses, PostForumPostsByIdCommentsData, PostForumPostsByIdCommentsResponses, PostForumPostsByIdVoteData, PostForumPostsByIdVoteResponses, PostForumPostsData, PostForumPostsResponses, PutAuthMeData, PutAuthMeErrors, PutAuthMeResponses, PutAuthNotificationsIdReadData, PutAuthNotificationsIdReadErrors, PutAuthNotificationsIdReadResponses, PutAuthNotificationsReadAllData, PutAuthNotificationsReadAllErrors, PutAuthNotificationsReadAllResponses, PutExamsIdData, PutExamsIdResponses, PutForumCommentsByIdData, PutForumCommentsByIdResponses, PutForumPostsByIdData, PutForumPostsByIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -17,6 +17,16 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: Record<string, unknown>;
 };
+
+/**
+ * List all activities
+ */
+export const getActivities = <ThrowOnError extends boolean = false>(options?: Options<GetActivitiesData, ThrowOnError>) => (options?.client ?? client).get<GetActivitiesResponses, unknown, ThrowOnError>({ url: '/activities', ...options });
+
+/**
+ * Get user avatar
+ */
+export const getAuthAvatarsByUserIdByFilename = <ThrowOnError extends boolean = false>(options: Options<GetAuthAvatarsByUserIdByFilenameData, ThrowOnError>) => (options.client ?? client).get<GetAuthAvatarsByUserIdByFilenameResponses, unknown, ThrowOnError>({ url: '/auth/avatars/{userId}/{filename}', ...options });
 
 /**
  * Issue CSRF token
@@ -56,6 +66,11 @@ export const putAuthMe = <ThrowOnError extends boolean = false>(options: Options
         ...options.headers
     }
 });
+
+/**
+ * Regenerate user avatar
+ */
+export const postAuthMeAvatarGenerate = <ThrowOnError extends boolean = false>(options?: Options<PostAuthMeAvatarGenerateData, ThrowOnError>) => (options?.client ?? client).post<PostAuthMeAvatarGenerateResponses, PostAuthMeAvatarGenerateErrors, ThrowOnError>({ url: '/auth/me/avatar/generate', ...options });
 
 /**
  * List notifications
@@ -115,6 +130,11 @@ export const postExams = <ThrowOnError extends boolean = false>(options: Options
 export const deleteExamsId = <ThrowOnError extends boolean = false>(options: Options<DeleteExamsIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteExamsIdResponses, unknown, ThrowOnError>({ url: '/exams/{id}', ...options });
 
 /**
+ * Get exam details
+ */
+export const getExamsId = <ThrowOnError extends boolean = false>(options: Options<GetExamsIdData, ThrowOnError>) => (options.client ?? client).get<GetExamsIdResponses, GetExamsIdErrors, ThrowOnError>({ url: '/exams/{id}', ...options });
+
+/**
  * Update exam
  */
 export const putExamsId = <ThrowOnError extends boolean = false>(options: Options<PutExamsIdData, ThrowOnError>) => (options.client ?? client).put<PutExamsIdResponses, unknown, ThrowOnError>({
@@ -135,6 +155,98 @@ export const getExamsFile = <ThrowOnError extends boolean = false>(options: Opti
  * List exam versions
  */
 export const getExamVersions = <ThrowOnError extends boolean = false>(options: Options<GetExamVersionsData, ThrowOnError>) => (options.client ?? client).get<GetExamVersionsResponses, GetExamVersionsErrors, ThrowOnError>({ url: '/exams/versions/{groupId}', ...options });
+
+/**
+ * Update comment
+ */
+export const putForumCommentsById = <ThrowOnError extends boolean = false>(options: Options<PutForumCommentsByIdData, ThrowOnError>) => (options.client ?? client).put<PutForumCommentsByIdResponses, unknown, ThrowOnError>({
+    url: '/forum/comments/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Vote for comment
+ */
+export const postForumCommentsByIdVote = <ThrowOnError extends boolean = false>(options: Options<PostForumCommentsByIdVoteData, ThrowOnError>) => (options.client ?? client).post<PostForumCommentsByIdVoteResponses, unknown, ThrowOnError>({
+    url: '/forum/comments/{id}/vote',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List forum posts
+ */
+export const getForumPosts = <ThrowOnError extends boolean = false>(options?: Options<GetForumPostsData, ThrowOnError>) => (options?.client ?? client).get<GetForumPostsResponses, unknown, ThrowOnError>({ url: '/forum/posts', ...options });
+
+/**
+ * Create forum post
+ */
+export const postForumPosts = <ThrowOnError extends boolean = false>(options: Options<PostForumPostsData, ThrowOnError>) => (options.client ?? client).post<PostForumPostsResponses, unknown, ThrowOnError>({
+    url: '/forum/posts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete forum post
+ */
+export const deleteForumPostsById = <ThrowOnError extends boolean = false>(options: Options<DeleteForumPostsByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteForumPostsByIdResponses, unknown, ThrowOnError>({ url: '/forum/posts/{id}', ...options });
+
+/**
+ * Get forum post
+ */
+export const getForumPostsById = <ThrowOnError extends boolean = false>(options: Options<GetForumPostsByIdData, ThrowOnError>) => (options.client ?? client).get<GetForumPostsByIdResponses, unknown, ThrowOnError>({ url: '/forum/posts/{id}', ...options });
+
+/**
+ * Update forum post
+ */
+export const putForumPostsById = <ThrowOnError extends boolean = false>(options: Options<PutForumPostsByIdData, ThrowOnError>) => (options.client ?? client).put<PutForumPostsByIdResponses, unknown, ThrowOnError>({
+    url: '/forum/posts/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List comments for post
+ */
+export const getForumPostsByIdComments = <ThrowOnError extends boolean = false>(options: Options<GetForumPostsByIdCommentsData, ThrowOnError>) => (options.client ?? client).get<GetForumPostsByIdCommentsResponses, unknown, ThrowOnError>({ url: '/forum/posts/{id}/comments', ...options });
+
+/**
+ * Add comment to post
+ */
+export const postForumPostsByIdComments = <ThrowOnError extends boolean = false>(options: Options<PostForumPostsByIdCommentsData, ThrowOnError>) => (options.client ?? client).post<PostForumPostsByIdCommentsResponses, unknown, ThrowOnError>({
+    url: '/forum/posts/{id}/comments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Vote for post
+ */
+export const postForumPostsByIdVote = <ThrowOnError extends boolean = false>(options: Options<PostForumPostsByIdVoteData, ThrowOnError>) => (options.client ?? client).post<PostForumPostsByIdVoteResponses, unknown, ThrowOnError>({
+    url: '/forum/posts/{id}/vote',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * List all programs
@@ -167,3 +279,8 @@ export const getUsers = <ThrowOnError extends boolean = false>(options?: Options
  * Get user profile
  */
 export const getUsersById = <ThrowOnError extends boolean = false>(options: Options<GetUsersByIdData, ThrowOnError>) => (options.client ?? client).get<GetUsersByIdResponses, unknown, ThrowOnError>({ url: '/users/{id}', ...options });
+
+/**
+ * List user activities
+ */
+export const getUsersByIdActivities = <ThrowOnError extends boolean = false>(options: Options<GetUsersByIdActivitiesData, ThrowOnError>) => (options.client ?? client).get<GetUsersByIdActivitiesResponses, unknown, ThrowOnError>({ url: '/users/{id}/activities', ...options });

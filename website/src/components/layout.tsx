@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   AppBar,
   Avatar,
@@ -29,6 +29,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneRounded from '@mui/icons-material/NotificationsNoneRounded';
 import MailRounded from '@mui/icons-material/MailRounded';
 import MenuRounded from '@mui/icons-material/MenuRounded';
+
 import MenuOpenRounded from '@mui/icons-material/MenuOpenRounded';
 import DashboardRounded from '@mui/icons-material/DashboardRounded';
 import CampaignRounded from '@mui/icons-material/CampaignRounded';
@@ -59,31 +60,7 @@ import { client } from '@lib/api/client.gen';
 const drawerWidthOpen = 240;
 const drawerWidthClosed = 72;
 
-const avatarPalette = [
-  '#d32f2f',
-  '#c2185b',
-  '#7b1fa2',
-  '#512da8',
-  '#303f9f',
-  '#1976d2',
-  '#0288d1',
-  '#0097a7',
-  '#00796b',
-  '#388e3c',
-  '#e64a19',
-  '#5d4037',
-  '#455a64',
-];
 
-const stringToColor = (string?: string) => {
-  if (!string) return avatarPalette[0];
-  let hash = 0;
-  for (let i = 0; i < string.length; i++) {
-    hash = string.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash % avatarPalette.length);
-  return avatarPalette[index];
-};
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -127,7 +104,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 interface SearchResult {
-  type: 'exam' | 'module';
+  type: 'exam' | 'module' | 'user' | 'post';
   id: string;
   title: string;
   subtitle: string;
@@ -227,7 +204,10 @@ const GlobalSearch = () => {
       renderOption={(props, option) => (
         <ListItem {...props} key={option.id + option.type}>
           <ListItemIcon sx={{ minWidth: 40 }}>
-            {option.type === 'module' ? <DashboardRounded fontSize="small" /> : <SchoolRounded fontSize="small" />}
+            {option.type === 'module' ? <DashboardRounded fontSize="small" /> :
+              option.type === 'user' ? <PeopleRounded fontSize="small" /> :
+                option.type === 'post' ? <QuestionAnswerRounded fontSize="small" /> :
+                  <SchoolRounded fontSize="small" />}
           </ListItemIcon>
           <ListItemText
             primary={option.title}
@@ -250,8 +230,6 @@ const navItems = [
   { label: 'Team', href: '/team', icon: <PeopleRounded />, isRoute: true },
   { label: 'Kontakt', href: '/contact', icon: <MailRounded />, isRoute: true },
 ];
-
-
 
 interface SidebarProps {
   user?: User | null;
@@ -392,9 +370,6 @@ const Sidebar = ({
     }
   };
 
-  const avatarColor = useMemo(() => stringToColor(user?.name), [user?.name]);
-  const avatarLetter = user?.name ? user.name.charAt(0).toUpperCase() : '?';
-
   const handleMenuClose = () => setAnchorEl(null);
 
   const toggleBtnStyle = {
@@ -417,18 +392,15 @@ const Sidebar = ({
   };
 
   const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
-      {!isMdUp && (
-        <>
-          <Toolbar sx={{ justifyContent: 'flex-end' }}>
-            <IconButton onClick={() => setMobileOpen(false)}>
-              <MenuOpenRounded />
-            </IconButton>
-          </Toolbar>
-          <Divider />
-        </>
-      )}
-
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      overflowY: 'auto',
+      '&::-webkit-scrollbar': { display: 'none' },
+      scrollbarWidth: 'none',
+      msOverflowStyle: 'none'
+    }}>
       <List sx={{ pt: 1, flexGrow: 1 }}>
         {navItems.map((item) => (
           <Tooltip key={item.label} title={navOpen ? '' : item.label} placement="right">
@@ -635,16 +607,14 @@ const Sidebar = ({
                   aria-expanded={open ? 'true' : undefined}
                 >
                   <Avatar
+                    src={user?.avatar_url || undefined}
                     sx={{
                       width: 32,
                       height: 32,
-                      bgcolor: avatarColor,
                       fontSize: '0.9rem',
                       fontWeight: 600
                     }}
-                  >
-                    {avatarLetter}
-                  </Avatar>
+                  />
                 </IconButton>
               </Tooltip>
 
@@ -693,7 +663,9 @@ const Sidebar = ({
               </Menu>
             </>
           ) : (
-            <Button color="inherit" component={RouterLink} to="/login">Anmelden</Button>
+            <Button color="inherit" variant="outlined" component={RouterLink} to="/login">
+              Anmelden
+            </Button>
           )}
         </Toolbar>
       </AppBar>
@@ -714,6 +686,8 @@ const Sidebar = ({
               duration: theme.transitions.duration.enteringScreen,
             }),
             overflowX: 'hidden',
+            backgroundColor: theme.palette.background.paper,
+            backgroundImage: 'none',
           },
         }}
       >

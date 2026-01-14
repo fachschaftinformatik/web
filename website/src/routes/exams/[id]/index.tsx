@@ -18,7 +18,7 @@ import {
     Autocomplete,
     Tooltip
 } from "@mui/material";
-import { useLocation, useSearchParams, useNavigate } from "react-router-dom";
+import { useLocation, useSearchParams, useNavigate, useParams } from "react-router-dom";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
@@ -43,12 +43,14 @@ export default function ExamDetailsPage() {
     const { user } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
+    const { id } = useParams();
     const [params] = useSearchParams();
 
     const state = location.state as { studiengang?: string; po?: string; modul?: string; modulId?: number } || {};
 
     const modulName = state.modul || params.get("mod") || "Modul";
-    const modulId = state.modulId ? Number(state.modulId) : (params.get("modulId") ? Number(params.get("modulId")) : null);
+    // Prefer route param 'id', fall back to state/search params (legacy/linking)
+    const modulId = id ? Number(id) : (state.modulId ? Number(state.modulId) : (params.get("modulId") ? Number(params.get("modulId")) : null));
 
     const [exams, setExams] = useState<ExamListEntry[]>([]);
     const [loading, setLoading] = useState(false);
@@ -101,6 +103,25 @@ export default function ExamDetailsPage() {
             if (data) setPrograms(data);
         });
     }, [fetchExams]);
+
+    useEffect(() => {
+        const examId = params.get("examId");
+        if (examId && !modulId) {
+            client.request({ method: "GET", url: `/exams/${examId}` }).then(({ data }) => {
+                const exam = data as ExamListEntry;
+                if (exam && exam.moduleid) {
+                    const newParams = new URLSearchParams(params);
+                    // We don't need modulId query param anymore since it's in the path
+                    newParams.delete("modulId");
+                    if (exam.module_name) newParams.set("mod", exam.module_name);
+                    // Navigate to the correct module path
+                    navigate(`/exams/${exam.moduleid}?${newParams.toString()}`, { replace: true });
+                }
+            }).catch(() => {
+                console.log("Could not find exam for deep link");
+            });
+        }
+    }, [params, modulId, navigate]);
 
     useEffect(() => {
         const examId = params.get("examId");
@@ -278,8 +299,8 @@ export default function ExamDetailsPage() {
                 ) : (
                     <Paper elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3, overflow: 'hidden' }}>
                         <List disablePadding>
-                            {exams.map((exam, idx) => {
-                                const prog = programs.find(p => p.id === exam.programid);
+                            {exams?.map((exam, idx) => {
+                                const prog = programs?.find(p => p.id === exam.programid);
                                 const poLabel = prog ? `${prog.name} (${exam.version})` : (exam.version || "");
                                 return (
                                     <Box key={exam.id}>
@@ -425,7 +446,7 @@ export default function ExamDetailsPage() {
                                             {(!formProgram?.versions || formProgram.versions.length === 0) && formPo ? (
                                                 <MenuItem value={formPo}>{formPo}</MenuItem>
                                             ) : null}
-                                            {formProgram?.versions && formProgram.versions.map((v) => (<MenuItem key={v} value={v}>{v}</MenuItem>))}
+                                            {formProgram?.versions && formProgram.versions?.map((v) => (<MenuItem key={v} value={v}>{v}</MenuItem>))}
                                             {(!formProgram?.versions || formProgram.versions.length === 0) && !formPo && (
                                                 <MenuItem value=""><em>PO</em></MenuItem>
                                             )}
@@ -449,7 +470,7 @@ export default function ExamDetailsPage() {
                                             {programs.length === 0 && formProgram?.id ? (
                                                 <MenuItem value={formProgram.id}>{formProgram.name}</MenuItem>
                                             ) : null}
-                                            {programs.map((p) => (<MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>))}
+                                            {programs?.map((p) => (<MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>))}
                                             {programs.length === 0 && !formProgram && (
                                                 <MenuItem value=""><em>Wähle einen Studiengang</em></MenuItem>
                                             )}
@@ -474,7 +495,7 @@ export default function ExamDetailsPage() {
                                                     {selectedExam.edit_version}
                                                 </MenuItem>
                                             ) : (
-                                                examVersions.map((v) => (
+                                                examVersions?.map((v) => (
                                                     <MenuItem key={v.id} value={v.id}>
                                                         {v.edit_version} {v.is_latest ? "(neu)" : ""}
                                                     </MenuItem>
