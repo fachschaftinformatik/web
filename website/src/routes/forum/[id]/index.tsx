@@ -28,7 +28,7 @@ import {
     Post, Comment, Vote, PROGRAM_META_MAP, isoToShort, CommentsSection, Program
 } from "../components";
 
-const safeParseArray = (jsonString: any): any[] => {
+const safeParseArray = (jsonString: unknown): unknown[] => {
     try {
         const parsed = JSON.parse(jsonString as string);
         return Array.isArray(parsed) ? parsed : [];
