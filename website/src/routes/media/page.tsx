@@ -15,6 +15,7 @@ import InsertPhotoRoundedIcon from '@mui/icons-material/InsertPhotoRounded';
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import { alpha } from "@mui/material/styles";
+import { useSearchParams } from "react-router-dom";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
@@ -35,6 +36,8 @@ export default function Galerie() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [page, setPage] = useState(1);
   const [loadingMedia, setLoadingMedia] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mediaId = searchParams.get("mediaId");
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -72,15 +75,53 @@ export default function Galerie() {
         setLoadingMedia(true);
         try {
           const res = await client.request({ method: 'GET', url: '/media', query: { event_id: selectedEventId } });
-          setMedia(res.data as MediaItem[] || []);
+          const mediaList = res.data as MediaItem[] || [];
+          setMedia(mediaList);
           setPage(1);
+
+          // If we have a mediaId from URL, find it in the list and open lightbox
+          if (mediaId) {
+            const index = mediaList.findIndex(m => m.id === mediaId);
+            if (index !== -1) {
+              const targetPage = Math.floor(index / IMAGES_PER_PAGE) + 1;
+              setPage(targetPage);
+              // Calculate index within that page
+              const indexInPage = index % IMAGES_PER_PAGE;
+              setLightboxIndex(indexInPage);
+              setLightboxOpen(true);
+              // Clear mediaId from search params to avoid re-opening on manual navigation
+              setSearchParams(prev => {
+                const updated = new URLSearchParams(prev);
+                updated.delete("mediaId");
+                return updated;
+              }, { replace: true });
+            }
+          }
         } finally {
           setLoadingMedia(false);
         }
       };
       void fetchMedia();
     }
-  }, [selectedEventId]);
+  }, [selectedEventId, mediaId, setSearchParams]);
+
+  // Initial load: if mediaId is present, fetch its event first
+  useEffect(() => {
+    if (mediaId && !selectedEventId) {
+      const fetchMediaMetadata = async () => {
+        try {
+          const res = await client.request({ method: 'GET', url: `/media/${mediaId}` });
+          if (res.data) {
+            const m = res.data as MediaItem;
+            setSelectedEventId(m.event_id);
+          }
+        } catch (e) {
+          console.error("Failed to fetch media metadata", e);
+        }
+      };
+      void fetchMediaMetadata();
+    }
+  }, [mediaId, selectedEventId]);
 
   const getImageUrl = (id: string) => `/api/media/${id}/file`;
   const getEventCoverUrl = (ev: EventItem) => ev.cover_path ? `/api/events/${ev.id}/cover` : pic(ev.id);
