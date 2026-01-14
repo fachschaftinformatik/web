@@ -6,7 +6,7 @@ type Config struct {
 	HTTPPort      string
 	SecureCookies bool
 	DatabaseUrl   string
-	Domain	      string
+	Domain        string
 	SMTPHost      string
 	SMTPPort      string
 	SMTPUser      string
@@ -24,7 +24,7 @@ func New() *Config {
 	return &Config{
 		HTTPPort:      getEnv("HTTP_PORT", "80"),
 		SecureCookies: getEnv("SECURE_COOKIES", "true") == "true",
-		DatabaseUrl:	 getEnv("DATABASE_URL", "file:/data/sqlite.db?_journal_mode=WAL&_foreign_keys=on&_recursive_triggers=off&_busy_timeout=5000"),
+		DatabaseUrl:   getEnv("DATABASE_URL", "file:/data/sqlite.db?_journal_mode=WAL&_foreign_keys=on&_recursive_triggers=off&_busy_timeout=5000"),
 		Domain:        getEnv("DOMAIN", "http://localhost:5173"),
 		SMTPHost:      getEnv("SMTP_HOST", ""),
 		SMTPPort:      getEnv("SMTP_PORT", ""),
