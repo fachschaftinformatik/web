@@ -222,7 +222,7 @@ function PostItem({
               }}
             />
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-              von <Typography component={Link} to={`/user/${post.author_id}`} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author_name || "Anonym"}</Typography> · {isoToShort(post.created_at ?? "")}
+              von <Typography component={Link} to={`/user/${post.author_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author_name || "Anonym"}</Typography> · {isoToShort(post.created_at ?? "")}
               {post.updated_at && post.created_at && post.updated_at !== post.created_at && " (bearbeitet)"}
               {" · "}
               {post.comment_count} {post.comment_count === 1 ? "Kommentar" : "Kommentare"}
