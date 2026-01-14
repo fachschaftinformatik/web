@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/auth"
+	"github.com/fachschaftinformatik/web/internal/avatars"
 	"github.com/fachschaftinformatik/web/internal/buckets"
 	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/internal/database"
@@ -56,7 +57,8 @@ func main() {
 
 	querier := database.New(sqlDB)
 	emailSender := email.NewSender(cfg)
-	authServer := auth.NewServer(querier, logger, cfg, emailSender, store)
+	avatarService := avatars.NewService(store)
+	authServer := auth.NewServer(querier, logger, cfg, emailSender, store, avatarService)
 
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
@@ -73,11 +75,13 @@ func main() {
 		r.Post("/auth/logout", authServer.PostAuthLogout)
 		r.Get("/auth/me", authServer.GetAuthMe)
 		r.Put("/auth/me", authServer.PutAuthMe)
+		r.Post("/auth/me/avatar/generate", authServer.PostAuthAvatarGenerate)
 		r.Post("/auth/register", authServer.PostAuthRegister)
 		r.Get("/auth/verify", authServer.GetAuthVerify)
 		r.Get("/auth/notifications", authServer.GetAuthNotifications)
 		r.Put("/auth/notifications/{id}/read", authServer.PutAuthNotificationsIdRead)
 		r.Put("/auth/notifications/read-all", authServer.PutAuthNotificationsReadAll)
+		r.Get("/auth/avatars/{userId}/{filename}", authServer.GetAvatar)
 
 		r.Get("/users", authServer.GetUsers)
 		r.Get("/users/{id}", authServer.GetUsersId)
@@ -88,6 +92,7 @@ func main() {
 
 		r.Get("/exams", authServer.GetExams)
 		r.Post("/exams", authServer.PostExams)
+		r.Get("/exams/{id}", authServer.GetExamsId)
 		r.Put("/exams/{id}", authServer.PutExamsId)
 		r.Delete("/exams/{id}", authServer.DeleteExamsId)
 		r.Get("/exams/{id}/file", authServer.GetExamsFile)
@@ -100,6 +105,22 @@ func main() {
 		r.Get("/media", authServer.GetMedia)
 		r.Post("/media", authServer.PostMedia)
 		r.Get("/media/{id}/file", authServer.GetMediaFile)
+
+		// Forum
+		r.Get("/forum/posts", authServer.GetForumPosts)
+		r.Post("/forum/posts", authServer.PostForumPosts)
+		r.Get("/forum/posts/{id}", authServer.GetForumPostsId)
+		r.Put("/forum/posts/{id}", authServer.PutForumPostsId)
+		r.Delete("/forum/posts/{id}", authServer.DeleteForumPostsId)
+		r.Get("/forum/posts/{id}/comments", authServer.GetForumPostsComments)
+		r.Post("/forum/posts/{id}/comments", authServer.PostForumPostsComments)
+		r.Put("/forum/comments/{id}", authServer.PutForumPostsCommentsId) // Update comment route
+		r.Post("/forum/comments/{id}/vote", authServer.PostForumCommentsVote)
+		r.Post("/forum/posts/{id}/vote", authServer.PostForumPostsVote)
+
+		// Activities
+		r.Get("/activities", authServer.GetActivities)
+		r.Get("/users/{id}/activities", authServer.GetUsersActivities)
 
 	})
 
