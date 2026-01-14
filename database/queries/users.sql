@@ -1,13 +1,14 @@
 -- name: CreateUser :one
 INSERT INTO users (
-  id, email, name, password, role, active, verified, programid, verification_token
+  id, email, name, password, role, active, verified, programid, verification_token, avatar_url
 ) VALUES (
   sqlc.arg(id), sqlc.arg(email), sqlc.arg(name), sqlc.arg(password),
   COALESCE(sqlc.arg(role), 'user'),
   COALESCE(sqlc.arg(active), 0),
   0,
   sqlc.arg(programid),
-  sqlc.arg(verification_token)
+  sqlc.arg(verification_token),
+  sqlc.arg(avatar_url)
 )
 RETURNING *;
 
@@ -79,6 +80,15 @@ UPDATE users
 SET name = sqlc.arg(name),
     programid = sqlc.arg(programid),
     theme = sqlc.arg(theme),
+    private = sqlc.arg(private),
+    avatar_url = sqlc.arg(avatar_url),
+    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+WHERE id = sqlc.arg(id)
+RETURNING *;
+
+-- name: UpdateUserAvatar :one
+UPDATE users
+SET avatar_url = sqlc.arg(avatar_url),
     updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
 WHERE id = sqlc.arg(id)
 RETURNING *;
@@ -88,3 +98,14 @@ SELECT *
 FROM users
 ORDER BY created_at DESC
 LIMIT sqlc.arg(limit) OFFSET sqlc.arg(offset);
+
+-- name: SearchUsers :many
+SELECT *
+FROM users
+WHERE (
+  lower(id) LIKE '%' || lower(sqlc.arg(query)) || '%' OR
+  lower(name) LIKE '%' || lower(sqlc.arg(query)) || '%' OR
+  lower(email) LIKE '%' || lower(sqlc.arg(query)) || '%'
+) AND active = 1 AND private = 0
+ORDER BY name ASC
+LIMIT 10;

@@ -4,6 +4,39 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}/api` | (string & {});
 };
 
+export type AuthCommentRequest = {
+    parent_id?: string;
+    text?: string;
+};
+
+export type AuthCommentResponse = {
+    active?: number;
+    author_avatar_url?: string;
+    author_id?: string;
+    author_name?: string;
+    created_at?: string;
+    id?: string;
+    parent_id?: string;
+    post_id?: string;
+    text?: string;
+    updated_at?: string;
+    user_vote?: number;
+    votes?: number;
+};
+
+export type AuthCreatePostRequest = {
+    body?: string;
+    event_date?: string;
+    image_url?: string;
+    links?: Array<string>;
+    location?: string;
+    pinned?: number;
+    programs?: Array<string>;
+    tags?: Array<string>;
+    title?: string;
+    type?: string;
+};
+
 export type AuthCsrfResponse = {
     csrf?: string;
 };
@@ -56,6 +89,29 @@ export type AuthNotificationResponse = {
     type?: string;
 };
 
+export type AuthPostResponse = {
+    active?: number;
+    author_avatar_url?: string;
+    author_id?: string;
+    author_name?: string;
+    body?: string;
+    comment_count?: number;
+    created_at?: string;
+    event_date?: string;
+    id?: string;
+    image_url?: string;
+    links?: string;
+    location?: string;
+    pinned?: number;
+    programs?: string;
+    tags?: string;
+    title?: string;
+    type?: string;
+    updated_at?: string;
+    user_vote?: number;
+    votes?: number;
+};
+
 /**
  * A study program including valid PO versions
  */
@@ -67,9 +123,11 @@ export type AuthProgramResponse = {
 
 export type AuthPublicUserResponse = {
     active?: number;
+    avatar_url?: string;
     created_at?: string;
     id?: string;
     name?: string;
+    private?: number;
     programid?: number;
     role?: string;
     theme?: string;
@@ -104,6 +162,7 @@ export type AuthUpdateExamRequest = {
 
 export type AuthUpdateProfileRequest = {
     name?: string;
+    private?: boolean;
     programid?: number;
     theme?: string;
 };
@@ -113,11 +172,13 @@ export type AuthUpdateProfileRequest = {
  */
 export type AuthUserResponse = {
     active?: number;
+    avatar_url?: string;
     created_at?: string;
     email?: string;
     id?: string;
     name?: string;
     password?: string;
+    private?: number;
     programid?: number;
     role?: string;
     theme?: string;
@@ -126,6 +187,99 @@ export type AuthUserResponse = {
     verified?: number;
     verified_at?: string;
     verified_until?: string;
+};
+
+export type AuthVoteRequest = {
+    /**
+     * 1 or -1
+     */
+    vote?: number;
+};
+
+export type DatabaseActivity = {
+    created_at?: string;
+    id?: string;
+    target_id?: string;
+    target_name?: string;
+    type?: string;
+    user_id?: string;
+};
+
+export type DatabaseForumComment = {
+    active?: number;
+    author_id?: string;
+    created_at?: string;
+    id?: string;
+    parent_id?: string;
+    post_id?: string;
+    text?: string;
+    updated_at?: string;
+};
+
+export type DatabaseForumPost = {
+    active?: number;
+    author_id?: string;
+    body?: string;
+    created_at?: string;
+    event_date?: string;
+    id?: string;
+    image_url?: string;
+    links?: string;
+    location?: string;
+    pinned?: number;
+    programs?: string;
+    tags?: string;
+    title?: string;
+    type?: string;
+    updated_at?: string;
+};
+
+export type GetActivitiesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/activities';
+};
+
+export type GetActivitiesResponses = {
+    /**
+     * OK
+     */
+    200: Array<DatabaseActivity>;
+};
+
+export type GetActivitiesResponse = GetActivitiesResponses[keyof GetActivitiesResponses];
+
+export type GetAuthAvatarsByUserIdByFilenameData = {
+    body?: never;
+    path: {
+        /**
+         * User ID
+         */
+        userId: string;
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    query?: never;
+    url: '/auth/avatars/{userId}/{filename}';
+};
+
+export type GetAuthAvatarsByUserIdByFilenameResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
 };
 
 export type GetAuthCsrfData = {
@@ -235,6 +389,29 @@ export type PutAuthMeResponses = {
 };
 
 export type PutAuthMeResponse = PutAuthMeResponses[keyof PutAuthMeResponses];
+
+export type PostAuthMeAvatarGenerateData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/me/avatar/generate';
+};
+
+export type PostAuthMeAvatarGenerateErrors = {
+    /**
+     * Unauthorized
+     */
+    401: AuthErrorResponse;
+};
+
+export type PostAuthMeAvatarGenerateError = PostAuthMeAvatarGenerateErrors[keyof PostAuthMeAvatarGenerateErrors];
+
+export type PostAuthMeAvatarGenerateResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
 
 export type GetAuthNotificationsData = {
     body?: never;
@@ -469,6 +646,36 @@ export type DeleteExamsIdResponses = {
     204: unknown;
 };
 
+export type GetExamsIdData = {
+    body?: never;
+    path: {
+        /**
+         * Exam ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/exams/{id}';
+};
+
+export type GetExamsIdErrors = {
+    /**
+     * Not Found
+     */
+    404: AuthErrorResponse;
+};
+
+export type GetExamsIdError = GetExamsIdErrors[keyof GetExamsIdErrors];
+
+export type GetExamsIdResponses = {
+    /**
+     * OK
+     */
+    200: AuthExamResponse;
+};
+
+export type GetExamsIdResponse = GetExamsIdResponses[keyof GetExamsIdResponses];
+
 export type PutExamsIdData = {
     /**
      * Update Data
@@ -541,6 +748,231 @@ export type GetExamVersionsResponses = {
 };
 
 export type GetExamVersionsResponse = GetExamVersionsResponses[keyof GetExamVersionsResponses];
+
+export type PutForumCommentsByIdData = {
+    /**
+     * Comment Content
+     */
+    body: AuthCommentRequest;
+    path: {
+        /**
+         * Comment ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/forum/comments/{id}';
+};
+
+export type PutForumCommentsByIdResponses = {
+    /**
+     * OK
+     */
+    200: DatabaseForumComment;
+};
+
+export type PutForumCommentsByIdResponse = PutForumCommentsByIdResponses[keyof PutForumCommentsByIdResponses];
+
+export type PostForumCommentsByIdVoteData = {
+    /**
+     * Vote Value
+     */
+    body: AuthVoteRequest;
+    path: {
+        /**
+         * Comment ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/forum/comments/{id}/vote';
+};
+
+export type PostForumCommentsByIdVoteResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type GetForumPostsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Post type (forum, news, event)
+         */
+        type?: string;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/forum/posts';
+};
+
+export type GetForumPostsResponses = {
+    /**
+     * OK
+     */
+    200: Array<AuthPostResponse>;
+};
+
+export type GetForumPostsResponse = GetForumPostsResponses[keyof GetForumPostsResponses];
+
+export type PostForumPostsData = {
+    /**
+     * Post Content
+     */
+    body: AuthCreatePostRequest;
+    path?: never;
+    query?: never;
+    url: '/forum/posts';
+};
+
+export type PostForumPostsResponses = {
+    /**
+     * Created
+     */
+    201: DatabaseForumPost;
+};
+
+export type PostForumPostsResponse = PostForumPostsResponses[keyof PostForumPostsResponses];
+
+export type DeleteForumPostsByIdData = {
+    body?: never;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/forum/posts/{id}';
+};
+
+export type DeleteForumPostsByIdResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type GetForumPostsByIdData = {
+    body?: never;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/forum/posts/{id}';
+};
+
+export type GetForumPostsByIdResponses = {
+    /**
+     * OK
+     */
+    200: AuthPostResponse;
+};
+
+export type GetForumPostsByIdResponse = GetForumPostsByIdResponses[keyof GetForumPostsByIdResponses];
+
+export type PutForumPostsByIdData = {
+    /**
+     * Post Content
+     */
+    body: AuthCreatePostRequest;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/forum/posts/{id}';
+};
+
+export type PutForumPostsByIdResponses = {
+    /**
+     * OK
+     */
+    200: DatabaseForumPost;
+};
+
+export type PutForumPostsByIdResponse = PutForumPostsByIdResponses[keyof PutForumPostsByIdResponses];
+
+export type GetForumPostsByIdCommentsData = {
+    body?: never;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/forum/posts/{id}/comments';
+};
+
+export type GetForumPostsByIdCommentsResponses = {
+    /**
+     * OK
+     */
+    200: Array<AuthCommentResponse>;
+};
+
+export type GetForumPostsByIdCommentsResponse = GetForumPostsByIdCommentsResponses[keyof GetForumPostsByIdCommentsResponses];
+
+export type PostForumPostsByIdCommentsData = {
+    /**
+     * Comment Content
+     */
+    body: AuthCommentRequest;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/forum/posts/{id}/comments';
+};
+
+export type PostForumPostsByIdCommentsResponses = {
+    /**
+     * Created
+     */
+    201: DatabaseForumComment;
+};
+
+export type PostForumPostsByIdCommentsResponse = PostForumPostsByIdCommentsResponses[keyof PostForumPostsByIdCommentsResponses];
+
+export type PostForumPostsByIdVoteData = {
+    /**
+     * Vote Value
+     */
+    body: AuthVoteRequest;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/forum/posts/{id}/vote';
+};
+
+export type PostForumPostsByIdVoteResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
 
 export type GetProgramsData = {
     body?: never;
@@ -697,3 +1129,33 @@ export type GetUsersByIdResponses = {
 };
 
 export type GetUsersByIdResponse = GetUsersByIdResponses[keyof GetUsersByIdResponses];
+
+export type GetUsersByIdActivitiesData = {
+    body?: never;
+    path: {
+        /**
+         * User ID
+         */
+        id: string;
+    };
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/users/{id}/activities';
+};
+
+export type GetUsersByIdActivitiesResponses = {
+    /**
+     * OK
+     */
+    200: Array<DatabaseActivity>;
+};
+
+export type GetUsersByIdActivitiesResponse = GetUsersByIdActivitiesResponses[keyof GetUsersByIdActivitiesResponses];

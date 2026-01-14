@@ -25,6 +25,14 @@ ORDER BY e.exam_date DESC;
 -- name: GetExam :one
 SELECT * FROM exams WHERE id = sqlc.arg(id) LIMIT 1;
 
+-- name: GetExamDetails :one
+SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
+       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+FROM exams e
+JOIN modules m ON e.moduleid = m.id
+JOIN users u ON e.userid = u.id
+WHERE e.id = sqlc.arg(id) LIMIT 1;
+
 -- name: GetLatestByGroupId :one
 SELECT * FROM exams WHERE group_id = sqlc.arg(group_id) AND is_latest = 1 LIMIT 1;
 
