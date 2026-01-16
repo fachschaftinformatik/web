@@ -21,8 +21,8 @@ type CommentResponse struct {
 }
 
 type CreatePostRequest struct {
-	Title     string   `json:"title"`
-	Body      string   `json:"body"`
+	Title     *string  `json:"title,omitempty"`
+	Body      *string  `json:"body,omitempty"`
 	Type      *string  `json:"type,omitempty"`
 	Pinned    *int64   `json:"pinned,omitempty"`
 	Programs  []string `json:"programs,omitempty"`
@@ -157,6 +157,11 @@ func (s *Server) PostForumPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if payload.Title == nil || payload.Body == nil {
+		s.jsonError(w, "invalid_request_body", "Title and body are required", http.StatusBadRequest)
+		return
+	}
+
 	pinned := int64(0)
 	if payload.Pinned != nil && (user.Role == "admin" || user.Role == "editor") {
 		pinned = *payload.Pinned
@@ -168,8 +173,8 @@ func (s *Server) PostForumPosts(w http.ResponseWriter, r *http.Request) {
 
 	post, err := s.DB.CreateForumPost(r.Context(), database.CreateForumPostParams{
 		ID:        sid.New(),
-		Title:     payload.Title,
-		Body:      payload.Body,
+		Title:     *payload.Title,
+		Body:      *payload.Body,
 		AuthorID:  user.ID,
 		Type:      payload.Type,
 		Pinned:    pinned,
@@ -187,7 +192,7 @@ func (s *Server) PostForumPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Log activity
-	activityTargetName := payload.Title
+	activityTargetName := *payload.Title
 	_, _ = s.DB.CreateActivity(r.Context(), database.CreateActivityParams{
 		ID:         sid.New(),
 		UserID:     user.ID,
@@ -262,7 +267,7 @@ func (s *Server) PutForumPostsId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if existing.AuthorID != user.ID && user.Role != "admin" {
+	if existing.AuthorID != user.ID && user.Role != "admin" && user.Role != "editor" {
 		s.jsonError(w, "forbidden", "You can only edit your own posts", http.StatusForbidden)
 		return
 	}
@@ -273,14 +278,31 @@ func (s *Server) PutForumPostsId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pinned := existing.Pinned
+	var pinned *int64
 	if payload.Pinned != nil && (user.Role == "admin" || user.Role == "editor") {
-		pinned = *payload.Pinned
+		pinned = payload.Pinned
 	}
 
-	programsJSON, _ := json.Marshal(payload.Programs)
-	tagsJSON, _ := json.Marshal(payload.Tags)
-	linksJSON, _ := json.Marshal(payload.Links)
+	var programsJSON *string
+	if payload.Programs != nil {
+		j, _ := json.Marshal(payload.Programs)
+		s := string(j)
+		programsJSON = &s
+	}
+
+	var tagsJSON *string
+	if payload.Tags != nil {
+		j, _ := json.Marshal(payload.Tags)
+		s := string(j)
+		tagsJSON = &s
+	}
+
+	var linksJSON *string
+	if payload.Links != nil {
+		j, _ := json.Marshal(payload.Links)
+		s := string(j)
+		linksJSON = &s
+	}
 
 	updated, err := s.DB.UpdateForumPost(r.Context(), database.UpdateForumPostParams{
 		ID:        postID,
@@ -290,9 +312,9 @@ func (s *Server) PutForumPostsId(w http.ResponseWriter, r *http.Request) {
 		EventDate: payload.EventDate,
 		Location:  payload.Location,
 		ImageUrl:  payload.ImageURL,
-		Links:     string(linksJSON),
-		Programs:  string(programsJSON),
-		Tags:      string(tagsJSON),
+		Links:     linksJSON,
+		Programs:  programsJSON,
+		Tags:      tagsJSON,
 	})
 	if err != nil {
 		s.Log.Printf("Failed to update forum post: %v", err)
@@ -331,7 +353,7 @@ func (s *Server) DeleteForumPostsId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if existing.AuthorID != user.ID && user.Role != "admin" {
+	if existing.AuthorID != user.ID && user.Role != "admin" && user.Role != "editor" {
 		s.jsonError(w, "forbidden", "You can only delete your own posts", http.StatusForbidden)
 		return
 	}
