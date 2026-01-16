@@ -494,7 +494,7 @@ export default function Galerie() {
 function getFriendlyErrorMessage(error: { message?: string; error?: string } | string | unknown): string {
   const msg = typeof error === 'string' ? error : (error as { message?: string })?.message || (error as { error?: string })?.error || "";
   const errorMap: Record<string, string> = {
-    "File too large": "Die Datei ist zu groß (maximal 50MB erlaubt).",
+    "File too large": "Die Datei ist zu groß (maximal 256MB erlaubt).",
     "File upload failed": "Der Upload ist fehlgeschlagen. Bitte versuche es erneut.",
     "Invalid event_id": "Das ausgewählte Event ist ungültig.",
     "Missing metadata": "Es fehlen notwendige Daten für den Upload.",
