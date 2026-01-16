@@ -19,6 +19,22 @@ import (
 func (s *Server) GetUsersActivities(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "id")
 
+	// Check for privacy
+	targetUser, err := s.DB.GetUser(r.Context(), userID)
+	if err != nil {
+		s.jsonError(w, "not_found", "User not found", http.StatusNotFound)
+		return
+	}
+
+	_, authUser, authErr := s.authenticate(w, r)
+	isOwnerOrAdmin := authErr == nil && (authUser.ID == userID || authUser.Role == "admin")
+
+	if targetUser.Private == 1 && !isOwnerOrAdmin {
+		w.Header().Set("X-Total-Count", "0")
+		s.respondJSON(w, http.StatusOK, []database.Activity{})
+		return
+	}
+
 	limit, _ := strconv.ParseInt(r.URL.Query().Get("limit"), 10, 64)
 	if limit <= 0 {
 		limit = 20
