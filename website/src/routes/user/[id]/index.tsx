@@ -20,8 +20,9 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import HistoryIcon from '@mui/icons-material/History';
 import PostAddIcon from '@mui/icons-material/PostAdd';
-import CommentIcon from '@mui/icons-material/Comment';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
+import QuestionAnswerRounded from '@mui/icons-material/QuestionAnswerRounded';
+import LibraryBooksRounded from '@mui/icons-material/LibraryBooksRounded';
+import CollectionsIcon from '@mui/icons-material/Collections';
 import LockRoundedIcon from '@mui/icons-material/LockRounded';
 
 import { useAuth } from '@lib/auth';
@@ -78,6 +79,13 @@ const ProfilePage: React.FC = () => {
     if (!userId) return;
 
     const fetchActivities = async () => {
+      // Don't even try to fetch if we already know it's private and not ours
+      if (profileUser?.private === 1 && !isOwnProfile) {
+        setActivities([]);
+        setPageCount(0);
+        return;
+      }
+
       setActivitiesLoading(true);
       try {
         const offset = (page - 1) * LIMIT;
@@ -102,7 +110,7 @@ const ProfilePage: React.FC = () => {
     };
 
     fetchActivities();
-  }, [userId, page]);
+  }, [userId, page, profileUser, isOwnProfile]);
 
   useEffect(() => {
     let isMounted = true;
@@ -306,23 +314,19 @@ const ProfilePage: React.FC = () => {
                     primaryText = activity.target_name || "Neues Bild";
                   }
 
-                  const isDark = theme.palette.mode === 'dark';
-
-                  // Helper for consistent coloring across light/dark
                   const getActivityColor = (type: string, attr: 'bg' | 'fg') => {
-                    const isPost = type === 'POST_CREATED';
-                    const isExam = type === 'EXAM_UPLOADED';
-                    // Default media/other to info
+                    const isDark = theme.palette.mode === 'dark';
+                    let paletteColor = theme.palette.info; // Default
+
+                    if (type === 'POST_CREATED') paletteColor = theme.palette.error;
+                    if (type === 'COMMENT_ADDED') paletteColor = theme.palette.success;
+                    if (type === 'EXAM_UPLOADED') paletteColor = theme.palette.info;
+                    if (type === 'MEDIA_UPLOADED') paletteColor = theme.palette.warning;
 
                     if (attr === 'bg') {
-                      if (isPost) return alpha(theme.palette.secondary.main, isDark ? 0.2 : 0.1);
-                      if (isExam) return alpha(theme.palette.success.main, isDark ? 0.2 : 0.1);
-                      return alpha(theme.palette.info.main, isDark ? 0.2 : 0.1);
+                      return alpha(paletteColor.main, isDark ? 0.2 : 0.12);
                     } else {
-                      // Foreground
-                      if (isPost) return isDark ? theme.palette.secondary.light : theme.palette.secondary.main;
-                      if (isExam) return isDark ? theme.palette.success.light : theme.palette.success.main;
-                      return isDark ? theme.palette.info.light : theme.palette.info.main;
+                      return paletteColor.main; // Using main as it's already mode-aware and accessible
                     }
                   };
 
@@ -349,14 +353,14 @@ const ProfilePage: React.FC = () => {
                             sx={{
                               width: 40,
                               height: 40,
-                              bgcolor: getActivityColor(activity.type, 'bg'),
-                              color: getActivityColor(activity.type, 'fg'),
+                              bgcolor: getActivityColor(activity.type || '', 'bg'),
+                              color: getActivityColor(activity.type || '', 'fg'),
                             }}
                           >
                             {activity.type === 'POST_CREATED' && <PostAddIcon fontSize="small" />}
-                            {activity.type === 'COMMENT_ADDED' && <CommentIcon fontSize="small" />}
-                            {activity.type === 'EXAM_UPLOADED' && <UploadFileIcon fontSize="small" />}
-                            {activity.type === 'MEDIA_UPLOADED' && <UploadFileIcon fontSize="small" />}
+                            {activity.type === 'COMMENT_ADDED' && <QuestionAnswerRounded fontSize="small" />}
+                            {activity.type === 'EXAM_UPLOADED' && <LibraryBooksRounded fontSize="small" />}
+                            {activity.type === 'MEDIA_UPLOADED' && <CollectionsIcon fontSize="small" />}
                           </Avatar>
                         </ListItemIcon>
                         <ListItemText
