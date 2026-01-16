@@ -39,7 +39,6 @@ export type Comment = ApiComment & {
 export type Post = Omit<ApiPost, "programs" | "tags" | "links"> & {
     programs: Program[];
     tags: string[];
-    links: string[];
     comments: Comment[];
 };
 
@@ -59,22 +58,18 @@ export const COMMENT_COLLAPSE_LIMIT = 6;
 export const POSTS_PER_PAGE = 20;
 
 export const FORUM_CATEGORIES = [
+    "Ankündigung",
+    "Termin",
     "Frage",
     "Diskussion",
-    "Lerngruppe",
     "Feedback",
     "Sonstiges"
 ] as const;
 
 export const FORUM_TAGS = [
     "Hilfe benötigt",
-    "Gelöst",
     "Wichtig",
     "Klausur",
-    "Mathe",
-    "Programmieren",
-    "Hardware",
-    "Empfehlung",
     "Organisatorisches"
 ] as const;
 
@@ -611,7 +606,7 @@ export function CommentsSection({
                             sx={{ minWidth: 120 }}
                         >
                             <MenuItem value="desc">Neueste</MenuItem>
-                            <MenuItem value="top">Top (am besten bewertet)</MenuItem>
+                            <MenuItem value="top">Am besten bewertet</MenuItem>
                         </TextField>
                     </Stack>
                 )}

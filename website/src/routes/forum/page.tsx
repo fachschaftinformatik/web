@@ -81,12 +81,16 @@ function PostItem({
         border: "1px solid",
         borderColor: theme.palette.divider,
         transition: "all 0.2s ease-in-out",
-        bgcolor: "var(--card-bg)",
+        bgcolor: post.type === "news"
+          ? (isDark ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.04))
+          : "var(--card-bg)",
         "&:hover": {
           transform: "translateY(-2px)",
           boxShadow: isDark ? "0 8px 16px rgba(0,0,0,0.4)" : "0 8px 16px rgba(15,110,46,0.08)",
           borderColor: theme.palette.primary.main,
-          bgcolor: isDark ? alpha(theme.palette.primary.main, 0.04) : alpha(theme.palette.primary.main, 0.02),
+          bgcolor: post.type === "news"
+            ? (isDark ? alpha(theme.palette.primary.main, 0.12) : alpha(theme.palette.primary.main, 0.06))
+            : (isDark ? alpha(theme.palette.primary.main, 0.04) : alpha(theme.palette.primary.main, 0.02)),
         },
       }}
     >
@@ -151,9 +155,8 @@ function PostItem({
                   <ListItemText>Bearbeiten</ListItemText>
                 </MenuItem>
               )}
-              {isAdmin && (
+              {(isAdmin || user?.role === "editor") && (
                 <MenuItem
-                  disabled
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCloseMenu();
@@ -338,7 +341,6 @@ export default function ForumPage() {
   // Filter Logic
   const filtered = React.useMemo(() => {
     const query = q.trim().toLowerCase();
-    const isDefaultView = !query && !activeProgramFilters.length;
     let base = posts;
 
     if (activeProgramFilters.length) {
@@ -357,10 +359,9 @@ export default function ForumPage() {
     }
 
     const sortWithPinned = (a: Post, b: Post) => {
-      if (isDefaultView && sort !== "votes") {
-        const pinDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
-        if (pinDiff !== 0) return pinDiff;
-      }
+      const pinDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+      if (pinDiff !== 0) return pinDiff;
+
       if (sort === "votes") {
         return (Number(b.votes)) - (Number(a.votes));
       }
@@ -401,7 +402,7 @@ export default function ForumPage() {
   };
 
   const togglePin = async (id: string) => {
-    if (!isAdmin) return;
+    if (!isAdmin && user?.role !== "editor") return;
     const post = posts.find(p => p.id === id);
     if (!post) return;
     try {
