@@ -18,9 +18,6 @@ import RegistrationPage from '@routes/registration/page';
 import DashboardPage from '@routes/user/[id]';
 import MediaPage from '@routes/media/page';
 import TeamPage from '@routes/team/page';
-import NewsPage from '@routes/news/page';
-import NewsDetail from '@routes/news/details';
-import CreateNewsPage from '@routes/news/create';
 import ExamsPage from '@routes/exams/page';
 import ExamDetailsPage from '@routes/exams/[id]';
 import ForumPage from '@routes/forum/page';
@@ -71,7 +68,6 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/exams" element={<ExamsPage />} />
               <Route path="/exams/:id" element={<ExamDetailsPage />} />
-              <Route path="/news/create" element={<CreateNewsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/forum/create" element={<CreateForumPost />} />
               <Route path="/forum/:id/edit" element={<EditForumPost />} />
@@ -83,8 +79,6 @@ function App() {
             <Route path="/forum/:id" element={<ViewForumPost />} />
             <Route path="/media" element={<MediaPage />} />
             <Route path="/team" element={<TeamPage />} />
-            <Route path="/news" element={<NewsPage />} />
-            <Route path="/news/:id" element={<NewsDetail />} />
             <Route path="/contact" element={<ContactPage />} />
 
             <Route path="/" element={<NewsFeedPage />} />

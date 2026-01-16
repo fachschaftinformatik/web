@@ -390,29 +390,6 @@ export type PutAuthMeResponses = {
 
 export type PutAuthMeResponse = PutAuthMeResponses[keyof PutAuthMeResponses];
 
-export type PostAuthMeAvatarGenerateData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/me/avatar/generate';
-};
-
-export type PostAuthMeAvatarGenerateErrors = {
-    /**
-     * Unauthorized
-     */
-    401: AuthErrorResponse;
-};
-
-export type PostAuthMeAvatarGenerateError = PostAuthMeAvatarGenerateErrors[keyof PostAuthMeAvatarGenerateErrors];
-
-export type PostAuthMeAvatarGenerateResponses = {
-    /**
-     * No Content
-     */
-    204: unknown;
-};
-
 export type GetAuthNotificationsData = {
     body?: never;
     path?: never;
