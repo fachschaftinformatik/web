@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const maxMediaUploadSize = 50 << 20
+const maxMediaUploadSize = 256 << 20
 
 type EventResponse struct {
 	ID        int64     `json:"id"`
@@ -71,8 +71,14 @@ func (s *Server) PostEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, maxMediaUploadSize+1024*1024)
+
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		s.jsonError(w, "bad_request", "Invalid form data", http.StatusBadRequest)
+		if errors.As(err, new(*http.MaxBytesError)) {
+			s.jsonError(w, "bad_request", "File too large", http.StatusBadRequest)
+		} else {
+			s.jsonError(w, "bad_request", "Invalid form data", http.StatusBadRequest)
+		}
 		return
 	}
 
