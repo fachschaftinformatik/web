@@ -302,12 +302,6 @@ export const zPutAuthMeData = z.object({
  */
 export const zPutAuthMeResponse = zAuthUserResponse;
 
-export const zPostAuthMeAvatarGenerateData = z.object({
-    body: z.optional(z.never()),
-    path: z.optional(z.never()),
-    query: z.optional(z.never())
-});
-
 export const zGetAuthNotificationsData = z.object({
     body: z.optional(z.never()),
     path: z.optional(z.never()),

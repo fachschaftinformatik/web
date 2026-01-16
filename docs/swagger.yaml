@@ -519,20 +519,6 @@ paths:
       summary: Update current user profile
       tags:
       - Auth
-  /auth/me/avatar/generate:
-    post:
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/auth.ErrorResponse'
-      security:
-      - Session: []
-      summary: Regenerate user avatar
-      tags:
-      - Auth
   /auth/notifications:
     get:
       operationId: getAuthNotifications
