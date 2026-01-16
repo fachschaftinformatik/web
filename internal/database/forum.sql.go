@@ -401,8 +401,8 @@ FROM forum_posts p
 JOIN users u ON p.author_id = u.id
 WHERE (?2 IS NULL OR p.type = ?2) AND p.active = 1
 ORDER BY
-    votes DESC,
     p.pinned DESC,
+    votes DESC,
     p.created_at DESC
 LIMIT ?4 OFFSET ?3
 `
@@ -499,7 +499,9 @@ WHERE (
   lower(p.title) LIKE '%' || lower(?2) || '%' OR
   lower(p.body) LIKE '%' || lower(?2) || '%'
 ) AND p.active = 1
-ORDER BY p.created_at DESC
+ORDER BY 
+    p.pinned DESC,
+    p.created_at DESC
 LIMIT 10
 `
 
@@ -606,12 +608,12 @@ func (q *Queries) UpdateForumComment(ctx context.Context, arg UpdateForumComment
 
 const updateForumPost = `-- name: UpdateForumPost :one
 UPDATE forum_posts
-SET title = ?1,
-    body = ?2,
-    pinned = ?3,
-    event_date = ?4,
-    location = ?5,
-    image_url = ?6,
+SET title = COALESCE(?1, title),
+    body = COALESCE(?2, body),
+    pinned = COALESCE(?3, pinned),
+    event_date = COALESCE(?4, event_date),
+    location = COALESCE(?5, location),
+    image_url = COALESCE(?6, image_url),
     links = COALESCE(?7, links),
     programs = COALESCE(?8, programs),
     tags = COALESCE(?9, tags),
@@ -621,15 +623,15 @@ RETURNING id, title, body, author_id, created_at, updated_at, pinned, type, prog
 `
 
 type UpdateForumPostParams struct {
-	Title     string  `json:"title"`
-	Body      string  `json:"body"`
-	Pinned    int64   `json:"pinned"`
+	Title     *string `json:"title"`
+	Body      *string `json:"body"`
+	Pinned    *int64  `json:"pinned"`
 	EventDate *string `json:"event_date"`
 	Location  *string `json:"location"`
 	ImageUrl  *string `json:"image_url"`
-	Links     string  `json:"links"`
-	Programs  string  `json:"programs"`
-	Tags      string  `json:"tags"`
+	Links     *string `json:"links"`
+	Programs  *string `json:"programs"`
+	Tags      *string `json:"tags"`
 	ID        string  `json:"id"`
 }
 

@@ -507,12 +507,14 @@ func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request) {
 
 	// Otherwise check for privacy
 	if dbUser.Private == 1 {
+		dbUser.AvatarUrl = s.formatAvatarURL(dbUser.AvatarUrl, dbUser.ID)
 		s.respondJSON(w, http.StatusOK, PublicUserResponse{
 			ID:        dbUser.ID,
-			Name:      dbUser.ID,
+			Name:      "Anonym",
 			Role:      dbUser.Role,
 			Private:   1,
 			CreatedAt: dbUser.CreatedAt,
+			AvatarUrl: dbUser.AvatarUrl,
 		})
 		return
 	}
@@ -602,40 +604,6 @@ func (s *Server) boolToInt(b bool) int64 {
 	return 0
 }
 
-// PostAuthAvatarGenerate regenerates the user's avatar
-// @Summary Regenerate user avatar
-// @Tags Auth
-// @Security Session
-// @Success 204 "No Content"
-// @Failure 401 {object} ErrorResponse
-// @Router /auth/me/avatar/generate [post]
-func (s *Server) PostAuthAvatarGenerate(w http.ResponseWriter, r *http.Request) {
-	_, user, err := s.authenticate(w, r)
-	if err != nil {
-		s.jsonError(w, "unauthorized", "Not authenticated", http.StatusUnauthorized)
-		return
-	}
-
-	avatarPath, err := s.Avatars.GenerateAndStoreAvatar(r.Context(), user.ID)
-	if err != nil {
-		s.Log.Printf("Failed to regenerate avatar for %s: %v", user.ID, err)
-		s.jsonError(w, "avatar_generation_error", "Failed to generate avatar", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = s.DB.UpdateUserAvatar(r.Context(), database.UpdateUserAvatarParams{
-		ID:        user.ID,
-		AvatarUrl: &avatarPath,
-	})
-	if err != nil {
-		s.Log.Printf("Failed to update avatar URL for %s: %v", user.ID, err)
-		s.jsonError(w, "database_error", "Failed to update user profile", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
 // GetAvatar serves the user avatar from the bucket
 // @Summary Get user avatar
 // @Tags Auth
@@ -668,6 +636,7 @@ func (s *Server) GetAvatar(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "image/svg+xml")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
+		w.Header().Set("Cache-Control", "no-cache, must-revalidate")
 		w.Write(data)
 		return
 	}
@@ -693,12 +662,27 @@ func (s *Server) GetAvatar(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "image/svg+xml")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
+		w.Header().Set("Cache-Control", "no-cache, must-revalidate")
 		w.Write(data)
 		return
 	}
 
 	w.Header().Set("Content-Type", info.ContentType)
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", info.Size))
+	w.Header().Set("ETag", info.ETag)
+
+	// If it's a UUID-based avatar (contains .svg and is not the fallback), we can cache it forever
+	if strings.HasSuffix(filename, ".svg") && !strings.Contains(filename, "generated") {
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	} else {
+		w.Header().Set("Cache-Control", "public, max-age=3600") // 1 hour for others
+	}
+
+	if r.Header.Get("If-None-Match") == info.ETag {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
 	io.Copy(w, obj)
 }
 
