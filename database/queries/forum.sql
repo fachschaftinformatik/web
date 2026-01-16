@@ -52,22 +52,22 @@ FROM forum_posts p
 JOIN users u ON p.author_id = u.id
 WHERE (sqlc.narg(type) IS NULL OR p.type = sqlc.narg(type)) AND p.active = 1
 ORDER BY
-    votes DESC,
     p.pinned DESC,
+    votes DESC,
     p.created_at DESC
 LIMIT sqlc.arg(limit) OFFSET sqlc.arg(offset);
 
 -- name: UpdateForumPost :one
 UPDATE forum_posts
-SET title = sqlc.arg(title),
-    body = sqlc.arg(body),
-    pinned = sqlc.arg(pinned),
-    event_date = sqlc.arg(event_date),
-    location = sqlc.arg(location),
-    image_url = sqlc.arg(image_url),
-    links = COALESCE(sqlc.arg(links), links),
-    programs = COALESCE(sqlc.arg(programs), programs),
-    tags = COALESCE(sqlc.arg(tags), tags),
+SET title = COALESCE(sqlc.narg(title), title),
+    body = COALESCE(sqlc.narg(body), body),
+    pinned = COALESCE(sqlc.narg(pinned), pinned),
+    event_date = COALESCE(sqlc.narg(event_date), event_date),
+    location = COALESCE(sqlc.narg(location), location),
+    image_url = COALESCE(sqlc.narg(image_url), image_url),
+    links = COALESCE(sqlc.narg(links), links),
+    programs = COALESCE(sqlc.narg(programs), programs),
+    tags = COALESCE(sqlc.narg(tags), tags),
     updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
 WHERE id = sqlc.arg(id)
 RETURNING *;
@@ -144,5 +144,7 @@ WHERE (
   lower(p.title) LIKE '%' || lower(sqlc.arg(query)) || '%' OR
   lower(p.body) LIKE '%' || lower(sqlc.arg(query)) || '%'
 ) AND p.active = 1
-ORDER BY p.created_at DESC
+ORDER BY 
+    p.pinned DESC,
+    p.created_at DESC
 LIMIT 10;

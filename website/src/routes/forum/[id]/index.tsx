@@ -10,7 +10,6 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
-import LinkIcon from "@mui/icons-material/Link";
 
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
@@ -65,7 +64,6 @@ export default function ViewPost() {
                     ...postData,
                     programs: safeParseArray(postData.programs) as Program[],
                     tags: safeParseArray(postData.tags) as string[],
-                    links: safeParseArray(postData.links) as string[],
                     comments: []
                 };
 
@@ -301,20 +299,6 @@ export default function ViewPost() {
                                 {post.body}
                             </Typography>
 
-                            {post.image_url && (
-                                <Box component="img" src={post.image_url} sx={{ width: "100%", maxHeight: 500, objectFit: "contain", borderRadius: 2 }} />
-                            )}
-
-                            {post.links && post.links.length > 0 && (
-                                <Stack spacing={1}>
-                                    <Typography variant="subtitle2" fontWeight={700}>Links</Typography>
-                                    {post.links.map((link, i) => (
-                                        <Button key={i} href={link} target="_blank" startIcon={<LinkIcon />} sx={{ justifyContent: "flex-start" }}>
-                                            {link}
-                                        </Button>
-                                    ))}
-                                </Stack>
-                            )}
 
                             <Stack direction="row" spacing={1} flexWrap="wrap">
                                 {post.programs.map((p) => (

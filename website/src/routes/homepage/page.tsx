@@ -3,48 +3,39 @@ import {
   Avatar,
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  MenuItem,
   Paper,
   Stack,
-  TextField,
   Typography,
   alpha,
   useTheme,
 } from '@mui/material';
-import AddRounded from '@mui/icons-material/AddRounded';
 import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded';
-import CalendarMonthRounded from '@mui/icons-material/CalendarMonthRounded';
-import CampaignRounded from '@mui/icons-material/CampaignRounded';
-import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
-import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
-import EventAvailableRounded from '@mui/icons-material/EventAvailableRounded';
-import ForumRounded from '@mui/icons-material/ForumRounded';
-import LocationOnRounded from '@mui/icons-material/LocationOnRounded';
-import { Link as RouterLink } from 'react-router-dom';
+import GroupsRounded from '@mui/icons-material/GroupsRounded';
+import TerminalRounded from '@mui/icons-material/TerminalRounded';
+import CelebrationRounded from '@mui/icons-material/CelebrationRounded';
+import InfoRounded from '@mui/icons-material/InfoRounded';
+import MoreHorizRounded from '@mui/icons-material/MoreHorizRounded';
+import {
+  Timeline,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineConnector,
+  TimelineContent,
+  TimelineDot,
+  TimelineOppositeContent,
+  timelineOppositeContentClasses,
+} from '@mui/lab';
+import { useNavigate, Link as RouterLink, Link } from 'react-router-dom';
 
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
-import { newsDaten, type NewsItem } from '@routes/news/page';
 import type { AuthPostResponse } from '@lib/api';
 
-type ForumPostSummary = { id: string; title: string; author: string; authorAvatarUrl: string | undefined; createdAt: string; replies: number; };
+type NewsItem = AuthPostResponse;
+
+type EventItem = { id: number; title: string; created_at: string; cover_path?: string };
+type ForumPostSummary = { id: string; title: string; body: string; author: string; authorId: string; authorAvatarUrl: string | undefined; createdAt: string; replies: number; };
 type CalendarEvent = { id: string; title: string; date: string; time?: string; location?: string; category: string; };
-type EventDraft = { title: string; date: string; time: string; location: string; category: string; };
-
-const STORAGE_NEWS_KEY = 'custom-news';
-const STORAGE_EVENTS_KEY = 'homepage-events';
-
-const EVENT_CATEGORIES = [
-  { value: 'Treffen', label: 'Treffen', tone: 'success' },
-  { value: 'Workshop', label: 'Workshop', tone: 'info' },
-  { value: 'Party', label: 'Party', tone: 'error' },
-  { value: 'Info', label: 'Info', tone: 'warning' },
-] as const;
 
 const toDateKey = (date: Date) => {
   const year = date.getFullYear();
@@ -56,7 +47,6 @@ const parseDateKey = (dateKey: string) => {
   const [year, month, day] = dateKey.split('-').map(Number);
   return new Date(year, (month || 1) - 1, day || 1);
 };
-const monthLabel = (date: Date) => date.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
 const formatShortDate = (date: Date) => date.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
 const formatNewsDate = (dateString: string) => {
   const parsed = new Date(dateString);
@@ -67,62 +57,13 @@ const formatForumDate = (iso?: string) => {
   const d = new Date(iso);
   return isNaN(d.getTime()) ? 'k.A.' : d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
 };
-const buildCalendarDays = (date: Date) => {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const start = new Date(year, month, 1);
-  const end = new Date(year, month + 1, 0);
-  const prevEnd = new Date(year, month, 0);
-  const offset = (start.getDay() + 6) % 7;
-  const days: Array<{ date: Date; day: number; inMonth: boolean }> = [];
-  for (let i = 0; i < offset; i++) {
-    const day = prevEnd.getDate() - offset + i + 1;
-    days.push({ date: new Date(year, month - 1, day), day, inMonth: false });
-  }
-  for (let d = 1; d <= end.getDate(); d++) {
-    days.push({ date: new Date(year, month, d), day: d, inMonth: true });
-  }
-  while (days.length % 7 !== 0) {
-    const day = days.length - (offset + end.getDate()) + 1;
-    days.push({ date: new Date(year, month + 1, day), day, inMonth: false });
-  }
-  return days;
-};
-
-const buildSeedEvents = (): CalendarEvent[] => {
-  const base = new Date();
-  const make = (offset: number, title: string, time: string, location: string, category: string) => {
-    const date = new Date(base);
-    date.setDate(base.getDate() + offset);
-    return { id: `seed-${offset}-${title}`, title, date: toDateKey(date), time, location, category };
-  };
-  return [
-    make(1, 'Erstsemester-Meetup', '18:30', 'Raum A2.12', 'Treffen'),
-    make(3, 'React Workshop', '16:00', 'Labor 3', 'Workshop'),
-    make(8, 'Spieleabend', '19:00', 'FSV Lounge', 'Party'),
-    make(12, 'Info-Session Praktika', '14:00', 'Online', 'Info'),
-  ];
-};
-const loadEvents = (): CalendarEvent[] => {
-  if (typeof window === 'undefined') return buildSeedEvents();
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(STORAGE_EVENTS_KEY) || '[]');
-    if (Array.isArray(stored) && stored.length) return stored;
-  } catch { void 0; }
-  return buildSeedEvents();
-};
-const loadNews = (): NewsItem[] => {
-  if (typeof window === 'undefined') return newsDaten;
-  try {
-    const custom = JSON.parse(window.localStorage.getItem(STORAGE_NEWS_KEY) || '[]');
-    return [...newsDaten, ...(Array.isArray(custom) ? custom : [])];
-  } catch { return newsDaten; }
-};
 const loadForumPosts = (apiPosts: AuthPostResponse[] = []): ForumPostSummary[] => {
   const normalize = (post: AuthPostResponse): ForumPostSummary => ({
     id: String(post.id ?? ''),
     title: String(post.title ?? 'Neuer Beitrag'),
+    body: String(post.body ?? ''),
     author: String(post.author_name ?? 'Anonym'),
+    authorId: String(post.author_id ?? ''),
     authorAvatarUrl: post.author_avatar_url || undefined,
     createdAt: String(post.created_at ?? new Date().toISOString()),
     replies: Number(post.comment_count ?? 0),
@@ -131,81 +72,68 @@ const loadForumPosts = (apiPosts: AuthPostResponse[] = []): ForumPostSummary[] =
 };
 const toEventTimestamp = (event: CalendarEvent) => {
   const [year, month, day] = event.date.split('-').map(Number);
-  const [hour, minute] = (event.time || '00:00').split(':').map(Number);
+  // If no time is provided, we treat it as an all-day event occurring at the end of the day for filtering purposes
+  const [hour, minute] = event.time ? event.time.split(':').map(Number) : [23, 59];
   return new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0).getTime();
 };
-const toNewsTimestamp = (item: NewsItem) => {
-  if (item.createdAt) {
-    const parsed = Date.parse(item.createdAt);
-    if (!Number.isNaN(parsed)) return parsed;
-  }
-  const parsedDate = Date.parse(item.date);
-  if (!Number.isNaN(parsedDate)) return parsedDate;
-  return typeof item.id === 'number' ? item.id : 0;
-};
+
 
 const NewsFeedPage: React.FC = () => {
   const { user } = useAuth();
-
-  const isAdmin = user?.role === 'admin';
-
+  const navigate = useNavigate();
   const theme = useTheme();
-
   const custom = theme.custom;
   const isDark = theme.palette.mode === 'dark';
 
-  const categoryColors = useMemo(() => {
-    const paletteMap = {
-      success: theme.palette.success.main,
-      info: theme.palette.info.main,
-      warning: theme.palette.warning.main,
-      error: theme.palette.error.main,
-    };
-    return EVENT_CATEGORIES.reduce<Record<string, string>>((acc, entry) => {
-      acc[entry.value] = paletteMap[entry.tone];
-      return acc;
-    }, {});
-  }, [theme]);
+  const getCategoryColor = (category: string) => {
+    if (category === 'Treffen') return theme.palette.success.main;
+    if (category === 'Workshop') return theme.palette.info.main;
+    if (category === 'Party') return theme.palette.error.main;
+    if (category === 'Info') return theme.palette.warning.main;
+    return theme.palette.primary.main;
+  };
 
-  const getCategoryColor = (category: string) => categoryColors[category] ?? theme.palette.success.main;
-  const imageOverlayBase = isDark ? theme.palette.background.default : theme.palette.text.primary;
-
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()));
-  const [events, setEvents] = useState<CalendarEvent[]>(() => {
-    const loaded = loadEvents();
-    return [...loaded].sort((a, b) => toEventTimestamp(a) - toEventTimestamp(b));
-  });
-
-  const newsItems = useMemo(() => {
-    const items = loadNews();
-    return [...items].sort((a, b) => toNewsTimestamp(b) - toNewsTimestamp(a));
-  }, []);
-
+  const [eventsData, setEventsData] = useState<EventItem[]>([]);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [sidebarIndex, setSidebarIndex] = useState(0);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [forumPosts, setForumPosts] = useState<ForumPostSummary[]>([]);
+  const [apiEvents, setApiEvents] = useState<AuthPostResponse[]>([]);
 
   useEffect(() => {
     import('@lib/api').then(({ getForumPosts }) => {
-      getForumPosts({ query: { limit: 5 } }).then(({ data }) => {
+      // Fetch News
+      getForumPosts({ query: { type: 'news', limit: 10 } }).then(({ data }) => {
+        if (data) setNewsItems(data as AuthPostResponse[]);
+      });
+      // Fetch Forum
+      getForumPosts({ query: { type: 'forum', limit: 5 } }).then(({ data }) => {
         if (data) setForumPosts(loadForumPosts(data as AuthPostResponse[]));
+      });
+      // Fetch Event Posts
+      getForumPosts({ query: { type: 'event', limit: 20 } }).then(({ data }) => {
+        if (data) setApiEvents(data as AuthPostResponse[]);
+      });
+    });
+
+    // Fetch Events for Carousel
+    import('@lib/api/client.gen').then(({ client }) => {
+      client.request({ method: 'GET', url: '/events' }).then(({ data }) => {
+        if (data) setEventsData(data as EventItem[]);
       });
     });
   }, []);
 
-  const [eventDialogOpen, setEventDialogOpen] = useState(false);
-  const [eventDraft, setEventDraft] = useState<EventDraft>({
-    title: '',
-    date: toDateKey(new Date()),
-    time: '',
-    location: '',
-    category: EVENT_CATEGORIES[0].value,
-  });
-
-
+  // Carousel auto-slide
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(STORAGE_EVENTS_KEY, JSON.stringify(events));
-  }, [events]);
+    if (eventsData.length <= 1) return;
+    const interval = setInterval(() => {
+      setCarouselIndex((prev) => (prev + 1) % eventsData.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [eventsData.length]);
+
+
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -229,94 +157,96 @@ const NewsFeedPage: React.FC = () => {
     return () => { sectionObserver.disconnect(); railObserver.disconnect(); };
   }, [newsItems.length]);
 
-  const days = useMemo(() => buildCalendarDays(currentMonth), [currentMonth]);
-  const todayKey = toDateKey(new Date());
-  const eventsByDate = useMemo(() => {
-    const map = new Map<string, CalendarEvent[]>();
-    events.forEach((event) => {
-      const list = map.get(event.date) ?? [];
-      list.push(event);
-      map.set(event.date, list);
-    });
-    return map;
-  }, [events]);
   const upcomingEvents = useMemo(() => {
     const now = new Date();
-    return [...events]
-      .filter((event) => toEventTimestamp(event) >= now.getTime())
-      .sort((a, b) => toEventTimestamp(a) - toEventTimestamp(b));
-  }, [events]);
 
-  const latestNews = newsItems.slice(0, 8);
-  const leadNews = latestNews[0];
-  const secondaryNews = latestNews.slice(1, 3);
-  const railNews = newsItems.slice(3, 9);
-  const railItems = railNews.length ? railNews : secondaryNews;
-  const latestForum = forumPosts.slice(0, 3);
-  const forumHighlight = latestForum[0];
-  const forumRest = latestForum.slice(1);
-  const upcomingPreview = upcomingEvents.slice(0, 3);
-  const heroEvent = upcomingPreview[0];
-  const heroEventDate = heroEvent ? parseDateKey(heroEvent.date) : null;
+    const mappedApiEvents: CalendarEvent[] = apiEvents.map(post => {
+      const datePart = post.event_date ? post.event_date.split('T')[0] : toDateKey(new Date(post.created_at || ''));
+      const timePart = post.event_date && post.event_date.includes('T') ? post.event_date.split('T')[1].substring(0, 5) : '';
 
-  const openEventDialog = (dateKey?: string) => {
-    setEventDraft((prev) => ({ ...prev, date: dateKey ?? selectedDate }));
-    setEventDialogOpen(true);
-  };
-  const selectDate = (dateKey: string) => {
-    setSelectedDate(dateKey);
-    const parsed = parseDateKey(dateKey);
-    setCurrentMonth(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
-  };
-  const handleCreateEvent = () => {
-    if (!isAdmin) return;
+      // Extract category from tags or default to 'Info'
+      let category = 'Info';
+      if (post.tags) {
+        try {
+          const tagsArray = typeof post.tags === 'string' ? JSON.parse(post.tags) : post.tags;
+          if (Array.isArray(tagsArray)) {
+            const found = tagsArray.find(t => ['Treffen', 'Workshop', 'Party', 'Info'].includes(t));
+            if (found) category = found;
+          }
+        } catch (e) {
+          console.error('Failed to parse tags for event category', e);
+        }
+      }
 
-    if (!eventDraft.title.trim() || !eventDraft.date) return;
-    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `event-${Date.now()}`;
-    const nextEventEntry: CalendarEvent = {
-      id,
-      title: eventDraft.title.trim(),
-      date: eventDraft.date,
-      time: eventDraft.time,
-      location: eventDraft.location.trim(),
-      category: eventDraft.category,
-    };
-    setEvents((prev) => [...prev, nextEventEntry].sort((a, b) => toEventTimestamp(a) - toEventTimestamp(b)));
-    setEventDialogOpen(false);
-    setEventDraft((prev) => ({ ...prev, title: '', time: '', location: '' }));
-  };
-  const changeMonth = (offset: number) => {
-    setCurrentMonth((prev) => {
-      const next = new Date(prev.getFullYear(), prev.getMonth() + offset, 1);
-      setSelectedDate(toDateKey(next));
-      return next;
+      return {
+        id: post.id!,
+        title: post.title!,
+        date: datePart,
+        time: timePart,
+        location: post.location || '',
+        category: category
+      };
     });
-  };
+
+    return mappedApiEvents
+      .filter((event) => {
+        const eventTs = toEventTimestamp(event);
+        // Include events that are still relevant today
+        return eventTs >= now.getTime();
+      })
+      .sort((a, b) => toEventTimestamp(a) - toEventTimestamp(b));
+  }, [apiEvents]);
+
+  const upcomingPreview: CalendarEvent[] = upcomingEvents.slice(0, 5);
 
   return (
     <Sidebar user={user} title="Startseite" maxWidth="xl">
-      <Box sx={{
-        ...custom.pageWrapper,
-        py: 0,
-        background: 'transparent',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(12, minmax(0, 1fr))',
-        columnGap: 3,
-        rowGap: 8
-      }}>
+      <Stack spacing={4} sx={{ mt: 1 }}>
 
 
         <Box
           component="section"
           sx={{
-            gridColumn: '1 / -1',
-            mb: { xs: 6, md: 10 }
+            position: 'relative',
+            height: { xs: 300, md: 400 },
+            borderRadius: 6,
+            overflow: 'hidden',
+            border: '1px solid',
+            borderColor: 'divider',
           }}
         >
-          <Paper
-            elevation={0}
-            sx={custom.heroSection}
-          >
+          {/* Hero Background Carousel */}
+          {eventsData.length > 0 ? (
+            eventsData.map((ev, idx) => (
+              <Box
+                key={ev.id}
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  transition: 'opacity 1s ease-in-out',
+                  opacity: carouselIndex === idx ? 1 : 0,
+                  zIndex: carouselIndex === idx ? 0 : -1,
+                }}
+              >
+                <Box
+                  component="img"
+                  src={ev.cover_path ? `/api/events/${ev.id}/cover` : `https://picsum.photos/seed/${ev.id}/1600/900`}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: `linear-gradient(to right, ${alpha(theme.palette.background.default, 0.95)} 0%, ${alpha(theme.palette.background.default, 0.4)} 50%, transparent 100%), linear-gradient(to top, ${alpha(theme.palette.background.default, 0.8)}, transparent)`,
+                  }}
+                />
+              </Box>
+            ))
+          ) : (
             <Box
               sx={{
                 position: 'absolute',
@@ -326,150 +256,105 @@ const NewsFeedPage: React.FC = () => {
                   : `linear-gradient(120deg, ${alpha(theme.palette.primary.dark, 0.45)}, ${alpha(theme.palette.primary.dark, 0.08)})`,
               }}
             />
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                background: isDark
-                  ? `radial-gradient(circle at 20% 20%, ${alpha(theme.palette.primary.light, 0.22)}, transparent 55%)`
-                  : `radial-gradient(circle at 20% 20%, ${alpha(theme.palette.primary.light, 0.2)}, transparent 55%)`,
-                mixBlendMode: 'screen',
-              }}
-            />
-            <Box
-              sx={{
-                position: 'relative',
-                zIndex: 1,
-                maxWidth: { xs: '100%', md: 'calc(var(--page-max-width) + (var(--grid-gap) * 12))' },
-                mx: 'auto',
-                px: { xs: 8, md: 12 },
-                py: { xs: 3, md: 4 },
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' },
-                columnGap: { xs: 2, md: 4 },
-                rowGap: { xs: 3, md: 4 },
-              }}
-            >
-              <Stack spacing={1} sx={{ gridColumn: { xs: '1 / -1', md: '1 / 9' }, justifyContent: 'center' }}>
-                <Box>
-                  <Typography variant="overline" sx={custom.heroOverline}>
-                    FSV Hub
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'var(--muted)', letterSpacing: '0.16em', textTransform: 'uppercase', display: 'block' }}>
-                    Fachschaft Informatik
-                  </Typography>
-                </Box>
-                <Typography
-                  variant="h1"
+          )}
+
+          <Box
+            sx={{
+              position: 'relative',
+              zIndex: 1,
+              height: '100%',
+              px: { xs: 4, md: 8 },
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+            }}
+          >
+            <Stack spacing={2} sx={{ maxWidth: 800, pointerEvents: 'auto' }}>
+              <Box>
+                <Typography variant="overline" sx={{ ...custom.heroOverline, color: 'primary.main', fontWeight: 800, fontSize: '1.1rem', letterSpacing: '0.15em' }}>
+                  fsInformatik
+                </Typography>
+                <Typography variant="h1" sx={{
+                  fontFamily: '"Space Grotesk", sans-serif',
+                  fontWeight: 800,
+                  fontSize: { xs: '2.5rem', md: '4rem' },
+                  lineHeight: 1,
+                  mb: 2,
+                  textShadow: isDark ? '0 0 40px rgba(0,0,0,0.5)' : 'none',
+                }}>
+                  {eventsData[carouselIndex]?.title || 'Dein Hub für das Studium'}
+                </Typography>
+              </Box>
+
+              <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400, maxWidth: 600, mb: 2 }}>
+                Bleib informiert über Events, Klausuren und alles Wichtige rund um dein Studium an der Westfälischen Hochschule.
+              </Typography>
+
+              <Stack direction="row" spacing={2}>
+                <Button
+                  component={RouterLink}
+                  to="/forum"
+                  variant="contained"
+                  disableElevation
+                  size="large"
                   sx={{
-                    fontFamily: '"Space Grotesk", sans-serif',
+                    borderRadius: 3,
+                    px: 4,
+                    py: 1.2,
+                    fontSize: '1.1rem',
                     fontWeight: 700,
-                    lineHeight: 1.1,
-                    fontSize: { xs: '1.75rem', md: '2.5rem' },
-                    color: 'var(--ink)',
+                    textTransform: 'none',
                   }}
                 >
-                  Willkommen bei der Fachschaft.
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'var(--muted)', maxWidth: 560, mb: 0.5 }}>
-                  Dein Hub für Termine, Unterstützung und Austausch im Studium.
-                </Typography>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: 1 }}>
-                  <Button
-                    component="a"
-                    href="#events"
-                    variant="contained"
-                    sx={{
-                      ...custom.roundButton,
-                      bgcolor: 'var(--accent-strong)',
-                      color: theme.palette.primary.contrastText,
-                      boxShadow: `0 14px 30px ${alpha(theme.palette.success.main, 0.25)}`,
-                      '&:hover': { bgcolor: isDark ? theme.palette.primary.light : theme.palette.primary.dark },
-                    }}
-                  >
-                    Zu den Events
-                  </Button>
-                  <Button
-                    component={RouterLink}
-                    to="/forum"
-                    variant="outlined"
-                    sx={{
-                      ...custom.roundButton,
-                      borderColor: alpha(theme.palette.text.primary, 0.4),
-                      color: theme.palette.text.primary,
-                      '&:hover': { borderColor: 'var(--accent-strong)', bgcolor: alpha(theme.palette.text.primary, 0.08) },
-                    }}
-                  >
-                    Zum Forum
-                  </Button>
-                </Stack>
+                  Zum Forum
+                </Button>
+                <Button
+                  component={RouterLink}
+                  to="/media"
+                  variant="outlined"
+                  size="large"
+                  sx={{
+                    borderRadius: 3,
+                    px: 4,
+                    py: 1.2,
+                    fontSize: '1.1rem',
+                    fontWeight: 700,
+                    backdropFilter: 'blur(10px)',
+                    textTransform: 'none',
+                  }}
+                >
+                  Galerie ansehen
+                </Button>
               </Stack>
+            </Stack>
 
-              {heroEvent && (
-                <Box sx={{
-                  gridColumn: { xs: '1 / -1', md: '9 / -1' },
-                  justifySelf: { md: 'end' },
-                  alignSelf: { md: 'flex-end' },
-                  mt: { xs: 2, md: 0 },
-                  width: '100%'
-                }}>
-                  <Paper
-                    elevation={0}
+            {/* Carousel Navigation Indicators */}
+            {eventsData.length > 1 && (
+              <Box sx={{ position: 'absolute', bottom: 32, left: { xs: 32, md: 64 }, display: 'flex', gap: 1, pointerEvents: 'auto' }}>
+                {eventsData.map((_, i) => (
+                  <Box
+                    key={i}
+                    onClick={() => setCarouselIndex(i)}
                     sx={{
-                      ...custom.glassCard,
-                      ...custom.eventFloat,
-                      p: 1.6,
-                      transform: { md: 'rotate(-1deg)' },
+                      width: 40,
+                      height: 4,
+                      borderRadius: 2,
+                      bgcolor: carouselIndex === i ? 'primary.main' : alpha(theme.palette.text.primary, 0.2),
+                      cursor: 'pointer',
+                      transition: 'all 0.3s',
+                      '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.6) }
                     }}
-                  >
-                    <Stack spacing={1}>
-                      <Typography variant="overline" sx={{ letterSpacing: '0.22em', color: 'var(--accent-strong)', fontWeight: 700, lineHeight: 1 }}>
-                        Nächstes Event
-                      </Typography>
-                      <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.1rem' }}>
-                        {heroEvent.title}
-                      </Typography>
-                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                        <Typography variant="caption" sx={{ color: 'var(--muted)' }}>
-                          {heroEventDate ? formatShortDate(heroEventDate) : heroEvent.date}
-                        </Typography>
-                        {heroEvent.time && (
-                          <Typography variant="caption" sx={{ color: 'var(--muted)' }}>{heroEvent.time} Uhr</Typography>
-                        )}
-                        {heroEvent.location && (
-                          <Stack direction="row" spacing={0.3} alignItems="center">
-                            <LocationOnRounded sx={{ fontSize: 14, color: 'var(--muted)' }} />
-                            <Typography variant="caption" sx={{ color: 'var(--muted)' }}>{heroEvent.location}</Typography>
-                          </Stack>
-                        )}
-                      </Stack>
-                      <Button component="a" href="#events" size="small" sx={{ alignSelf: 'flex-start', textTransform: 'none', color: 'var(--accent-strong)', px: 0 }}>
-                        Zum Kalender
-                      </Button>
-                    </Stack>
-                  </Paper>
-                </Box>
-              )}
-            </Box>
-          </Paper>
+                  />
+                ))}
+              </Box>
+            )}
+          </Box>
         </Box>
 
-        <Box component="section" data-reveal="true"
-          sx={{
-            ...custom.sectionShell,
-            gridColumn: '1 / -1',
-            background: custom.sectionGradients.newsroom,
-            mb: { xs: 6, md: 10 }
-          }}>
+        <Box component="section">
           <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <CampaignRounded sx={custom.sectionIcon} />
-                <Typography variant="h4" sx={custom.sectionTitle}>Newsroom</Typography>
-              </Stack>
-              <Button component={RouterLink} to="/news" size="small" endIcon={<ArrowForwardRounded fontSize="small" />} sx={custom.sectionAction}>
-                Alle News
-              </Button>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2, px: 1 }}>
             </Stack>
             <Box sx={{
               display: 'grid',
@@ -477,273 +362,235 @@ const NewsFeedPage: React.FC = () => {
               gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' },
               alignItems: 'stretch'
             }}>
-              <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 7' } }}>
-                {leadNews ? (
-                  <Paper
-                    component={RouterLink}
-                    to={`/news/${leadNews.id}`}
-                    elevation={0}
+              {/* Left Column: Announcements / Forum Carousel */}
+              <Paper
+                elevation={0}
+                sx={{
+                  gridColumn: { xs: '1 / -1', md: 'span 7' },
+                  borderRadius: 4,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 380,
+                  overflow: 'hidden'
+                }}
+              >
+                <Box sx={{ p: { xs: 2.2, md: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Stack spacing={2.5} sx={{ flex: 1 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Typography
+                          variant="h5"
+                          onClick={() => setSidebarIndex(0)}
+                          sx={{
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            color: sidebarIndex === 0 ? 'text.primary' : 'text.secondary',
+                            transition: 'color 0.2s',
+                            '&:hover': { color: 'primary.main' }
+                          }}
+                        >
+                          Ankündigungen
+                        </Typography>
+                        <Typography variant="h5" sx={{ color: 'divider', fontWeight: 300 }}>|</Typography>
+                        <Typography
+                          variant="h5"
+                          onClick={() => setSidebarIndex(1)}
+                          sx={{
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            color: sidebarIndex === 1 ? 'text.primary' : 'text.secondary',
+                            transition: 'color 0.2s',
+                            '&:hover': { color: 'primary.main' }
+                          }}
+                        >
+                          Forum
+                        </Typography>
+                      </Stack>
+                    </Stack>
+
+                    <Box sx={{ flex: 1 }}>
+                      {sidebarIndex === 0 ? (
+                        <Stack spacing={1.5}>
+                          {newsItems.slice(0, 3).map((item) => (
+                            <Box
+                              key={item.id}
+                              component={RouterLink}
+                              to={`/forum/${item.id}`}
+                              sx={{
+                                ...custom.newsCardLink,
+                                bgcolor: isDark ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.04),
+                                '&:hover': {
+                                  ...custom.newsCardLink['&:hover'],
+                                  bgcolor: isDark ? alpha(theme.palette.primary.main, 0.12) : alpha(theme.palette.primary.main, 0.06),
+                                }
+                              }}
+                            >
+                              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                                <Avatar
+                                  src={item.author_avatar_url || undefined}
+                                  sx={{
+                                    width: 18,
+                                    height: 18,
+                                    fontSize: "0.6rem",
+                                    bgcolor: theme.palette.primary.main,
+                                    fontWeight: "bold"
+                                  }}
+                                />
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  von <Typography component={Link} to={`/user/${item.author_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{item.author_name || "Anonym"}</Typography> · {formatNewsDate(item.created_at || "")}
+                                </Typography>
+                              </Stack>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{item.title}</Typography>
+                              <Typography variant="body2" sx={{ color: 'text.secondary', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                {(item.body || '').substring(0, 100)}
+                              </Typography>
+                            </Box>
+                          ))}
+                          {newsItems.length === 0 && <Typography variant="body1" sx={{ color: 'text.secondary' }}>Weitere Ankündigungen folgen in Kürze.</Typography>}
+                        </Stack>
+                      ) : (
+                        <Stack spacing={1.5}>
+                          {forumPosts.slice(0, 3).map((post) => (
+                            <Box key={post.id} component={RouterLink} to={`/forum/${post.id}`} sx={custom.newsCardLink}>
+                              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                                <Avatar
+                                  src={post.authorAvatarUrl || undefined}
+                                  sx={{
+                                    width: 18,
+                                    height: 18,
+                                    fontSize: "0.6rem",
+                                    bgcolor: theme.palette.primary.main,
+                                    fontWeight: "bold"
+                                  }}
+                                />
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  von <Typography component={Link} to={`/user/${post.authorId}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author}</Typography> · {formatForumDate(post.createdAt)}
+                                </Typography>
+                              </Stack>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{post.title}</Typography>
+                              <Typography variant="body2" sx={{ color: 'text.secondary', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                {post.body}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Stack>
+                      )}
+                    </Box>
+
+                    <Button
+                      component={RouterLink}
+                      to={sidebarIndex === 0 ? "/forum?type=news" : "/forum"}
+                      variant="contained"
+                      disableElevation
+                      endIcon={<ArrowForwardRounded fontSize="small" />}
+                      sx={{
+                        mt: 'auto',
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        borderRadius: 3,
+                        py: 1.2,
+                        width: 'fit-content'
+                      }}
+                    >
+                      Alle anzeigen
+                    </Button>
+                  </Stack>
+                </Box>
+              </Paper>
+
+              {/* Right Column: Upcoming Events */}
+              <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' }, display: 'flex', justifyContent: 'center' }}>
+                <Stack spacing={2} sx={{ width: '100%', maxWidth: 400, pt: { xs: 2.2, md: 3 } }}>
+                  <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mb: 2 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 800 }}>Agenda</Typography>
+                  </Stack>
+
+                  <Timeline
                     sx={{
-                      ...custom.glassCard,
-                      display: 'flex', flexDirection: 'column', position: 'relative', minHeight: { xs: 220, md: 280 }, borderRadius: 5, overflow: 'hidden', textDecoration: 'none', color: 'inherit', background: 'none', backgroundColor: imageOverlayBase, height: '100%',
-                      '&::before': {
-                        content: '""', position: 'absolute', inset: -1,
-                        backgroundImage: leadNews.image
-                          ? `linear-gradient(180deg, ${alpha(imageOverlayBase, 0.6)} 0%, ${alpha(imageOverlayBase, 1)} 100%), url(${leadNews.image})`
-                          : `linear-gradient(135deg, ${alpha(imageOverlayBase, 0.6)}, ${alpha(imageOverlayBase, 0.98)})`,
-                        backgroundSize: leadNews.image ? '100% 100%, cover' : 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', zIndex: 0, pointerEvents: 'none',
+                      p: 0,
+                      m: 0,
+                      [`& .${timelineOppositeContentClasses.root}`]: {
+                        flex: 1,
+                        textAlign: 'right',
+                        px: 2,
+                      },
+                      [`& .MuiTimelineContent-root`]: {
+                        flex: 1,
+                        px: 2,
                       },
                     }}
                   >
-                    <Stack spacing={0.8} sx={{ position: 'relative', zIndex: 1, p: { xs: 2, md: 2.6 }, height: '100%', justifyContent: 'flex-end' }}>
-                      <Typography variant="overline" sx={{ letterSpacing: '0.18em', color: alpha(theme.palette.common.white, 0.85) }}>
-                        {formatNewsDate(leadNews.date)}
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.common.white, lineHeight: 1.15 }}>{leadNews.title}</Typography>
-                      <Typography variant="body2" sx={{ color: alpha(theme.palette.common.white, 0.75), display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                        {leadNews.summary || 'Mehr lesen …'}
-                      </Typography>
-                    </Stack>
-                  </Paper>
-                ) : (
-                  <Paper elevation={0} sx={{ ...custom.glassCard, p: { xs: 2, md: 2.6 }, borderRadius: 5 }}>
-                    <Typography variant="body1" sx={{ color: 'var(--muted)' }}>Weitere News folgen in Kürze.</Typography>
-                  </Paper>
-                )}
-              </Box>
-              <Paper elevation={0} sx={{ ...custom.glassCard, gridColumn: { xs: '1 / -1', md: 'span 5' }, p: { xs: 1.8, md: 2.2 }, borderRadius: 4, background: alpha(theme.palette.background.paper, isDark ? 0.72 : 0.9) }}>
-                <Stack spacing={2}>
-                  <Typography variant="overline" sx={{ letterSpacing: '0.24em', color: 'var(--accent-strong)', fontWeight: 700 }}>Kurz &amp; Knapp</Typography>
-                  {secondaryNews.length ? secondaryNews.map((item) => (
-                    <Box key={item.id} component={RouterLink} to={`/news/${item.id}`} sx={custom.newsCardLink}>
-                      <Typography variant="caption" sx={{ color: 'var(--muted)', letterSpacing: '0.12em' }}>{formatNewsDate(item.date)}</Typography>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{item.title}</Typography>
-                    </Box>
-                  )) : <Typography variant="body2" sx={{ color: 'var(--muted)' }}>Keine weiteren News.</Typography>}
-                  <Button component={RouterLink} to="/news" size="small" endIcon={<ArrowForwardRounded fontSize="small" />} sx={{ ...custom.sectionAction, alignSelf: 'flex-start', px: 0 }}>
-                    Alle News
-                  </Button>
-                </Stack>
-              </Paper>
-            </Box>
-            {railItems.length ? (
-              <Box data-reveal="rail" sx={{ mt: { xs: 3, md: 5 }, ...custom.railReveal }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.6 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Mehr Stories</Typography>
-                </Stack>
-                <Box sx={custom.scrollableRail}>
-                  {railItems.map((item) => (
-                    <Paper key={item.id} component={RouterLink} to={`/news/${item.id}`} elevation={0} sx={{ ...custom.glassCard, borderRadius: 4, overflow: 'hidden', textDecoration: 'none', color: 'inherit', borderColor: 'var(--card-border)', boxShadow: 'none', '&:hover': { transform: 'translateY(-3px)', borderColor: 'var(--accent-strong)', boxShadow: 'none' } }}>
-                      <Box sx={{ height: 130, backgroundImage: item.image ? `url(${item.image})` : isDark ? `linear-gradient(135deg, ${alpha(theme.palette.background.default, 0.96)}, ${alpha(theme.palette.background.default, 0.98)})` : `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.18)}, ${alpha(theme.palette.background.paper, 0.98)})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                      <Stack spacing={0.6} sx={{ p: 1.6 }}>
-                        <Typography variant="caption" sx={{ color: 'var(--muted)', letterSpacing: '0.12em' }}>{formatNewsDate(item.date)}</Typography>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{item.title}</Typography>
-                        <Typography variant="body2" sx={{ color: 'var(--muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.summary || 'Mehr lesen …'}</Typography>
-                      </Stack>
-                    </Paper>
-                  ))}
-                </Box>
-              </Box>
-            ) : null}
-          </Box>
-        </Box>
-
-        <Box component="section" id="events" data-reveal="true"
-          sx={{
-            ...custom.sectionShell,
-            gridColumn: '1 / -1',
-            scrollMarginTop: { xs: 80, md: 100 },
-            background: custom.sectionGradients.agenda,
-            mb: { xs: 6, md: 10 }
-          }}>
-          <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between" sx={{ mb: 2 }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <EventAvailableRounded sx={custom.sectionIcon} />
-                <Typography variant="h4" sx={custom.sectionTitle}>Agenda</Typography>
-              </Stack>
-
-              {isAdmin && (
-                <Button
-                  size="small"
-                  variant="contained"
-                  startIcon={<AddRounded fontSize="small" />}
-                  onClick={() => openEventDialog()}
-                  sx={{ ...custom.roundButton, bgcolor: 'var(--accent-strong)', color: theme.palette.primary.contrastText, '&:hover': { bgcolor: isDark ? theme.palette.primary.light : theme.palette.primary.dark } }}
-                >
-                  Event eintragen
-                </Button>
-              )}
-            </Stack>
-            <Box sx={{
-              display: 'grid',
-              gap: { xs: 3, md: 4 },
-              gridTemplateColumns: { xs: '1fr', lg: '7fr 5fr' },
-              alignItems: 'start'
-            }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', display: 'block', mb: 1.2 }}>KOMMENDE TERMINE</Typography>
-                <Box sx={{ position: 'relative', pl: { xs: 2.5, md: 3.5 } }}>
-                  <Box sx={{ position: 'absolute', left: { xs: 10, md: 14 }, top: 6, bottom: 6, width: 2, bgcolor: 'var(--card-border)', borderRadius: 999 }} />
-                  <Stack spacing={2.5}>
-                    {upcomingPreview.length ? upcomingPreview.map((event) => {
+                    {upcomingPreview.length ? upcomingPreview.slice(0, 5).map((event) => {
                       const accent = getCategoryColor(event.category);
                       const eventDate = parseDateKey(event.date);
-                      const isActive = event.date === selectedDate;
+
+                      const Icon = event.category === 'Treffen' ? GroupsRounded :
+                        event.category === 'Workshop' ? TerminalRounded :
+                          event.category === 'Party' ? CelebrationRounded :
+                            event.category === 'Info' ? InfoRounded : MoreHorizRounded;
+
                       return (
-                        <Box key={event.id} component="button" type="button" onClick={() => selectDate(event.date)} sx={{ appearance: 'none', border: 'none', background: 'transparent', textAlign: 'left', padding: 0, cursor: 'pointer', width: '100%', fontFamily: 'inherit', '&:focus-visible': { outline: '2px solid var(--accent-3)', outlineOffset: 3 } }}>
-                          <Box sx={{ ...custom.glassCard, p: { xs: 1.6, md: 2 }, borderRadius: 4, borderColor: isActive ? 'var(--accent-strong)' : 'transparent', background: isActive ? 'var(--accent-soft)' : isDark ? alpha(theme.palette.background.paper, 0.72) : alpha(theme.palette.background.paper, 0.94), position: 'relative', color: theme.palette.text.primary }}>
-                            <Box sx={custom.timelineDot(accent)} />
-                            <Stack spacing={0.6}>
-                              <Typography variant="overline" sx={{ letterSpacing: '0.18em', color: 'var(--muted)' }}>{formatShortDate(eventDate)}</Typography>
-                              <Typography variant="h6" sx={{ fontWeight: 700 }}>{event.title}</Typography>
-                              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                                {event.time && <Typography variant="caption" sx={{ color: 'var(--muted)' }}>{event.time} Uhr</Typography>}
-                                {event.location && (
-                                  <Stack direction="row" spacing={0.3} alignItems="center">
-                                    <LocationOnRounded sx={{ fontSize: 13, color: 'var(--muted)' }} />
-                                    <Typography variant="caption" sx={{ color: 'var(--muted)' }}>{event.location}</Typography>
-                                  </Stack>
-                                )}
-                                <Typography variant="caption" sx={{ color: accent, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{event.category}</Typography>
-                              </Stack>
-                            </Stack>
-                          </Box>
-                        </Box>
+                        <TimelineItem
+                          key={event.id}
+                          onClick={() => navigate(`/forum/${event.id}`)}
+                          sx={{
+                            ...custom.newsCardLink,
+                            display: 'flex',
+                            mb: 1.5,
+                            flexDirection: 'row',
+                            p: 0,
+                            overflow: 'hidden',
+                            '&:hover': {
+                              ...custom.newsCardLink['&:hover'],
+                            }
+                          }}
+                        >
+                          <TimelineOppositeContent
+                            sx={{ m: 'auto 0', flex: 1, textAlign: 'right', px: 2 }}
+                            variant="body2"
+                            color="text.secondary"
+                          >
+                            {formatShortDate(eventDate)}
+                            {event.time && <Box sx={{ display: 'block', fontSize: '0.75rem', opacity: 0.8 }}>{event.time} Uhr</Box>}
+                          </TimelineOppositeContent>
+                          <TimelineSeparator>
+                            <TimelineConnector sx={{ opacity: 0.5 }} />
+                            <TimelineDot sx={{
+                              bgcolor: accent,
+                              boxShadow: 'none',
+                              p: 1,
+                              transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                            }}>
+                              <Icon sx={{ fontSize: 18, color: '#fff' }} />
+                            </TimelineDot>
+                            <TimelineConnector sx={{ opacity: 0.5 }} />
+                          </TimelineSeparator>
+                          <TimelineContent sx={{ py: '12px', px: 2, m: 'auto 0' }}>
+                            <Typography variant="h6" component="span" sx={{ fontWeight: 800, fontSize: '0.95rem', lineHeight: 1.2 }}>
+                              {event.title}
+                            </Typography>
+                            {event.location && (
+                              <Typography variant="body2" color="text.secondary" sx={{ display: 'block', mt: 0.2 }}>
+                                {event.location}
+                              </Typography>
+                            )}
+                          </TimelineContent>
+                        </TimelineItem>
                       );
-                    }) : <Typography variant="body2" sx={{ color: 'var(--muted)' }}>Noch keine Events eingetragen.</Typography>}
-                  </Stack>
-                </Box>
-              </Box>
-              <Paper elevation={0} sx={{ ...custom.glassCard, mt: { xs: 2.6, md: 3.2 }, p: { xs: 1.6, md: 2 }, borderRadius: 4, background: alpha(theme.palette.background.paper, 0.92) }}>
-                <Stack spacing={1}>
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Stack direction="row" spacing={0.6} alignItems="center">
-                      <CalendarMonthRounded sx={custom.sectionIcon} />
-                      <Typography variant="subtitle1" fontWeight={700}>Kalender</Typography>
-                    </Stack>
-                    <Stack direction="row" spacing={0.3} alignItems="center">
-                      <IconButton size="small" onClick={() => changeMonth(-1)} sx={{ p: 0.3 }}><ChevronLeftRounded fontSize="small" /></IconButton>
-                      <IconButton size="small" onClick={() => changeMonth(1)} sx={{ p: 0.3 }}><ChevronRightRounded fontSize="small" /></IconButton>
-                    </Stack>
-                  </Stack>
-                  <Typography variant="caption" sx={{ color: 'var(--muted)' }}>{monthLabel(currentMonth)}</Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 0.3, textAlign: 'center' }}>
-                    {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((label) => (
-                      <Typography key={label} variant="caption" sx={{ fontWeight: 700, color: 'var(--muted)' }}>{label}</Typography>
-                    ))}
-                  </Box>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 0.3 }}>
-                    {days.map(({ date, day, inMonth }, idx) => {
-                      const dateKey = toDateKey(date);
-                      const isToday = dateKey === todayKey;
-                      const isSelected = dateKey === selectedDate;
-                      const dayEvents = eventsByDate.get(dateKey) ?? [];
-                      const hasEvents = dayEvents.length > 0;
-                      return (
-                        <Box key={`${dateKey}-${idx}`} component="button" type="button" onClick={() => selectDate(dateKey)} sx={custom.calendarDay(isSelected, isToday, inMonth)}>
-                          <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.72rem' }}>{day}</Typography>
-                          {hasEvents && <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: getCategoryColor(dayEvents[0].category), opacity: 0.9 }} />}
-                        </Box>
-                      );
-                    })}
-                  </Box>
+                    }) : (
+                      <Typography variant="body2" sx={{ color: 'text.secondary', px: 1 }}>Keine kommenden Events.</Typography>
+                    )}
+                  </Timeline>
                 </Stack>
-              </Paper>
+              </Box>
             </Box>
           </Box>
         </Box>
 
-        <Box component="section" data-reveal="true" sx={{ ...custom.sectionShell, gridColumn: '1 / -1', background: custom.sectionGradients.forum }}>
-          <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <ForumRounded sx={custom.sectionIcon} />
-                <Typography variant="h4" sx={custom.sectionTitle}>Forum</Typography>
-              </Stack>
-              <Button component={RouterLink} to="/forum" size="small" endIcon={<ArrowForwardRounded fontSize="small" />} sx={custom.sectionAction}>
-                Zum Forum
-              </Button>
-            </Stack>
-            {forumHighlight ? (
-              <Box sx={{
-                display: 'grid',
-                gap: { xs: 3, md: 4 },
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' }
-              }}>
-                <Paper component={RouterLink} to="/forum" elevation={0} sx={{ ...custom.glassCard, gridColumn: { xs: '1 / -1', md: 'span 7' }, p: { xs: 1.6, md: 3 }, borderRadius: 5, textDecoration: 'none', color: 'inherit', background: isDark ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.92)}, ${alpha(theme.palette.background.default, 0.9)})` : `linear-gradient(135deg, ${alpha(theme.palette.info.light, 0.2)}, ${alpha(theme.palette.background.paper, 0.98)})` }}>
-                  <Stack spacing={{ xs: 1, md: 1.4 }}>
-                    <Stack direction="row" spacing={1.2} alignItems="center" sx={{ flexWrap: { xs: 'wrap', sm: 'nowrap' }, rowGap: { xs: 0.4, sm: 0 } }}>
-                      <Avatar
-                        src={forumHighlight.authorAvatarUrl}
-                        sx={{
-                          width: { xs: 36, md: 42 },
-                          height: { xs: 36, md: 42 },
-                          bgcolor: 'var(--accent-soft)',
-                          color: 'var(--accent-strong)'
-                        }}
-                      />
-                      <Box>
-                        <Typography variant="overline" sx={{ letterSpacing: { xs: '0.16em', md: '0.22em' }, color: 'var(--accent-strong)' }}>Top Diskussion</Typography>
-                        <Typography variant="caption" sx={{ color: 'var(--muted)' }}>{forumHighlight.author} · {formatForumDate(forumHighlight.createdAt)}</Typography>
-                      </Box>
-                    </Stack>
-                    <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2, fontSize: { xs: '1.35rem', sm: '1.6rem', md: '2rem' } }}>{forumHighlight.title}</Typography>
-                    <Typography variant="body2" sx={{ color: 'var(--muted)' }}>{forumHighlight.replies} Antworten</Typography>
-                    <Stack direction="row" spacing={0.4} alignItems="center" sx={{ flexWrap: 'wrap', rowGap: 0.2 }}>
-                      <Typography variant="caption" sx={{ color: 'var(--accent-strong)', fontWeight: 600 }}>Zum Beitrag</Typography>
-                      <ArrowForwardRounded fontSize="small" sx={{ color: 'var(--accent-strong)' }} />
-                    </Stack>
-                  </Stack>
-                </Paper>
-                <Stack spacing={{ xs: 2, md: 2.5 }} sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' } }}>
-                  {forumRest.length ? forumRest.map((post) => (
-                    <Box key={post.id} component={RouterLink} to="/forum" sx={{ ...custom.glassCard, p: { xs: 1.2, md: 1.6 }, borderRadius: 3, textDecoration: 'none', color: 'inherit', display: 'grid', gap: 0.6 }}>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Avatar
-                          src={post.authorAvatarUrl}
-                          sx={{
-                            width: { xs: 30, md: 34 },
-                            height: { xs: 30, md: 34 },
-                            fontSize: '0.8rem'
-                          }}
-                        />
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: { xs: '0.95rem', md: '1.05rem' }, display: '-webkit-box', WebkitLineClamp: { xs: 2, md: 1 }, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.title}</Typography>
-                          <Typography variant="caption" sx={{ color: 'var(--muted)' }}>{post.author} · {formatForumDate(post.createdAt)}</Typography>
-                        </Box>
-                      </Stack>
-                      <Typography variant="caption" sx={{ color: 'var(--muted)' }}>{post.replies} Antworten</Typography>
-                    </Box>
-                  )) : <Typography variant="body2" sx={{ color: 'var(--muted)' }}>Keine weiteren Threads.</Typography>}
-                </Stack>
-              </Box>
-            ) : <Typography variant="body2" sx={{ color: 'var(--muted)' }}>Noch keine Beiträge.</Typography>}
-          </Box>
-
-          <Dialog open={eventDialogOpen} onClose={() => setEventDialogOpen(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3, background: theme.palette.background.paper } }}>
-            <DialogTitle>Event eintragen</DialogTitle>
-            <DialogContent dividers>
-              <Stack spacing={2} sx={{ mt: 1 }}>
-                <TextField id="event-title" name="title" label="Titel" value={eventDraft.title} onChange={(e) => setEventDraft((p) => ({ ...p, title: e.target.value }))} fullWidth />
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <TextField id="event-date" name="date" label="Datum" type="date" value={eventDraft.date} onChange={(e) => setEventDraft((p) => ({ ...p, date: e.target.value }))} fullWidth InputLabelProps={{ shrink: true }} />
-                  <TextField id="event-time" name="time" label="Uhrzeit" type="time" value={eventDraft.time} onChange={(e) => setEventDraft((p) => ({ ...p, time: e.target.value }))} fullWidth InputLabelProps={{ shrink: true }} />
-                </Stack>
-                <TextField id="event-location" name="location" label="Ort" value={eventDraft.location} onChange={(e) => setEventDraft((p) => ({ ...p, location: e.target.value }))} fullWidth />
-                <TextField id="event-category" name="category" label="Kategorie" select value={eventDraft.category} onChange={(e) => setEventDraft((p) => ({ ...p, category: e.target.value }))} fullWidth>
-                  {EVENT_CATEGORIES.map((cat) => <MenuItem key={cat.value} value={cat.value}>{cat.label}</MenuItem>)}
-                </TextField>
-              </Stack>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setEventDialogOpen(false)}>Abbrechen</Button>
-              <Button variant="contained" onClick={handleCreateEvent} disabled={!eventDraft.title.trim() || !eventDraft.date}>Speichern</Button>
-            </DialogActions>
-          </Dialog>
-        </Box>
-      </Box>
-    </Sidebar>
+      </Stack>
+    </Sidebar >
   );
 };
 

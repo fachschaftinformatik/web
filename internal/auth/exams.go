@@ -19,7 +19,7 @@ import (
 )
 
 // TODO: Move to env
-const maxUploadSize = 10 << 20 // 10 MB
+const maxUploadSize = 256 << 20 // 256 MB
 
 // @Description Exam details
 type ExamResponse struct {
@@ -196,8 +196,14 @@ func (s *Server) PostExams(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize+1024*1024)
+
 	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
-		s.jsonError(w, "bad_request", "File too large", http.StatusBadRequest)
+		if errors.As(err, new(*http.MaxBytesError)) {
+			s.jsonError(w, "bad_request", "File too large", http.StatusBadRequest)
+		} else {
+			s.jsonError(w, "bad_request", "Upload failed", http.StatusBadRequest)
+		}
 		return
 	}
 
