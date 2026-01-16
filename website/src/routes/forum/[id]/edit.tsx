@@ -32,6 +32,7 @@ export default function EditPost() {
     const [title, setTitle] = useState("");
     const [body, setBody] = useState("");
     const [type, setType] = useState("forum");
+    const isStaff = user?.role === "admin" || user?.role === "editor";
     const [category, setCategory] = useState<string>("");
     const [selectedPrograms, setSelectedPrograms] = useState<Program[]>([]);
     const [tags, setTags] = useState<string[]>([]);
@@ -40,9 +41,6 @@ export default function EditPost() {
     // Additional fields for News/Events
     const [eventDate, setEventDate] = useState("");
     const [location, setLocation] = useState("");
-    const [imageUrl, setImageUrl] = useState("");
-    const [links, setLinks] = useState<string[]>([]);
-    const [linkInput, setLinkInput] = useState("");
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -83,13 +81,6 @@ export default function EditPost() {
 
                     if (data.event_date) setEventDate(data.event_date);
                     if (data.location) setLocation(data.location);
-                    if (data.image_url) setImageUrl(data.image_url);
-                    if (data.links) {
-                        try {
-                            const l = JSON.parse(data.links as unknown as string) as string[];
-                            setLinks(l);
-                        } catch { /* empty */ }
-                    }
                 }
                 if (error) {
                     setError("Beitrag konnte nicht geladen werden.");
@@ -138,9 +129,7 @@ export default function EditPost() {
                     programs: selectedPrograms.map(p => p.name || ""),
                     tags: finalTags,
                     event_date: eventDate || undefined,
-                    location: location || undefined,
-                    image_url: imageUrl || undefined,
-                    links: links
+                    location: location || undefined
                 },
                 headers: { "X-CSRF-Token": token }
             });
@@ -159,15 +148,6 @@ export default function EditPost() {
         // ... removed
     }; */
 
-    const handleAddLink = (event: React.KeyboardEvent) => {
-        if (event.key === 'Enter' && linkInput.trim()) {
-            event.preventDefault();
-            if (!links.includes(linkInput.trim())) {
-                setLinks([...links, linkInput.trim()]);
-            }
-            setLinkInput("");
-        }
-    }
 
     // const canCreateNews = user?.role === "admin" || user?.role === "editor";
 
@@ -207,11 +187,15 @@ export default function EditPost() {
                             select
                             label="Kategorie"
                             value={category}
-                            onChange={(e) => setCategory(e.target.value)}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setCategory(val);
+                                setType(val === "Ankündigung" ? "news" : "forum");
+                            }}
                             fullWidth
                             required
                         >
-                            {FORUM_CATEGORIES.map((cat) => (
+                            {FORUM_CATEGORIES.filter(cat => cat !== "Ankündigung" || isStaff).map((cat) => (
                                 <MenuItem key={cat} value={cat}>
                                     {cat}
                                 </MenuItem>
@@ -280,52 +264,20 @@ export default function EditPost() {
                         </Stack>
 
                         {(type === 'news' || type === 'event') && (
-                            <Stack spacing={3}>
+                            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                                 <TextField
-                                    label="Bild URL"
+                                    label="Event Datum"
+                                    type="datetime-local"
                                     fullWidth
-                                    value={imageUrl}
-                                    onChange={(e) => setImageUrl(e.target.value)}
-                                    placeholder="https://..."
+                                    value={eventDate}
+                                    onChange={(e) => setEventDate(e.target.value)}
+                                    InputLabelProps={{ shrink: true }}
                                 />
-                                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                                    <TextField
-                                        label="Event Datum"
-                                        type="datetime-local"
-                                        fullWidth
-                                        value={eventDate}
-                                        onChange={(e) => setEventDate(e.target.value)}
-                                        InputLabelProps={{ shrink: true }}
-                                    />
-                                    <TextField
-                                        label="Ort"
-                                        fullWidth
-                                        value={location}
-                                        onChange={(e) => setLocation(e.target.value)}
-                                    />
-                                </Stack>
-                                <Autocomplete
-                                    multiple
-                                    freeSolo
-                                    options={[]}
-                                    value={links}
-                                    onChange={(_, newValue) => setLinks(newValue)}
-                                    renderTags={(value: readonly string[], getTagProps) =>
-                                        value.map((option: string, index: number) => (
-                                            <Chip variant="outlined" label={option} {...getTagProps({ index })} />
-                                        ))
-                                    }
-                                    renderInput={(params) => (
-                                        <TextField
-                                            {...params}
-                                            label="Links"
-                                            placeholder="URL eingeben und Enter drücken..."
-                                            value={linkInput}
-                                            onChange={(e) => setLinkInput(e.target.value)}
-                                            onKeyDown={handleAddLink}
-                                        />
-                                    )}
+                                <TextField
+                                    label="Ort"
                                     fullWidth
+                                    value={location}
+                                    onChange={(e) => setLocation(e.target.value)}
                                 />
                             </Stack>
                         )}

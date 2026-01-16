@@ -75,7 +75,6 @@ func main() {
 		r.Post("/auth/logout", authServer.PostAuthLogout)
 		r.Get("/auth/me", authServer.GetAuthMe)
 		r.Put("/auth/me", authServer.PutAuthMe)
-		r.Post("/auth/me/avatar/generate", authServer.PostAuthAvatarGenerate)
 		r.Post("/auth/register", authServer.PostAuthRegister)
 		r.Get("/auth/verify", authServer.GetAuthVerify)
 		r.Get("/auth/notifications", authServer.GetAuthNotifications)

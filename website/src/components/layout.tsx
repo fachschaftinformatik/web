@@ -15,6 +15,7 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Stack,
   Toolbar,
   Tooltip,
   Typography,
@@ -29,6 +30,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneRounded from '@mui/icons-material/NotificationsNoneRounded';
 import MailRounded from '@mui/icons-material/MailRounded';
 import MenuRounded from '@mui/icons-material/MenuRounded';
+import LibraryBooksRounded from '@mui/icons-material/LibraryBooksRounded';
 
 import MenuOpenRounded from '@mui/icons-material/MenuOpenRounded';
 import DashboardRounded from '@mui/icons-material/DashboardRounded';
@@ -223,10 +225,9 @@ const GlobalSearch = () => {
 
 const navItems = [
   { label: 'Startseite', href: '/', icon: <DashboardRounded />, isRoute: true },
-  { label: 'Ankündigungen', href: '/news', icon: <CampaignRounded />, isRoute: true },
-  { label: 'Rekos', href: '/exams', icon: <SchoolRounded />, isRoute: true },
   { label: 'Forum', href: '/forum', icon: <QuestionAnswerRounded />, isRoute: true },
   { label: 'Galerie', href: '/media', icon: <CollectionsRounded />, isRoute: true },
+  { label: 'Rekos', href: '/exams', icon: <LibraryBooksRounded />, isRoute: true },
   { label: 'Team', href: '/team', icon: <PeopleRounded />, isRoute: true },
   { label: 'Kontakt', href: '/contact', icon: <MailRounded />, isRoute: true },
 ];
@@ -450,9 +451,36 @@ const Sidebar = ({
             {navOpen ? <MenuOpenRounded /> : <MenuRounded />}
           </IconButton>
 
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, display: { xs: 'none', sm: 'block' } }}>
-            {title}
-          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexGrow: 1 }}>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{
+                fontWeight: 800,
+                letterSpacing: '-0.02em',
+                fontFamily: '"Space Grotesk", sans-serif',
+                display: { xs: 'none', sm: 'block' }
+              }}
+            >
+              fsInformatik
+            </Typography>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{
+                fontWeight: 400,
+                color: alpha(theme.palette.common.white, 0.6),
+                display: { xs: 'none', md: 'block' }
+              }}
+            >
+              /
+            </Typography>
+            <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 400 }}>
+              {title}
+            </Typography>
+          </Stack>
 
           <GlobalSearch />
 

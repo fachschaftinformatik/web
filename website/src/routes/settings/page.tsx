@@ -223,22 +223,6 @@ export default function SettingsPage() {
 
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
                         <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 2 }}>
-                            Benachrichtigungen
-                        </Typography>
-                        <Stack spacing={1}>
-                            <FormControlLabel
-                                control={<Switch defaultChecked color="primary" />}
-                                label={<Typography variant="body2">E-Mail-Benachrichtigungen bei neuen Rekos</Typography>}
-                            />
-                            <FormControlLabel
-                                control={<Switch defaultChecked color="primary" />}
-                                label={<Typography variant="body2">E-Mail-Benachrichtigungen bei News</Typography>}
-                            />
-                        </Stack>
-                    </Paper>
-
-                    <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-                        <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 2 }}>
                             Anzeige
                         </Typography>
                         <Stack spacing={3}>
