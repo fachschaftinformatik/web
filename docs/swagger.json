@@ -206,30 +206,6 @@
                 }
             }
         },
-        "/auth/me/avatar/generate": {
-            "post": {
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Regenerate user avatar",
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "Session": []
-                    }
-                ]
-            }
-        },
         "/auth/notifications": {
             "get": {
                 "tags": [
