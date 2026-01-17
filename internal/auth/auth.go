@@ -382,7 +382,7 @@ func (s *Server) PutAuthMe(w http.ResponseWriter, r *http.Request) {
 		s.jsonError(w, "database_error", "Could not update user profile", http.StatusInternalServerError)
 		return
 	}
-
+	updatedUser.AvatarUrl = s.formatAvatarURL(updatedUser.AvatarUrl, updatedUser.ID)
 	s.respondJSON(w, http.StatusOK, UserResponse{User: updatedUser})
 }
 

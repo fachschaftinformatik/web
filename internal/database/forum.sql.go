@@ -9,6 +9,25 @@ import (
 	"context"
 )
 
+const countForumPosts = `-- name: CountForumPosts :one
+SELECT COUNT(*) FROM forum_posts p
+WHERE (?1 IS NULL OR p.type = ?1)
+  AND (?2 IS NULL OR (lower(p.title) LIKE '%' || lower(?2) || '%' OR lower(p.body) LIKE '%' || lower(?2) || '%'))
+  AND p.active = 1
+`
+
+type CountForumPostsParams struct {
+	Type  interface{} `json:"type"`
+	Query interface{} `json:"query"`
+}
+
+func (q *Queries) CountForumPosts(ctx context.Context, arg CountForumPostsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countForumPosts, arg.Type, arg.Query)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createForumComment = `-- name: CreateForumComment :one
 INSERT INTO forum_comments (
     id, post_id, author_id, parent_id, text
@@ -304,16 +323,19 @@ SELECT p.id, p.title, p.body, p.author_id, p.created_at, p.updated_at, p.pinned,
        CAST(COALESCE((SELECT v.vote FROM forum_votes v WHERE v.post_id = p.id AND v.user_id = ?1), 0) AS INTEGER) as user_vote
 FROM forum_posts p
 JOIN users u ON p.author_id = u.id
-WHERE (?2 IS NULL OR p.type = ?2) AND p.active = 1
+WHERE (?2 IS NULL OR p.type = ?2)
+  AND (?3 IS NULL OR (lower(p.title) LIKE '%' || lower(?3) || '%' OR lower(p.body) LIKE '%' || lower(?3) || '%'))
+  AND p.active = 1
 ORDER BY
     p.pinned DESC,
     p.created_at DESC
-LIMIT ?4 OFFSET ?3
+LIMIT ?5 OFFSET ?4
 `
 
 type ListForumPostsParams struct {
 	CurrentUserID *string     `json:"current_user_id"`
 	Type          interface{} `json:"type"`
+	Query         interface{} `json:"query"`
 	Offset        int64       `json:"offset"`
 	Limit         int64       `json:"limit"`
 }
@@ -345,6 +367,7 @@ func (q *Queries) ListForumPosts(ctx context.Context, arg ListForumPostsParams) 
 	rows, err := q.db.QueryContext(ctx, listForumPosts,
 		arg.CurrentUserID,
 		arg.Type,
+		arg.Query,
 		arg.Offset,
 		arg.Limit,
 	)
@@ -399,17 +422,20 @@ SELECT p.id, p.title, p.body, p.author_id, p.created_at, p.updated_at, p.pinned,
        CAST(COALESCE((SELECT v.vote FROM forum_votes v WHERE v.post_id = p.id AND v.user_id = ?1), 0) AS INTEGER) as user_vote
 FROM forum_posts p
 JOIN users u ON p.author_id = u.id
-WHERE (?2 IS NULL OR p.type = ?2) AND p.active = 1
+WHERE (?2 IS NULL OR p.type = ?2)
+  AND (?3 IS NULL OR (lower(p.title) LIKE '%' || lower(?3) || '%' OR lower(p.body) LIKE '%' || lower(?3) || '%'))
+  AND p.active = 1
 ORDER BY
     p.pinned DESC,
     votes DESC,
     p.created_at DESC
-LIMIT ?4 OFFSET ?3
+LIMIT ?5 OFFSET ?4
 `
 
 type ListForumPostsTopParams struct {
 	CurrentUserID *string     `json:"current_user_id"`
 	Type          interface{} `json:"type"`
+	Query         interface{} `json:"query"`
 	Offset        int64       `json:"offset"`
 	Limit         int64       `json:"limit"`
 }
@@ -441,6 +467,7 @@ func (q *Queries) ListForumPostsTop(ctx context.Context, arg ListForumPostsTopPa
 	rows, err := q.db.QueryContext(ctx, listForumPostsTop,
 		arg.CurrentUserID,
 		arg.Type,
+		arg.Query,
 		arg.Offset,
 		arg.Limit,
 	)
