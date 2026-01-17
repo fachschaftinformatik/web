@@ -14,7 +14,6 @@ import {
     IconButton
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 
 import { useAuth } from "@lib/auth";
@@ -152,14 +151,14 @@ export default function EditPost() {
                     <IconButton onClick={() => navigate("/forum")} sx={{ bgcolor: 'action.hover' }}>
                         <ArrowBackRoundedIcon />
                     </IconButton>
-                    <Typography variant="h4" fontWeight={700}>
+                    <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
                         Beitrag bearbeiten
                     </Typography>
                 </Box>
 
                 {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
-                <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                <Paper elevation={0} sx={{ p: { xs: 2.5, md: 4 }, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
                     <Stack spacing={3}>
                         <TextField
                             label="Titel"
@@ -255,12 +254,11 @@ export default function EditPost() {
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                             <Button
                                 variant="contained"
-                                startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveRoundedIcon />}
                                 onClick={handleSubmit}
                                 disabled={saving || !title || !body}
                                 sx={{ borderRadius: 2, px: 4, py: 1.5, fontWeight: 700 }}
                             >
-                                Speichern
+                                {saving ? <CircularProgress size={20} color="inherit" /> : 'Speichern'}
                             </Button>
                         </Box>
                     </Stack>

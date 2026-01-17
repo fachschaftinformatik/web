@@ -45,6 +45,7 @@ import LogoutRounded from '@mui/icons-material/LogoutRounded';
 import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
 import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
 import DoneAllRounded from '@mui/icons-material/DoneAllRounded';
+import CloseRounded from '@mui/icons-material/CloseRounded';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import type { AuthUserResponse as User, AuthNotificationResponse as Notification } from '@lib/api/types.gen';
@@ -114,6 +115,9 @@ interface SearchResult {
 }
 
 const GlobalSearch = () => {
+  const theme = useTheme();
+  const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<readonly SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -167,59 +171,116 @@ const GlobalSearch = () => {
     };
   }, [inputValue]);
 
+  if (!isSmUp && !mobileOpen) {
+    return (
+      <IconButton color="inherit" onClick={() => setMobileOpen(true)}>
+        <SearchIcon />
+      </IconButton>
+    );
+  }
+
   return (
-    <Autocomplete
-      id="global-search"
-      sx={{ mr: 1 }}
-      open={open && inputValue.length >= 2}
-      onOpen={() => setOpen(true)}
-      onClose={() => setOpen(false)}
-      isOptionEqualToValue={(option, value) => option.id === value.id}
-      getOptionLabel={(option) => option.title}
-      filterOptions={(x) => x}
-      options={options}
-      loading={loading}
-      value={null}
-      onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
-      onChange={(_, value) => {
-        if (value) {
-          navigate(value.url);
-          setInputValue('');
-          setOptions([]);
-        }
-      }}
-      noOptionsText="Keine Ergebnisse"
-      loadingText="Wird geladen..."
-      clearIcon={null}
-      popupIcon={null}
-      renderInput={(params) => (
-        <Search ref={params.InputProps.ref}>
-          <SearchIconWrapper>
-            {loading ? <CircularProgress color="inherit" size={20} /> : <SearchIcon />}
-          </SearchIconWrapper>
-          <StyledInputBase
-            inputProps={params.inputProps}
-            placeholder="Suchen…"
-          />
-        </Search>
+    <Box
+      sx={!isSmUp && mobileOpen ? {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        bgcolor: alpha(theme.palette.background.paper, 0.9),
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        alignItems: 'center',
+        px: 1.5,
+        zIndex: 1200,
+      } : { mr: 1 }}
+    >
+      <Autocomplete
+        id="global-search"
+        fullWidth
+        open={open && inputValue.length >= 2}
+        onOpen={() => setOpen(true)}
+        onClose={() => setOpen(false)}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        getOptionLabel={(option) => option.title}
+        filterOptions={(x) => x}
+        options={options}
+        loading={loading}
+        value={null}
+        onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
+        onChange={(_, value) => {
+          if (value) {
+            navigate(value.url);
+            setInputValue('');
+            setOptions([]);
+            if (!isSmUp) setMobileOpen(false);
+          }
+        }}
+        noOptionsText="Keine Ergebnisse"
+        loadingText="Wird geladen..."
+        clearIcon={null}
+        popupIcon={null}
+        sx={{
+          '& .MuiAutocomplete-inputRoot': {
+            flexWrap: 'nowrap'
+          }
+        }}
+        renderInput={(params) => (
+          <Search
+            ref={params.InputProps.ref}
+            sx={!isSmUp ? {
+              mx: 0,
+              flex: 1,
+              backgroundColor: alpha(theme.palette.text.primary, 0.05),
+              color: theme.palette.text.primary,
+              '&:hover': {
+                backgroundColor: alpha(theme.palette.text.primary, 0.08),
+              },
+              '& .MuiInputBase-input': {
+                color: theme.palette.text.primary,
+                '&::placeholder': {
+                  color: theme.palette.text.secondary,
+                  opacity: 1
+                }
+              },
+              '& .MuiSvgIcon-root': {
+                color: theme.palette.primary.main
+              }
+            } : {}}
+          >
+            <SearchIconWrapper>
+              {loading ? <CircularProgress color="inherit" size={20} /> : <SearchIcon />}
+            </SearchIconWrapper>
+            <StyledInputBase
+              inputProps={params.inputProps}
+              placeholder="Suchen…"
+              autoFocus={!isSmUp}
+            />
+          </Search>
+        )}
+        renderOption={(props, option) => (
+          <ListItem {...props} key={option.id + option.type}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              {option.type === 'module' ? <DashboardRounded fontSize="small" /> :
+                option.type === 'user' ? <PeopleRounded fontSize="small" /> :
+                  option.type === 'post' ? <QuestionAnswerRounded fontSize="small" /> :
+                    <SchoolRounded fontSize="small" />}
+            </ListItemIcon>
+            <ListItemText
+              primary={option.title}
+              secondary={option.subtitle}
+              primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
+              secondaryTypographyProps={{ variant: 'caption' }}
+            />
+          </ListItem>
+        )}
+      />
+      {!isSmUp && (
+        <IconButton color="inherit" onClick={() => setMobileOpen(false)} sx={{ ml: 1 }}>
+          <CloseRounded />
+        </IconButton>
       )}
-      renderOption={(props, option) => (
-        <ListItem {...props} key={option.id + option.type}>
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            {option.type === 'module' ? <DashboardRounded fontSize="small" /> :
-              option.type === 'user' ? <PeopleRounded fontSize="small" /> :
-                option.type === 'post' ? <QuestionAnswerRounded fontSize="small" /> :
-                  <SchoolRounded fontSize="small" />}
-          </ListItemIcon>
-          <ListItemText
-            primary={option.title}
-            secondary={option.subtitle}
-            primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
-            secondaryTypographyProps={{ variant: 'caption' }}
-          />
-        </ListItem>
-      )}
-    />
+    </Box>
   );
 };
 
@@ -474,7 +535,15 @@ const Sidebar = ({
             >
               /
             </Typography>
-            <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 400 }}>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{
+                fontWeight: 400,
+                display: { xs: 'none', sm: 'block' }
+              }}
+            >
               {title}
             </Typography>
           </Stack>
@@ -632,6 +701,7 @@ const Sidebar = ({
                   aria-expanded={open ? 'true' : undefined}
                 >
                   <Avatar
+                    key={user?.id || 'anonymous'}
                     src={user?.avatar_url || undefined}
                     sx={{
                       width: 32,

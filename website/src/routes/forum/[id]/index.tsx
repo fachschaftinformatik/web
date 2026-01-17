@@ -233,26 +233,39 @@ export default function ViewPost() {
                     Zurück zum Forum
                 </Button>
 
-                <Paper sx={{ p: { xs: 2.5, md: 4 }, borderRadius: 3 }}>
-                    <Stack direction="row" spacing={3} alignItems="flex-start">
-                        <Stack alignItems="center" spacing={0.5} sx={{ bgcolor: "action.hover", borderRadius: 2, p: 0.5 }}>
+                <Paper sx={{ p: { xs: 2, sm: 2.5, md: 4 }, borderRadius: 3 }}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 2, sm: 3 }} alignItems="flex-start">
+                        {/* Voting Section */}
+                        <Stack
+                            direction={{ xs: "row", sm: "column" }}
+                            alignItems="center"
+                            spacing={0.5}
+                            sx={{
+                                bgcolor: "action.hover",
+                                borderRadius: 2,
+                                p: 0.5,
+                                width: { xs: "fit-content", sm: "auto" },
+                                alignSelf: { xs: "center", sm: "flex-start" }
+                            }}
+                        >
                             <IconButton size="small" onClick={() => handleVote(1)} color={userVote === 1 ? "primary" : "default"}>
                                 <ThumbUpOutlined fontSize="small" />
                             </IconButton>
-                            <Typography variant="subtitle2" fontWeight={700}>{netVotes}</Typography>
+                            <Typography variant="subtitle2" fontWeight={700} sx={{ px: { xs: 1, sm: 0 } }}>{netVotes}</Typography>
                             <IconButton size="small" onClick={() => handleVote(-1)} color={userVote === -1 ? "primary" : "default"}>
                                 <ThumbDownOutlined fontSize="small" />
                             </IconButton>
                         </Stack>
 
                         <Stack spacing={3} sx={{ flex: 1, width: "100%" }}>
-                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                            <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems="flex-start" spacing={2}>
                                 <Stack spacing={1}>
-                                    <Typography variant="h4" fontWeight={700}>
+                                    <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
                                         {post.title}
                                     </Typography>
                                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                                         <Avatar
+                                            key={post.author_avatar_url || post.author_id}
                                             src={post.author_avatar_url || undefined}
                                             sx={{
                                                 width: 24,
@@ -266,7 +279,7 @@ export default function ViewPost() {
                                             von <Typography component={Link} to={`/user/${post.author_id}`} variant="body2" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author_name || "Anonym"}</Typography> · {isoToShort(post.created_at)}
                                         </Typography>
                                         {post.pinned === 1 && (
-                                            <Chip label="Angepinnt" size="small" icon={<PushPinOutlinedIcon />} />
+                                            <Chip label="Angepinnt" size="small" icon={<PushPinOutlinedIcon />} variant="outlined" sx={{ fontWeight: 600 }} />
                                         )}
                                     </Stack>
                                 </Stack>
