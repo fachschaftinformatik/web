@@ -10,6 +10,7 @@ import (
 
 type Querier interface {
 	ClearLatestFlag(ctx context.Context, groupID string) error
+	CountForumPosts(ctx context.Context, arg CountForumPostsParams) (int64, error)
 	CountUnreadNotifications(ctx context.Context, userid string) (int64, error)
 	CountUserActivities(ctx context.Context, userID string) (int64, error)
 	CreateActivity(ctx context.Context, arg CreateActivityParams) (Activity, error)

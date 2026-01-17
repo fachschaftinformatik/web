@@ -213,6 +213,7 @@ const ProfilePage: React.FC = () => {
           >
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="center">
               <Avatar
+                key={profileUser.avatar_url || profileUser.id}
                 src={profileUser.avatar_url || undefined}
                 sx={{
                   width: 120,

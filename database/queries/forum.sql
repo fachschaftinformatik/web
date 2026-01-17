@@ -35,7 +35,9 @@ SELECT p.*,
        CAST(COALESCE((SELECT v.vote FROM forum_votes v WHERE v.post_id = p.id AND v.user_id = sqlc.narg(current_user_id)), 0) AS INTEGER) as user_vote
 FROM forum_posts p
 JOIN users u ON p.author_id = u.id
-WHERE (sqlc.narg(type) IS NULL OR p.type = sqlc.narg(type)) AND p.active = 1
+WHERE (sqlc.narg(type) IS NULL OR p.type = sqlc.narg(type))
+  AND (sqlc.narg(query) IS NULL OR (lower(p.title) LIKE '%' || lower(sqlc.arg(query)) || '%' OR lower(p.body) LIKE '%' || lower(sqlc.arg(query)) || '%'))
+  AND p.active = 1
 ORDER BY
     p.pinned DESC,
     p.created_at DESC
@@ -50,7 +52,9 @@ SELECT p.*,
        CAST(COALESCE((SELECT v.vote FROM forum_votes v WHERE v.post_id = p.id AND v.user_id = sqlc.narg(current_user_id)), 0) AS INTEGER) as user_vote
 FROM forum_posts p
 JOIN users u ON p.author_id = u.id
-WHERE (sqlc.narg(type) IS NULL OR p.type = sqlc.narg(type)) AND p.active = 1
+WHERE (sqlc.narg(type) IS NULL OR p.type = sqlc.narg(type))
+  AND (sqlc.narg(query) IS NULL OR (lower(p.title) LIKE '%' || lower(sqlc.arg(query)) || '%' OR lower(p.body) LIKE '%' || lower(sqlc.arg(query)) || '%'))
+  AND p.active = 1
 ORDER BY
     p.pinned DESC,
     votes DESC,
@@ -148,3 +152,9 @@ ORDER BY
     p.pinned DESC,
     p.created_at DESC
 LIMIT 10;
+
+-- name: CountForumPosts :one
+SELECT COUNT(*) FROM forum_posts p
+WHERE (sqlc.narg(type) IS NULL OR p.type = sqlc.narg(type))
+  AND (sqlc.narg(query) IS NULL OR (lower(p.title) LIKE '%' || lower(sqlc.arg(query)) || '%' OR lower(p.body) LIKE '%' || lower(sqlc.arg(query)) || '%'))
+  AND p.active = 1;

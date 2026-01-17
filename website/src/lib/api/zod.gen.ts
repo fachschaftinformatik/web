@@ -466,6 +466,8 @@ export const zGetForumPostsData = z.object({
     path: z.optional(z.never()),
     query: z.optional(z.object({
         type: z.optional(z.string()),
+        query: z.optional(z.string()),
+        sort: z.optional(z.string()),
         limit: z.optional(z.int()),
         offset: z.optional(z.int())
     }))
