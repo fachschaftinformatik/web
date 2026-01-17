@@ -1,11 +1,11 @@
 {
-  "name": "fachschaft-website",
-  "private": true,
-  "version": "0.0.0",
+  "name": "web",
+  "private": false,
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "openapi-ts && vite build",
+    "build": "vite build",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "gen:api": "openapi-ts"

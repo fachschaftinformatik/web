@@ -16,7 +16,6 @@ import {
     Slide,
     type SlideProps
 } from '@mui/material';
-import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
 import { getPrograms, getAuthCsrf, putAuthMe } from '@lib/api';
@@ -245,7 +244,6 @@ export default function SettingsPage() {
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                         <Button
                             variant="contained"
-                            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveRoundedIcon />}
                             onClick={handleSave}
                             disabled={loading || !name || !programId || !isDirty}
                             sx={{
@@ -264,7 +262,7 @@ export default function SettingsPage() {
                                 transition: 'all 0.2s ease'
                             }}
                         >
-                            Änderungen speichern
+                            {loading ? <CircularProgress size={20} color="inherit" /> : 'Speichern'}
                         </Button>
                     </Box>
                 </Stack>
