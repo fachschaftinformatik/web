@@ -445,15 +445,10 @@ export default function Exams() {
                     setModules(uniqueModules);
                 });
 
-            const defaultPo = "all";
-            // Reset to "all" if current selection is no longer valid for ANY of the selected programs
-            if (selectedPo !== "all" && !sortedPos.includes(selectedPo)) {
-                void Promise.resolve().then(() => {
-                    setSelectedPo(defaultPo);
-                });
-            }
+            void Promise.resolve().then(() => {
+                setSelectedPo("all");
+            });
         } else if (programs.length > 0) {
-            // If no program selected, load modules from ALL programs so search works globally
             Promise.all(programs.map(p => getProgramModules({ path: { id: p.id as number } })))
                 .then(results => {
                     const allModules = results.flatMap(r => r.data || []);
@@ -483,7 +478,6 @@ export default function Exams() {
                 })
                 .catch(() => setActiveModuleIds(new Set()));
         } else if (selectedPrograms.length === 0) {
-            // Show all when no filter
             getExams({ query: {} })
                 .then(({ data }) => {
                     const ids = new Set((data || []).map(e => e.moduleid).filter((id): id is number => id !== undefined));
