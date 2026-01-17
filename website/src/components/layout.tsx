@@ -301,11 +301,9 @@ const Sidebar = ({
   }, [user]);
 
   useEffect(() => {
-    // Wrap in microtask to avoid synchronous setState warning in some linters
     Promise.resolve().then(() => {
       fetchNotifications();
     });
-    // Refresh every minute
     const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
@@ -346,7 +344,6 @@ const Sidebar = ({
   const handleThemeToggle = async () => {
     const nextMode = mode === 'light' ? 'dark' : 'light';
 
-    // Update locally first for instant feedback
     setPreference(nextMode);
 
     if (user) {

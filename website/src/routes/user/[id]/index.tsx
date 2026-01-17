@@ -67,19 +67,15 @@ const ProfilePage: React.FC = () => {
     };
 
     fetchProfile();
-    // Reset activities when userId changes
     setActivities([]);
     setPage(1);
     setPageCount(1);
-    // Initial fetch handled by the pagination effect below or dedicated init?
-    // Let's use a separate effect for activities that depends on page
   }, [userId]);
 
   useEffect(() => {
     if (!userId) return;
 
     const fetchActivities = async () => {
-      // Don't even try to fetch if we already know it's private and not ours
       if (profileUser?.private === 1 && !isOwnProfile) {
         setActivities([]);
         setPageCount(0);
@@ -307,7 +303,7 @@ const ProfilePage: React.FC = () => {
                     linkTarget = `/forum/${activity.target_id}`;
                     primaryText = activity.target_name ? `Kommentar zu "${activity.target_name}"` : "Neuer Kommentar";
                   } else if (activity.type === 'EXAM_UPLOADED') {
-                    linkTarget = `/exams/detail?examId=${activity.target_id}`;
+                    linkTarget = `/exams/${activity.target_id}`;
                     primaryText = activity.target_name ? `Klausur für ${activity.target_name}` : "Neue Altklausur";
                   } else if (activity.type === 'MEDIA_UPLOADED') {
                     linkTarget = `/media?mediaId=${activity.target_id}`;
@@ -316,7 +312,7 @@ const ProfilePage: React.FC = () => {
 
                   const getActivityColor = (type: string, attr: 'bg' | 'fg') => {
                     const isDark = theme.palette.mode === 'dark';
-                    let paletteColor = theme.palette.info; // Default
+                    let paletteColor = theme.palette.info;
 
                     if (type === 'POST_CREATED') paletteColor = theme.palette.error;
                     if (type === 'COMMENT_ADDED') paletteColor = theme.palette.success;
@@ -326,7 +322,7 @@ const ProfilePage: React.FC = () => {
                     if (attr === 'bg') {
                       return alpha(paletteColor.main, isDark ? 0.2 : 0.12);
                     } else {
-                      return paletteColor.main; // Using main as it's already mode-aware and accessible
+                      return paletteColor.main;
                     }
                   };
 

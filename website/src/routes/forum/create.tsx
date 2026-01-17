@@ -86,8 +86,6 @@ export default function CreatePost() {
     };
 
 
-    // const canCreateNews = user?.role === "admin" || user?.role === "editor";
-
     return (
         <Sidebar user={user} title="Beitrag erstellen" maxWidth="md">
             <Box>
@@ -127,23 +125,8 @@ export default function CreatePost() {
                             ))}
                         </TextField>
 
-                        {/* Admin override for Type if needed - currently hidden as requested */}
-                        {/*
-                        {canCreateNews && (
-                            <TextField
-                                select
-                                label="Typ (Admin)"
-                                value={type}
-                                onChange={(e) => setType(e.target.value)}
-                                fullWidth
-                            >
-                                <MenuItem value="forum">Diskussion</MenuItem>
-                                <MenuItem value="news">News</MenuItem>
-                                <MenuItem value="event">Event</MenuItem>
-                            </TextField>
-                        )}
-                        */}
 
+                        {/* Inhalt */}
                         <TextField
                             label="Inhalt"
                             multiline

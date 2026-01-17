@@ -51,7 +51,6 @@ export default function ViewPost() {
 
     useEffect(() => {
         if (!id) return;
-        // Wrap in microtask to avoid sync setState warning
         Promise.resolve().then(() => setLoading(true));
         Promise.all([
             getForumPostsById({ path: { id } }),
@@ -82,22 +81,18 @@ export default function ViewPost() {
         const oldVote = (post.user_vote as Vote) || 0;
         const oldVotes = Number(post.votes) || 0;
 
-        const targetVote = vote === oldVote ? 0 : vote; // Toggle if same
+        const targetVote = vote === oldVote ? 0 : vote;
 
-        // Calculate new net votes locally
-        // If oldVote was 1 and target is 0, net -1.
-        // If oldVote was 1 and target is -1, net -2.
-        // If oldVote was 0 and target is 1, net +1.
         let diff = 0;
         if (targetVote === 1) {
-            if (oldVote === 1) diff = 0; // shouldn't happen with toggle logic
+            if (oldVote === 1) diff = 0;
             else if (oldVote === -1) diff = 2;
             else diff = 1;
         } else if (targetVote === -1) {
             if (oldVote === 1) diff = -2;
             else if (oldVote === -1) diff = 0;
             else diff = -1;
-        } else { // target 0
+        } else {
             if (oldVote === 1) diff = -1;
             else if (oldVote === -1) diff = 1;
         }
@@ -177,7 +172,6 @@ export default function ViewPost() {
                 headers: { "X-CSRF-Token": csrfData.csrf }
             });
 
-            // Update local state
             setPost(prev => {
                 if (!prev) return null;
                 const newComments = prev.comments.map(c => {
@@ -312,7 +306,6 @@ export default function ViewPost() {
                             <Divider />
 
                             <Box>
-                                {/* <Typography variant="h6" gutterBottom>Kommentare ({post.comments.length})</Typography> */}
                                 <CommentsSection
                                     comments={post.comments}
                                     onAdd={handleAddComment}
