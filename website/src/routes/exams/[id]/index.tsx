@@ -49,7 +49,6 @@ export default function ExamDetailsPage() {
     const state = location.state as { studiengang?: string; po?: string; modul?: string; modulId?: number } || {};
 
     const modulName = state.modul || params.get("mod") || "Modul";
-    // Prefer route param 'id', fall back to state/search params (legacy/linking)
     const modulId = id ? Number(id) : (state.modulId ? Number(state.modulId) : (params.get("modulId") ? Number(params.get("modulId")) : null));
 
     const [exams, setExams] = useState<ExamListEntry[]>([]);
@@ -111,10 +110,8 @@ export default function ExamDetailsPage() {
                 const exam = data as ExamListEntry;
                 if (exam && exam.moduleid) {
                     const newParams = new URLSearchParams(params);
-                    // We don't need modulId query param anymore since it's in the path
                     newParams.delete("modulId");
                     if (exam.module_name) newParams.set("mod", exam.module_name);
-                    // Navigate to the correct module path
                     navigate(`/exams/${exam.moduleid}?${newParams.toString()}`, { replace: true });
                 }
             }).catch(() => {
@@ -283,9 +280,6 @@ export default function ExamDetailsPage() {
                     <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
                         {modulName}
                     </Typography>
-                    {/* <Typography variant="body1" color="text.secondary">
-                       Beschreibung 
-                    </Typography> */}
                 </Box>
 
                 {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
@@ -328,13 +322,7 @@ export default function ExamDetailsPage() {
                                                             )}
                                                         </Stack>
                                                     }
-                                                    primaryTypographyProps={{ fontWeight: 600 }}
                                                 />
-                                                {/* <ListItemSecondaryAction sx={{ right: 24 }}>
-                                                    <Typography variant="caption" sx={{ bgcolor: 'action.hover', px: 1, py: 0.5, borderRadius: 1, fontWeight: 500 }}>
-                                                        Revision {exam.edit_version}
-                                                    </Typography>
-                                                </ListItemSecondaryAction> */}
                                             </ListItemButton>
                                         </ListItem>
                                     </Box>

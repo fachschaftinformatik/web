@@ -83,7 +83,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuthStatus();
   }, [setPreference]);
 
-  // Ensure theme precedence: if the user object changes, force sync the theme
   useEffect(() => {
     if (user && user.theme) {
       setPreference(user.theme as ThemePreference);

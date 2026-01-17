@@ -340,7 +340,7 @@ export function CommentThread({
                     {replyOpen && (
                         <Box sx={{ mt: 2, ml: 0 }}>
                             <CommentsSection
-                                comments={[]} // Reuse input component logic basically
+                                comments={[]}
                                 onAdd={(_, t) => {
                                     onReply((node.id ?? null) as string | null, t);
                                     setReplyOpen(false);
@@ -433,7 +433,6 @@ export function CommentsSection({
         if (sortOrder === "top") {
             return sorted.sort((a, b) => (b.votes || 0) - (a.votes || 0));
         }
-        // Default to desc (newest)
         return sorted.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
     }, [visibleComments, sortOrder]);
 

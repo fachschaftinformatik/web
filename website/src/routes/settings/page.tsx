@@ -52,7 +52,6 @@ export default function SettingsPage() {
         });
     }, []);
 
-    // Sync state if user changes (e.g. after re-auth)
     useEffect(() => {
         if (user) {
             setName(user.name || "");
@@ -81,9 +80,7 @@ export default function SettingsPage() {
             } else {
                 setSuccess("Einstellungen erfolgreich gespeichert.");
                 if (res.data) {
-                    // Update the local user state
                     login(res.data as User, window.localStorage.getItem('fs_remember_flag') === 'true');
-                    // Apply the theme after successful save
                     setPreference(themePreference);
                 }
             }
