@@ -260,28 +260,28 @@ const NewsFeedPage: React.FC = () => {
               pointerEvents: 'none',
             }}
           >
-            <Stack spacing={2} sx={{ maxWidth: 800, pointerEvents: 'auto' }}>
+            <Stack spacing={1.5} sx={{ maxWidth: 800, pointerEvents: 'auto' }}>
               <Box>
-                <Typography variant="overline" sx={{ ...custom.heroOverline, color: 'primary.main', fontWeight: 800, fontSize: '1.1rem', letterSpacing: '0.15em' }}>
+                <Typography variant="overline" sx={{ ...custom.heroOverline, color: 'primary.main', fontWeight: 800, fontSize: { xs: '0.85rem', md: '1.1rem' }, letterSpacing: '0.15em' }}>
                   fsInformatik
                 </Typography>
                 <Typography variant="h1" sx={{
                   fontFamily: '"Space Grotesk", sans-serif',
                   fontWeight: 800,
-                  fontSize: { xs: '2.5rem', md: '4rem' },
-                  lineHeight: 1,
-                  mb: 2,
+                  fontSize: { xs: '2.25rem', sm: '3rem', md: '4rem' },
+                  lineHeight: 1.1,
+                  mb: { xs: 1, md: 2 },
                   textShadow: isDark ? '0 0 40px rgba(0,0,0,0.5)' : 'none',
                 }}>
                   {eventsData[carouselIndex]?.title || 'Dein Hub für das Studium'}
                 </Typography>
               </Box>
 
-              <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400, maxWidth: 600, mb: 2 }}>
+              <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400, fontSize: { xs: '1rem', md: '1.25rem' }, maxWidth: 600, mb: { xs: 1, md: 2 } }}>
                 Bleib informiert über Events, Klausuren und alles Wichtige rund um dein Studium an der Westfälischen Hochschule.
               </Typography>
 
-              <Stack direction="row" spacing={2}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <Button
                   component={RouterLink}
                   to="/forum"
@@ -291,8 +291,8 @@ const NewsFeedPage: React.FC = () => {
                   sx={{
                     borderRadius: 3,
                     px: 4,
-                    py: 1.2,
-                    fontSize: '1.1rem',
+                    py: { xs: 1.5, md: 1.2 },
+                    fontSize: { xs: '1rem', md: '1.1rem' },
                     fontWeight: 700,
                     textTransform: 'none',
                   }}
@@ -307,8 +307,8 @@ const NewsFeedPage: React.FC = () => {
                   sx={{
                     borderRadius: 3,
                     px: 4,
-                    py: 1.2,
-                    fontSize: '1.1rem',
+                    py: { xs: 1.5, md: 1.2 },
+                    fontSize: { xs: '1rem', md: '1.1rem' },
                     fontWeight: 700,
                     backdropFilter: 'blur(10px)',
                     textTransform: 'none',
@@ -319,13 +319,13 @@ const NewsFeedPage: React.FC = () => {
               </Stack>
             </Stack>
             {eventsData.length > 1 && (
-              <Box sx={{ position: 'absolute', bottom: 32, left: { xs: 32, md: 64 }, display: 'flex', gap: 1, pointerEvents: 'auto' }}>
+              <Box sx={{ position: 'absolute', bottom: { xs: 16, md: 32 }, left: { xs: '50%', md: 64 }, transform: { xs: 'translateX(-50%)', md: 'none' }, display: 'flex', gap: 1, pointerEvents: 'auto' }}>
                 {eventsData.map((_, i) => (
                   <Box
                     key={i}
                     onClick={() => setCarouselIndex(i)}
                     sx={{
-                      width: 40,
+                      width: { xs: 32, md: 40 },
                       height: 4,
                       borderRadius: 2,
                       bgcolor: carouselIndex === i ? 'primary.main' : alpha(theme.palette.text.primary, 0.2),

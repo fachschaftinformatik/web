@@ -846,6 +846,14 @@ paths:
         in: query
         name: type
         type: string
+      - description: Search query
+        in: query
+        name: query
+        type: string
+      - description: Sort by (new, votes)
+        in: query
+        name: sort
+        type: string
       - description: Limit
         in: query
         name: limit

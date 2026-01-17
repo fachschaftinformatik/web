@@ -55,7 +55,7 @@ export const PROGRAM_META_MAP: Record<Program, ProgramMeta> = PROGRAM_CATALOG.re
 }, {} as Record<Program, ProgramMeta>);
 
 export const COMMENT_COLLAPSE_LIMIT = 6;
-export const POSTS_PER_PAGE = 20;
+export const POSTS_PER_PAGE = 10;
 
 export const FORUM_CATEGORIES = [
     "Ankündigung",
@@ -182,7 +182,7 @@ export function CommentThread({
         <Box
             sx={{
                 mt: 2,
-                pl: depth ? 2 : 0,
+                pl: depth ? { xs: 1, sm: 2 } : 0,
                 borderLeft: depth ? `2px solid ${appearance.border}` : "none",
             }}
         >
@@ -590,7 +590,13 @@ export function CommentsSection({
             {/* List */}
             <Box>
                 {!flat && (
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        justifyContent="space-between"
+                        alignItems={{ xs: "flex-start", sm: "center" }}
+                        spacing={2}
+                        mb={3}
+                    >
                         <Typography variant="h6" fontWeight={700}>
                             Kommentare ({totalComments})
                         </Typography>
@@ -602,7 +608,7 @@ export function CommentsSection({
                             InputProps={{
                                 sx: { borderRadius: 2, fontSize: '0.875rem' }
                             }}
-                            sx={{ minWidth: 120 }}
+                            sx={{ minWidth: 120, alignSelf: { xs: "flex-end", sm: "center" } }}
                         >
                             <MenuItem value="desc">Neueste</MenuItem>
                             <MenuItem value="top">Am besten bewertet</MenuItem>
