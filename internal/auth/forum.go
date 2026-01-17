@@ -46,6 +46,8 @@ type VoteRequest struct {
 // @Summary List forum posts
 // @Tags Forum
 // @Param type query string false "Post type (forum, news, event)"
+// @Param query query string false "Search query"
+// @Param sort query string false "Sort by (new, votes)"
 // @Param limit query int false "Limit"
 // @Param offset query int false "Offset"
 // @Success 200 {array} PostResponse
@@ -65,6 +67,11 @@ func (s *Server) GetForumPosts(w http.ResponseWriter, r *http.Request) {
 	}
 	offset, _ := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 64)
 	sortBy := r.URL.Query().Get("sort")
+	searchQ := r.URL.Query().Get("query")
+	var searchPtr *string
+	if searchQ != "" {
+		searchPtr = &searchQ
+	}
 
 	var currentUserID *string
 	if user.ID != "" {
@@ -77,6 +84,7 @@ func (s *Server) GetForumPosts(w http.ResponseWriter, r *http.Request) {
 	if sortBy == "votes" {
 		topPosts, err2 := s.DB.ListForumPostsTop(r.Context(), database.ListForumPostsTopParams{
 			Type:          typePtr,
+			Query:         searchPtr,
 			Limit:         limit,
 			Offset:        offset,
 			CurrentUserID: currentUserID,
@@ -88,6 +96,7 @@ func (s *Server) GetForumPosts(w http.ResponseWriter, r *http.Request) {
 	} else {
 		posts, err = s.DB.ListForumPosts(r.Context(), database.ListForumPostsParams{
 			Type:          typePtr,
+			Query:         searchPtr,
 			Limit:         limit,
 			Offset:        offset,
 			CurrentUserID: currentUserID,
@@ -99,6 +108,17 @@ func (s *Server) GetForumPosts(w http.ResponseWriter, r *http.Request) {
 		s.jsonError(w, "database_error", err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Get total count for pagination
+	totalCount, err := s.DB.CountForumPosts(r.Context(), database.CountForumPostsParams{
+		Type:  typePtr,
+		Query: searchPtr,
+	})
+	if err != nil {
+		s.Log.Printf("Failed to count forum posts: %v", err)
+		totalCount = int64(len(posts))
+	}
+	w.Header().Set("X-Total-Count", strconv.FormatInt(totalCount, 10))
 
 	resp := make([]PostResponse, 0, len(posts))
 	for _, p := range posts {
