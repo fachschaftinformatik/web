@@ -781,6 +781,14 @@ export type GetForumPostsData = {
          */
         type?: string;
         /**
+         * Search query
+         */
+        query?: string;
+        /**
+         * Sort by (new, votes)
+         */
+        sort?: string;
+        /**
          * Limit
          */
         limit?: number;
