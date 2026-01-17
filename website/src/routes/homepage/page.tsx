@@ -72,7 +72,6 @@ const loadForumPosts = (apiPosts: AuthPostResponse[] = []): ForumPostSummary[] =
 };
 const toEventTimestamp = (event: CalendarEvent) => {
   const [year, month, day] = event.date.split('-').map(Number);
-  // If no time is provided, we treat it as an all-day event occurring at the end of the day for filtering purposes
   const [hour, minute] = event.time ? event.time.split(':').map(Number) : [23, 59];
   return new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0).getTime();
 };
@@ -102,21 +101,17 @@ const NewsFeedPage: React.FC = () => {
 
   useEffect(() => {
     import('@lib/api').then(({ getForumPosts }) => {
-      // Fetch News
       getForumPosts({ query: { type: 'news', limit: 10 } }).then(({ data }) => {
         if (data) setNewsItems(data as AuthPostResponse[]);
       });
-      // Fetch Forum
       getForumPosts({ query: { type: 'forum', limit: 5 } }).then(({ data }) => {
         if (data) setForumPosts(loadForumPosts(data as AuthPostResponse[]));
       });
-      // Fetch Event Posts
       getForumPosts({ query: { type: 'event', limit: 20 } }).then(({ data }) => {
         if (data) setApiEvents(data as AuthPostResponse[]);
       });
     });
 
-    // Fetch Events for Carousel
     import('@lib/api/client.gen').then(({ client }) => {
       client.request({ method: 'GET', url: '/events' }).then(({ data }) => {
         if (data) setEventsData(data as EventItem[]);
@@ -124,7 +119,6 @@ const NewsFeedPage: React.FC = () => {
     });
   }, []);
 
-  // Carousel auto-slide
   useEffect(() => {
     if (eventsData.length <= 1) return;
     const interval = setInterval(() => {
@@ -163,8 +157,6 @@ const NewsFeedPage: React.FC = () => {
     const mappedApiEvents: CalendarEvent[] = apiEvents.map(post => {
       const datePart = post.event_date ? post.event_date.split('T')[0] : toDateKey(new Date(post.created_at || ''));
       const timePart = post.event_date && post.event_date.includes('T') ? post.event_date.split('T')[1].substring(0, 5) : '';
-
-      // Extract category from tags or default to 'Info'
       let category = 'Info';
       if (post.tags) {
         try {
@@ -191,7 +183,6 @@ const NewsFeedPage: React.FC = () => {
     return mappedApiEvents
       .filter((event) => {
         const eventTs = toEventTimestamp(event);
-        // Include events that are still relevant today
         return eventTs >= now.getTime();
       })
       .sort((a, b) => toEventTimestamp(a) - toEventTimestamp(b));
@@ -215,7 +206,6 @@ const NewsFeedPage: React.FC = () => {
             borderColor: 'divider',
           }}
         >
-          {/* Hero Background Carousel */}
           {eventsData.length > 0 ? (
             eventsData.map((ev, idx) => (
               <Box
@@ -328,8 +318,6 @@ const NewsFeedPage: React.FC = () => {
                 </Button>
               </Stack>
             </Stack>
-
-            {/* Carousel Navigation Indicators */}
             {eventsData.length > 1 && (
               <Box sx={{ position: 'absolute', bottom: 32, left: { xs: 32, md: 64 }, display: 'flex', gap: 1, pointerEvents: 'auto' }}>
                 {eventsData.map((_, i) => (
@@ -362,7 +350,6 @@ const NewsFeedPage: React.FC = () => {
               gridTemplateColumns: { xs: '1fr', md: 'repeat(12, minmax(0, 1fr))' },
               alignItems: 'stretch'
             }}>
-              {/* Left Column: Announcements / Forum Carousel */}
               <Paper
                 elevation={0}
                 sx={{
@@ -499,8 +486,6 @@ const NewsFeedPage: React.FC = () => {
                   </Stack>
                 </Box>
               </Paper>
-
-              {/* Right Column: Upcoming Events */}
               <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' }, display: 'flex', justifyContent: 'center' }}>
                 <Stack spacing={2} sx={{ width: '100%', maxWidth: 400, pt: { xs: 2.2, md: 3 } }}>
                   <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mb: 2 }}>

@@ -36,9 +36,6 @@ export default function EditPost() {
     const [category, setCategory] = useState<string>("");
     const [selectedPrograms, setSelectedPrograms] = useState<Program[]>([]);
     const [tags, setTags] = useState<string[]>([]);
-    // const [tagInput, setTagInput] = useState(""); // Removed custom tag input
-
-    // Additional fields for News/Events
     const [eventDate, setEventDate] = useState("");
     const [location, setLocation] = useState("");
 
@@ -62,20 +59,17 @@ export default function EditPost() {
                     setBody(data.body || "");
                     setType(data.type || "forum");
 
-                    // Handle Category and Tags
                     let loadedTags: string[] = [];
                     try {
                         loadedTags = data.tags ? JSON.parse(data.tags as unknown as string) as string[] : [];
                     } catch { /* empty */ }
 
-                    // Find if any tag matches a category
                     const foundCategory = loadedTags.find(t => FORUM_CATEGORIES.includes(t as typeof FORUM_CATEGORIES[number]));
                     if (foundCategory) {
                         setCategory(foundCategory);
-                        // Filter out the category from the tags displayed in the tag selector
                         setTags(loadedTags.filter(t => t !== foundCategory));
                     } else {
-                        setCategory(""); // Or default?
+                        setCategory("");
                         setTags(loadedTags);
                     }
 
@@ -90,7 +84,6 @@ export default function EditPost() {
             .finally(() => setLoading(false));
     }, [id]);
 
-    // Effect to match loaded program names to Program objects once programs list is available
     useEffect(() => {
         if (!id || programs.length === 0) return;
 
@@ -117,7 +110,6 @@ export default function EditPost() {
             const token = csrfData?.csrf;
             if (csrfError || !token) throw new Error("CSRF-Token fehlt. Bitte neu laden.");
 
-            // Combine category and tags
             const finalTags = [category, ...tags];
 
             const { error: apiError } = await putForumPostsById({
@@ -144,12 +136,6 @@ export default function EditPost() {
         }
     };
 
-    /* const handleAddTag = (event: React.KeyboardEvent) => {
-        // ... removed
-    }; */
-
-
-    // const canCreateNews = user?.role === "admin" || user?.role === "editor";
 
     if (loading) {
         return (
@@ -201,22 +187,6 @@ export default function EditPost() {
                                 </MenuItem>
                             ))}
                         </TextField>
-
-                        {/*
-                        {canCreateNews && (
-                            <TextField
-                                select
-                                label="Typ"
-                                value={type}
-                                onChange={(e) => setType(e.target.value)}
-                                fullWidth
-                            >
-                                <MenuItem value="forum">Diskussion</MenuItem>
-                                <MenuItem value="news">News</MenuItem>
-                                <MenuItem value="event">Event</MenuItem>
-                            </TextField>
-                        )}
-                        */}
 
                         <TextField
                             label="Inhalt"

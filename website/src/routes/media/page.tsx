@@ -105,7 +105,6 @@ export default function Galerie() {
     }
   }, [selectedEventId, mediaId, setSearchParams]);
 
-  // Initial load: if mediaId is present, fetch its event first
   useEffect(() => {
     if (mediaId && !selectedEventId) {
       const fetchMediaMetadata = async () => {
