@@ -261,16 +261,30 @@ function PostItem({
 export default function ForumPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-
   const navigate = useNavigate();
 
   const [posts, setPosts] = React.useState<Post[]>([]);
+  const [totalCount, setTotalCount] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
+
+  const [q, setQ] = React.useState("");
+  const [sort, setSort] = React.useState<"new" | "votes" | "relevant">("new");
+  const [activeProgramFilters, setActiveProgramFilters] = React.useState<Program[]>([]);
+  const [page, setPage] = React.useState(1);
 
   const fetchPosts = React.useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await getForumPosts({ query: { limit: 100 } });
+      const offset = (page - 1) * POSTS_PER_PAGE;
+      const { data, response } = await getForumPosts({
+        query: {
+          limit: POSTS_PER_PAGE,
+          offset,
+          query: q.trim() || undefined,
+          sort: sort === "votes" ? "votes" : undefined,
+        }
+      });
+
       if (data) {
         const parsed: Post[] = (data as ApiPost[]).map((p: ApiPost) => {
           let programs: Program[] = [];
@@ -305,13 +319,16 @@ export default function ForumPage() {
           } as Post;
         });
         setPosts(parsed);
+
+        const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
+        setTotalCount(total);
       }
     } catch (err) {
       console.error("Fetch error:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, q, sort]);
 
   React.useEffect(() => {
     fetchPosts();
@@ -326,64 +343,22 @@ export default function ForumPage() {
     }
   }, [navigate]);
 
-
-
-
-  const [q, setQ] = React.useState("");
-  const [sort, setSort] = React.useState<"new" | "votes" | "relevant">("new");
-  const [activeProgramFilters, setActiveProgramFilters] = React.useState<Program[]>([]);
-  const [page, setPage] = React.useState(1);
-
   React.useEffect(() => {
     setPage(1);
   }, [q, sort, activeProgramFilters]);
 
-  // Filter Logic
-  const filtered = React.useMemo(() => {
-    const query = q.trim().toLowerCase();
-    let base = posts;
+  // Client-side filtering for programs (since backend doesn't support it yet)
+  const filteredPosts = React.useMemo(() => {
+    if (activeProgramFilters.length === 0) return posts;
+    return posts.filter((p) =>
+      p.programs.some((program) => activeProgramFilters.includes(program))
+    );
+  }, [posts, activeProgramFilters]);
 
-    if (activeProgramFilters.length) {
-      base = base.filter((p) =>
-        p.programs.some((program) => activeProgramFilters.includes(program))
-      );
-    }
-
-    if (query) {
-      base = base.filter(
-        (p) =>
-          (p.title ?? "").toLowerCase().includes(query) ||
-          (p.body ?? "").toLowerCase().includes(query) ||
-          p.tags.some((t) => t.toLowerCase().includes(query))
-      );
-    }
-
-    const sortWithPinned = (a: Post, b: Post) => {
-      const pinDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
-      if (pinDiff !== 0) return pinDiff;
-
-      if (sort === "votes") {
-        return (Number(b.votes)) - (Number(a.votes));
-      }
-      return +new Date(b.created_at ?? 0) - +new Date(a.created_at ?? 0);
-    };
-
-    return [...base].sort(sortWithPinned);
-  }, [posts, q, sort, activeProgramFilters]);
-
-  const pageCount = React.useMemo(
-    () => Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE)),
-    [filtered.length]
-  );
-
-  React.useEffect(() => {
-    setPage((prev) => Math.min(prev, pageCount));
-  }, [pageCount]);
-
-  const paginatedPosts = React.useMemo(() => {
-    const startIndex = (page - 1) * POSTS_PER_PAGE;
-    return filtered.slice(startIndex, startIndex + POSTS_PER_PAGE);
-  }, [filtered, page]);
+  // If we have local filters that change the count significantly, 
+  // we might need more complex logic, but for now we follow the user's request
+  // to implement pagination similar to activity feed.
+  const pageCount = Math.ceil(totalCount / POSTS_PER_PAGE);
 
   const handleVote = async (id: string, newVote: Vote) => {
     if (!user) return;
@@ -440,7 +415,6 @@ export default function ForumPage() {
   const closeReport = () => { setReportFor(null); setReportNote(""); };
   const sendReport = () => {
     console.log("Report", reportFor, reportReason, reportNote);
-    // Ideally send to API
     closeReport();
   };
 
@@ -454,14 +428,38 @@ export default function ForumPage() {
           </Box>
         </Box>
 
-        {loading ? (<Box display="flex" justifyContent="center" py={8}><Typography>Lädt...</Typography></Box>) : (
+        {loading && posts.length === 0 ? (
+          <Box display="flex" justifyContent="center" py={8}><Typography>Lädt...</Typography></Box>
+        ) : (
           <>
             <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider" }}>
               <Stack spacing={2}>
                 <Stack direction="row" spacing={2}>
-                  <TextField fullWidth placeholder="Suche in Titel, Text oder Tags…" value={q} onChange={e => setQ(e.target.value)} size="small" InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon color="primary" /></InputAdornment>, sx: { borderRadius: 2 } }} />
+                  <TextField
+                    fullWidth
+                    placeholder="Suche in Titel, Text oder Tags…"
+                    value={q}
+                    onChange={e => setQ(e.target.value)}
+                    size="small"
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start"><SearchIcon color="primary" /></InputAdornment>,
+                      sx: { borderRadius: 2 }
+                    }}
+                  />
                   <Tooltip title="Beitrag erstellen">
-                    <IconButton onClick={handleOpenCreate} sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', borderRadius: 2, width: 40, height: 40, '&:hover': { bgcolor: 'primary.dark' } }}><AddIcon /></IconButton>
+                    <IconButton
+                      onClick={handleOpenCreate}
+                      sx={{
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        borderRadius: 2,
+                        width: 40,
+                        height: 40,
+                        '&:hover': { bgcolor: 'primary.dark' }
+                      }}
+                    >
+                      <AddIcon />
+                    </IconButton>
                   </Tooltip>
                 </Stack>
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', width: '100%', alignItems: 'center' }}>
@@ -476,7 +474,14 @@ export default function ForumPage() {
                     size="small"
                     sx={{ flex: 2, minWidth: 300 }}
                   />
-                  <TextField select label="Filter" value={sort} onChange={e => setSort(e.target.value as "new" | "votes" | "relevant")} size="small" sx={{ flex: 1, minWidth: 150 }}>
+                  <TextField
+                    select
+                    label="Filter"
+                    value={sort}
+                    onChange={e => setSort(e.target.value as "new" | "votes" | "relevant")}
+                    size="small"
+                    sx={{ flex: 1, minWidth: 150 }}
+                  >
                     <MenuItem value="relevant">Relevant</MenuItem>
                     <MenuItem value="new">Neuste</MenuItem>
                     <MenuItem value="votes">Top</MenuItem>
@@ -485,8 +490,8 @@ export default function ForumPage() {
               </Stack>
             </Paper>
 
-            <Stack spacing={2}>
-              {paginatedPosts.map(p => (
+            <Stack spacing={2} sx={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+              {filteredPosts.map(p => (
                 <PostItem
                   key={p.id}
                   post={p}
@@ -499,12 +504,24 @@ export default function ForumPage() {
                   isAdmin={isAdmin}
                 />
               ))}
-              {filtered.length === 0 && <Stack spacing={1.5}><Typography color="text.secondary">Keine Treffer. Suchbegriff oder Filter anpassen.</Typography></Stack>}
+              {filteredPosts.length === 0 && !loading && (
+                <Stack spacing={1.5}>
+                  <Typography color="text.secondary">Keine Treffer. Suchbegriff oder Filter anpassen.</Typography>
+                </Stack>
+              )}
             </Stack>
 
-            {filtered.length > POSTS_PER_PAGE && (
-              <Box display="flex" justifyContent="center" mt={1}>
-                <Pagination count={pageCount} page={page} onChange={(_, v) => setPage(v)} color="primary" showFirstButton showLastButton />
+            {pageCount > 1 && (
+              <Box display="flex" justifyContent="center" mt={4}>
+                <Pagination
+                  count={pageCount}
+                  page={page}
+                  onChange={(_, v) => setPage(v)}
+                  color="primary"
+                  shape="rounded"
+                  variant="outlined"
+                  disabled={loading}
+                />
               </Box>
             )}
           </>
