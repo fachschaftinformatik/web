@@ -115,7 +115,7 @@ export default function ExamDetailsPage() {
                     navigate(`/exams/${exam.moduleid}?${newParams.toString()}`, { replace: true });
                 }
             }).catch(() => {
-                console.log("Could not find exam for deep link");
+                // Silently fail if exam not found for deep link
             });
         }
     }, [params, modulId, navigate]);

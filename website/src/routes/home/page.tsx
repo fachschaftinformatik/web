@@ -75,7 +75,6 @@ const toEventTimestamp = (event: CalendarEvent) => {
   return new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0).getTime();
 };
 
-
 const NewsFeedPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -125,8 +124,6 @@ const NewsFeedPage: React.FC = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, [eventsData.length]);
-
-
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -283,7 +280,7 @@ const NewsFeedPage: React.FC = () => {
               <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{ mt: 1 }}>
                 <Button
                   component={RouterLink}
-                  to="/forum"
+                  to="/discussions"
                   variant="contained"
                   disableElevation
                   size="large"
@@ -300,7 +297,7 @@ const NewsFeedPage: React.FC = () => {
                 </Button>
                 <Button
                   component={RouterLink}
-                  to="/media"
+                  to="/images"
                   variant="outlined"
                   size="large"
                   sx={{
@@ -404,7 +401,7 @@ const NewsFeedPage: React.FC = () => {
                             <Box
                               key={item.id}
                               component={RouterLink}
-                              to={`/forum/${item.id}`}
+                              to={`/discussions/${item.id}`}
                               sx={{
                                 ...custom.newsCardLink,
                                 bgcolor: isDark ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.04),
@@ -442,7 +439,7 @@ const NewsFeedPage: React.FC = () => {
                       ) : (
                         <Stack spacing={1.5}>
                           {forumPosts.slice(0, 3).map((post) => (
-                            <Box key={post.id} component={RouterLink} to={`/forum/${post.id}`} sx={custom.newsCardLink}>
+                            <Box key={post.id} component={RouterLink} to={`/discussions/${post.id}`} sx={custom.newsCardLink}>
                               <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
                                 <Avatar
                                   src={post.authorAvatarUrl || undefined}
@@ -472,7 +469,7 @@ const NewsFeedPage: React.FC = () => {
 
                     <Button
                       component={RouterLink}
-                      to={sidebarIndex === 0 ? "/forum?type=news" : "/forum"}
+                      to={sidebarIndex === 0 ? "/discussions?type=news" : "/discussions"}
                       variant="contained"
                       disableElevation
                       endIcon={<ArrowForwardRounded fontSize="small" />}
@@ -522,7 +519,7 @@ const NewsFeedPage: React.FC = () => {
                               boxShadow: `0 0 20px ${alpha(accent, 0.4)}`
                             }
                           }}
-                          onClick={() => navigate(`/forum/${event.id}`)}
+                          onClick={() => navigate(`/discussions/${event.id}`)}
                         >
                           <TimelineOppositeContent
                             sx={{ m: 'auto 0' }}
