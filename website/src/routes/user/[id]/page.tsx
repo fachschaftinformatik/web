@@ -298,10 +298,10 @@ const ProfilePage: React.FC = () => {
                   const secondaryText = activity.created_at ? new Date(activity.created_at).toLocaleString() : '';
 
                   if (activity.type === 'POST_CREATED') {
-                    linkTarget = `/forum/${activity.target_id}`;
+                    linkTarget = `/discussions/${activity.target_id}`;
                     primaryText = activity.target_name || "Neuer Beitrag";
                   } else if (activity.type === 'COMMENT_ADDED') {
-                    linkTarget = `/forum/${activity.target_id}`;
+                    linkTarget = `/discussions/${activity.target_id}`;
                     primaryText = activity.target_name ? `Kommentar zu "${activity.target_name}"` : "Neuer Kommentar";
                   } else if (activity.type === 'EXAM_UPLOADED') {
                     linkTarget = `/exams/${activity.target_id}`;
