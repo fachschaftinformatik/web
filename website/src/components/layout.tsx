@@ -63,8 +63,6 @@ import { client } from '@lib/api/client.gen';
 const drawerWidthOpen = 240;
 const drawerWidthClosed = 72;
 
-
-
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
   borderRadius: theme.shape.borderRadius,
@@ -105,7 +103,6 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     },
   },
 }));
-
 interface SearchResult {
   type: 'exam' | 'module' | 'user' | 'post';
   id: string;
@@ -286,8 +283,8 @@ const GlobalSearch = () => {
 
 const navItems = [
   { label: 'Startseite', href: '/', icon: <DashboardRounded />, isRoute: true },
-  { label: 'Forum', href: '/forum', icon: <QuestionAnswerRounded />, isRoute: true },
-  { label: 'Galerie', href: '/media', icon: <CollectionsRounded />, isRoute: true },
+  { label: 'Diskussionen', href: '/discussions', icon: <QuestionAnswerRounded />, isRoute: true },
+  { label: 'Galerie', href: '/images', icon: <CollectionsRounded />, isRoute: true },
   { label: 'Rekos', href: '/exams', icon: <LibraryBooksRounded />, isRoute: true },
   { label: 'Team', href: '/team', icon: <PeopleRounded />, isRoute: true },
   { label: 'Kontakt', href: '/contact', icon: <MailRounded />, isRoute: true },
@@ -310,15 +307,15 @@ const Sidebar = ({
   fullBleed = false,
   maxWidth = "lg"
 }: SidebarProps) => {
-  const { mode } = useThemeMode();
+  const { mode, setPreference } = useThemeMode();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
   const navigate = useNavigate();
+  const { logout, login } = useAuth();
 
-  React.useEffect(() => {
+  useEffect(() => {
     document.title = `${title} | FSV Informatik`;
   }, [title]);
-
 
   const [desktopOpen, setDesktopOpen] = useState(() => {
     const stored = localStorage.getItem('sidebar_desktop_open');
@@ -338,18 +335,13 @@ const Sidebar = ({
 
   const navOpen = isMdUp ? desktopOpen : mobileOpen;
 
-
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notiAnchorEl, setNotiAnchorEl] = useState<null | HTMLElement>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const open = Boolean(anchorEl);
   const notiOpen = Boolean(notiAnchorEl);
-
   const unreadCount = notifications.filter(n => !n.read).length;
-
-  const { logout, login } = useAuth();
-  const { setPreference } = useThemeMode();
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
@@ -362,9 +354,7 @@ const Sidebar = ({
   }, [user]);
 
   useEffect(() => {
-    Promise.resolve().then(() => {
-      fetchNotifications();
-    });
+    fetchNotifications();
     const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
@@ -373,7 +363,7 @@ const Sidebar = ({
     try {
       const { data: csrfData } = await getAuthCsrf();
       await putAuthNotificationsReadAll({ headers: { 'X-CSRF-Token': csrfData?.csrf || '' } });
-      await fetchNotifications();
+      fetchNotifications();
     } catch (err) {
       console.error("Failed to mark all read", err);
     }
@@ -386,13 +376,11 @@ const Sidebar = ({
         path: { id },
         headers: { 'X-CSRF-Token': csrfData?.csrf || '' }
       });
-      await fetchNotifications();
+      fetchNotifications();
     } catch (err) {
       console.error("Failed to mark notification as read", err);
     }
   };
-
-
 
   const handleNotiClick = (e: React.MouseEvent<HTMLElement>) => {
     setNotiAnchorEl(e.currentTarget);
@@ -404,22 +392,18 @@ const Sidebar = ({
 
   const handleThemeToggle = async () => {
     const nextMode = mode === 'light' ? 'dark' : 'light';
-
     setPreference(nextMode);
-
     if (user) {
       try {
         const { data: csrfData } = await getAuthCsrf();
-        const token = csrfData?.csrf;
         const res = await putAuthMe({
           body: {
             name: user.name,
             programid: user.programid,
             theme: nextMode
           },
-          headers: { "X-CSRF-Token": token || "" }
+          headers: { "X-CSRF-Token": csrfData?.csrf || "" }
         });
-
         if (res.data) {
           login(res.data as User, window.localStorage.getItem('fs_remember_flag') === 'true');
         }
@@ -504,7 +488,7 @@ const Sidebar = ({
             color="inherit"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { xs: 'block', md: 'block' } }}
+            sx={{ mr: 2 }}
           >
             {navOpen ? <MenuOpenRounded /> : <MenuRounded />}
           </IconButton>
@@ -696,19 +680,11 @@ const Sidebar = ({
                 <IconButton
                   onClick={(e) => setAnchorEl(e.currentTarget)}
                   size="small"
-                  aria-controls={open ? 'account-menu' : undefined}
-                  aria-haspopup="true"
-                  aria-expanded={open ? 'true' : undefined}
                 >
                   <Avatar
                     key={user?.id || 'anonymous'}
                     src={user?.avatar_url || undefined}
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      fontSize: '0.9rem',
-                      fontWeight: 600
-                    }}
+                    sx={{ width: 32, height: 32, fontSize: '0.9rem', fontWeight: 600 }}
                   />
                 </IconButton>
               </Tooltip>
@@ -749,7 +725,7 @@ const Sidebar = ({
                   Einstellungen
                 </MenuItem>
                 <Divider />
-                <MenuItem onClick={() => { logout(); }} sx={{ py: 1.2 }}>
+                <MenuItem onClick={() => logout()} sx={{ py: 1.2 }}>
                   <ListItemIcon>
                     <LogoutRounded fontSize="small" color="error" />
                   </ListItemIcon>
@@ -758,7 +734,26 @@ const Sidebar = ({
               </Menu>
             </>
           ) : (
-            <Button color="inherit" variant="outlined" component={RouterLink} to="/login">
+            <Button
+              variant="contained"
+              component={RouterLink}
+              to="/login"
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 700,
+                px: 3,
+                bgcolor: 'common.white',
+                color: 'primary.main',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.common.white, 0.9),
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
+                  transform: 'translateY(-1px)'
+                },
+                transition: 'all 0.2s ease'
+              }}
+            >
               Anmelden
             </Button>
           )}
