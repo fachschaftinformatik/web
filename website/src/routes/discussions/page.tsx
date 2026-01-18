@@ -30,7 +30,8 @@ import {
 } from "@lib/api";
 import type {
   AuthPostResponse as ApiPost,
-  AuthUserResponse as User
+  AuthUserResponse as User,
+  AuthProgramResponse
 } from "@lib/api";
 
 import {
@@ -275,7 +276,7 @@ export default function ForumPage() {
   const [activeProgramFilters, setActiveProgramFilters] = React.useState<Program[]>([]);
   const [page, setPage] = React.useState(1);
 
-  const [apiPrograms, setApiPrograms] = React.useState<any[]>([]);
+  const [apiPrograms, setApiPrograms] = React.useState<AuthProgramResponse[]>([]);
 
   const fetchPosts = React.useCallback(async () => {
     setLoading(true);
@@ -337,7 +338,7 @@ export default function ForumPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, q, sort]);
+  }, [page, q, sort, apiPrograms.length]);
 
   React.useEffect(() => {
     fetchPosts();
@@ -475,7 +476,7 @@ export default function ForumPage() {
                     multiple
                     options={apiPrograms}
                     getOptionLabel={o => o.name || ""}
-                    value={apiPrograms.filter(p => activeProgramFilters.includes(p.name))}
+                    value={apiPrograms.filter(p => activeProgramFilters.includes(p.name || ""))}
                     isOptionEqualToValue={(o, v) => o.id === v.id}
                     onChange={(_, n) => setActiveProgramFilters(n.map(v => v.name || ""))}
                     renderInput={p => <TextField {...p} label="Studiengang" size="small" placeholder="Wählen..." />}
