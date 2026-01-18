@@ -1,14 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
 
 import { client } from '@lib/api/client.gen';
 
-import {
-  ThemeModeProvider
-} from '@lib/theme';
+import { ThemeModeProvider } from '@lib/theme';
 
 import { AuthProvider, useAuth } from '@lib/auth';
 import ProtectedRoute from '@lib/routes';
@@ -16,18 +14,17 @@ import ProtectedRoute from '@lib/routes';
 import { lazy, Suspense } from 'react';
 import { CircularProgress, Box } from '@mui/material';
 
-const LoginPage = lazy(() => import('@routes/login/page'));
-const RegistrationPage = lazy(() => import('@routes/registration/page'));
-const DashboardPage = lazy(() => import('@routes/user/[id]'));
-const MediaPage = lazy(() => import('@routes/media/page'));
+const AuthPage = lazy(() => import('@routes/auth/page'));
+const DashboardPage = lazy(() => import('@routes/user/[id]/page'));
+const ImagesPage = lazy(() => import('@routes/images/page'));
 const TeamPage = lazy(() => import('@routes/team/page'));
 const ExamsPage = lazy(() => import('@routes/exams/page'));
-const ExamDetailsPage = lazy(() => import('@routes/exams/[id]'));
-const ForumPage = lazy(() => import('@routes/forum/page'));
-const CreateForumPost = lazy(() => import('@routes/forum/create'));
-const EditForumPost = lazy(() => import('@routes/forum/[id]/edit'));
-const ViewForumPost = lazy(() => import('@routes/forum/[id]'));
-const NewsFeedPage = lazy(() => import('@routes/homepage/page'));
+const ExamDetailsPage = lazy(() => import('@routes/exams/[id]/page'));
+const ForumPage = lazy(() => import('@routes/discussions/page'));
+const CreateForumPost = lazy(() => import('@routes/discussions/create/page'));
+const EditForumPost = lazy(() => import('@routes/discussions/[id]/edit/page'));
+const ViewForumPost = lazy(() => import('@routes/discussions/[id]/page'));
+const NewsFeedPage = lazy(() => import('@routes/home/page'));
 const ContactPage = lazy(() => import('@routes/contact/page'));
 const SettingsPage = lazy(() => import('@routes/settings/page'));
 
@@ -52,6 +49,11 @@ const ScrollToTop = () => {
   return null;
 };
 
+const ForumRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/discussions/${id}`} replace />;
+};
+
 const AuthRedirector: React.FC = () => {
   const { user, isLoading } = useAuth();
   if (isLoading)
@@ -70,30 +72,38 @@ function App() {
           <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
             <Routes>
-
               <Route element={<AuthRedirector />}>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegistrationPage />} />
+                <Route path="/auth" element={<Navigate to="/login" replace />} />
+                <Route path="/login" element={<AuthPage />} />
+                <Route path="/register" element={<AuthPage />} />
               </Route>
               <Route element={<ProtectedRoute />}>
                 <Route path="/exams" element={<ExamsPage />} />
                 <Route path="/exams/:id" element={<ExamDetailsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/forum/create" element={<CreateForumPost />} />
-                <Route path="/forum/:id/edit" element={<EditForumPost />} />
+                <Route path="/discussions/create" element={<CreateForumPost />} />
+                <Route path="/discussions/:id/edit" element={<EditForumPost />} />
               </Route>
 
               <Route path="/user/:userId" element={<DashboardPage />} />
 
-              <Route path="/forum" element={<ForumPage />} />
-              <Route path="/forum/:id" element={<ViewForumPost />} />
-              <Route path="/media" element={<MediaPage />} />
+              <Route path="/discussions" element={<ForumPage />} />
+              <Route path="/discussions/:id" element={<ViewForumPost />} />
+
+              <Route path="/forum" element={<Navigate to="/discussions" replace />} />
+              <Route path="/forum/:id" element={<ForumRedirect />} />
+
+              <Route path="/images" element={<ImagesPage />} />
+              <Route path="/images/:eventId" element={<ImagesPage />} />
+              <Route path="/images/:eventId/:imageId" element={<ImagesPage />} />
+
+              <Route path="/media" element={<Navigate to="/images" replace />} />
+
               <Route path="/team" element={<TeamPage />} />
               <Route path="/contact" element={<ContactPage />} />
 
               <Route path="/" element={<NewsFeedPage />} />
-              <Route path="*" element={<Navigate to="/login" replace />} />
-
+              <Route path="*" element={<Navigate to="/auth" replace />} />
             </Routes>
           </Suspense>
         </BrowserRouter>

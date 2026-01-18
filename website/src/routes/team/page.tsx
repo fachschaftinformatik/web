@@ -10,7 +10,7 @@ import {
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
-import { teamSections, TeamMember } from "@lib/data";
+import { TEAM_SECTIONS, TeamMember } from "@lib/config";
 
 export default function Team() {
   const { user } = useAuth();
@@ -106,7 +106,7 @@ export default function Team() {
             </Typography>
           </Box>
         </Box>
-        {teamSections.map((section) => (
+        {TEAM_SECTIONS.map((section) => (
           <Section key={section.id} title={section.title} members={section.members} />
         ))}
       </Box>

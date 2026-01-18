@@ -7,9 +7,9 @@ const ProtectedRoute: React.FC = () => {
   const { user, isLoading } = useAuth();
   if (isLoading) {
     return (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-            <CircularProgress />
-        </Box>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
     );
   }
 
