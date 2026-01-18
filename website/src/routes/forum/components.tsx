@@ -178,54 +178,71 @@ export function CommentThread({
     const netVotes = node.votes || 0;
     const userVote = (node.user_vote || 0) as Vote;
 
+    const totalDescendants = React.useMemo(() => {
+        const count = (n: CommentNode): number =>
+            n.children.reduce((acc, child) => acc + 1 + count(child), 0);
+        return count(node);
+    }, [node]);
+
     return (
         <Box
             sx={{
-                mt: 2,
-                pl: depth ? { xs: 1, sm: 2 } : 0,
-                borderLeft: depth ? `2px solid ${appearance.border}` : "none",
+                mt: 1.5,
+                pl: depth ? { xs: 0.75, sm: 2 } : 0,
+                borderLeft: depth ? `1.5px solid ${appearance.border}` : "none",
+                width: "100%",
+                maxWidth: "100%",
+                boxSizing: "border-box"
             }}
         >
-            <Stack direction="row" spacing={2} alignItems="flex-start">
+            <Stack direction="row" spacing={{ xs: 1, sm: 2 }} alignItems="flex-start">
                 <Avatar
                     src={node.author_avatar_url || undefined}
                     sx={{
-                        width: depth ? 24 : 32,
-                        height: depth ? 24 : 32,
+                        width: depth ? { xs: 20, sm: 24 } : { xs: 28, sm: 32 },
+                        height: depth ? { xs: 20, sm: 24 } : { xs: 28, sm: 32 },
                         bgcolor: appearance.accent,
-                        fontSize: "0.8rem",
-                        fontWeight: "bold"
+                        fontSize: depth ? "0.6rem" : "0.8rem",
+                        fontWeight: "bold",
+                        flexShrink: 0
                     }}
-                />
+                >
+                    {node.author_name ? node.author_name[0].toUpperCase() : "A"}
+                </Avatar>
 
-                <Box sx={{ width: "100%" }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Paper
                         elevation={0}
                         sx={{
-                            p: 2,
+                            p: { xs: 1.5, sm: 2 },
                             borderRadius: 3,
                             borderRadiusTopLeft: depth ? 3 : 0,
                             bgcolor: appearance.surface,
                             border: `1px solid ${appearance.border}`,
+                            width: "100%",
+                            boxSizing: "border-box",
+                            overflow: "hidden"
                         }}
                     >
                         <Stack spacing={1}>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Stack direction="row" spacing={1} alignItems="center">
+                                <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
                                     <Typography
                                         component={Link}
                                         to={`/user/${node.author_id}`}
                                         variant="subtitle2"
                                         fontWeight={700}
+                                        noWrap
                                         sx={{
                                             color: "inherit",
                                             textDecoration: "none",
+                                            fontSize: { xs: '0.75rem', sm: '0.875rem' },
                                             "&:hover": { color: appearance.accent, cursor: "pointer" }
                                         }}
                                     >
                                         {node.author_name || "Anonym"}
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: appearance.textSecondary }}>
+                                    <Typography variant="caption" sx={{ color: appearance.textSecondary, whiteSpace: 'nowrap', fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                                         · {isoToShort(node.created_at ?? "")}
                                         {isEdited && " (Bearbeitet)"}
                                     </Typography>
@@ -255,7 +272,7 @@ export function CommentThread({
                                                 setEditing(false);
                                                 setEditText(node.text || "");
                                             }}
-                                            sx={{ borderRadius: 2 }}
+                                            sx={{ borderRadius: 2, fontSize: '0.75rem' }}
                                         >
                                             Abbrechen
                                         </Button>
@@ -266,14 +283,23 @@ export function CommentThread({
                                                 onEdit(node.id!, editText);
                                                 setEditing(false);
                                             }}
-                                            sx={{ borderRadius: 2 }}
+                                            sx={{ borderRadius: 2, fontSize: '0.75rem' }}
                                         >
                                             Speichern
                                         </Button>
                                     </Stack>
                                 </Box>
                             ) : (
-                                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        whiteSpace: "pre-wrap",
+                                        lineHeight: 1.6,
+                                        wordBreak: "break-word",
+                                        overflowWrap: "anywhere",
+                                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                                    }}
+                                >
                                     {renderTextWithMentions(node.text ?? "")}
                                 </Typography>
                             )}
@@ -281,38 +307,39 @@ export function CommentThread({
                     </Paper>
 
                     {/* Action Bar */}
-                    <Stack direction="row" spacing={1} sx={{ mt: 0.5, ml: 1 }} alignItems="center">
+                    <Stack direction="row" spacing={{ xs: 0, sm: 1 }} sx={{ mt: 0.5, ml: { xs: 0, sm: 1 } }} alignItems="center">
                         <Stack direction="row" alignItems="center" spacing={0}>
                             <IconButton
                                 size="small"
                                 onClick={() => onVote(node.id!, userVote === 1 ? 0 : 1)}
                                 color={userVote === 1 ? "primary" : "default"}
-                                sx={{ p: 0.5 }}
+                                sx={{ p: { xs: 0.25, sm: 0.5 } }}
                             >
-                                <ThumbUpOutlined sx={{ fontSize: 16 }} />
+                                <ThumbUpOutlined sx={{ fontSize: { xs: 14, sm: 16 } }} />
                             </IconButton>
-                            <Typography variant="caption" sx={{ minWidth: 20, textAlign: 'center', fontWeight: 'bold' }}>
+                            <Typography variant="caption" sx={{ minWidth: { xs: 16, sm: 20 }, textAlign: 'center', fontWeight: 'bold', fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                                 {netVotes}
                             </Typography>
                             <IconButton
                                 size="small"
                                 onClick={() => onVote(node.id!, userVote === -1 ? 0 : -1)}
                                 color={userVote === -1 ? "primary" : "default"}
-                                sx={{ p: 0.5 }}
+                                sx={{ p: { xs: 0.25, sm: 0.5 } }}
                             >
-                                <ThumbDownOutlined sx={{ fontSize: 16 }} />
+                                <ThumbDownOutlined sx={{ fontSize: { xs: 14, sm: 16 } }} />
                             </IconButton>
                         </Stack>
 
                         <Button
                             size="small"
-                            startIcon={<ReplyIcon sx={{ fontSize: 16 }} />}
+                            startIcon={<ReplyIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />}
                             onClick={() => setReplyOpen((v) => !v)}
                             disabled={!canReply}
                             sx={{
                                 color: appearance.textSecondary,
                                 minWidth: 0,
-                                px: 1,
+                                px: { xs: 0.5, sm: 1 },
+                                fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                 textTransform: 'none',
                                 "&:hover": { color: appearance.accent, bgcolor: "transparent" }
                             }}
@@ -322,12 +349,13 @@ export function CommentThread({
                         {canEdit && !editing && (
                             <Button
                                 size="small"
-                                startIcon={<EditIcon sx={{ fontSize: 16 }} />}
+                                startIcon={<EditIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />}
                                 onClick={() => setEditing(true)}
                                 sx={{
                                     color: appearance.textSecondary,
                                     minWidth: 0,
-                                    px: 1,
+                                    px: { xs: 0.5, sm: 1 },
+                                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
                                     textTransform: 'none',
                                     "&:hover": { color: appearance.accent, bgcolor: "transparent" }
                                 }}
@@ -356,25 +384,26 @@ export function CommentThread({
                 </Box>
             </Stack>
 
-            {node.children.length > 0 && (
-                <Box sx={{ mt: 1, ml: 1 }}>
+            {depth === 0 && totalDescendants > 0 && (
+                <Box sx={{ mt: 1, ml: { xs: 3.5, sm: 5 } }}>
                     <Button
                         size="small"
                         onClick={() => setRepliesExpanded(!repliesExpanded)}
-                        startIcon={repliesExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                        startIcon={repliesExpanded ? <ExpandLessIcon sx={{ fontSize: { xs: 16, sm: 20 } }} /> : <ExpandMoreIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
                         sx={{
                             color: "primary.main",
                             fontWeight: 600,
+                            fontSize: { xs: '0.75rem', sm: '0.8125rem' },
                             textTransform: 'none',
                             "&:hover": { bgcolor: "transparent", textDecoration: 'underline' }
                         }}
                     >
-                        {node.children.length} {node.children.length === 1 ? "Antwort" : "Antworten"}
+                        {totalDescendants} {totalDescendants === 1 ? "Antwort" : "Antworten"}
                     </Button>
                 </Box>
             )}
 
-            {repliesExpanded && node.children.map((child) => (
+            {(depth > 0 || repliesExpanded) && node.children.map((child) => (
                 <CommentThread
                     key={child.id}
                     node={child}

@@ -128,7 +128,9 @@ export default function ViewPost() {
         if (data) {
             const newComment: Comment = {
                 ...data,
-                author_name: user.name || user.email
+                author_name: user.name || user.email,
+                author_avatar_url: user.avatar_url,
+                author_id: user.id
             };
             setPost(prev => prev ? ({
                 ...prev,
@@ -227,7 +229,7 @@ export default function ViewPost() {
     const userVote = (post.user_vote as Vote) || 0;
 
     return (
-        <Sidebar user={user} title={post.title} maxWidth="md">
+        <Sidebar user={user} title="Forum" maxWidth="md">
             <Box pb={6}>
                 <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/forum")} sx={{ mb: 2, color: "text.secondary" }}>
                     Zurück zum Forum
@@ -274,7 +276,9 @@ export default function ViewPost() {
                                                 bgcolor: theme.palette.primary.main,
                                                 fontWeight: "bold"
                                             }}
-                                        />
+                                        >
+                                            {post.author_name ? post.author_name[0].toUpperCase() : "A"}
+                                        </Avatar>
                                         <Typography variant="body2" color="text.secondary">
                                             von <Typography component={Link} to={`/user/${post.author_id}`} variant="body2" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author_name || "Anonym"}</Typography> · {isoToShort(post.created_at)}
                                         </Typography>
