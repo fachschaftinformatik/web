@@ -89,6 +89,9 @@ const translateError = (err: unknown): string => {
     const msg = message.toLowerCase();
     if (msg.includes('invalid email or password')) return 'Ungültige Anmeldedaten.';
     if (msg.includes('already exists')) return 'Diese E-Mail-Adresse ist bereits registriert.';
+    if (msg.includes('failed to fetch')) return 'Verbindung zum Server fehlgeschlagen. Bitte prüfe deine Internetverbindung.';
+    if (msg.includes('network error')) return 'Netzwerkfehler. Bitte prüfe deine Verbindung.';
+    if (msg.includes('timeout')) return 'Zeitüberschreitung. Der Server antwortet nicht.';
 
     return message || 'Ein unerwarteter Fehler ist aufgetreten.';
 };
