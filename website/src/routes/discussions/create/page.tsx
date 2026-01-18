@@ -13,33 +13,32 @@ import {
     CircularProgress,
     IconButton
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
-import { getPrograms, getForumPostsById, putForumPostsById, getAuthCsrf } from "@lib/api";
+import { getPrograms, postForumPosts, getAuthCsrf } from "@lib/api";
 import type { AuthProgramResponse as Program } from "@lib/api";
-import { FORUM_CATEGORIES, FORUM_TAGS } from "../components";
+import { FORUM_CATEGORIES, FORUM_TAGS } from "@lib/config";
 
-export default function EditPost() {
+export default function CreatePost() {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const { id } = useParams();
 
     const [programs, setPrograms] = useState<Program[]>([]);
     const [title, setTitle] = useState("");
     const [body, setBody] = useState("");
-    const [type, setType] = useState("forum");
-    const isStaff = user?.role === "admin" || user?.role === "editor";
     const [category, setCategory] = useState<string>("");
+    const isStaff = user?.role === "admin" || user?.role === "editor";
+    const type: "forum" | "news" | "event" = category === "Ankündigung" ? "news" : (category === "Termin" ? "event" : "forum");
     const [selectedPrograms, setSelectedPrograms] = useState<Program[]>([]);
     const [tags, setTags] = useState<string[]>([]);
+
     const [eventDate, setEventDate] = useState("");
     const [location, setLocation] = useState("");
 
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -48,60 +47,10 @@ export default function EditPost() {
         });
     }, []);
 
-    useEffect(() => {
-        if (!id) return;
-        setLoading(true);
-        getForumPostsById({ path: { id } })
-            .then(({ data, error }) => {
-                if (data) {
-                    setTitle(data.title || "");
-                    setBody(data.body || "");
-                    setType(data.type || "forum");
-
-                    let loadedTags: string[] = [];
-                    try {
-                        loadedTags = data.tags ? JSON.parse(data.tags as unknown as string) as string[] : [];
-                    } catch { /* empty */ }
-
-                    const foundCategory = loadedTags.find(t => FORUM_CATEGORIES.includes(t as typeof FORUM_CATEGORIES[number]));
-                    if (foundCategory) {
-                        setCategory(foundCategory);
-                        setTags(loadedTags.filter(t => t !== foundCategory));
-                    } else {
-                        setCategory("");
-                        setTags(loadedTags);
-                    }
-
-                    if (data.event_date) setEventDate(data.event_date);
-                    if (data.location) setLocation(data.location);
-                }
-                if (error) {
-                    setError("Beitrag konnte nicht geladen werden.");
-                }
-            })
-            .catch(() => setError("Fehler beim Laden."))
-            .finally(() => setLoading(false));
-    }, [id]);
-
-    useEffect(() => {
-        if (!id || programs.length === 0) return;
-
-        getForumPostsById({ path: { id } }).then(({ data }) => {
-            if (data && data.programs) {
-                try {
-                    const names = JSON.parse(data.programs as unknown as string) as string[];
-                    const matched = programs.filter(p => p.name && names.includes(p.name));
-                    setSelectedPrograms(matched);
-                } catch { /* empty */ }
-            }
-        });
-    }, [id, programs]);
-
-
     const handleSubmit = async () => {
-        if (!title || !body || !id || !category) return;
+        if (!title || !body || !category) return;
 
-        setSaving(true);
+        setLoading(true);
         setError("");
 
         try {
@@ -109,10 +58,10 @@ export default function EditPost() {
             const token = csrfData?.csrf;
             if (csrfError || !token) throw new Error("CSRF-Token fehlt. Bitte neu laden.");
 
+            // Combine category and tags
             const finalTags = [category, ...tags];
 
-            const { error: apiError } = await putForumPostsById({
-                path: { id },
+            const { error: apiError } = await postForumPosts({
                 body: {
                     title,
                     body,
@@ -125,34 +74,26 @@ export default function EditPost() {
                 headers: { "X-CSRF-Token": token }
             });
 
-            if (apiError) throw new Error((apiError as { message?: string }).message || "Fehler beim Speichern.");
+            if (apiError) throw new Error((apiError as { message?: string }).message || "Fehler beim Erstellen.");
 
-            navigate("/forum");
+            navigate("/discussions");
         } catch (err: unknown) {
             setError((err as Error).message);
         } finally {
-            setSaving(false);
+            setLoading(false);
         }
     };
 
 
-    if (loading) {
-        return (
-            <Sidebar user={user} title="Beitrag bearbeiten">
-                <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
-            </Sidebar>
-        );
-    }
-
     return (
-        <Sidebar user={user} title="Beitrag bearbeiten" maxWidth="md">
+        <Sidebar user={user} title="Beitrag erstellen" maxWidth="md">
             <Box>
                 <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <IconButton onClick={() => navigate("/forum")} sx={{ bgcolor: 'action.hover' }}>
+                    <IconButton onClick={() => navigate("/discussions")} sx={{ bgcolor: 'action.hover' }}>
                         <ArrowBackRoundedIcon />
                     </IconButton>
                     <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
-                        Beitrag bearbeiten
+                        Neuen Beitrag erstellen
                     </Typography>
                 </Box>
 
@@ -172,21 +113,19 @@ export default function EditPost() {
                             select
                             label="Kategorie"
                             value={category}
-                            onChange={(e) => {
-                                const val = e.target.value;
-                                setCategory(val);
-                                setType(val === "Ankündigung" ? "news" : "forum");
-                            }}
+                            onChange={(e) => setCategory(e.target.value)}
                             fullWidth
                             required
                         >
-                            {FORUM_CATEGORIES.filter(cat => cat !== "Ankündigung" || isStaff).map((cat) => (
+                            {FORUM_CATEGORIES.filter(cat => (cat !== "Ankündigung" && cat !== "Termin") || isStaff).map((cat) => (
                                 <MenuItem key={cat} value={cat}>
                                     {cat}
                                 </MenuItem>
                             ))}
                         </TextField>
 
+
+                        {/* Inhalt */}
                         <TextField
                             label="Inhalt"
                             multiline
@@ -232,7 +171,7 @@ export default function EditPost() {
                             />
                         </Stack>
 
-                        {(type === 'news' || type === 'event') && (
+                        {type !== 'forum' && (
                             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                                 <TextField
                                     label="Event Datum"
@@ -255,10 +194,10 @@ export default function EditPost() {
                             <Button
                                 variant="contained"
                                 onClick={handleSubmit}
-                                disabled={saving || !title || !body}
+                                disabled={loading || !title || !body}
                                 sx={{ borderRadius: 2, px: 4, py: 1.5, fontWeight: 700 }}
                             >
-                                {saving ? <CircularProgress size={20} color="inherit" /> : 'Speichern'}
+                                {loading ? <CircularProgress size={20} color="inherit" /> : 'Veröffentlichen'}
                             </Button>
                         </Box>
                     </Stack>

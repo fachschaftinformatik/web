@@ -22,6 +22,7 @@ import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
 import {
   getForumPosts,
+  getPrograms,
   postForumPostsByIdVote,
   deleteForumPostsById,
   putForumPostsById,
@@ -33,7 +34,7 @@ import type {
 } from "@lib/api";
 
 import {
-  PROGRAM_CATALOG, PROGRAM_META_MAP, isoToShort,
+  isoToShort,
   Post, Vote, Program, POSTS_PER_PAGE
 } from "./components";
 function PostItem({
@@ -72,7 +73,7 @@ function PostItem({
 
   return (
     <Paper
-      onClick={() => navigate(`/forum/${post.id}`)}
+      onClick={() => navigate(`/discussions/${post.id}`)}
       elevation={0}
       sx={{
         p: 2,
@@ -146,7 +147,7 @@ function PostItem({
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCloseMenu();
-                    navigate(`/forum/${post.id}/edit`);
+                    navigate(`/discussions/${post.id}/edit`);
                   }}
                 >
                   <ListItemIcon>
@@ -238,7 +239,7 @@ function PostItem({
             {post.programs.map((program) => (
               <Chip
                 key={program}
-                label={PROGRAM_META_MAP[program]?.shortLabel ?? program}
+                label={program}
                 size="small"
                 variant="outlined"
               />
@@ -274,9 +275,15 @@ export default function ForumPage() {
   const [activeProgramFilters, setActiveProgramFilters] = React.useState<Program[]>([]);
   const [page, setPage] = React.useState(1);
 
+  const [apiPrograms, setApiPrograms] = React.useState<any[]>([]);
+
   const fetchPosts = React.useCallback(async () => {
     setLoading(true);
     try {
+      if (apiPrograms.length === 0) {
+        const { data: progData } = await getPrograms();
+        if (progData) setApiPrograms(progData);
+      }
       const offset = (page - 1) * POSTS_PER_PAGE;
       const { data, response } = await getForumPosts({
         query: {
@@ -341,7 +348,7 @@ export default function ForumPage() {
     const params = new URLSearchParams(window.location.search);
     const targetId = params.get("postId") || params.get("post");
     if (targetId) {
-      navigate(`/forum/${targetId}`, { replace: true });
+      navigate(`/discussions/${targetId}`, { replace: true });
     }
   }, [navigate]);
 
@@ -408,7 +415,7 @@ export default function ForumPage() {
     } catch (e) { console.error(e); }
   };
 
-  const handleOpenCreate = () => navigate("/forum/create");
+  const handleOpenCreate = () => navigate("/discussions/create");
 
   const [reportFor, setReportFor] = React.useState<string | null>(null);
   const [reportReason, setReportReason] = React.useState("Spam / Werbung");
@@ -416,7 +423,6 @@ export default function ForumPage() {
   const openReport = (id: string) => setReportFor(id);
   const closeReport = () => { setReportFor(null); setReportNote(""); };
   const sendReport = () => {
-    console.log("Report", reportFor, reportReason, reportNote);
     closeReport();
   };
 
@@ -467,11 +473,11 @@ export default function ForumPage() {
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', width: '100%', alignItems: 'center' }}>
                   <Autocomplete
                     multiple
-                    options={PROGRAM_CATALOG}
-                    getOptionLabel={o => o.label}
-                    value={activeProgramFilters.map(id => PROGRAM_META_MAP[id]).filter(Boolean)}
+                    options={apiPrograms}
+                    getOptionLabel={o => o.name || ""}
+                    value={apiPrograms.filter(p => activeProgramFilters.includes(p.name))}
                     isOptionEqualToValue={(o, v) => o.id === v.id}
-                    onChange={(_, n) => setActiveProgramFilters(n.map(v => v.id))}
+                    onChange={(_, n) => setActiveProgramFilters(n.map(v => v.name || ""))}
                     renderInput={p => <TextField {...p} label="Studiengang" size="small" placeholder="Wählen..." />}
                     size="small"
                     sx={{ flex: 2, minWidth: 300 }}
