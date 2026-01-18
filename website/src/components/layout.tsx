@@ -354,9 +354,10 @@ const Sidebar = ({
   }, [user]);
 
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000);
-    return () => clearInterval(interval);
+    const timer = setTimeout(() => {
+      void fetchNotifications();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchNotifications]);
 
   const handleMarkAllRead = async () => {

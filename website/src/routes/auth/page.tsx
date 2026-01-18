@@ -66,11 +66,10 @@ const registrationSchema = z.object({
     }
 });
 
-const translateError = (err: any): string => {
-    // If the error has a translation mapping for its error-code, use it.
-    // The backend provides { error: "code", message: "details" }
-    const code = err?.error || err?.statusText?.toLowerCase() || '';
-    const message = err?.message || '';
+const translateError = (err: unknown): string => {
+    const errorObj = err as { error?: string, statusText?: string, message?: string };
+    const code = errorObj?.error || errorObj?.statusText?.toLowerCase() || '';
+    const message = errorObj?.message || '';
 
     const translations: Record<string, string> = {
         'invalid_credentials': 'Ungültige Anmeldedaten.',
@@ -103,7 +102,7 @@ export default function AuthPage() {
 
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
-    const [errors, setErrors] = useState<any>({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [programs, setPrograms] = useState<Program[]>([]);
@@ -149,14 +148,14 @@ export default function AuthPage() {
         setSuccess('');
 
         const formData = new FormData(event.currentTarget);
-        const rawData: any = Object.fromEntries(formData.entries());
+        const rawData = Object.fromEntries(formData.entries()) as Record<string, string>;
 
         if (tabValue === 0) {
             // Login Flow
             const validationResult = loginSchema.safeParse(rawData);
             if (!validationResult.success) {
-                const fieldErrors: any = {};
-                validationResult.error.issues.forEach((issue) => { fieldErrors[issue.path[0]] = issue.message; });
+                const fieldErrors: Record<string, string> = {};
+                validationResult.error.issues.forEach((issue) => { fieldErrors[issue.path[0] as string] = issue.message; });
                 setErrors(fieldErrors);
                 setLoading(false);
                 return;
@@ -189,8 +188,8 @@ export default function AuthPage() {
                 programid: Number(rawData.programid)
             });
             if (!validationResult.success) {
-                const fieldErrors: any = {};
-                validationResult.error.issues.forEach((issue) => { fieldErrors[issue.path[0]] = issue.message; });
+                const fieldErrors: Record<string, string> = {};
+                validationResult.error.issues.forEach((issue) => { fieldErrors[issue.path[0] as string] = issue.message; });
                 setErrors(fieldErrors);
                 setLoading(false);
                 return;
