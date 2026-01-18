@@ -18,17 +18,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import MenuItem from "@mui/material/MenuItem";
 
-export const PROGRAM_CATALOG = [
-    { id: "inf-bsc", label: "Informatik (B.Sc.)", shortLabel: "INF B.Sc.", level: "Bachelor" },
-    { id: "winf-bsc", label: "Wirtschaftsinformatik (B.Sc.)", shortLabel: "WINF B.Sc.", level: "Bachelor" },
-    { id: "med-bsc", label: "Informatik und Design (B.Sc.)", shortLabel: "IuD B.Sc.", level: "Bachelor" },
-    { id: "inf-msc", label: "Informatik (M.Sc.)", shortLabel: "INF M.Sc.", level: "Master" },
-    { id: "winf-msc", label: "Wirtschaftsinformatik (M.Sc.)", shortLabel: "WINF M.Sc.", level: "Master" },
-    { id: "med-msc", label: "Informatik und Design (M.Sc.)", shortLabel: "IuD M.Sc.", level: "Master" },
-] as const;
-
-export type ProgramMeta = typeof PROGRAM_CATALOG[number];
-export type Program = ProgramMeta["id"];
+export type Program = string;
 export type Vote = -1 | 0 | 1;
 
 export type Comment = ApiComment & {
@@ -37,7 +27,7 @@ export type Comment = ApiComment & {
     user_vote?: number;
 };
 export type Post = Omit<ApiPost, "programs" | "tags" | "links"> & {
-    programs: Program[];
+    programs: string[];
     tags: string[];
     comments: Comment[];
 };
@@ -49,29 +39,10 @@ export type CommentAppearance = {
     textSecondary: string;
 };
 
-export const PROGRAM_META_MAP: Record<Program, ProgramMeta> = PROGRAM_CATALOG.reduce((acc, meta) => {
-    acc[meta.id] = meta;
-    return acc;
-}, {} as Record<Program, ProgramMeta>);
-
 export const COMMENT_COLLAPSE_LIMIT = 6;
 export const POSTS_PER_PAGE = 10;
 
-export const FORUM_CATEGORIES = [
-    "Ankündigung",
-    "Termin",
-    "Frage",
-    "Diskussion",
-    "Feedback",
-    "Sonstiges"
-] as const;
-
-export const FORUM_TAGS = [
-    "Hilfe benötigt",
-    "Wichtig",
-    "Klausur",
-    "Organisatorisches"
-] as const;
+export { FORUM_CATEGORIES, FORUM_TAGS } from "@lib/config";
 
 export const isoToShort = (iso?: string) => {
     if (!iso)
@@ -306,8 +277,8 @@ export function CommentThread({
                         </Stack>
                     </Paper>
 
-                    {/* Action Bar */}
-                    <Stack direction="row" spacing={{ xs: 0, sm: 1 }} sx={{ mt: 0.5, ml: { xs: 0, sm: 1 } }} alignItems="center">
+                    {/* Main Content */}
+                    <Stack spacing={1}>
                         <Stack direction="row" alignItems="center" spacing={0}>
                             <IconButton
                                 size="small"
@@ -494,7 +465,6 @@ export function CommentsSection({
 
     return (
         <Stack spacing={3}>
-            {/* Input Area */}
             {!flat && (
                 <Paper
                     elevation={0}

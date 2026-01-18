@@ -15,15 +15,15 @@ import InsertPhotoRoundedIcon from '@mui/icons-material/InsertPhotoRounded';
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import { alpha } from "@mui/material/styles";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
 import { client } from "@lib/api/client.gen";
 import { getAuthCsrf } from "@lib/api";
 
-type EventItem = { id: number; title: string; created_at: string; cover_path?: string };
-type MediaItem = { id: string; event_id: number; title: string; description: string; mime_type: string; uploaded_at: string };
+type EventItem = { id: string; title: string; created_at: string; cover_path?: string };
+type MediaItem = { id: string; event_id: string; title: string; description: string; mime_type: string; uploaded_at: string };
 
 const IMAGES_PER_PAGE = 10;
 
@@ -31,13 +31,15 @@ const pic = (seed: number) => `https://picsum.photos/seed/${seed}/300/200`;
 
 export default function Galerie() {
   const { user } = useAuth();
+  const { eventId: urlEventId, imageId: urlImageId } = useParams();
+
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [page, setPage] = useState(1);
   const [loadingMedia, setLoadingMedia] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const mediaId = searchParams.get("mediaId");
+  const navigate = useNavigate();
+  const [, setSearchParams] = useSearchParams();
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -46,7 +48,7 @@ export default function Galerie() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
-  const [preselectedEventId, setPreselectedEventId] = useState<number | null>(null);
+  const [preselectedEventId, setPreselectedEventId] = useState<string | null>(null);
 
   const canUpload = user?.role === "admin" || user?.role === "editor";
 
@@ -56,14 +58,15 @@ export default function Galerie() {
       if (res.data) {
         const list = res.data as EventItem[];
         setEvents(list);
-        if (list.length > 0 && !selectedEventId) {
-          setSelectedEventId(list[0].id);
-        }
+
+        // Priority: URL Param > State > First Item
+        const targetId = urlEventId || selectedEventId || list[0]?.id;
+        if (targetId) setSelectedEventId(targetId);
       }
     } catch (e) {
       console.error("Fehler beim Laden der Events", e);
     }
-  }, [selectedEventId]);
+  }, [urlEventId, selectedEventId]);
 
   useEffect(() => {
     void fetchEvents();
@@ -77,24 +80,16 @@ export default function Galerie() {
           const res = await client.request({ method: 'GET', url: '/media', query: { event_id: selectedEventId } });
           const mediaList = res.data as MediaItem[] || [];
           setMedia(mediaList);
-          setPage(1);
 
-          // If we have a mediaId from URL, find it in the list and open lightbox
-          if (mediaId) {
-            const index = mediaList.findIndex(m => m.id === mediaId);
+          // Reset page if we just switched event and no deep link for image
+          if (!urlImageId) setPage(1);
+
+          if (urlImageId && selectedEventId === urlEventId) {
+            const index = mediaList.findIndex(m => m.id === urlImageId);
             if (index !== -1) {
-              const targetPage = Math.floor(index / IMAGES_PER_PAGE) + 1;
-              setPage(targetPage);
-              // Calculate index within that page
-              const indexInPage = index % IMAGES_PER_PAGE;
-              setLightboxIndex(indexInPage);
+              setPage(Math.floor(index / IMAGES_PER_PAGE) + 1);
+              setLightboxIndex(index % IMAGES_PER_PAGE);
               setLightboxOpen(true);
-              // Clear mediaId from search params to avoid re-opening on manual navigation
-              setSearchParams(prev => {
-                const updated = new URLSearchParams(prev);
-                updated.delete("mediaId");
-                return updated;
-              }, { replace: true });
             }
           }
         } finally {
@@ -103,27 +98,10 @@ export default function Galerie() {
       };
       void fetchMedia();
     }
-  }, [selectedEventId, mediaId, setSearchParams]);
-
-  useEffect(() => {
-    if (mediaId && !selectedEventId) {
-      const fetchMediaMetadata = async () => {
-        try {
-          const res = await client.request({ method: 'GET', url: `/media/${mediaId}` });
-          if (res.data) {
-            const m = res.data as MediaItem;
-            setSelectedEventId(m.event_id);
-          }
-        } catch (e) {
-          console.error("Failed to fetch media metadata", e);
-        }
-      };
-      void fetchMediaMetadata();
-    }
-  }, [mediaId, selectedEventId]);
+  }, [selectedEventId, urlImageId, urlEventId]);
 
   const getImageUrl = (id: string) => `/api/media/${id}/file`;
-  const getEventCoverUrl = (ev: EventItem) => ev.cover_path ? `/api/events/${ev.id}/cover` : pic(ev.id);
+  const getEventCoverUrl = (ev: EventItem) => ev.cover_path ? `/api/events/${ev.id}/cover` : pic(Number(ev.id.toString().slice(-4)));
 
   const pageCount = Math.max(Math.ceil(media.length / IMAGES_PER_PAGE), 1);
   const displayedMedia = media.slice((page - 1) * IMAGES_PER_PAGE, page * IMAGES_PER_PAGE);
@@ -132,17 +110,28 @@ export default function Galerie() {
   const openLightbox = (idx: number) => {
     setLightboxIndex(idx);
     setLightboxOpen(true);
+    const img = displayedMedia[idx];
+    if (img) navigate(`/images/${selectedEventId}/${img.id}`, { replace: true });
   };
 
-  const closeLightbox = useCallback(() => setLightboxOpen(false), []);
+  const closeLightbox = useCallback(() => {
+    setLightboxOpen(false);
+    navigate(`/images/${selectedEventId}`, { replace: true });
+  }, [selectedEventId, navigate]);
 
   const nextImage = useCallback(() => {
-    setLightboxIndex((i) => (i + 1) % displayedMedia.length);
-  }, [displayedMedia.length]);
+    const nextIdx = (lightboxIndex + 1) % displayedMedia.length;
+    setLightboxIndex(nextIdx);
+    const img = displayedMedia[nextIdx];
+    if (img) navigate(`/images/${selectedEventId}/${img.id}`, { replace: true });
+  }, [displayedMedia.length, lightboxIndex, selectedEventId, navigate, displayedMedia]);
 
   const prevImage = useCallback(() => {
-    setLightboxIndex((i) => (i - 1 + displayedMedia.length) % displayedMedia.length);
-  }, [displayedMedia.length]);
+    const prevIdx = (lightboxIndex - 1 + displayedMedia.length) % displayedMedia.length;
+    setLightboxIndex(prevIdx);
+    const img = displayedMedia[prevIdx];
+    if (img) navigate(`/images/${selectedEventId}/${img.id}`, { replace: true });
+  }, [displayedMedia.length, lightboxIndex, selectedEventId, navigate, displayedMedia]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -157,14 +146,14 @@ export default function Galerie() {
 
   const handleCopyLink = () => {
     if (!currentImage) return;
-    const url = window.location.origin + getImageUrl(currentImage.id);
+    const url = window.location.origin + `/images/${selectedEventId}/${currentImage.id}`;
     navigator.clipboard.writeText(url).then(() => {
       setSuccessMessage("Link in die Zwischenablage kopiert!");
     });
   };
 
   const handleEditImage = () => {
-    console.log("Edit image:", currentImage);
+    // Placeholder for edit functionality
   };
 
   return (
@@ -510,12 +499,12 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
   events: EventItem[];
   onSuccess: () => void;
   onCreateEvent: () => void;
-  preselectedId?: number | null;
+  preselectedId?: string | null;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [eventId, setEventId] = useState<number | "">("");
+  const [eventId, setEventId] = useState<string | "">("");
 
   useEffect(() => {
     if (preselectedId) {
@@ -589,7 +578,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
               fullWidth
               label="Event auswählen"
               value={eventId}
-              onChange={(e) => setEventId(Number(e.target.value))}
+              onChange={(e) => setEventId(e.target.value)}
               size="small"
             >
               {events.length > 0 ? (
@@ -663,7 +652,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
 function CreateEventDialog({ open, onClose, onSuccess }: {
   open: boolean;
   onClose: () => void;
-  onSuccess: (id: number) => void;
+  onSuccess: (id: string) => void;
 }) {
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -699,7 +688,7 @@ function CreateEventDialog({ open, onClose, onSuccess }: {
 
       if (res.error) throw res.error;
 
-      const newEvent = res.data as { id: number };
+      const newEvent = res.data as { id: string };
       onSuccess(newEvent.id);
       onClose();
       setTitle("");

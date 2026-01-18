@@ -24,7 +24,7 @@ import {
     getAuthCsrf
 } from "@lib/api";
 import {
-    Post, Comment, Vote, PROGRAM_META_MAP, isoToShort, CommentsSection, Program
+    Post, Comment, Vote, CommentsSection, isoToShort, Program
 } from "../components";
 
 const safeParseArray = (jsonString: unknown): unknown[] => {
@@ -204,7 +204,7 @@ export default function ViewPost() {
             path: { id },
             headers: { "X-CSRF-Token": csrfData.csrf }
         });
-        navigate("/forum");
+        navigate("/discussions");
     };
 
 
@@ -220,7 +220,7 @@ export default function ViewPost() {
         return (
             <Sidebar user={user} title="Forum" maxWidth="md">
                 <Alert severity="error">{error || "Beitrag nicht gefunden"}</Alert>
-                <Button sx={{ mt: 2 }} startIcon={<ArrowBackIcon />} onClick={() => navigate("/forum")}>Zurück zum Forum</Button>
+                <Button sx={{ mt: 2 }} startIcon={<ArrowBackIcon />} onClick={() => navigate("/discussions")}>Zurück zum Forum</Button>
             </Sidebar>
         );
     }
@@ -231,7 +231,7 @@ export default function ViewPost() {
     return (
         <Sidebar user={user} title="Forum" maxWidth="md">
             <Box pb={6}>
-                <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/forum")} sx={{ mb: 2, color: "text.secondary" }}>
+                <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/discussions")} sx={{ mb: 2, color: "text.secondary" }}>
                     Zurück zum Forum
                 </Button>
 
@@ -291,7 +291,7 @@ export default function ViewPost() {
                                 {(isAdmin || user?.id === post.author_id) && (
                                     <Stack direction="row" spacing={1}>
                                         <Tooltip title="Bearbeiten">
-                                            <IconButton onClick={() => navigate(`/forum/${post.id}/edit`)}>
+                                            <IconButton onClick={() => navigate(`/discussions/${post.id}/edit`)}>
                                                 <EditIcon />
                                             </IconButton>
                                         </Tooltip>
@@ -313,7 +313,7 @@ export default function ViewPost() {
 
                             <Stack direction="row" spacing={1} flexWrap="wrap">
                                 {post.programs.map((p) => (
-                                    <Chip key={p} label={PROGRAM_META_MAP[p]?.shortLabel || p} variant="outlined" size="small" />
+                                    <Chip key={p} label={p} variant="outlined" size="small" />
                                 ))}
                                 {post.tags.map(t => (
                                     <Chip key={t} label={t} variant="outlined" size="small" />
