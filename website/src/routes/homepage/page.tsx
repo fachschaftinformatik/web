@@ -23,7 +23,6 @@ import {
   TimelineContent,
   TimelineDot,
   TimelineOppositeContent,
-  timelineOppositeContentClasses,
 } from '@mui/lab';
 import { useNavigate, Link as RouterLink, Link } from 'react-router-dom';
 
@@ -199,7 +198,7 @@ const NewsFeedPage: React.FC = () => {
           component="section"
           sx={{
             position: 'relative',
-            height: { xs: 300, md: 400 },
+            height: { xs: 240, md: 400 },
             borderRadius: 6,
             overflow: 'hidden',
             border: '1px solid',
@@ -260,28 +259,28 @@ const NewsFeedPage: React.FC = () => {
               pointerEvents: 'none',
             }}
           >
-            <Stack spacing={1.5} sx={{ maxWidth: 800, pointerEvents: 'auto' }}>
+            <Stack spacing={1.2} sx={{ maxWidth: 800, pointerEvents: 'auto', pb: { xs: 4.5, md: 0 } }}>
               <Box>
-                <Typography variant="overline" sx={{ ...custom.heroOverline, color: 'primary.main', fontWeight: 800, fontSize: { xs: '0.85rem', md: '1.1rem' }, letterSpacing: '0.15em' }}>
+                <Typography variant="overline" sx={{ ...custom.heroOverline, color: 'primary.main', fontWeight: 800, fontSize: { xs: '0.8rem', md: '1.1rem' }, letterSpacing: '0.15em' }}>
                   fsInformatik
                 </Typography>
                 <Typography variant="h1" sx={{
                   fontFamily: '"Space Grotesk", sans-serif',
                   fontWeight: 800,
-                  fontSize: { xs: '2.25rem', sm: '3rem', md: '4rem' },
+                  fontSize: { xs: '2rem', sm: '3rem', md: '4rem' },
                   lineHeight: 1.1,
-                  mb: { xs: 1, md: 2 },
+                  mb: { xs: 0.5, md: 2 },
                   textShadow: isDark ? '0 0 40px rgba(0,0,0,0.5)' : 'none',
                 }}>
                   {eventsData[carouselIndex]?.title || 'Dein Hub für das Studium'}
                 </Typography>
               </Box>
 
-              <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400, fontSize: { xs: '1rem', md: '1.25rem' }, maxWidth: 600, mb: { xs: 1, md: 2 } }}>
+              <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400, fontSize: { xs: '0.9rem', md: '1.25rem' }, maxWidth: 600, mb: { xs: 0.5, md: 2 } }}>
                 Bleib informiert über Events, Klausuren und alles Wichtige rund um dein Studium an der Westfälischen Hochschule.
               </Typography>
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{ mt: 1 }}>
                 <Button
                   component={RouterLink}
                   to="/forum"
@@ -290,9 +289,9 @@ const NewsFeedPage: React.FC = () => {
                   size="large"
                   sx={{
                     borderRadius: 3,
-                    px: 4,
-                    py: { xs: 1.5, md: 1.2 },
-                    fontSize: { xs: '1rem', md: '1.1rem' },
+                    px: { xs: 2.5, md: 4 },
+                    py: 1.2,
+                    fontSize: { xs: '0.85rem', md: '1.1rem' },
                     fontWeight: 700,
                     textTransform: 'none',
                   }}
@@ -306,20 +305,21 @@ const NewsFeedPage: React.FC = () => {
                   size="large"
                   sx={{
                     borderRadius: 3,
-                    px: 4,
-                    py: { xs: 1.5, md: 1.2 },
-                    fontSize: { xs: '1rem', md: '1.1rem' },
+                    px: { xs: 2.5, md: 4 },
+                    py: 1.2,
+                    fontSize: { xs: '0.85rem', md: '1.1rem' },
                     fontWeight: 700,
                     backdropFilter: 'blur(10px)',
                     textTransform: 'none',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  Galerie ansehen
+                  Galerie
                 </Button>
               </Stack>
             </Stack>
             {eventsData.length > 1 && (
-              <Box sx={{ position: 'absolute', bottom: { xs: 16, md: 32 }, left: { xs: '50%', md: 64 }, transform: { xs: 'translateX(-50%)', md: 'none' }, display: 'flex', gap: 1, pointerEvents: 'auto' }}>
+              <Box sx={{ position: 'absolute', bottom: { xs: 16, md: 32 }, left: { xs: 32, md: 64 }, display: 'flex', gap: 1, pointerEvents: 'auto' }}>
                 {eventsData.map((_, i) => (
                   <Box
                     key={i}
@@ -424,7 +424,9 @@ const NewsFeedPage: React.FC = () => {
                                     bgcolor: theme.palette.primary.main,
                                     fontWeight: "bold"
                                   }}
-                                />
+                                >
+                                  {item.author_name ? item.author_name[0].toUpperCase() : "A"}
+                                </Avatar>
                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                   von <Typography component={Link} to={`/user/${item.author_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{item.author_name || "Anonym"}</Typography> · {formatNewsDate(item.created_at || "")}
                                 </Typography>
@@ -451,7 +453,9 @@ const NewsFeedPage: React.FC = () => {
                                     bgcolor: theme.palette.primary.main,
                                     fontWeight: "bold"
                                   }}
-                                />
+                                >
+                                  {post.author ? post.author[0].toUpperCase() : "A"}
+                                </Avatar>
                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                   von <Typography component={Link} to={`/user/${post.authorId}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author}</Typography> · {formatForumDate(post.createdAt)}
                                 </Typography>
@@ -493,18 +497,10 @@ const NewsFeedPage: React.FC = () => {
                   </Stack>
 
                   <Timeline
+                    position="alternate"
                     sx={{
                       p: 0,
                       m: 0,
-                      [`& .${timelineOppositeContentClasses.root}`]: {
-                        flex: 1,
-                        textAlign: 'right',
-                        px: 2,
-                      },
-                      [`& .MuiTimelineContent-root`]: {
-                        flex: 1,
-                        px: 2,
-                      },
                     }}
                   >
                     {upcomingPreview.length ? upcomingPreview.slice(0, 5).map((event) => {
@@ -519,45 +515,61 @@ const NewsFeedPage: React.FC = () => {
                       return (
                         <TimelineItem
                           key={event.id}
-                          onClick={() => navigate(`/forum/${event.id}`)}
                           sx={{
-                            ...custom.newsCardLink,
-                            display: 'flex',
-                            mb: 1.5,
-                            flexDirection: 'row',
-                            p: 0,
-                            overflow: 'hidden',
-                            '&:hover': {
-                              ...custom.newsCardLink['&:hover'],
+                            cursor: 'pointer',
+                            '&:hover .MuiTimelineDot-root': {
+                              transform: 'scale(1.15)',
+                              boxShadow: `0 0 20px ${alpha(accent, 0.4)}`
                             }
                           }}
+                          onClick={() => navigate(`/forum/${event.id}`)}
                         >
                           <TimelineOppositeContent
-                            sx={{ m: 'auto 0', flex: 1, textAlign: 'right', px: 2 }}
+                            sx={{ m: 'auto 0' }}
                             variant="body2"
                             color="text.secondary"
+                            fontWeight={600}
                           >
                             {formatShortDate(eventDate)}
-                            {event.time && <Box sx={{ display: 'block', fontSize: '0.75rem', opacity: 0.8 }}>{event.time} Uhr</Box>}
+                            {event.time && (
+                              <Typography variant="caption" sx={{ display: 'block', opacity: 0.7, fontWeight: 400 }}>
+                                {event.time} Uhr
+                              </Typography>
+                            )}
                           </TimelineOppositeContent>
                           <TimelineSeparator>
-                            <TimelineConnector sx={{ opacity: 0.5 }} />
-                            <TimelineDot sx={{
-                              bgcolor: accent,
-                              boxShadow: 'none',
-                              p: 1,
-                              transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-                            }}>
-                              <Icon sx={{ fontSize: 18, color: '#fff' }} />
+                            <TimelineConnector sx={{ bgcolor: alpha(theme.palette.divider, 0.5) }} />
+                            <TimelineDot
+                              sx={{
+                                bgcolor: accent,
+                                boxShadow: 'none',
+                                p: 1.2,
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                border: 'none',
+                              }}
+                            >
+                              <Icon sx={{ fontSize: 20, color: '#fff' }} />
                             </TimelineDot>
-                            <TimelineConnector sx={{ opacity: 0.5 }} />
+                            <TimelineConnector sx={{ bgcolor: alpha(theme.palette.divider, 0.5) }} />
                           </TimelineSeparator>
                           <TimelineContent sx={{ py: '12px', px: 2, m: 'auto 0' }}>
-                            <Typography variant="h6" component="span" sx={{ fontWeight: 800, fontSize: '0.95rem', lineHeight: 1.2 }}>
+                            <Typography variant="h6" component="span" sx={{
+                              fontWeight: 800,
+                              fontSize: '0.95rem',
+                              lineHeight: 1.2,
+                              color: 'text.primary',
+                              display: 'block'
+                            }}>
                               {event.title}
                             </Typography>
                             {event.location && (
-                              <Typography variant="body2" color="text.secondary" sx={{ display: 'block', mt: 0.2 }}>
+                              <Typography variant="caption" color="text.secondary" sx={{
+                                fontSize: '0.8rem',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 1,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden'
+                              }}>
                                 {event.location}
                               </Typography>
                             )}
@@ -565,7 +577,9 @@ const NewsFeedPage: React.FC = () => {
                         </TimelineItem>
                       );
                     }) : (
-                      <Typography variant="body2" sx={{ color: 'text.secondary', px: 1 }}>Keine kommenden Events.</Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>
+                        Keine kommenden Events.
+                      </Typography>
                     )}
                   </Timeline>
                 </Stack>
