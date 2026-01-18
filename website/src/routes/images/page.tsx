@@ -15,7 +15,7 @@ import InsertPhotoRoundedIcon from '@mui/icons-material/InsertPhotoRounded';
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import { alpha } from "@mui/material/styles";
-import { useNavigate, useSearchParams, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
@@ -39,7 +39,7 @@ export default function Galerie() {
   const [page, setPage] = useState(1);
   const [loadingMedia, setLoadingMedia] = useState(false);
   const navigate = useNavigate();
-  const [, setSearchParams] = useSearchParams();
+  // useSearchParams removed as it was unused
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -124,14 +124,14 @@ export default function Galerie() {
     setLightboxIndex(nextIdx);
     const img = displayedMedia[nextIdx];
     if (img) navigate(`/images/${selectedEventId}/${img.id}`, { replace: true });
-  }, [displayedMedia.length, lightboxIndex, selectedEventId, navigate, displayedMedia]);
+  }, [lightboxIndex, selectedEventId, navigate, displayedMedia]);
 
   const prevImage = useCallback(() => {
     const prevIdx = (lightboxIndex - 1 + displayedMedia.length) % displayedMedia.length;
     setLightboxIndex(prevIdx);
     const img = displayedMedia[prevIdx];
     if (img) navigate(`/images/${selectedEventId}/${img.id}`, { replace: true });
-  }, [displayedMedia.length, lightboxIndex, selectedEventId, navigate, displayedMedia]);
+  }, [lightboxIndex, selectedEventId, navigate, displayedMedia]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
