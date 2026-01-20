@@ -1,6 +1,7 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
+import { Navigate, useLocation, Outlet } from 'react-router-dom';
 
-import { getAuthMe, postAuthLogout, getAuthCsrf } from '@lib/api';
+import { getAuthMe, postAuthLogout } from '@lib/api';
 import type { AuthUserResponse as User } from '@lib/api';
 import { useThemeMode, type ThemePreference } from '@lib/theme';
 
@@ -58,30 +59,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { setPreference } = useThemeMode();
 
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await getAuthMe();
-        if (error || !data) {
-          throw new Error('Nicht authentifiziert');
-        }
-        setUser(data);
-        if (data.theme) {
-          setPreference(data.theme as ThemePreference);
-        }
-        if (typeof window !== 'undefined' && window.localStorage.getItem(REMEMBERED_FLAG_KEY) === 'true') {
-          persistRememberedUser(data);
-        }
-      } catch {
-        setUser(null);
-        clearRememberedUser();
-      } finally {
-        setIsLoading(false);
+  const checkAuthStatus = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await getAuthMe();
+      if (error || !data) {
+        throw new Error('Nicht authentifiziert');
       }
-    };
-    checkAuthStatus();
+      setUser(data);
+      if (data.theme) {
+        setPreference(data.theme as ThemePreference);
+      }
+      if (typeof window !== 'undefined' && window.localStorage.getItem(REMEMBERED_FLAG_KEY) === 'true') {
+        persistRememberedUser(data);
+      }
+    } catch {
+      setUser(null);
+      clearRememberedUser();
+    } finally {
+      setIsLoading(false);
+    }
   }, [setPreference]);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   useEffect(() => {
     if (user && user.theme) {
@@ -103,15 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-
-      const { data } = await getAuthCsrf();
-      const token = data?.csrf ?? '';
-
-      await postAuthLogout({
-        headers: {
-          'X-CSRF-Token': token
-        }
-      });
+      await postAuthLogout({});
       setUser(null);
       clearRememberedUser();
     } catch (error) {
@@ -134,4 +128,17 @@ export const useAuth = (): AuthContextType => {
     throw new Error('useAuth muss innerhalb eines AuthProviders verwendet werden');
   }
   return context;
+};
+
+export const ProtectedRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) return null;
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <>{children || <Outlet />}</>;
 };

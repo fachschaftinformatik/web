@@ -18,7 +18,7 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
-import { getPrograms, postForumPosts, getAuthCsrf } from "@lib/api";
+import { getPrograms, postForumPosts } from "@lib/api";
 import type { AuthProgramResponse as Program } from "@lib/api";
 import { FORUM_CATEGORIES, FORUM_TAGS } from "@lib/config";
 
@@ -54,10 +54,6 @@ export default function CreatePost() {
         setError("");
 
         try {
-            const { data: csrfData, error: csrfError } = await getAuthCsrf();
-            const token = csrfData?.csrf;
-            if (csrfError || !token) throw new Error("CSRF-Token fehlt. Bitte neu laden.");
-
             // Combine category and tags
             const finalTags = [category, ...tags];
 
@@ -71,7 +67,6 @@ export default function CreatePost() {
                     event_date: eventDate || undefined,
                     location: location || undefined
                 },
-                headers: { "X-CSRF-Token": token }
             });
 
             if (apiError) throw new Error((apiError as { message?: string }).message || "Fehler beim Erstellen.");
@@ -83,6 +78,7 @@ export default function CreatePost() {
             setLoading(false);
         }
     };
+
 
 
     return (
