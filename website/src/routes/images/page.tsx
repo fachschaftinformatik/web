@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Typography, Card, CardMedia, Box, Dialog, DialogTitle, DialogContent,
   DialogActions, IconButton, ImageList, ImageListItem, ImageListItemBar, Pagination,
-  Button, Stack, TextField, MenuItem, Snackbar, Alert, CircularProgress, Tooltip, Paper
+  Button, Stack, TextField, MenuItem, Snackbar, Alert, CircularProgress, Tooltip, Paper,
+  LinearProgress, List, ListItem, ListItemText
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
@@ -20,7 +21,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
 import { client } from "@lib/api/client.gen";
-import { getAuthCsrf } from "@lib/api";
+
 
 type EventItem = { id: string; title: string; created_at: string; cover_path?: string };
 type MediaItem = { id: string; event_id: string; title: string; description: string; mime_type: string; uploaded_at: string };
@@ -39,7 +40,6 @@ export default function Galerie() {
   const [page, setPage] = useState(1);
   const [loadingMedia, setLoadingMedia] = useState(false);
   const navigate = useNavigate();
-  // useSearchParams removed as it was unused
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -52,6 +52,12 @@ export default function Galerie() {
 
   const canUpload = user?.role === "admin" || user?.role === "editor";
 
+  useEffect(() => {
+    if (urlEventId) {
+      setSelectedEventId(urlEventId);
+    }
+  }, [urlEventId]);
+
   const fetchEvents = useCallback(async () => {
     try {
       const res = await client.request({ method: 'GET', url: '/events' });
@@ -59,58 +65,82 @@ export default function Galerie() {
         const list = res.data as EventItem[];
         setEvents(list);
 
-        // Priority: URL Param > State > First Item
-        const targetId = urlEventId || selectedEventId || list[0]?.id;
-        if (targetId) setSelectedEventId(targetId);
+        if (!urlEventId && list.length > 0) {
+          navigate(`/images/${list[0].id}`, { replace: true });
+        }
       }
     } catch (e) {
       console.error("Fehler beim Laden der Events", e);
     }
-  }, [urlEventId, selectedEventId]);
+  }, [urlEventId, navigate, setEvents]);
 
   useEffect(() => {
     void fetchEvents();
   }, [fetchEvents]);
 
   useEffect(() => {
-    if (selectedEventId) {
-      const fetchMedia = async () => {
-        setLoadingMedia(true);
-        try {
-          const res = await client.request({ method: 'GET', url: '/media', query: { event_id: selectedEventId } });
-          const mediaList = res.data as MediaItem[] || [];
-          setMedia(mediaList);
+    if (!selectedEventId) {
+      setMedia([]);
+      return;
+    }
 
-          // Reset page if we just switched event and no deep link for image
-          if (!urlImageId) setPage(1);
+    const abortController = new AbortController();
+    const fetchMedia = async () => {
+      setLoadingMedia(true);
+      try {
+        const res = await client.request({
+          method: 'GET',
+          url: '/media',
+          query: { event_id: selectedEventId },
+          signal: abortController.signal as never
+        });
+        
+        if (abortController.signal.aborted) return;
 
-          if (urlImageId && selectedEventId === urlEventId) {
-            const index = mediaList.findIndex(m => m.id === urlImageId);
-            if (index !== -1) {
-              setPage(Math.floor(index / IMAGES_PER_PAGE) + 1);
-              setLightboxIndex(index % IMAGES_PER_PAGE);
-              setLightboxOpen(true);
-            }
-          }
-        } finally {
+        const mediaList = res.data as MediaItem[] || [];
+        setMedia(mediaList);
+      } catch (e: unknown) {
+        if (e instanceof Error && e.name === 'AbortError') return;
+        console.error("Fehler beim Laden der Medien", e);
+      } finally {
+        if (!abortController.signal.aborted) {
           setLoadingMedia(false);
         }
-      };
-      void fetchMedia();
+      }
+    };
+    void fetchMedia();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [selectedEventId]);
+
+  useEffect(() => {
+    if (urlImageId && media.length > 0 && selectedEventId === urlEventId) {
+      const index = media.findIndex(m => m.id === urlImageId);
+      if (index !== -1) {
+        setPage(Math.floor(index / IMAGES_PER_PAGE) + 1);
+        setLightboxIndex(index);
+        setLightboxOpen(true);
+      }
+    } else if (!urlImageId) {
+      setLightboxOpen(false);
     }
-  }, [selectedEventId, urlImageId, urlEventId]);
+  }, [urlImageId, media, selectedEventId, urlEventId]);
 
   const getImageUrl = (id: string) => `/api/media/${id}/file`;
+  const getPreviewUrl = (id: string) => `/api/media/${id}/preview`;
   const getEventCoverUrl = (ev: EventItem) => ev.cover_path ? `/api/events/${ev.id}/cover` : pic(Number(ev.id.toString().slice(-4)));
 
   const pageCount = Math.max(Math.ceil(media.length / IMAGES_PER_PAGE), 1);
   const displayedMedia = media.slice((page - 1) * IMAGES_PER_PAGE, page * IMAGES_PER_PAGE);
-  const currentImage = displayedMedia[lightboxIndex];
+  const currentImage = media[lightboxIndex];
 
   const openLightbox = (idx: number) => {
-    setLightboxIndex(idx);
+    const absoluteIdx = (page - 1) * IMAGES_PER_PAGE + idx;
+    setLightboxIndex(absoluteIdx);
     setLightboxOpen(true);
-    const img = displayedMedia[idx];
+    const img = media[absoluteIdx];
     if (img) navigate(`/images/${selectedEventId}/${img.id}`, { replace: true });
   };
 
@@ -120,18 +150,22 @@ export default function Galerie() {
   }, [selectedEventId, navigate]);
 
   const nextImage = useCallback(() => {
-    const nextIdx = (lightboxIndex + 1) % displayedMedia.length;
+    if (media.length === 0) return;
+    const nextIdx = (lightboxIndex + 1) % media.length;
     setLightboxIndex(nextIdx);
-    const img = displayedMedia[nextIdx];
+    setPage(Math.floor(nextIdx / IMAGES_PER_PAGE) + 1);
+    const img = media[nextIdx];
     if (img) navigate(`/images/${selectedEventId}/${img.id}`, { replace: true });
-  }, [lightboxIndex, selectedEventId, navigate, displayedMedia]);
+  }, [lightboxIndex, selectedEventId, navigate, media]);
 
   const prevImage = useCallback(() => {
-    const prevIdx = (lightboxIndex - 1 + displayedMedia.length) % displayedMedia.length;
+    if (media.length === 0) return;
+    const prevIdx = (lightboxIndex - 1 + media.length) % media.length;
     setLightboxIndex(prevIdx);
-    const img = displayedMedia[prevIdx];
+    setPage(Math.floor(prevIdx / IMAGES_PER_PAGE) + 1);
+    const img = media[prevIdx];
     if (img) navigate(`/images/${selectedEventId}/${img.id}`, { replace: true });
-  }, [lightboxIndex, selectedEventId, navigate, displayedMedia]);
+  }, [lightboxIndex, selectedEventId, navigate, media]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -153,7 +187,6 @@ export default function Galerie() {
   };
 
   const handleEditImage = () => {
-    // Placeholder for edit functionality
   };
 
   return (
@@ -216,11 +249,15 @@ export default function Galerie() {
                 {events.map((ev) => {
                   const selected = ev.id === selectedEventId;
 
-                  return (
-                    <ImageListItem
-                      key={ev.id}
-                      onClick={() => { setSelectedEventId(ev.id); setPage(1); }}
-                      sx={(theme) => ({
+                    return (
+                      <ImageListItem
+                        key={ev.id}
+                        onClick={() => {
+                          setMedia([]); // Clear media immediately
+                          setPage(1); // Reset page
+                          navigate(`/images/${ev.id}`);
+                        }}
+                        sx={(theme) => ({
                         cursor: "pointer",
                         width: 160,
                         flexShrink: 0,
@@ -321,7 +358,7 @@ export default function Galerie() {
               >
                 <CardMedia
                   component="img"
-                  image={getImageUrl(item.id)}
+                  image={getPreviewUrl(item.id)}
                   alt={item.title || "Bild"}
                   sx={{ width: "100%", aspectRatio: "3/2", objectFit: "cover" }}
                 />
@@ -330,16 +367,16 @@ export default function Galerie() {
           </Box>
         )}
 
-        {media.length > IMAGES_PER_PAGE && (
+        {pageCount > 1 && (
           <Box sx={{ mt: 5, display: "flex", justifyContent: "center" }}>
             <Pagination
               count={pageCount}
               page={page}
               onChange={(_, p) => setPage(p)}
-              showFirstButton
-              showLastButton
               color="primary"
               shape="rounded"
+              variant="outlined"
+              disabled={loadingMedia}
             />
           </Box>
         )}
@@ -501,7 +538,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
   onCreateEvent: () => void;
   preselectedId?: string | null;
 }) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [eventId, setEventId] = useState<string | "">("");
@@ -513,62 +550,100 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
   }, [preselectedId]);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragging(false);
-    if (e.dataTransfer.files?.[0]) setFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files) {
+      const newFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+      setFiles(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setFiles(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const removeFile = (idx: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async () => {
-    if (!file || !eventId) return;
+    if (files.length === 0 || !eventId) return;
     setUploading(true);
     setError("");
-    try {
-      const { data } = await getAuthCsrf();
-      const token = data?.csrf;
+    setProgress(0);
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("event_id", String(eventId));
-      if (title) formData.append("title", title);
-      if (description) formData.append("description", description);
+    let successCount = 0;
+    const total = files.length;
+    const failedFiles: File[] = [];
 
-      const res = await client.request({
-        method: 'POST',
-        url: '/media',
-        body: formData,
-        bodySerializer: null,
-        headers: {
-          "X-CSRF-Token": token || "",
-          "Content-Type": null
-        }
-      });
+    for (let i = 0; i < total; i++) {
+      const file = files[i];
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("event_id", String(eventId));
+        if (title) formData.append("title", title);
+        if (description) formData.append("description", description);
 
-      if (res.error) throw res.error;
+        const res = await client.request({
+          method: 'POST',
+          url: '/media',
+          body: formData,
+          bodySerializer: null,
+          headers: {
+            "Content-Type": null
+          }
+        });
 
+        if (res.error) throw res.error;
+        successCount++;
+        setProgress(Math.round(((i + 1) / total) * 100));
+      } catch (e: unknown) {
+        console.error(`Fehler beim Upload von ${file.name}:`, e);
+        setError(getFriendlyErrorMessage(e) + ` (${file.name})`);
+        failedFiles.push(file);
+      }
+    }
+
+    if (successCount > 0) {
       onSuccess();
+    }
+
+    if (failedFiles.length === 0 && successCount > 0) {
       onClose();
-      setFile(null);
+      setFiles([]);
       setTitle("");
       setDescription("");
-    } catch (e: unknown) {
-      console.error("Fehler beim Upload:", e);
-      setError(getFriendlyErrorMessage(e));
-    } finally {
-      setUploading(false);
+    } else {
+      setFiles(failedFiles);
     }
+    setUploading(false);
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" fontWeight={700}>Bild hochladen</Typography>
-        <IconButton onClick={onClose}><CloseIcon /></IconButton>
+        <Typography variant="h6" fontWeight={700}>Bilder hochladen</Typography>
+        <IconButton onClick={onClose} disabled={uploading}><CloseIcon /></IconButton>
       </DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
         <Stack spacing={3} mt={1}>
           {error && <Alert severity="error">{error}</Alert>}
+
+          {uploading && (
+            <Box sx={{ width: '100%' }}>
+              <LinearProgress variant="determinate" value={progress} sx={{ borderRadius: 1, height: 8 }} />
+              <Typography variant="caption" sx={{ mt: 0.5, display: 'block', textAlign: 'center' }}>
+                {Math.round(progress)}% hochgeladen
+              </Typography>
+            </Box>
+          )}
 
           <Stack direction="row" spacing={1} alignItems="stretch">
             <TextField
@@ -580,6 +655,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
               value={eventId}
               onChange={(e) => setEventId(e.target.value)}
               size="small"
+              disabled={uploading}
             >
               {events.length > 0 ? (
                 events.map((e) => <MenuItem key={e.id} value={e.id}>{e.title}</MenuItem>)
@@ -588,20 +664,23 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
               )}
             </TextField>
             <Tooltip title="Neues Event anlegen">
-              <Button
-                variant="outlined"
-                sx={{ minWidth: 40, px: 0, borderRadius: 2 }}
-                onClick={onCreateEvent}
-              >
-                <AddRoundedIcon />
-              </Button>
+              <span>
+                <Button
+                  variant="outlined"
+                  sx={{ minWidth: 40, px: 0, borderRadius: 2, height: '100%' }}
+                  onClick={onCreateEvent}
+                  disabled={uploading}
+                >
+                  <AddRoundedIcon />
+                </Button>
+              </span>
             </Tooltip>
           </Stack>
 
           <Box
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragOver={(e) => { e.preventDefault(); if (!uploading) setDragging(true); }}
             onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
+            onDrop={(e) => { if (!uploading) handleDrop(e); }}
             sx={{
               border: '2px dashed',
               borderColor: dragging ? 'primary.main' : 'divider',
@@ -609,40 +688,76 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
               borderRadius: 2,
               p: 3,
               textAlign: 'center',
-              cursor: 'pointer',
+              cursor: uploading ? 'default' : 'pointer',
               transition: 'all 0.2s',
               '&:hover': {
-                borderColor: 'text.primary',
-                bgcolor: 'action.hover'
+                borderColor: uploading ? 'divider' : 'text.primary',
+                bgcolor: uploading ? 'background.default' : 'action.hover'
               }
             }}
           >
-            <input type="file" accept="image/*" hidden id="img-upload" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-            {!file ? (
-              <label htmlFor="img-upload" style={{ width: '100%', display: 'block', cursor: 'pointer' }}>
-                <UploadRoundedIcon sx={{ fontSize: 40, color: dragging ? "primary.main" : "text.secondary", mb: 1 }} />
-                <Typography variant="body2" fontWeight={500}>Bild hier ablegen</Typography>
-                <Typography variant="caption" color="text.secondary">oder klicken zum Auswählen</Typography>
-              </label>
-            ) : (
-              <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
-                <InsertPhotoRoundedIcon color="primary" />
-                <Typography noWrap sx={{ maxWidth: 200, fontWeight: 500 }}>{file.name}</Typography>
-                <IconButton size="small" color="error" onClick={(e) => { e.preventDefault(); setFile(null); }}>
-                  <DeleteOutlineRoundedIcon />
-                </IconButton>
-              </Stack>
-            )}
+            <input type="file" accept="image/*" multiple hidden id="img-upload" onChange={handleFileChange} disabled={uploading} />
+            <label htmlFor="img-upload" style={{ width: '100%', display: 'block', cursor: uploading ? 'default' : 'pointer' }}>
+              <UploadRoundedIcon sx={{ fontSize: 40, color: dragging ? "primary.main" : "text.secondary", mb: 1 }} />
+              <Typography variant="body2" fontWeight={500}>Bilder hier ablegen</Typography>
+              <Typography variant="caption" color="text.secondary">oder klicken zum Auswählen</Typography>
+            </label>
           </Box>
 
-          <TextField id="media-title" name="title" label="Titel (Optional)" size="small" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <TextField id="media-description" name="description" label="Beschreibung (Optional)" size="small" multiline rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+          {files.length > 0 && (
+            <Paper variant="outlined" sx={{ maxHeight: 200, overflow: 'auto', borderRadius: 2 }}>
+              <List dense>
+                {files.map((f, idx) => (
+                  <ListItem key={idx} secondaryAction={
+                    <IconButton edge="end" size="small" onClick={() => removeFile(idx)} disabled={uploading}>
+                      <DeleteOutlineRoundedIcon fontSize="small" />
+                    </IconButton>
+                  }>
+                    <InsertPhotoRoundedIcon sx={{ mr: 1, color: 'primary.main' }} fontSize="small" />
+                    <ListItemText
+                      primary={f.name}
+                      secondary={`${(f.size / (1024 * 1024)).toFixed(2)} MB`}
+                      primaryTypographyProps={{ variant: 'body2', noWrap: true, sx: { maxWidth: 250 } }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
+          )}
+
+          <TextField
+            id="media-title"
+            name="title"
+            label="Titel für alle Bilder (Optional)"
+            size="small"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            disabled={uploading}
+          />
+          <TextField
+            id="media-description"
+            name="description"
+            label="Beschreibung für alle Bilder (Optional)"
+            size="small"
+            multiline
+            rows={2}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={uploading}
+          />
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: 3 }}>
-        <Button onClick={onClose} color="inherit">Abbrechen</Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={!file || !eventId || uploading}>
-          {uploading ? <CircularProgress size={24} /> : "Hochladen"}
+        <Button onClick={onClose} color="inherit" disabled={uploading}>Abbrechen</Button>
+        <Button variant="contained" onClick={handleSubmit} disabled={files.length === 0 || !eventId || uploading}>
+          {uploading ? (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <CircularProgress size={20} color="inherit" />
+              <span>{Math.round(progress)}%</span>
+            </Stack>
+          ) : (
+            `Hochladen ${files.length > 0 ? `(${files.length})` : ""}`
+          )}
         </Button>
       </DialogActions>
     </Dialog>
@@ -669,9 +784,6 @@ function CreateEventDialog({ open, onClose, onSuccess }: {
     setLoading(true);
     setError("");
     try {
-      const { data } = await getAuthCsrf();
-      const token = data?.csrf;
-
       const formData = new FormData();
       formData.append("title", title);
       if (file) {
@@ -683,7 +795,9 @@ function CreateEventDialog({ open, onClose, onSuccess }: {
         url: '/events',
         body: formData,
         bodySerializer: null,
-        headers: { "X-CSRF-Token": token || "", "Content-Type": null }
+        headers: {
+          "Content-Type": null
+        }
       });
 
       if (res.error) throw res.error;
