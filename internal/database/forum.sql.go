@@ -180,7 +180,7 @@ func (q *Queries) GetForumComment(ctx context.Context, id string) (ForumComment,
 const getForumPost = `-- name: GetForumPost :one
 SELECT p.id, p.title, p.body, p.author_id, p.created_at, p.updated_at, p.pinned, p.type, p.programs, p.tags, p.event_date, p.location, p.image_url, p.links, p.active,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as author_name,
-       CAST(COALESCE(u.avatar_url, '') AS TEXT) as author_avatar_url,
+       CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as author_avatar_url,
        (SELECT COUNT(*) FROM forum_comments WHERE post_id = p.id AND active = 1) as comment_count,
        (SELECT CAST(COALESCE(SUM(vote), 0) AS INTEGER) FROM forum_votes WHERE forum_votes.post_id = p.id) as votes,
        CAST(COALESCE((SELECT vote FROM forum_votes WHERE forum_votes.post_id = p.id AND forum_votes.user_id = ?1), 0) AS INTEGER) as user_vote
@@ -249,7 +249,7 @@ func (q *Queries) GetForumPost(ctx context.Context, arg GetForumPostParams) (Get
 const listForumComments = `-- name: ListForumComments :many
 SELECT c.id, c.post_id, c.author_id, c.parent_id, c.text, c.created_at, c.updated_at, c.active,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as author_name,
-       CAST(COALESCE(u.avatar_url, '') AS TEXT) as author_avatar_url,
+       CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as author_avatar_url,
        (SELECT CAST(COALESCE(SUM(vote), 0) AS INTEGER) FROM forum_comment_votes v WHERE v.comment_id = c.id) as votes,
        CAST(COALESCE((SELECT vote FROM forum_comment_votes v WHERE v.comment_id = c.id AND v.user_id = ?1), 0) AS INTEGER) as user_vote
 FROM forum_comments c
@@ -317,7 +317,7 @@ func (q *Queries) ListForumComments(ctx context.Context, arg ListForumCommentsPa
 const listForumPosts = `-- name: ListForumPosts :many
 SELECT p.id, p.title, p.body, p.author_id, p.created_at, p.updated_at, p.pinned, p.type, p.programs, p.tags, p.event_date, p.location, p.image_url, p.links, p.active,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as author_name,
-       CAST(COALESCE(u.avatar_url, '') AS TEXT) as author_avatar_url,
+       CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as author_avatar_url,
        (SELECT COUNT(*) FROM forum_comments WHERE post_id = p.id AND active = 1) as comment_count,
        (SELECT CAST(COALESCE(SUM(v.vote), 0) AS INTEGER) FROM forum_votes v WHERE v.post_id = p.id) as votes,
        CAST(COALESCE((SELECT v.vote FROM forum_votes v WHERE v.post_id = p.id AND v.user_id = ?1), 0) AS INTEGER) as user_vote
@@ -416,7 +416,7 @@ func (q *Queries) ListForumPosts(ctx context.Context, arg ListForumPostsParams) 
 const listForumPostsTop = `-- name: ListForumPostsTop :many
 SELECT p.id, p.title, p.body, p.author_id, p.created_at, p.updated_at, p.pinned, p.type, p.programs, p.tags, p.event_date, p.location, p.image_url, p.links, p.active,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as author_name,
-       CAST(COALESCE(u.avatar_url, '') AS TEXT) as author_avatar_url,
+       CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as author_avatar_url,
        (SELECT COUNT(*) FROM forum_comments WHERE post_id = p.id AND active = 1) as comment_count,
        (SELECT CAST(COALESCE(SUM(v.vote), 0) AS INTEGER) FROM forum_votes v WHERE v.post_id = p.id) as votes,
        CAST(COALESCE((SELECT v.vote FROM forum_votes v WHERE v.post_id = p.id AND v.user_id = ?1), 0) AS INTEGER) as user_vote
@@ -516,7 +516,7 @@ func (q *Queries) ListForumPostsTop(ctx context.Context, arg ListForumPostsTopPa
 const searchForumPosts = `-- name: SearchForumPosts :many
 SELECT p.id, p.title, p.body, p.author_id, p.created_at, p.updated_at, p.pinned, p.type, p.programs, p.tags, p.event_date, p.location, p.image_url, p.links, p.active,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as author_name,
-       CAST(COALESCE(u.avatar_url, '') AS TEXT) as author_avatar_url,
+       CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as author_avatar_url,
        (SELECT COUNT(*) FROM forum_comments WHERE post_id = p.id AND active = 1) as comment_count,
        (SELECT CAST(COALESCE(SUM(v.vote), 0) AS INTEGER) FROM forum_votes v WHERE v.post_id = p.id) as votes,
        CAST(COALESCE((SELECT v.vote FROM forum_votes v WHERE v.post_id = p.id AND v.user_id = ?1), 0) AS INTEGER) as user_vote

@@ -13,28 +13,19 @@ type Activity struct {
 	TargetName *string `json:"target_name"`
 }
 
-type Comment struct {
-	ID        string `json:"id"`
-	Postid    string `json:"postid"`
-	Userid    string `json:"userid"`
-	Body      string `json:"body"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-}
-
 type Event struct {
-	ID        int64   `json:"id"`
+	ID        string  `json:"id"`
 	Title     string  `json:"title"`
-	CreatedAt string  `json:"created_at"`
 	CoverPath *string `json:"cover_path"`
+	CreatedAt string  `json:"created_at"`
 }
 
 type Exam struct {
 	ID          string  `json:"id"`
 	Userid      string  `json:"userid"`
-	Programid   int64   `json:"programid"`
+	Programid   string  `json:"programid"`
 	Version     string  `json:"version"`
-	Moduleid    *int64  `json:"moduleid"`
+	Moduleid    *string `json:"moduleid"`
 	Comment     *string `json:"comment"`
 	ExamDate    string  `json:"exam_date"`
 	UploadedAt  string  `json:"uploaded_at"`
@@ -90,7 +81,7 @@ type ForumVote struct {
 
 type Medium struct {
 	ID          string  `json:"id"`
-	EventID     int64   `json:"event_id"`
+	EventID     string  `json:"event_id"`
 	Userid      string  `json:"userid"`
 	Title       *string `json:"title"`
 	Description *string `json:"description"`
@@ -101,11 +92,11 @@ type Medium struct {
 }
 
 type Module struct {
-	ID        int64   `json:"id"`
-	Programid int64   `json:"programid"`
+	ID        string  `json:"id"`
+	Programid string  `json:"programid"`
 	Name      string  `json:"name"`
-	CreatedAt string  `json:"created_at"`
 	Alias     *string `json:"alias"`
+	CreatedAt string  `json:"created_at"`
 }
 
 type Notification struct {
@@ -119,33 +110,25 @@ type Notification struct {
 	CreatedAt string `json:"created_at"`
 }
 
-type Post struct {
-	ID        string  `json:"id"`
-	Userid    string  `json:"userid"`
-	Title     string  `json:"title"`
-	Body      string  `json:"body"`
-	CreatedAt string  `json:"created_at"`
-	UpdatedAt string  `json:"updated_at"`
-	Deleted   *string `json:"deleted"`
-}
-
 type Program struct {
-	ID        int64  `json:"id"`
+	ID        string `json:"id"`
 	Name      string `json:"name"`
 	CreatedAt string `json:"created_at"`
 }
 
 type ProgramVersion struct {
-	Programid int64  `json:"programid"`
+	Programid string `json:"programid"`
 	Name      string `json:"name"`
 }
 
 type Session struct {
-	ID        string `json:"id"`
-	Userid    string `json:"userid"`
-	CreatedAt string `json:"created_at"`
-	LastSeen  string `json:"last_seen"`
-	ExpiresAt string `json:"expires_at"`
+	ID        string  `json:"id"`
+	Userid    string  `json:"userid"`
+	CreatedAt string  `json:"created_at"`
+	LastSeen  string  `json:"last_seen"`
+	ExpiresAt string  `json:"expires_at"`
+	UserAgent *string `json:"user_agent"`
+	IpAddress *string `json:"ip_address"`
 }
 
 type User struct {
@@ -158,11 +141,11 @@ type User struct {
 	Verified          int64   `json:"verified"`
 	VerifiedAt        *string `json:"verified_at"`
 	VerifiedUntil     *string `json:"verified_until"`
-	Programid         int64   `json:"programid"`
-	CreatedAt         string  `json:"created_at"`
-	UpdatedAt         string  `json:"updated_at"`
-	VerificationToken *string `json:"verification_token"`
+	Programid         string  `json:"programid"`
 	Theme             string  `json:"theme"`
 	Private           int64   `json:"private"`
 	AvatarUrl         *string `json:"avatar_url"`
+	VerificationToken *string `json:"verification_token"`
+	CreatedAt         string  `json:"created_at"`
+	UpdatedAt         string  `json:"updated_at"`
 }

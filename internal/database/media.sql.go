@@ -10,22 +10,23 @@ import (
 )
 
 const createEvent = `-- name: CreateEvent :one
-INSERT INTO events (title, cover_path) VALUES (?, ?) RETURNING id, title, created_at, cover_path
+INSERT INTO events (id, title, cover_path) VALUES (?, ?, ?) RETURNING id, title, cover_path, created_at
 `
 
 type CreateEventParams struct {
+	ID        string  `json:"id"`
 	Title     string  `json:"title"`
 	CoverPath *string `json:"cover_path"`
 }
 
 func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error) {
-	row := q.db.QueryRowContext(ctx, createEvent, arg.Title, arg.CoverPath)
+	row := q.db.QueryRowContext(ctx, createEvent, arg.ID, arg.Title, arg.CoverPath)
 	var i Event
 	err := row.Scan(
 		&i.ID,
 		&i.Title,
-		&i.CreatedAt,
 		&i.CoverPath,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -41,7 +42,7 @@ INSERT INTO media (
 
 type CreateMediaParams struct {
 	ID          string  `json:"id"`
-	EventID     int64   `json:"event_id"`
+	EventID     string  `json:"event_id"`
 	Userid      string  `json:"userid"`
 	Title       *string `json:"title"`
 	Description *string `json:"description"`
@@ -86,23 +87,23 @@ func (q *Queries) DeleteMedia(ctx context.Context, id string) error {
 }
 
 const getEvent = `-- name: GetEvent :one
-SELECT id, title, created_at, cover_path FROM events WHERE id = ? LIMIT 1
+SELECT id, title, cover_path, created_at FROM events WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) GetEvent(ctx context.Context, id int64) (Event, error) {
+func (q *Queries) GetEvent(ctx context.Context, id string) (Event, error) {
 	row := q.db.QueryRowContext(ctx, getEvent, id)
 	var i Event
 	err := row.Scan(
 		&i.ID,
 		&i.Title,
-		&i.CreatedAt,
 		&i.CoverPath,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getMedia = `-- name: GetMedia :one
-SELECT m.id, m.event_id, m.userid, m.title, m.description, m.accesskey, m.mime_type, m.nbytes, m.uploaded_at, u.name as uploader_name 
+SELECT m.id, m.event_id, m.userid, m.title, m.description, m.accesskey, m.mime_type, m.nbytes, m.uploaded_at, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name 
 FROM media m
 JOIN users u ON m.userid = u.id
 WHERE m.id = ? LIMIT 1
@@ -110,7 +111,7 @@ WHERE m.id = ? LIMIT 1
 
 type GetMediaRow struct {
 	ID           string  `json:"id"`
-	EventID      int64   `json:"event_id"`
+	EventID      string  `json:"event_id"`
 	Userid       string  `json:"userid"`
 	Title        *string `json:"title"`
 	Description  *string `json:"description"`
@@ -140,7 +141,7 @@ func (q *Queries) GetMedia(ctx context.Context, id string) (GetMediaRow, error) 
 }
 
 const listEvents = `-- name: ListEvents :many
-SELECT id, title, created_at, cover_path FROM events ORDER BY created_at DESC
+SELECT id, title, cover_path, created_at FROM events ORDER BY created_at DESC
 `
 
 func (q *Queries) ListEvents(ctx context.Context) ([]Event, error) {
@@ -155,8 +156,8 @@ func (q *Queries) ListEvents(ctx context.Context) ([]Event, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.Title,
-			&i.CreatedAt,
 			&i.CoverPath,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -172,7 +173,7 @@ func (q *Queries) ListEvents(ctx context.Context) ([]Event, error) {
 }
 
 const listMediaByEvent = `-- name: ListMediaByEvent :many
-SELECT m.id, m.event_id, m.userid, m.title, m.description, m.accesskey, m.mime_type, m.nbytes, m.uploaded_at, u.name as uploader_name 
+SELECT m.id, m.event_id, m.userid, m.title, m.description, m.accesskey, m.mime_type, m.nbytes, m.uploaded_at, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name 
 FROM media m
 JOIN users u ON m.userid = u.id
 WHERE event_id = ?
@@ -181,7 +182,7 @@ ORDER BY uploaded_at DESC
 
 type ListMediaByEventRow struct {
 	ID           string  `json:"id"`
-	EventID      int64   `json:"event_id"`
+	EventID      string  `json:"event_id"`
 	Userid       string  `json:"userid"`
 	Title        *string `json:"title"`
 	Description  *string `json:"description"`
@@ -192,7 +193,7 @@ type ListMediaByEventRow struct {
 	UploaderName string  `json:"uploader_name"`
 }
 
-func (q *Queries) ListMediaByEvent(ctx context.Context, eventID int64) ([]ListMediaByEventRow, error) {
+func (q *Queries) ListMediaByEvent(ctx context.Context, eventID string) ([]ListMediaByEventRow, error) {
 	rows, err := q.db.QueryContext(ctx, listMediaByEvent, eventID)
 	if err != nil {
 		return nil, err

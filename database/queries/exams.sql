@@ -12,7 +12,9 @@ INSERT INTO exams (
 
 -- name: ListExams :many
 SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
-       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+       m.name as module_name, 
+       CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name,
+       e.group_id, e.edit_version, e.is_latest
 FROM exams e
 JOIN modules m ON e.moduleid = m.id
 JOIN users u ON e.userid = u.id
@@ -27,7 +29,9 @@ SELECT * FROM exams WHERE id = sqlc.arg(id) LIMIT 1;
 
 -- name: GetExamDetails :one
 SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
-       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+       m.name as module_name, 
+       CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name,
+       e.group_id, e.edit_version, e.is_latest
 FROM exams e
 JOIN modules m ON e.moduleid = m.id
 JOIN users u ON e.userid = u.id
@@ -54,7 +58,9 @@ DELETE FROM exams WHERE id = sqlc.arg(id);
 
 -- name: ListExamVersions :many
 SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
-       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+       m.name as module_name, 
+       CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name,
+       e.group_id, e.edit_version, e.is_latest
 FROM exams e
 JOIN modules m ON e.moduleid = m.id
 JOIN users u ON e.userid = u.id
@@ -63,7 +69,9 @@ ORDER BY e.edit_version DESC;
 
 -- name: SearchExams :many
 SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
-       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+       m.name as module_name, 
+       CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name,
+       e.group_id, e.edit_version, e.is_latest
 FROM exams e
 JOIN modules m ON e.moduleid = m.id
 JOIN users u ON e.userid = u.id

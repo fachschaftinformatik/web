@@ -34,9 +34,9 @@ INSERT INTO exams (
 type CreateExamParams struct {
 	ID          string  `json:"id"`
 	Userid      string  `json:"userid"`
-	Programid   int64   `json:"programid"`
+	Programid   string  `json:"programid"`
 	Version     string  `json:"version"`
-	Moduleid    *int64  `json:"moduleid"`
+	Moduleid    *string `json:"moduleid"`
 	ExamDate    string  `json:"exam_date"`
 	Accesskey   string  `json:"accesskey"`
 	MimeType    string  `json:"mime_type"`
@@ -124,7 +124,9 @@ func (q *Queries) GetExam(ctx context.Context, id string) (Exam, error) {
 
 const getExamDetails = `-- name: GetExamDetails :one
 SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
-       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+       m.name as module_name, 
+       CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name,
+       e.group_id, e.edit_version, e.is_latest
 FROM exams e
 JOIN modules m ON e.moduleid = m.id
 JOIN users u ON e.userid = u.id
@@ -133,11 +135,11 @@ WHERE e.id = ?1 LIMIT 1
 
 type GetExamDetailsRow struct {
 	ID           string  `json:"id"`
-	Programid    int64   `json:"programid"`
+	Programid    string  `json:"programid"`
 	Version      string  `json:"version"`
 	ExamDate     string  `json:"exam_date"`
 	UploadedAt   string  `json:"uploaded_at"`
-	Moduleid     *int64  `json:"moduleid"`
+	Moduleid     *string `json:"moduleid"`
 	Comment      *string `json:"comment"`
 	ModuleName   string  `json:"module_name"`
 	UploaderName string  `json:"uploader_name"`
@@ -195,7 +197,9 @@ func (q *Queries) GetLatestByGroupId(ctx context.Context, groupID string) (Exam,
 
 const listExamVersions = `-- name: ListExamVersions :many
 SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
-       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+       m.name as module_name, 
+       CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name,
+       e.group_id, e.edit_version, e.is_latest
 FROM exams e
 JOIN modules m ON e.moduleid = m.id
 JOIN users u ON e.userid = u.id
@@ -205,11 +209,11 @@ ORDER BY e.edit_version DESC
 
 type ListExamVersionsRow struct {
 	ID           string  `json:"id"`
-	Programid    int64   `json:"programid"`
+	Programid    string  `json:"programid"`
 	Version      string  `json:"version"`
 	ExamDate     string  `json:"exam_date"`
 	UploadedAt   string  `json:"uploaded_at"`
-	Moduleid     *int64  `json:"moduleid"`
+	Moduleid     *string `json:"moduleid"`
 	Comment      *string `json:"comment"`
 	ModuleName   string  `json:"module_name"`
 	UploaderName string  `json:"uploader_name"`
@@ -256,7 +260,9 @@ func (q *Queries) ListExamVersions(ctx context.Context, groupID string) ([]ListE
 
 const listExams = `-- name: ListExams :many
 SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
-       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+       m.name as module_name, 
+       CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name,
+       e.group_id, e.edit_version, e.is_latest
 FROM exams e
 JOIN modules m ON e.moduleid = m.id
 JOIN users u ON e.userid = u.id
@@ -275,11 +281,11 @@ type ListExamsParams struct {
 
 type ListExamsRow struct {
 	ID           string  `json:"id"`
-	Programid    int64   `json:"programid"`
+	Programid    string  `json:"programid"`
 	Version      string  `json:"version"`
 	ExamDate     string  `json:"exam_date"`
 	UploadedAt   string  `json:"uploaded_at"`
-	Moduleid     *int64  `json:"moduleid"`
+	Moduleid     *string `json:"moduleid"`
 	Comment      *string `json:"comment"`
 	ModuleName   string  `json:"module_name"`
 	UploaderName string  `json:"uploader_name"`
@@ -326,7 +332,9 @@ func (q *Queries) ListExams(ctx context.Context, arg ListExamsParams) ([]ListExa
 
 const searchExams = `-- name: SearchExams :many
 SELECT e.id, e.programid, e.version, e.exam_date, e.uploaded_at, e.moduleid, e.comment,
-       m.name as module_name, u.name as uploader_name, e.group_id, e.edit_version, e.is_latest
+       m.name as module_name, 
+       CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name,
+       e.group_id, e.edit_version, e.is_latest
 FROM exams e
 JOIN modules m ON e.moduleid = m.id
 JOIN users u ON e.userid = u.id
@@ -340,11 +348,11 @@ LIMIT 20
 
 type SearchExamsRow struct {
 	ID           string  `json:"id"`
-	Programid    int64   `json:"programid"`
+	Programid    string  `json:"programid"`
 	Version      string  `json:"version"`
 	ExamDate     string  `json:"exam_date"`
 	UploadedAt   string  `json:"uploaded_at"`
-	Moduleid     *int64  `json:"moduleid"`
+	Moduleid     *string `json:"moduleid"`
 	Comment      *string `json:"comment"`
 	ModuleName   string  `json:"module_name"`
 	UploaderName string  `json:"uploader_name"`
@@ -390,7 +398,7 @@ func (q *Queries) SearchExams(ctx context.Context, query *string) ([]SearchExams
 }
 
 const searchModules = `-- name: SearchModules :many
-SELECT id, programid, name, created_at, alias FROM modules
+SELECT id, programid, name, alias, created_at FROM modules
 WHERE name LIKE '%' || ?1 || '%'
    OR alias LIKE '%' || ?1 || '%'
 LIMIT 20
@@ -409,8 +417,8 @@ func (q *Queries) SearchModules(ctx context.Context, query *string) ([]Module, e
 			&i.ID,
 			&i.Programid,
 			&i.Name,
-			&i.CreatedAt,
 			&i.Alias,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -437,9 +445,9 @@ RETURNING id, userid, programid, version, moduleid, comment, exam_date, uploaded
 `
 
 type UpdateExamParams struct {
-	Programid int64   `json:"programid"`
+	Programid string  `json:"programid"`
 	Version   string  `json:"version"`
-	Moduleid  *int64  `json:"moduleid"`
+	Moduleid  *string `json:"moduleid"`
 	ExamDate  string  `json:"exam_date"`
 	Comment   *string `json:"comment"`
 	ID        string  `json:"id"`
