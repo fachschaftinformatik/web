@@ -1,16 +1,35 @@
 basePath: /api
 definitions:
-  auth.CommentRequest:
+  dto.ActivityResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      target_id:
+        type: string
+      target_name:
+        type: string
+      type:
+        type: string
+      user_id:
+        type: string
+      user_name:
+        type: string
+    type: object
+  dto.CommentRequest:
     properties:
       parent_id:
         type: string
       text:
+        maxLength: 2000
+        minLength: 1
         type: string
+    required:
+    - text
     type: object
-  auth.CommentResponse:
+  dto.CommentResponse:
     properties:
-      active:
-        type: integer
       author_avatar_url:
         type: string
       author_id:
@@ -34,9 +53,11 @@ definitions:
       votes:
         type: integer
     type: object
-  auth.CreatePostRequest:
+  dto.CreatePostRequest:
     properties:
       body:
+        maxLength: 10000
+        minLength: 10
         type: string
       event_date:
         type: string
@@ -59,32 +80,49 @@ definitions:
           type: string
         type: array
       title:
+        maxLength: 255
+        minLength: 3
         type: string
       type:
+        enum:
+        - forum
+        - news
+        - event
         type: string
+    required:
+    - body
+    - title
     type: object
-  auth.CsrfResponse:
+  dto.CsrfResponse:
     properties:
       csrf:
         type: string
     type: object
-  auth.ErrorResponse:
+  dto.ErrorResponse:
     properties:
       error:
         type: string
       message:
         type: string
     type: object
-  auth.ExamResponse:
-    description: Exam details
+  dto.EventResponse:
+    properties:
+      cover_path:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.ExamResponse:
     properties:
       comment:
         type: string
       edit_version:
         type: integer
       exam_date:
-        example: "2023-01-15"
-        format: date
         type: string
       group_id:
         type: string
@@ -95,9 +133,9 @@ definitions:
       module_name:
         type: string
       moduleid:
-        type: integer
+        type: string
       programid:
-        type: integer
+        type: string
       uploaded_at:
         type: string
       uploader_name:
@@ -105,28 +143,51 @@ definitions:
       version:
         type: string
     type: object
-  auth.LoginRequest:
+  dto.LoginRequest:
     properties:
       email:
         example: user@studmail.w-hs.de
         type: string
       password:
         example: secret123
+        maxLength: 72
+        minLength: 8
+        type: string
+      remember:
+        type: boolean
+    required:
+    - email
+    - password
+    type: object
+  dto.MediaResponse:
+    properties:
+      description:
+        type: string
+      event_id:
+        type: string
+      id:
+        type: string
+      mime_type:
+        type: string
+      title:
+        type: string
+      uploaded_at:
+        type: string
+      uploader_name:
         type: string
     type: object
-  auth.ModuleResponse:
-    description: A study module
+  dto.ModuleResponse:
     properties:
       alias:
         type: string
       id:
-        type: integer
+        type: string
       name:
         type: string
       programid:
-        type: integer
+        type: string
     type: object
-  auth.NotificationResponse:
+  dto.NotificationResponse:
     properties:
       created_at:
         type: string
@@ -143,7 +204,7 @@ definitions:
       type:
         type: string
     type: object
-  auth.PostResponse:
+  dto.PostResponse:
     properties:
       active:
         type: integer
@@ -166,15 +227,21 @@ definitions:
       image_url:
         type: string
       links:
-        type: string
+        items:
+          type: string
+        type: array
       location:
         type: string
       pinned:
         type: integer
       programs:
-        type: string
+        items:
+          type: string
+        type: array
       tags:
-        type: string
+        items:
+          type: string
+        type: array
       title:
         type: string
       type:
@@ -186,11 +253,10 @@ definitions:
       votes:
         type: integer
     type: object
-  auth.ProgramResponse:
-    description: A study program including valid PO versions
+  dto.ProgramResponse:
     properties:
       id:
-        type: integer
+        type: string
       name:
         type: string
       versions:
@@ -198,7 +264,7 @@ definitions:
           type: string
         type: array
     type: object
-  auth.PublicUserResponse:
+  dto.PublicUserResponse:
     properties:
       active:
         type: integer
@@ -213,7 +279,7 @@ definitions:
       private:
         type: integer
       programid:
-        type: integer
+        type: string
       role:
         type: string
       theme:
@@ -221,22 +287,30 @@ definitions:
       verified:
         type: integer
     type: object
-  auth.RegisterRequest:
+  dto.RegisterRequest:
     properties:
       email:
         example: user@studmail.w-hs.de
         type: string
       name:
         example: Max Mustermann
+        maxLength: 64
+        minLength: 2
         type: string
       password:
         example: secret123
+        maxLength: 72
+        minLength: 8
         type: string
       programid:
-        example: 1
-        type: integer
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - programid
     type: object
-  auth.SearchResult:
+  dto.SearchResult:
     properties:
       id:
         type: string
@@ -245,40 +319,56 @@ definitions:
       title:
         type: string
       type:
-        description: '"exam" or "module"'
+        description: '"exam" or "module" or "user" or "post"'
         type: string
       url:
         type: string
     type: object
-  auth.UpdateExamRequest:
+  dto.UpdateExamRequest:
     properties:
       comment:
+        maxLength: 1000
         type: string
       date:
         type: string
       moduleid:
-        type: integer
-      programid:
-        type: integer
-      version:
         type: string
+      programid:
+        type: string
+      version:
+        maxLength: 32
+        minLength: 2
+        type: string
+    required:
+    - date
+    - moduleid
+    - programid
+    - version
     type: object
-  auth.UpdateProfileRequest:
+  dto.UpdateProfileRequest:
     properties:
       name:
         example: Max Mustermann
+        maxLength: 64
+        minLength: 2
         type: string
       private:
         type: boolean
       programid:
-        example: 1
-        type: integer
+        type: string
       theme:
+        enum:
+        - light
+        - dark
+        - system
         example: dark
         type: string
+    required:
+    - name
+    - programid
+    - theme
     type: object
-  auth.UserResponse:
-    description: User account information
+  dto.UserResponse:
     properties:
       active:
         type: integer
@@ -292,99 +382,25 @@ definitions:
         type: string
       name:
         type: string
-      password:
-        type: string
       private:
         type: integer
       programid:
-        type: integer
+        type: string
       role:
         type: string
       theme:
         type: string
-      updated_at:
-        type: string
-      verification_token:
-        type: string
       verified:
         type: integer
-      verified_at:
-        type: string
-      verified_until:
-        type: string
     type: object
-  auth.VoteRequest:
+  dto.VoteRequest:
     properties:
       vote:
-        description: 1 or -1
+        enum:
+        - 1
+        - -1
+        - 0
         type: integer
-    type: object
-  database.Activity:
-    properties:
-      created_at:
-        type: string
-      id:
-        type: string
-      target_id:
-        type: string
-      target_name:
-        type: string
-      type:
-        type: string
-      user_id:
-        type: string
-    type: object
-  database.ForumComment:
-    properties:
-      active:
-        type: integer
-      author_id:
-        type: string
-      created_at:
-        type: string
-      id:
-        type: string
-      parent_id:
-        type: string
-      post_id:
-        type: string
-      text:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  database.ForumPost:
-    properties:
-      active:
-        type: integer
-      author_id:
-        type: string
-      body:
-        type: string
-      created_at:
-        type: string
-      event_date:
-        type: string
-      id:
-        type: string
-      image_url:
-        type: string
-      links:
-        type: string
-      location:
-        type: string
-      pinned:
-        type: integer
-      programs:
-        type: string
-      tags:
-        type: string
-      title:
-        type: string
-      type:
-        type: string
-      updated_at:
-        type: string
     type: object
 info:
   contact: {}
@@ -408,7 +424,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/database.Activity'
+              $ref: '#/definitions/dto.ActivityResponse'
             type: array
       summary: List all activities
       tags:
@@ -438,11 +454,13 @@ paths:
       - Auth
   /auth/csrf:
     get:
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.CsrfResponse'
+            $ref: '#/definitions/dto.CsrfResponse'
       summary: Issue CSRF token
       tags:
       - Auth
@@ -456,18 +474,18 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.LoginRequest'
+          $ref: '#/definitions/dto.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.UserResponse'
+            $ref: '#/definitions/dto.UserResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: Log in
       tags:
       - Auth
@@ -491,7 +509,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.UserResponse'
+            $ref: '#/definitions/dto.UserResponse'
       summary: Get current user
       tags:
       - Auth
@@ -504,18 +522,18 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.UpdateProfileRequest'
+          $ref: '#/definitions/dto.UpdateProfileRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.UserResponse'
+            $ref: '#/definitions/dto.UserResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: Update current user profile
       tags:
       - Auth
@@ -527,12 +545,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/auth.NotificationResponse'
+              $ref: '#/definitions/dto.NotificationResponse'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: List notifications
       tags:
       - Auth
@@ -549,15 +567,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.NotificationResponse'
+            $ref: '#/definitions/dto.NotificationResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: Mark notification as read
       tags:
       - Auth
@@ -570,7 +588,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: Mark all notifications as read
       tags:
       - Auth
@@ -584,18 +602,18 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.RegisterRequest'
+          $ref: '#/definitions/dto.RegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/auth.UserResponse'
+            $ref: '#/definitions/dto.UserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: Register a user
       tags:
       - Auth
@@ -613,6 +631,61 @@ paths:
       summary: Verify user email
       tags:
       - Auth
+  /events:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.EventResponse'
+            type: array
+      summary: List events
+      tags:
+      - Media
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Event Title
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: Cover Image
+        in: formData
+        name: file
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.EventResponse'
+      summary: Create event
+      tags:
+      - Media
+  /events/{id}/cover:
+    get:
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - image/jpeg
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Get event cover
+      tags:
+      - Media
   /exams:
     get:
       operationId: getExams
@@ -620,7 +693,7 @@ paths:
       - description: Program ID
         in: query
         name: programid
-        type: integer
+        type: string
       - description: Version
         in: query
         name: version
@@ -628,18 +701,18 @@ paths:
       - description: Module ID
         in: query
         name: moduleid
-        type: integer
+        type: string
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/auth.ExamResponse'
+              $ref: '#/definitions/dto.ExamResponse'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: List exams
       tags:
       - Exams
@@ -686,11 +759,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: Upload exam
       tags:
       - Exams
@@ -721,11 +794,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.ExamResponse'
+            $ref: '#/definitions/dto.ExamResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: Get exam details
       tags:
       - Exams
@@ -742,12 +815,12 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/auth.UpdateExamRequest'
+          $ref: '#/definitions/dto.UpdateExamRequest'
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.ExamResponse'
+            $ref: '#/definitions/dto.ExamResponse'
       summary: Update exam
       tags:
       - Exams
@@ -782,12 +855,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/auth.ExamResponse'
+              $ref: '#/definitions/dto.ExamResponse'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: List exam versions
       tags:
       - Exams
@@ -806,14 +879,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.CommentRequest'
+          $ref: '#/definitions/dto.CommentRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/database.ForumComment'
+            $ref: '#/definitions/dto.CommentResponse'
       summary: Update comment
       tags:
       - Forum
@@ -832,7 +905,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.VoteRequest'
+          $ref: '#/definitions/dto.VoteRequest'
       responses:
         "204":
           description: No Content
@@ -867,7 +940,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/auth.PostResponse'
+              $ref: '#/definitions/dto.PostResponse'
             type: array
       summary: List forum posts
       tags:
@@ -881,14 +954,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.CreatePostRequest'
+          $ref: '#/definitions/dto.CreatePostRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/database.ForumPost'
+            $ref: '#/definitions/dto.PostResponse'
       summary: Create forum post
       tags:
       - Forum
@@ -917,7 +990,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.PostResponse'
+            $ref: '#/definitions/dto.PostResponse'
       summary: Get forum post
       tags:
       - Forum
@@ -935,14 +1008,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.CreatePostRequest'
+          $ref: '#/definitions/dto.CreatePostRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/database.ForumPost'
+            $ref: '#/definitions/dto.PostResponse'
       summary: Update forum post
       tags:
       - Forum
@@ -959,7 +1032,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/auth.CommentResponse'
+              $ref: '#/definitions/dto.CommentResponse'
             type: array
       summary: List comments for post
       tags:
@@ -978,14 +1051,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.CommentRequest'
+          $ref: '#/definitions/dto.CommentRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/database.ForumComment'
+            $ref: '#/definitions/dto.CommentResponse'
       summary: Add comment to post
       tags:
       - Forum
@@ -1004,13 +1077,121 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/auth.VoteRequest'
+          $ref: '#/definitions/dto.VoteRequest'
       responses:
         "204":
           description: No Content
       summary: Vote for post
       tags:
       - Forum
+  /media:
+    get:
+      parameters:
+      - description: Event ID
+        in: query
+        name: event_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.MediaResponse'
+            type: array
+      summary: List media
+      tags:
+      - Media
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Event ID
+        in: formData
+        name: event_id
+        required: true
+        type: string
+      - description: Title
+        in: formData
+        name: title
+        type: string
+      - description: Description
+        in: formData
+        name: description
+        type: string
+      - description: Media File
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upload media
+      tags:
+      - Media
+  /media/{id}:
+    get:
+      parameters:
+      - description: Media ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MediaResponse'
+      summary: Get media by ID
+      tags:
+      - Media
+  /media/{id}/file:
+    get:
+      parameters:
+      - description: Media ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Get media file
+      tags:
+      - Media
+  /media/{id}/preview:
+    get:
+      parameters:
+      - description: Media ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - image/jpeg
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Get media preview
+      tags:
+      - Media
   /programs:
     get:
       consumes:
@@ -1024,12 +1205,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/auth.ProgramResponse'
+              $ref: '#/definitions/dto.ProgramResponse'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: List all programs
       tags:
       - Programs
@@ -1046,15 +1227,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.ProgramResponse'
+            $ref: '#/definitions/dto.ProgramResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: Get program by ID
       tags:
       - Programs
@@ -1066,18 +1247,18 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/auth.ModuleResponse'
+              $ref: '#/definitions/dto.ModuleResponse'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/auth.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: List modules for a program
       tags:
       - Programs
@@ -1095,7 +1276,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/auth.SearchResult'
+              $ref: '#/definitions/dto.SearchResult'
             type: array
       summary: Global search
       tags:
@@ -1116,7 +1297,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/auth.UserResponse'
+              $ref: '#/definitions/dto.UserResponse'
             type: array
       summary: List users
       tags:
@@ -1129,22 +1310,16 @@ paths:
         name: id
         required: true
         type: string
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/auth.PublicUserResponse'
+            $ref: '#/definitions/dto.PublicUserResponse'
       summary: Get user profile
       tags:
       - Users
-      - Auth
   /users/{id}/activities:
     get:
       parameters:
@@ -1166,7 +1341,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/database.Activity'
+              $ref: '#/definitions/dto.ActivityResponse'
             type: array
       summary: List user activities
       tags:

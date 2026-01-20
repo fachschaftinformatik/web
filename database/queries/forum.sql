@@ -17,7 +17,7 @@ RETURNING *;
 -- name: GetForumPost :one
 SELECT p.*,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as author_name,
-       CAST(COALESCE(u.avatar_url, '') AS TEXT) as author_avatar_url,
+       CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as author_avatar_url,
        (SELECT COUNT(*) FROM forum_comments WHERE post_id = p.id AND active = 1) as comment_count,
        (SELECT CAST(COALESCE(SUM(vote), 0) AS INTEGER) FROM forum_votes WHERE forum_votes.post_id = p.id) as votes,
        CAST(COALESCE((SELECT vote FROM forum_votes WHERE forum_votes.post_id = p.id AND forum_votes.user_id = sqlc.narg(current_user_id)), 0) AS INTEGER) as user_vote
@@ -29,7 +29,7 @@ LIMIT 1;
 -- name: ListForumPosts :many
 SELECT p.*,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as author_name,
-       CAST(COALESCE(u.avatar_url, '') AS TEXT) as author_avatar_url,
+       CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as author_avatar_url,
        (SELECT COUNT(*) FROM forum_comments WHERE post_id = p.id AND active = 1) as comment_count,
        (SELECT CAST(COALESCE(SUM(v.vote), 0) AS INTEGER) FROM forum_votes v WHERE v.post_id = p.id) as votes,
        CAST(COALESCE((SELECT v.vote FROM forum_votes v WHERE v.post_id = p.id AND v.user_id = sqlc.narg(current_user_id)), 0) AS INTEGER) as user_vote
@@ -46,7 +46,7 @@ LIMIT sqlc.arg(limit) OFFSET sqlc.arg(offset);
 -- name: ListForumPostsTop :many
 SELECT p.*,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as author_name,
-       CAST(COALESCE(u.avatar_url, '') AS TEXT) as author_avatar_url,
+       CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as author_avatar_url,
        (SELECT COUNT(*) FROM forum_comments WHERE post_id = p.id AND active = 1) as comment_count,
        (SELECT CAST(COALESCE(SUM(v.vote), 0) AS INTEGER) FROM forum_votes v WHERE v.post_id = p.id) as votes,
        CAST(COALESCE((SELECT v.vote FROM forum_votes v WHERE v.post_id = p.id AND v.user_id = sqlc.narg(current_user_id)), 0) AS INTEGER) as user_vote
@@ -95,13 +95,37 @@ SELECT * FROM forum_comments WHERE id = sqlc.arg(id) LIMIT 1;
 -- name: ListForumComments :many
 SELECT c.*,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as author_name,
-       CAST(COALESCE(u.avatar_url, '') AS TEXT) as author_avatar_url,
+       CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as author_avatar_url,
        (SELECT CAST(COALESCE(SUM(vote), 0) AS INTEGER) FROM forum_comment_votes v WHERE v.comment_id = c.id) as votes,
        CAST(COALESCE((SELECT vote FROM forum_comment_votes v WHERE v.comment_id = c.id AND v.user_id = sqlc.narg(current_user_id)), 0) AS INTEGER) as user_vote
 FROM forum_comments c
 JOIN users u ON c.author_id = u.id
 WHERE c.post_id = sqlc.arg(post_id) AND c.active = 1
 ORDER BY c.created_at ASC;
+
+-- name: SearchForumPosts :many
+SELECT p.*,
+       CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as author_name,
+       CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as author_avatar_url,
+       (SELECT COUNT(*) FROM forum_comments WHERE post_id = p.id AND active = 1) as comment_count,
+       (SELECT CAST(COALESCE(SUM(v.vote), 0) AS INTEGER) FROM forum_votes v WHERE v.post_id = p.id) as votes,
+       CAST(COALESCE((SELECT v.vote FROM forum_votes v WHERE v.post_id = p.id AND v.user_id = sqlc.narg(current_user_id)), 0) AS INTEGER) as user_vote
+FROM forum_posts p
+JOIN users u ON p.author_id = u.id
+WHERE (
+  lower(p.title) LIKE '%' || lower(sqlc.arg(query)) || '%' OR
+  lower(p.body) LIKE '%' || lower(sqlc.arg(query)) || '%'
+) AND p.active = 1
+ORDER BY 
+    p.pinned DESC,
+    p.created_at DESC
+LIMIT 10;
+
+-- name: CountForumPosts :one
+SELECT COUNT(*) FROM forum_posts p
+WHERE (sqlc.narg(type) IS NULL OR p.type = sqlc.narg(type))
+  AND (sqlc.narg(query) IS NULL OR (lower(p.title) LIKE '%' || lower(sqlc.arg(query)) || '%' OR lower(p.body) LIKE '%' || lower(sqlc.arg(query)) || '%'))
+  AND p.active = 1;
 
 -- name: UpdateForumComment :one
 UPDATE forum_comments
@@ -134,27 +158,3 @@ INSERT INTO forum_comment_votes (
 ON CONFLICT (comment_id, user_id) DO UPDATE SET
     vote = excluded.vote
 RETURNING *;
-
--- name: SearchForumPosts :many
-SELECT p.*,
-       CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as author_name,
-       CAST(COALESCE(u.avatar_url, '') AS TEXT) as author_avatar_url,
-       (SELECT COUNT(*) FROM forum_comments WHERE post_id = p.id AND active = 1) as comment_count,
-       (SELECT CAST(COALESCE(SUM(v.vote), 0) AS INTEGER) FROM forum_votes v WHERE v.post_id = p.id) as votes,
-       CAST(COALESCE((SELECT v.vote FROM forum_votes v WHERE v.post_id = p.id AND v.user_id = sqlc.narg(current_user_id)), 0) AS INTEGER) as user_vote
-FROM forum_posts p
-JOIN users u ON p.author_id = u.id
-WHERE (
-  lower(p.title) LIKE '%' || lower(sqlc.arg(query)) || '%' OR
-  lower(p.body) LIKE '%' || lower(sqlc.arg(query)) || '%'
-) AND p.active = 1
-ORDER BY 
-    p.pinned DESC,
-    p.created_at DESC
-LIMIT 10;
-
--- name: CountForumPosts :one
-SELECT COUNT(*) FROM forum_posts p
-WHERE (sqlc.narg(type) IS NULL OR p.type = sqlc.narg(type))
-  AND (sqlc.narg(query) IS NULL OR (lower(p.title) LIKE '%' || lower(sqlc.arg(query)) || '%' OR lower(p.body) LIKE '%' || lower(sqlc.arg(query)) || '%'))
-  AND p.active = 1;

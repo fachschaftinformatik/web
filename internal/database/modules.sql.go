@@ -12,11 +12,11 @@ import (
 const createModule = `-- name: CreateModule :one
 INSERT INTO modules (programid, name, alias) 
 VALUES (?1, ?2, ?3) 
-RETURNING id, programid, name, created_at, alias
+RETURNING id, programid, name, alias, created_at
 `
 
 type CreateModuleParams struct {
-	Programid int64   `json:"programid"`
+	Programid string  `json:"programid"`
 	Name      string  `json:"name"`
 	Alias     *string `json:"alias"`
 }
@@ -28,36 +28,36 @@ func (q *Queries) CreateModule(ctx context.Context, arg CreateModuleParams) (Mod
 		&i.ID,
 		&i.Programid,
 		&i.Name,
-		&i.CreatedAt,
 		&i.Alias,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getModule = `-- name: GetModule :one
-SELECT id, programid, name, created_at, alias FROM modules WHERE id = ?1 LIMIT 1
+SELECT id, programid, name, alias, created_at FROM modules WHERE id = ?1 LIMIT 1
 `
 
-func (q *Queries) GetModule(ctx context.Context, id int64) (Module, error) {
+func (q *Queries) GetModule(ctx context.Context, id string) (Module, error) {
 	row := q.db.QueryRowContext(ctx, getModule, id)
 	var i Module
 	err := row.Scan(
 		&i.ID,
 		&i.Programid,
 		&i.Name,
-		&i.CreatedAt,
 		&i.Alias,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listModulesByProgram = `-- name: ListModulesByProgram :many
-SELECT id, programid, name, created_at, alias FROM modules 
+SELECT id, programid, name, alias, created_at FROM modules 
 WHERE programid = ?1 
 ORDER BY name
 `
 
-func (q *Queries) ListModulesByProgram(ctx context.Context, programid int64) ([]Module, error) {
+func (q *Queries) ListModulesByProgram(ctx context.Context, programid string) ([]Module, error) {
 	rows, err := q.db.QueryContext(ctx, listModulesByProgram, programid)
 	if err != nil {
 		return nil, err
@@ -70,8 +70,8 @@ func (q *Queries) ListModulesByProgram(ctx context.Context, programid int64) ([]
 			&i.ID,
 			&i.Programid,
 			&i.Name,
-			&i.CreatedAt,
 			&i.Alias,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}

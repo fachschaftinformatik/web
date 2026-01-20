@@ -35,7 +35,7 @@ import { Link as RouterLink } from "react-router-dom";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
-import { getPrograms, getProgramModules, postExams, getExams, getAuthCsrf } from "@lib/api";
+import { getPrograms, getProgramModules, postExams, getExams } from "@lib/api";
 import type { AuthProgramResponse as Program, AuthModuleResponse as Module } from "@lib/api";
 
 function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; onClose: () => void; programs: Program[]; onSuccess: () => void }) {
@@ -56,7 +56,7 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
 
     useEffect(() => {
         if (currentProgram && currentProgram.id !== undefined) {
-            getProgramModules({ path: { id: currentProgram.id as number } })
+            getProgramModules({ path: { id: currentProgram.id } })
                 .then(({ data }) => setProgramModules(data || []))
                 .catch(() => setProgramModules([]));
 
@@ -123,12 +123,6 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
         setLoading(true);
 
         try {
-            const { data: csrfData, error: csrfError } = await getAuthCsrf();
-            const token = csrfData?.csrf;
-            if (csrfError || !token) {
-                throw new Error("Sicherheits-Token konnte nicht geladen werden. Bitte neu einloggen.");
-            }
-
             const assignmentData = finalAssignments.map(a => ({
                 programid: a.program.id,
                 version: a.version,
@@ -144,8 +138,8 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
 
             const { error: apiError } = await postExams({
                 body: formData,
-                headers: { "X-CSRF-Token": token }
             });
+
 
             if (apiError) {
                 const msg = (apiError as { message?: string }).message || "Fehler beim Hochladen.";
@@ -228,7 +222,7 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                             size="small"
                             value={currentProgram?.id || ""}
                             onChange={(e) => {
-                                const prog = programs.find(p => p.id === Number(e.target.value));
+                                const prog = programs.find(p => p.id === e.target.value);
                                 setCurrentProgram(prog || null);
                             }}
                         >
@@ -401,7 +395,7 @@ export default function Exams() {
     const [modules, setModules] = useState<Module[]>([]);
     const [search, setSearch] = useState("");
 
-    const [activeModuleIds, setActiveModuleIds] = useState<Set<number>>(new Set());
+    const [activeModuleIds, setActiveModuleIds] = useState<Set<string>>(new Set());
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const sortedPos = useMemo(() => {
@@ -437,7 +431,7 @@ export default function Exams() {
 
     useEffect(() => {
         if (selectedPrograms.length > 0) {
-            Promise.all(selectedPrograms.map(p => getProgramModules({ path: { id: p.id as number } })))
+            Promise.all(selectedPrograms.map(p => getProgramModules({ path: { id: p.id } })))
                 .then(results => {
                     const allModules = results.flatMap(r => r.data || []);
                     // Filter duplicates by ID
@@ -449,7 +443,7 @@ export default function Exams() {
                 setSelectedPo("all");
             });
         } else if (programs.length > 0) {
-            Promise.all(programs.map(p => getProgramModules({ path: { id: p.id as number } })))
+            Promise.all(programs.map(p => getProgramModules({ path: { id: p.id } })))
                 .then(results => {
                     const allModules = results.flatMap(r => r.data || []);
                     const uniqueModules = Array.from(new Map(allModules.map(m => [m.id, m])).values());
@@ -463,7 +457,7 @@ export default function Exams() {
     useEffect(() => {
         if (selectedPrograms.length > 0 && selectedPo) {
             const fetchExams = selectedPrograms.map(p => {
-                const query: { programid: number; version?: string } = { programid: p.id as number };
+                const query: { programid: string; version?: string } = { programid: p.id as string };
                 if (selectedPo !== "all") {
                     query.version = selectedPo;
                 }
@@ -473,14 +467,14 @@ export default function Exams() {
             Promise.all(fetchExams)
                 .then(results => {
                     const allExams = results.flatMap(r => r.data || []);
-                    const ids = new Set(allExams.map(e => e.moduleid).filter((id): id is number => id !== undefined));
+                    const ids = new Set(allExams.map(e => e.moduleid).filter((id): id is string => id !== undefined));
                     setActiveModuleIds(ids);
                 })
                 .catch(() => setActiveModuleIds(new Set()));
         } else if (selectedPrograms.length === 0) {
             getExams({ query: {} })
                 .then(({ data }) => {
-                    const ids = new Set((data || []).map(e => e.moduleid).filter((id): id is number => id !== undefined));
+                    const ids = new Set((data || []).map(e => e.moduleid).filter((id): id is string => id !== undefined));
                     setActiveModuleIds(ids);
                 })
                 .catch(() => setActiveModuleIds(new Set()));
@@ -490,7 +484,7 @@ export default function Exams() {
     }, [selectedPrograms, selectedPo, refreshTrigger]);
 
     const filteredModules = useMemo(() => {
-        let res = modules.filter(m => m.id !== undefined && activeModuleIds.has(m.id as number));
+        let res = modules.filter(m => m.id !== undefined && activeModuleIds.has(m.id as string));
         if (search) {
             const s = search.toLowerCase();
             res = res.filter(m =>

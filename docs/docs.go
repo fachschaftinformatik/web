@@ -41,7 +41,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/database.Activity"
+                                "$ref": "#/definitions/dto.ActivityResponse"
                             }
                         }
                     }
@@ -85,6 +85,9 @@ const docTemplate = `{
         },
         "/auth/csrf": {
             "get": {
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Auth"
                 ],
@@ -93,7 +96,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.CsrfResponse"
+                            "$ref": "#/definitions/dto.CsrfResponse"
                         }
                     }
                 }
@@ -118,7 +121,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.LoginRequest"
+                            "$ref": "#/definitions/dto.LoginRequest"
                         }
                     }
                 ],
@@ -126,13 +129,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.UserResponse"
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -170,7 +173,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.UserResponse"
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     }
                 }
@@ -193,7 +196,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.UpdateProfileRequest"
+                            "$ref": "#/definitions/dto.UpdateProfileRequest"
                         }
                     }
                 ],
@@ -201,13 +204,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.UserResponse"
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -226,14 +229,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/auth.NotificationResponse"
+                                "$ref": "#/definitions/dto.NotificationResponse"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -253,7 +256,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -279,19 +282,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.NotificationResponse"
+                            "$ref": "#/definitions/dto.NotificationResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -316,7 +319,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.RegisterRequest"
+                            "$ref": "#/definitions/dto.RegisterRequest"
                         }
                     }
                 ],
@@ -324,13 +327,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/auth.UserResponse"
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -358,6 +361,91 @@ const docTemplate = `{
                 }
             }
         },
+        "/events": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "List events",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.EventResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Create event",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event Title",
+                        "name": "title",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Cover Image",
+                        "name": "file",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EventResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/{id}/cover": {
+            "get": {
+                "produces": [
+                    "image/jpeg"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Get event cover",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
         "/exams": {
             "get": {
                 "tags": [
@@ -367,7 +455,7 @@ const docTemplate = `{
                 "operationId": "getExams",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Program ID",
                         "name": "programid",
                         "in": "query"
@@ -379,7 +467,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Module ID",
                         "name": "moduleid",
                         "in": "query"
@@ -391,14 +479,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/auth.ExamResponse"
+                                "$ref": "#/definitions/dto.ExamResponse"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -465,13 +553,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -499,14 +587,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/auth.ExamResponse"
+                                "$ref": "#/definitions/dto.ExamResponse"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -532,13 +620,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.ExamResponse"
+                            "$ref": "#/definitions/dto.ExamResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -563,7 +651,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.UpdateExamRequest"
+                            "$ref": "#/definitions/dto.UpdateExamRequest"
                         }
                     }
                 ],
@@ -571,7 +659,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.ExamResponse"
+                            "$ref": "#/definitions/dto.ExamResponse"
                         }
                     }
                 }
@@ -650,7 +738,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.CommentRequest"
+                            "$ref": "#/definitions/dto.CommentRequest"
                         }
                     }
                 ],
@@ -658,7 +746,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/database.ForumComment"
+                            "$ref": "#/definitions/dto.CommentResponse"
                         }
                     }
                 }
@@ -687,7 +775,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.VoteRequest"
+                            "$ref": "#/definitions/dto.VoteRequest"
                         }
                     }
                 ],
@@ -742,7 +830,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/auth.PostResponse"
+                                "$ref": "#/definitions/dto.PostResponse"
                             }
                         }
                     }
@@ -766,7 +854,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.CreatePostRequest"
+                            "$ref": "#/definitions/dto.CreatePostRequest"
                         }
                     }
                 ],
@@ -774,7 +862,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/database.ForumPost"
+                            "$ref": "#/definitions/dto.PostResponse"
                         }
                     }
                 }
@@ -799,7 +887,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.PostResponse"
+                            "$ref": "#/definitions/dto.PostResponse"
                         }
                     }
                 }
@@ -829,7 +917,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.CreatePostRequest"
+                            "$ref": "#/definitions/dto.CreatePostRequest"
                         }
                     }
                 ],
@@ -837,7 +925,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/database.ForumPost"
+                            "$ref": "#/definitions/dto.PostResponse"
                         }
                     }
                 }
@@ -884,7 +972,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/auth.CommentResponse"
+                                "$ref": "#/definitions/dto.CommentResponse"
                             }
                         }
                     }
@@ -915,7 +1003,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.CommentRequest"
+                            "$ref": "#/definitions/dto.CommentRequest"
                         }
                     }
                 ],
@@ -923,7 +1011,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/database.ForumComment"
+                            "$ref": "#/definitions/dto.CommentResponse"
                         }
                     }
                 }
@@ -952,13 +1040,179 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.VoteRequest"
+                            "$ref": "#/definitions/dto.VoteRequest"
                         }
                     }
                 ],
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/media": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "List media",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "event_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.MediaResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Upload media",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "event_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Title",
+                        "name": "title",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Description",
+                        "name": "description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Media File",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/media/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Get media by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/media/{id}/file": {
+            "get": {
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Get media file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/media/{id}/preview": {
+            "get": {
+                "produces": [
+                    "image/jpeg"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Get media preview",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
                     }
                 }
             }
@@ -983,14 +1237,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/auth.ProgramResponse"
+                                "$ref": "#/definitions/dto.ProgramResponse"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1016,19 +1270,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.ProgramResponse"
+                            "$ref": "#/definitions/dto.ProgramResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1043,7 +1297,7 @@ const docTemplate = `{
                 "operationId": "getProgramModules",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Program ID",
                         "name": "id",
                         "in": "path",
@@ -1056,14 +1310,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/auth.ModuleResponse"
+                                "$ref": "#/definitions/dto.ModuleResponse"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/auth.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1091,7 +1345,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/auth.SearchResult"
+                                "$ref": "#/definitions/dto.SearchResult"
                             }
                         }
                     }
@@ -1124,7 +1378,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/auth.UserResponse"
+                                "$ref": "#/definitions/dto.UserResponse"
                             }
                         }
                     }
@@ -1137,18 +1391,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Users",
-                    "Auth"
+                    "Users"
                 ],
                 "summary": "Get user profile",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "User ID",
@@ -1161,7 +1407,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.PublicUserResponse"
+                            "$ref": "#/definitions/dto.PublicUserResponse"
                         }
                     }
                 }
@@ -1200,7 +1446,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/database.Activity"
+                                "$ref": "#/definitions/dto.ActivityResponse"
                             }
                         }
                     }
@@ -1209,23 +1455,51 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "auth.CommentRequest": {
+        "dto.ActivityResponse": {
             "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "target_id": {
+                    "type": "string"
+                },
+                "target_name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CommentRequest": {
+            "type": "object",
+            "required": [
+                "text"
+            ],
             "properties": {
                 "parent_id": {
                     "type": "string"
                 },
                 "text": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 2000,
+                    "minLength": 1
                 }
             }
         },
-        "auth.CommentResponse": {
+        "dto.CommentResponse": {
             "type": "object",
             "properties": {
-                "active": {
-                    "type": "integer"
-                },
                 "author_avatar_url": {
                     "type": "string"
                 },
@@ -1261,11 +1535,17 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.CreatePostRequest": {
+        "dto.CreatePostRequest": {
             "type": "object",
+            "required": [
+                "body",
+                "title"
+            ],
             "properties": {
                 "body": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 10000,
+                    "minLength": 10
                 },
                 "event_date": {
                     "type": "string"
@@ -1298,14 +1578,21 @@ const docTemplate = `{
                     }
                 },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 3
                 },
                 "type": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "forum",
+                        "news",
+                        "event"
+                    ]
                 }
             }
         },
-        "auth.CsrfResponse": {
+        "dto.CsrfResponse": {
             "type": "object",
             "properties": {
                 "csrf": {
@@ -1313,7 +1600,7 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.ErrorResponse": {
+        "dto.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -1324,8 +1611,24 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.ExamResponse": {
-            "description": "Exam details",
+        "dto.EventResponse": {
+            "type": "object",
+            "properties": {
+                "cover_path": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ExamResponse": {
             "type": "object",
             "properties": {
                 "comment": {
@@ -1335,9 +1638,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "exam_date": {
-                    "type": "string",
-                    "format": "date",
-                    "example": "2023-01-15"
+                    "type": "string"
                 },
                 "group_id": {
                     "type": "string"
@@ -1352,10 +1653,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "moduleid": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "programid": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "uploaded_at": {
                     "type": "string"
@@ -1368,8 +1669,12 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.LoginRequest": {
+        "dto.LoginRequest": {
             "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
             "properties": {
                 "email": {
                     "type": "string",
@@ -1377,29 +1682,59 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string",
+                    "maxLength": 72,
+                    "minLength": 8,
                     "example": "secret123"
+                },
+                "remember": {
+                    "type": "boolean"
                 }
             }
         },
-        "auth.ModuleResponse": {
-            "description": "A study module",
+        "dto.MediaResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "event_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "uploaded_at": {
+                    "type": "string"
+                },
+                "uploader_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ModuleResponse": {
             "type": "object",
             "properties": {
                 "alias": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
                 "programid": {
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },
-        "auth.NotificationResponse": {
+        "dto.NotificationResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -1425,7 +1760,7 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.PostResponse": {
+        "dto.PostResponse": {
             "type": "object",
             "properties": {
                 "active": {
@@ -1459,7 +1794,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "links": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "location": {
                     "type": "string"
@@ -1468,10 +1806,16 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "programs": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "tags": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "title": {
                     "type": "string"
@@ -1490,12 +1834,11 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.ProgramResponse": {
-            "description": "A study program including valid PO versions",
+        "dto.ProgramResponse": {
             "type": "object",
             "properties": {
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -1508,7 +1851,7 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.PublicUserResponse": {
+        "dto.PublicUserResponse": {
             "type": "object",
             "properties": {
                 "active": {
@@ -1530,7 +1873,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "programid": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "role": {
                     "type": "string"
@@ -1543,8 +1886,14 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.RegisterRequest": {
+        "dto.RegisterRequest": {
             "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password",
+                "programid"
+            ],
             "properties": {
                 "email": {
                     "type": "string",
@@ -1552,19 +1901,22 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string",
+                    "maxLength": 64,
+                    "minLength": 2,
                     "example": "Max Mustermann"
                 },
                 "password": {
                     "type": "string",
+                    "maxLength": 72,
+                    "minLength": 8,
                     "example": "secret123"
                 },
                 "programid": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "string"
                 }
             }
         },
-        "auth.SearchResult": {
+        "dto.SearchResult": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1577,7 +1929,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "description": "\"exam\" or \"module\"",
+                    "description": "\"exam\" or \"module\" or \"user\" or \"post\"",
                     "type": "string"
                 },
                 "url": {
@@ -1585,48 +1937,67 @@ const docTemplate = `{
                 }
             }
         },
-        "auth.UpdateExamRequest": {
+        "dto.UpdateExamRequest": {
             "type": "object",
+            "required": [
+                "date",
+                "moduleid",
+                "programid",
+                "version"
+            ],
             "properties": {
                 "comment": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 1000
                 },
                 "date": {
                     "type": "string"
                 },
                 "moduleid": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "programid": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "version": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
                 }
             }
         },
-        "auth.UpdateProfileRequest": {
+        "dto.UpdateProfileRequest": {
             "type": "object",
+            "required": [
+                "name",
+                "programid",
+                "theme"
+            ],
             "properties": {
                 "name": {
                     "type": "string",
+                    "maxLength": 64,
+                    "minLength": 2,
                     "example": "Max Mustermann"
                 },
                 "private": {
                     "type": "boolean"
                 },
                 "programid": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "string"
                 },
                 "theme": {
                     "type": "string",
+                    "enum": [
+                        "light",
+                        "dark",
+                        "system"
+                    ],
                     "example": "dark"
                 }
             }
         },
-        "auth.UserResponse": {
-            "description": "User account information",
+        "dto.UserResponse": {
             "type": "object",
             "properties": {
                 "active": {
@@ -1647,14 +2018,11 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "password": {
-                    "type": "string"
-                },
                 "private": {
                     "type": "integer"
                 },
                 "programid": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "role": {
                     "type": "string"
@@ -1662,131 +2030,21 @@ const docTemplate = `{
                 "theme": {
                     "type": "string"
                 },
-                "updated_at": {
-                    "type": "string"
-                },
-                "verification_token": {
-                    "type": "string"
-                },
                 "verified": {
                     "type": "integer"
-                },
-                "verified_at": {
-                    "type": "string"
-                },
-                "verified_until": {
-                    "type": "string"
                 }
             }
         },
-        "auth.VoteRequest": {
+        "dto.VoteRequest": {
             "type": "object",
             "properties": {
                 "vote": {
-                    "description": "1 or -1",
-                    "type": "integer"
-                }
-            }
-        },
-        "database.Activity": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "target_id": {
-                    "type": "string"
-                },
-                "target_name": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "database.ForumComment": {
-            "type": "object",
-            "properties": {
-                "active": {
-                    "type": "integer"
-                },
-                "author_id": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "parent_id": {
-                    "type": "string"
-                },
-                "post_id": {
-                    "type": "string"
-                },
-                "text": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "database.ForumPost": {
-            "type": "object",
-            "properties": {
-                "active": {
-                    "type": "integer"
-                },
-                "author_id": {
-                    "type": "string"
-                },
-                "body": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "event_date": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "image_url": {
-                    "type": "string"
-                },
-                "links": {
-                    "type": "string"
-                },
-                "location": {
-                    "type": "string"
-                },
-                "pinned": {
-                    "type": "integer"
-                },
-                "programs": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        -1,
+                        0
+                    ]
                 }
             }
         }
