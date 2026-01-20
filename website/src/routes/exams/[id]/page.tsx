@@ -46,10 +46,10 @@ export default function ExamDetailsPage() {
     const { id } = useParams();
     const [params] = useSearchParams();
 
-    const state = location.state as { studiengang?: string; po?: string; modul?: string; modulId?: number } || {};
+    const state = location.state as { studiengang?: string; po?: string; modul?: string; modulId?: string } || {};
 
     const modulName = state.modul || params.get("mod") || "Modul";
-    const modulId = id ? Number(id) : (state.modulId ? Number(state.modulId) : (params.get("modulId") ? Number(params.get("modulId")) : null));
+    const modulId = id || state.modulId || params.get("modulId") || null;
 
     const [exams, setExams] = useState<ExamListEntry[]>([]);
     const [loading, setLoading] = useState(false);
@@ -151,7 +151,7 @@ export default function ExamDetailsPage() {
                 setFormProgram(prog || null);
 
                 if (prog && prog.id !== undefined) {
-                    getProgramModules({ path: { id: prog.id as number } }).then(({ data: mods }) => {
+                    getProgramModules({ path: { id: prog.id } }).then(({ data: mods }) => {
                         const modules = mods || [];
                         setProgramModules(modules);
                         const mod = modules.find(m => m.id === selectedExam.moduleid);
@@ -190,7 +190,7 @@ export default function ExamDetailsPage() {
     useEffect(() => {
         if (!isEditing || !formProgram || formProgram.id === undefined) return;
 
-        getProgramModules({ path: { id: formProgram.id as number } })
+        getProgramModules({ path: { id: formProgram.id } })
             .then(({ data }) => setProgramModules(data || []));
 
         if (formPo && formProgram.versions && !formProgram.versions.includes(formPo)) {
@@ -449,7 +449,7 @@ export default function ExamDetailsPage() {
                                             size="small"
                                             value={formProgram?.id || ""}
                                             onChange={(e) => {
-                                                const prog = programs.find(p => p.id === Number(e.target.value));
+                                                const prog = programs.find(p => p.id === e.target.value);
                                                 setFormProgram(prog || null);
                                             }}
                                             disabled={!isEditing}

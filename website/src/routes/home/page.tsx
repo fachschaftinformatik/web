@@ -28,6 +28,8 @@ import { useNavigate, Link as RouterLink, Link } from 'react-router-dom';
 
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
+import { getForumPosts } from '@lib/api';
+import { client } from '@lib/api/client.gen';
 import type { AuthPostResponse } from '@lib/api';
 
 type NewsItem = AuthPostResponse;
@@ -98,22 +100,18 @@ const NewsFeedPage: React.FC = () => {
   const [apiEvents, setApiEvents] = useState<AuthPostResponse[]>([]);
 
   useEffect(() => {
-    import('@lib/api').then(({ getForumPosts }) => {
-      getForumPosts({ query: { type: 'news', limit: 10 } }).then(({ data }) => {
-        if (data) setNewsItems(data as AuthPostResponse[]);
-      });
-      getForumPosts({ query: { type: 'forum', limit: 5 } }).then(({ data }) => {
-        if (data) setForumPosts(loadForumPosts(data as AuthPostResponse[]));
-      });
-      getForumPosts({ query: { type: 'event', limit: 20 } }).then(({ data }) => {
-        if (data) setApiEvents(data as AuthPostResponse[]);
-      });
+    getForumPosts({ query: { type: 'news', limit: 10 } }).then(({ data }) => {
+      if (data) setNewsItems(data as AuthPostResponse[]);
+    });
+    getForumPosts({ query: { type: 'forum', limit: 5 } }).then(({ data }) => {
+      if (data) setForumPosts(loadForumPosts(data as AuthPostResponse[]));
+    });
+    getForumPosts({ query: { type: 'event', limit: 20 } }).then(({ data }) => {
+      if (data) setApiEvents(data as AuthPostResponse[]);
     });
 
-    import('@lib/api/client.gen').then(({ client }) => {
-      client.request({ method: 'GET', url: '/events' }).then(({ data }) => {
-        if (data) setEventsData(data as EventItem[]);
-      });
+    client.request({ method: 'GET', url: '/events' }).then(({ data }) => {
+      if (data) setEventsData(data as EventItem[]);
     });
   }, []);
 
@@ -156,7 +154,7 @@ const NewsFeedPage: React.FC = () => {
       let category = 'Info';
       if (post.tags) {
         try {
-          const tagsArray = typeof post.tags === 'string' ? JSON.parse(post.tags) : post.tags;
+          const tagsArray = post.tags;
           if (Array.isArray(tagsArray)) {
             const found = tagsArray.find(t => ['Treffen', 'Workshop', 'Party', 'Info'].includes(t));
             if (found) category = found;
@@ -406,7 +404,7 @@ const NewsFeedPage: React.FC = () => {
                                 ...custom.newsCardLink,
                                 bgcolor: isDark ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.04),
                                 '&:hover': {
-                                  ...custom.newsCardLink['&:hover'],
+                                  ...(custom.newsCardLink['&:hover'] || {}),
                                   bgcolor: isDark ? alpha(theme.palette.primary.main, 0.12) : alpha(theme.palette.primary.main, 0.06),
                                 }
                               }}
