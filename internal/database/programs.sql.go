@@ -18,12 +18,12 @@ ORDER BY pv.name DESC
 `
 
 type GetProgramWithVersionsRow struct {
-	ID      int64  `json:"id"`
+	ID      string `json:"id"`
 	Name    string `json:"name"`
 	Version string `json:"version"`
 }
 
-func (q *Queries) GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error) {
+func (q *Queries) GetProgramWithVersions(ctx context.Context, id string) ([]GetProgramWithVersionsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getProgramWithVersions, id)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ ORDER BY p.name, pv.name DESC
 `
 
 type ListProgramsWithVersionsRow struct {
-	ID      int64  `json:"id"`
+	ID      string `json:"id"`
 	Name    string `json:"name"`
 	Version string `json:"version"`
 }

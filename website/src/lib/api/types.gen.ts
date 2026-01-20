@@ -4,13 +4,22 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}/api` | (string & {});
 };
 
-export type AuthCommentRequest = {
-    parent_id?: string;
-    text?: string;
+export type DtoActivityResponse = {
+    created_at?: string;
+    id?: string;
+    target_id?: string;
+    target_name?: string;
+    type?: string;
+    user_id?: string;
+    user_name?: string;
 };
 
-export type AuthCommentResponse = {
-    active?: number;
+export type DtoCommentRequest = {
+    parent_id?: string;
+    text: string;
+};
+
+export type DtoCommentResponse = {
     author_avatar_url?: string;
     author_id?: string;
     author_name?: string;
@@ -24,8 +33,8 @@ export type AuthCommentResponse = {
     votes?: number;
 };
 
-export type AuthCreatePostRequest = {
-    body?: string;
+export type DtoCreatePostRequest = {
+    body: string;
     event_date?: string;
     image_url?: string;
     links?: Array<string>;
@@ -33,23 +42,27 @@ export type AuthCreatePostRequest = {
     pinned?: number;
     programs?: Array<string>;
     tags?: Array<string>;
-    title?: string;
-    type?: string;
+    title: string;
+    type?: 'forum' | 'news' | 'event';
 };
 
-export type AuthCsrfResponse = {
+export type DtoCsrfResponse = {
     csrf?: string;
 };
 
-export type AuthErrorResponse = {
+export type DtoErrorResponse = {
     error?: string;
     message?: string;
 };
 
-/**
- * Exam details
- */
-export type AuthExamResponse = {
+export type DtoEventResponse = {
+    cover_path?: string;
+    created_at?: string;
+    id?: string;
+    title?: string;
+};
+
+export type DtoExamResponse = {
     comment?: string;
     edit_version?: number;
     exam_date?: string;
@@ -57,29 +70,37 @@ export type AuthExamResponse = {
     id?: string;
     is_latest?: number;
     module_name?: string;
-    moduleid?: number;
-    programid?: number;
+    moduleid?: string;
+    programid?: string;
     uploaded_at?: string;
     uploader_name?: string;
     version?: string;
 };
 
-export type AuthLoginRequest = {
-    email?: string;
-    password?: string;
+export type DtoLoginRequest = {
+    email: string;
+    password: string;
+    remember?: boolean;
 };
 
-/**
- * A study module
- */
-export type AuthModuleResponse = {
+export type DtoMediaResponse = {
+    description?: string;
+    event_id?: string;
+    id?: string;
+    mime_type?: string;
+    title?: string;
+    uploaded_at?: string;
+    uploader_name?: string;
+};
+
+export type DtoModuleResponse = {
     alias?: string;
-    id?: number;
+    id?: string;
     name?: string;
-    programid?: number;
+    programid?: string;
 };
 
-export type AuthNotificationResponse = {
+export type DtoNotificationResponse = {
     created_at?: string;
     id?: string;
     link?: string;
@@ -89,7 +110,7 @@ export type AuthNotificationResponse = {
     type?: string;
 };
 
-export type AuthPostResponse = {
+export type DtoPostResponse = {
     active?: number;
     author_avatar_url?: string;
     author_id?: string;
@@ -100,11 +121,11 @@ export type AuthPostResponse = {
     event_date?: string;
     id?: string;
     image_url?: string;
-    links?: string;
+    links?: Array<string>;
     location?: string;
     pinned?: number;
-    programs?: string;
-    tags?: string;
+    programs?: Array<string>;
+    tags?: Array<string>;
     title?: string;
     type?: string;
     updated_at?: string;
@@ -112,126 +133,74 @@ export type AuthPostResponse = {
     votes?: number;
 };
 
-/**
- * A study program including valid PO versions
- */
-export type AuthProgramResponse = {
-    id?: number;
+export type DtoProgramResponse = {
+    id?: string;
     name?: string;
     versions?: Array<string>;
 };
 
-export type AuthPublicUserResponse = {
+export type DtoPublicUserResponse = {
     active?: number;
     avatar_url?: string;
     created_at?: string;
     id?: string;
     name?: string;
     private?: number;
-    programid?: number;
+    programid?: string;
     role?: string;
     theme?: string;
     verified?: number;
 };
 
-export type AuthRegisterRequest = {
-    email?: string;
-    name?: string;
-    password?: string;
-    programid?: number;
+export type DtoRegisterRequest = {
+    email: string;
+    name: string;
+    password: string;
+    programid: string;
 };
 
-export type AuthSearchResult = {
+export type DtoSearchResult = {
     id?: string;
     subtitle?: string;
     title?: string;
     /**
-     * "exam" or "module"
+     * "exam" or "module" or "user" or "post"
      */
     type?: string;
     url?: string;
 };
 
-export type AuthUpdateExamRequest = {
+export type DtoUpdateExamRequest = {
     comment?: string;
-    date?: string;
-    moduleid?: number;
-    programid?: number;
-    version?: string;
+    date: string;
+    moduleid: string;
+    programid: string;
+    version: string;
 };
 
-export type AuthUpdateProfileRequest = {
-    name?: string;
+export type DtoUpdateProfileRequest = {
+    name: string;
     private?: boolean;
-    programid?: number;
-    theme?: string;
+    programid: string;
+    theme: 'light' | 'dark' | 'system';
 };
 
-/**
- * User account information
- */
-export type AuthUserResponse = {
+export type DtoUserResponse = {
     active?: number;
     avatar_url?: string;
     created_at?: string;
     email?: string;
     id?: string;
     name?: string;
-    password?: string;
     private?: number;
-    programid?: number;
+    programid?: string;
     role?: string;
     theme?: string;
-    updated_at?: string;
-    verification_token?: string;
     verified?: number;
-    verified_at?: string;
-    verified_until?: string;
 };
 
-export type AuthVoteRequest = {
-    /**
-     * 1 or -1
-     */
-    vote?: number;
-};
-
-export type DatabaseActivity = {
-    created_at?: string;
-    id?: string;
-    target_id?: string;
-    target_name?: string;
-    type?: string;
-    user_id?: string;
-};
-
-export type DatabaseForumComment = {
-    active?: number;
-    author_id?: string;
-    created_at?: string;
-    id?: string;
-    parent_id?: string;
-    post_id?: string;
-    text?: string;
-    updated_at?: string;
-};
-
-export type DatabaseForumPost = {
-    active?: number;
-    author_id?: string;
-    body?: string;
-    created_at?: string;
-    event_date?: string;
-    id?: string;
-    image_url?: string;
-    links?: string;
-    location?: string;
-    pinned?: number;
-    programs?: string;
-    tags?: string;
-    title?: string;
-    type?: string;
-    updated_at?: string;
+export type DtoVoteRequest = {
+    vote?: 1 | -1 | 0;
 };
 
 export type GetActivitiesData = {
@@ -254,7 +223,7 @@ export type GetActivitiesResponses = {
     /**
      * OK
      */
-    200: Array<DatabaseActivity>;
+    200: Array<DtoActivityResponse>;
 };
 
 export type GetActivitiesResponse = GetActivitiesResponses[keyof GetActivitiesResponses];
@@ -293,7 +262,7 @@ export type GetAuthCsrfResponses = {
     /**
      * OK
      */
-    200: AuthCsrfResponse;
+    200: DtoCsrfResponse;
 };
 
 export type GetAuthCsrfResponse = GetAuthCsrfResponses[keyof GetAuthCsrfResponses];
@@ -302,7 +271,7 @@ export type PostAuthLoginData = {
     /**
      * Login Credentials
      */
-    body: AuthLoginRequest;
+    body: DtoLoginRequest;
     path?: never;
     query?: never;
     url: '/auth/login';
@@ -312,7 +281,7 @@ export type PostAuthLoginErrors = {
     /**
      * Unauthorized
      */
-    401: AuthErrorResponse;
+    401: DtoErrorResponse;
 };
 
 export type PostAuthLoginError = PostAuthLoginErrors[keyof PostAuthLoginErrors];
@@ -321,7 +290,7 @@ export type PostAuthLoginResponses = {
     /**
      * OK
      */
-    200: AuthUserResponse;
+    200: DtoUserResponse;
 };
 
 export type PostAuthLoginResponse = PostAuthLoginResponses[keyof PostAuthLoginResponses];
@@ -357,7 +326,7 @@ export type GetAuthMeResponses = {
     /**
      * OK
      */
-    200: AuthUserResponse;
+    200: DtoUserResponse;
 };
 
 export type GetAuthMeResponse = GetAuthMeResponses[keyof GetAuthMeResponses];
@@ -366,7 +335,7 @@ export type PutAuthMeData = {
     /**
      * Update Profile Info
      */
-    body: AuthUpdateProfileRequest;
+    body: DtoUpdateProfileRequest;
     path?: never;
     query?: never;
     url: '/auth/me';
@@ -376,7 +345,7 @@ export type PutAuthMeErrors = {
     /**
      * Unauthorized
      */
-    401: AuthErrorResponse;
+    401: DtoErrorResponse;
 };
 
 export type PutAuthMeError = PutAuthMeErrors[keyof PutAuthMeErrors];
@@ -385,7 +354,7 @@ export type PutAuthMeResponses = {
     /**
      * OK
      */
-    200: AuthUserResponse;
+    200: DtoUserResponse;
 };
 
 export type PutAuthMeResponse = PutAuthMeResponses[keyof PutAuthMeResponses];
@@ -401,7 +370,7 @@ export type GetAuthNotificationsErrors = {
     /**
      * Unauthorized
      */
-    401: AuthErrorResponse;
+    401: DtoErrorResponse;
 };
 
 export type GetAuthNotificationsError = GetAuthNotificationsErrors[keyof GetAuthNotificationsErrors];
@@ -410,7 +379,7 @@ export type GetAuthNotificationsResponses = {
     /**
      * OK
      */
-    200: Array<AuthNotificationResponse>;
+    200: Array<DtoNotificationResponse>;
 };
 
 export type GetAuthNotificationsResponse = GetAuthNotificationsResponses[keyof GetAuthNotificationsResponses];
@@ -431,11 +400,11 @@ export type PutAuthNotificationsIdReadErrors = {
     /**
      * Unauthorized
      */
-    401: AuthErrorResponse;
+    401: DtoErrorResponse;
     /**
      * Not Found
      */
-    404: AuthErrorResponse;
+    404: DtoErrorResponse;
 };
 
 export type PutAuthNotificationsIdReadError = PutAuthNotificationsIdReadErrors[keyof PutAuthNotificationsIdReadErrors];
@@ -444,7 +413,7 @@ export type PutAuthNotificationsIdReadResponses = {
     /**
      * OK
      */
-    200: AuthNotificationResponse;
+    200: DtoNotificationResponse;
 };
 
 export type PutAuthNotificationsIdReadResponse = PutAuthNotificationsIdReadResponses[keyof PutAuthNotificationsIdReadResponses];
@@ -460,7 +429,7 @@ export type PutAuthNotificationsReadAllErrors = {
     /**
      * Unauthorized
      */
-    401: AuthErrorResponse;
+    401: DtoErrorResponse;
 };
 
 export type PutAuthNotificationsReadAllError = PutAuthNotificationsReadAllErrors[keyof PutAuthNotificationsReadAllErrors];
@@ -476,7 +445,7 @@ export type PostAuthRegisterData = {
     /**
      * Registration Info
      */
-    body: AuthRegisterRequest;
+    body: DtoRegisterRequest;
     path?: never;
     query?: never;
     url: '/auth/register';
@@ -486,7 +455,7 @@ export type PostAuthRegisterErrors = {
     /**
      * Bad Request
      */
-    400: AuthErrorResponse;
+    400: DtoErrorResponse;
 };
 
 export type PostAuthRegisterError = PostAuthRegisterErrors[keyof PostAuthRegisterErrors];
@@ -495,7 +464,7 @@ export type PostAuthRegisterResponses = {
     /**
      * Created
      */
-    201: AuthUserResponse;
+    201: DtoUserResponse;
 };
 
 export type PostAuthRegisterResponse = PostAuthRegisterResponses[keyof PostAuthRegisterResponses];
@@ -512,6 +481,66 @@ export type GetAuthVerifyData = {
     url: '/auth/verify';
 };
 
+export type GetEventsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/events';
+};
+
+export type GetEventsResponses = {
+    /**
+     * OK
+     */
+    200: Array<DtoEventResponse>;
+};
+
+export type GetEventsResponse = GetEventsResponses[keyof GetEventsResponses];
+
+export type PostEventsData = {
+    body: {
+        /**
+         * Event Title
+         */
+        title: string;
+        /**
+         * Cover Image
+         */
+        file?: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/events';
+};
+
+export type PostEventsResponses = {
+    /**
+     * Created
+     */
+    201: DtoEventResponse;
+};
+
+export type PostEventsResponse = PostEventsResponses[keyof PostEventsResponses];
+
+export type GetEventsByIdCoverData = {
+    body?: never;
+    path: {
+        /**
+         * Event ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/events/{id}/cover';
+};
+
+export type GetEventsByIdCoverResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
 export type GetExamsData = {
     body?: never;
     path?: never;
@@ -519,7 +548,7 @@ export type GetExamsData = {
         /**
          * Program ID
          */
-        programid?: number;
+        programid?: string;
         /**
          * Version
          */
@@ -527,7 +556,7 @@ export type GetExamsData = {
         /**
          * Module ID
          */
-        moduleid?: number;
+        moduleid?: string;
     };
     url: '/exams';
 };
@@ -536,7 +565,7 @@ export type GetExamsErrors = {
     /**
      * Unauthorized
      */
-    401: AuthErrorResponse;
+    401: DtoErrorResponse;
 };
 
 export type GetExamsError = GetExamsErrors[keyof GetExamsErrors];
@@ -545,7 +574,7 @@ export type GetExamsResponses = {
     /**
      * OK
      */
-    200: Array<AuthExamResponse>;
+    200: Array<DtoExamResponse>;
 };
 
 export type GetExamsResponse = GetExamsResponses[keyof GetExamsResponses];
@@ -584,11 +613,11 @@ export type PostExamsErrors = {
     /**
      * Bad Request
      */
-    400: AuthErrorResponse;
+    400: DtoErrorResponse;
     /**
      * Forbidden
      */
-    403: AuthErrorResponse;
+    403: DtoErrorResponse;
 };
 
 export type PostExamsError = PostExamsErrors[keyof PostExamsErrors];
@@ -639,7 +668,7 @@ export type GetExamsIdErrors = {
     /**
      * Not Found
      */
-    404: AuthErrorResponse;
+    404: DtoErrorResponse;
 };
 
 export type GetExamsIdError = GetExamsIdErrors[keyof GetExamsIdErrors];
@@ -648,7 +677,7 @@ export type GetExamsIdResponses = {
     /**
      * OK
      */
-    200: AuthExamResponse;
+    200: DtoExamResponse;
 };
 
 export type GetExamsIdResponse = GetExamsIdResponses[keyof GetExamsIdResponses];
@@ -657,7 +686,7 @@ export type PutExamsIdData = {
     /**
      * Update Data
      */
-    body: AuthUpdateExamRequest;
+    body: DtoUpdateExamRequest;
     path: {
         /**
          * Exam ID
@@ -672,7 +701,7 @@ export type PutExamsIdResponses = {
     /**
      * OK
      */
-    200: AuthExamResponse;
+    200: DtoExamResponse;
 };
 
 export type PutExamsIdResponse = PutExamsIdResponses[keyof PutExamsIdResponses];
@@ -712,7 +741,7 @@ export type GetExamVersionsErrors = {
     /**
      * Unauthorized
      */
-    401: AuthErrorResponse;
+    401: DtoErrorResponse;
 };
 
 export type GetExamVersionsError = GetExamVersionsErrors[keyof GetExamVersionsErrors];
@@ -721,7 +750,7 @@ export type GetExamVersionsResponses = {
     /**
      * OK
      */
-    200: Array<AuthExamResponse>;
+    200: Array<DtoExamResponse>;
 };
 
 export type GetExamVersionsResponse = GetExamVersionsResponses[keyof GetExamVersionsResponses];
@@ -730,7 +759,7 @@ export type PutForumCommentsByIdData = {
     /**
      * Comment Content
      */
-    body: AuthCommentRequest;
+    body: DtoCommentRequest;
     path: {
         /**
          * Comment ID
@@ -745,7 +774,7 @@ export type PutForumCommentsByIdResponses = {
     /**
      * OK
      */
-    200: DatabaseForumComment;
+    200: DtoCommentResponse;
 };
 
 export type PutForumCommentsByIdResponse = PutForumCommentsByIdResponses[keyof PutForumCommentsByIdResponses];
@@ -754,7 +783,7 @@ export type PostForumCommentsByIdVoteData = {
     /**
      * Vote Value
      */
-    body: AuthVoteRequest;
+    body: DtoVoteRequest;
     path: {
         /**
          * Comment ID
@@ -804,7 +833,7 @@ export type GetForumPostsResponses = {
     /**
      * OK
      */
-    200: Array<AuthPostResponse>;
+    200: Array<DtoPostResponse>;
 };
 
 export type GetForumPostsResponse = GetForumPostsResponses[keyof GetForumPostsResponses];
@@ -813,7 +842,7 @@ export type PostForumPostsData = {
     /**
      * Post Content
      */
-    body: AuthCreatePostRequest;
+    body: DtoCreatePostRequest;
     path?: never;
     query?: never;
     url: '/forum/posts';
@@ -823,7 +852,7 @@ export type PostForumPostsResponses = {
     /**
      * Created
      */
-    201: DatabaseForumPost;
+    201: DtoPostResponse;
 };
 
 export type PostForumPostsResponse = PostForumPostsResponses[keyof PostForumPostsResponses];
@@ -863,7 +892,7 @@ export type GetForumPostsByIdResponses = {
     /**
      * OK
      */
-    200: AuthPostResponse;
+    200: DtoPostResponse;
 };
 
 export type GetForumPostsByIdResponse = GetForumPostsByIdResponses[keyof GetForumPostsByIdResponses];
@@ -872,7 +901,7 @@ export type PutForumPostsByIdData = {
     /**
      * Post Content
      */
-    body: AuthCreatePostRequest;
+    body: DtoCreatePostRequest;
     path: {
         /**
          * Post ID
@@ -887,7 +916,7 @@ export type PutForumPostsByIdResponses = {
     /**
      * OK
      */
-    200: DatabaseForumPost;
+    200: DtoPostResponse;
 };
 
 export type PutForumPostsByIdResponse = PutForumPostsByIdResponses[keyof PutForumPostsByIdResponses];
@@ -908,7 +937,7 @@ export type GetForumPostsByIdCommentsResponses = {
     /**
      * OK
      */
-    200: Array<AuthCommentResponse>;
+    200: Array<DtoCommentResponse>;
 };
 
 export type GetForumPostsByIdCommentsResponse = GetForumPostsByIdCommentsResponses[keyof GetForumPostsByIdCommentsResponses];
@@ -917,7 +946,7 @@ export type PostForumPostsByIdCommentsData = {
     /**
      * Comment Content
      */
-    body: AuthCommentRequest;
+    body: DtoCommentRequest;
     path: {
         /**
          * Post ID
@@ -932,7 +961,7 @@ export type PostForumPostsByIdCommentsResponses = {
     /**
      * Created
      */
-    201: DatabaseForumComment;
+    201: DtoCommentResponse;
 };
 
 export type PostForumPostsByIdCommentsResponse = PostForumPostsByIdCommentsResponses[keyof PostForumPostsByIdCommentsResponses];
@@ -941,7 +970,7 @@ export type PostForumPostsByIdVoteData = {
     /**
      * Vote Value
      */
-    body: AuthVoteRequest;
+    body: DtoVoteRequest;
     path: {
         /**
          * Post ID
@@ -959,6 +988,121 @@ export type PostForumPostsByIdVoteResponses = {
     204: unknown;
 };
 
+export type GetMediaData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Event ID
+         */
+        event_id: string;
+    };
+    url: '/media';
+};
+
+export type GetMediaResponses = {
+    /**
+     * OK
+     */
+    200: Array<DtoMediaResponse>;
+};
+
+export type GetMediaResponse = GetMediaResponses[keyof GetMediaResponses];
+
+export type PostMediaData = {
+    body: {
+        /**
+         * Event ID
+         */
+        event_id: string;
+        /**
+         * Title
+         */
+        title?: string;
+        /**
+         * Description
+         */
+        description?: string;
+        /**
+         * Media File
+         */
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/media';
+};
+
+export type PostMediaResponses = {
+    /**
+     * Created
+     */
+    201: {
+        [key: string]: string;
+    };
+};
+
+export type PostMediaResponse = PostMediaResponses[keyof PostMediaResponses];
+
+export type GetMediaByIdData = {
+    body?: never;
+    path: {
+        /**
+         * Media ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/media/{id}';
+};
+
+export type GetMediaByIdResponses = {
+    /**
+     * OK
+     */
+    200: DtoMediaResponse;
+};
+
+export type GetMediaByIdResponse = GetMediaByIdResponses[keyof GetMediaByIdResponses];
+
+export type GetMediaByIdFileData = {
+    body?: never;
+    path: {
+        /**
+         * Media ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/media/{id}/file';
+};
+
+export type GetMediaByIdFileResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type GetMediaByIdPreviewData = {
+    body?: never;
+    path: {
+        /**
+         * Media ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/media/{id}/preview';
+};
+
+export type GetMediaByIdPreviewResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
 export type GetProgramsData = {
     body?: never;
     path?: never;
@@ -970,7 +1114,7 @@ export type GetProgramsErrors = {
     /**
      * Internal Server Error
      */
-    500: AuthErrorResponse;
+    500: DtoErrorResponse;
 };
 
 export type GetProgramsError = GetProgramsErrors[keyof GetProgramsErrors];
@@ -979,7 +1123,7 @@ export type GetProgramsResponses = {
     /**
      * OK
      */
-    200: Array<AuthProgramResponse>;
+    200: Array<DtoProgramResponse>;
 };
 
 export type GetProgramsResponse = GetProgramsResponses[keyof GetProgramsResponses];
@@ -1000,11 +1144,11 @@ export type GetProgramsIdErrors = {
     /**
      * Not Found
      */
-    404: AuthErrorResponse;
+    404: DtoErrorResponse;
     /**
      * Internal Server Error
      */
-    500: AuthErrorResponse;
+    500: DtoErrorResponse;
 };
 
 export type GetProgramsIdError = GetProgramsIdErrors[keyof GetProgramsIdErrors];
@@ -1013,7 +1157,7 @@ export type GetProgramsIdResponses = {
     /**
      * OK
      */
-    200: AuthProgramResponse;
+    200: DtoProgramResponse;
 };
 
 export type GetProgramsIdResponse = GetProgramsIdResponses[keyof GetProgramsIdResponses];
@@ -1024,7 +1168,7 @@ export type GetProgramModulesData = {
         /**
          * Program ID
          */
-        id: number;
+        id: string;
     };
     query?: never;
     url: '/programs/{id}/modules';
@@ -1034,7 +1178,7 @@ export type GetProgramModulesErrors = {
     /**
      * Internal Server Error
      */
-    500: AuthErrorResponse;
+    500: DtoErrorResponse;
 };
 
 export type GetProgramModulesError = GetProgramModulesErrors[keyof GetProgramModulesErrors];
@@ -1043,7 +1187,7 @@ export type GetProgramModulesResponses = {
     /**
      * OK
      */
-    200: Array<AuthModuleResponse>;
+    200: Array<DtoModuleResponse>;
 };
 
 export type GetProgramModulesResponse = GetProgramModulesResponses[keyof GetProgramModulesResponses];
@@ -1064,7 +1208,7 @@ export type GetSearchResponses = {
     /**
      * OK
      */
-    200: Array<AuthSearchResult>;
+    200: Array<DtoSearchResult>;
 };
 
 export type GetSearchResponse = GetSearchResponses[keyof GetSearchResponses];
@@ -1089,7 +1233,7 @@ export type GetUsersResponses = {
     /**
      * OK
      */
-    200: Array<AuthUserResponse>;
+    200: Array<DtoUserResponse>;
 };
 
 export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
@@ -1110,7 +1254,7 @@ export type GetUsersByIdResponses = {
     /**
      * OK
      */
-    200: AuthPublicUserResponse;
+    200: DtoPublicUserResponse;
 };
 
 export type GetUsersByIdResponse = GetUsersByIdResponses[keyof GetUsersByIdResponses];
@@ -1140,7 +1284,7 @@ export type GetUsersByIdActivitiesResponses = {
     /**
      * OK
      */
-    200: Array<DatabaseActivity>;
+    200: Array<DtoActivityResponse>;
 };
 
 export type GetUsersByIdActivitiesResponse = GetUsersByIdActivitiesResponses[keyof GetUsersByIdActivitiesResponses];

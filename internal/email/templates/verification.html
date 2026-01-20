@@ -4,97 +4,135 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <style>
+        @font-face {
+            font-family: 'Manrope';
+            font-style: normal;
+            font-weight: 400;
+            src: url({{.Domain}}/fonts/manrope-latin-400-normal.woff2) format('woff2');
+        }
+        @font-face {
+            font-family: 'Manrope';
+            font-style: normal;
+            font-weight: 600;
+            src: url({{.Domain}}/fonts/manrope-latin-600-normal.woff2) format('woff2');
+        }
+        @font-face {
+            font-family: 'Manrope';
+            font-style: normal;
+            font-weight: 700;
+            src: url({{.Domain}}/fonts/manrope-latin-700-normal.woff2) format('woff2');
+        }
+        @font-face {
+            font-family: 'Space Grotesk';
+            font-style: normal;
+            font-weight: 700;
+            src: url({{.Domain}}/fonts/space-grotesk-latin-700-normal.woff2) format('woff2');
+        }
+
         body {
-            font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
-            background-color: #f4f7fb;
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f5;
             margin: 0;
             padding: 0;
             -webkit-text-size-adjust: none;
             width: 100% !important;
         }
+        .wrapper {
+            background-color: #f5f5f5;
+            padding: 64px 0;
+        }
         .container {
-            max-width: 600px;
-            margin: 40px auto;
+            max-width: 560px;
+            margin: 0 auto;
             background-color: #ffffff;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1);
             border: 1px solid #e0e3eb;
-        }
-        .header {
-            background-color: #046709;
-            padding: 24px;
             text-align: center;
         }
+        .header {
+            padding: 48px 24px 8px 24px;
+        }
         .header h1 {
-            color: #ffffff;
+            color: #1f1f1f;
             margin: 0;
-            font-size: 24px;
-            font-weight: 500;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
         }
         .content {
-            padding: 32px 24px;
-            color: #0f172a;
+            padding: 16px 48px 64px 48px;
+            color: #1f1f1f;
             line-height: 1.6;
             font-size: 16px;
         }
+        .salutation {
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
         .button {
             display: inline-block;
-            background-color: #046709;
+            background-color: #2f7957;
             color: #ffffff !important;
             text-decoration: none;
-            padding: 12px 24px;
-            border-radius: 4px;
-            font-weight: 500;
-            margin-top: 24px;
-            box-shadow: 0 3px 1px -2px rgba(0,0,0,0.2), 0 2px 2px 0 rgba(0,0,0,0.14), 0 1px 5px 0 rgba(0,0,0,0.12);
+            padding: 0 40px;
+            height: 52px;
+            line-height: 52px;
+            border-radius: 8px;
+            font-weight: 700;
+            margin-top: 32px;
+            box-shadow: 0 4px 12px rgba(47, 121, 87, 0.2);
         }
-        .footer {
-            background-color: #f8fafc;
-            padding: 16px;
-            text-align: center;
-            font-size: 12px;
-            color: #475569;
-            border-top: 1px solid #e0e3eb;
+        .disclaimer {
+            margin-top: 40px;
+            color: #5c5c5c;
+            font-size: 14px;
         }
         .link-fallback {
-            margin-top: 24px;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px dashed #e0e3eb;
             font-size: 12px;
-            color: #64748b;
+            color: #94a3b8;
             word-break: break-all;
+        }
+        .link-fallback a {
+            color: #2f7957;
+            text-decoration: none;
         }
     </style>
 </head>
-<body>
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
-        <tr>
-            <td align="center" style="padding: 20px 0;">
-                <div class="container">
-                    <div class="header">
-                        <h1>Willkommen!</h1>
-                    </div>
-                    <div class="content">
-                        <p style="margin-top: 0;">Hallo {{.Name}},</p>
-                        <p>
-                            Damit du deinen Account bei der <strong>FSV Informatik</strong> nutzen kannst, müssen wir kurz deine E-Mail-Adresse bestätigen.
-                        </p>
-                        <div style="text-align: center;">
-                            <a href="{{.VerifyLink}}" class="button">E-Mail bestätigen</a>
+<body style="font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0;">
+    <div class="wrapper" style="background-color: #f5f5f5; padding: 64px 0;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+                <td align="center">
+                    <div class="container" style="max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e0e3eb; text-align: center;">
+                        <div class="header" style="padding: 48px 24px 8px 24px;">
+                            <h1 style="color: #1f1f1f; margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; letter-spacing: -0.02em;">Willkommen!</h1>
                         </div>
-                        <p style="margin-bottom: 0;">
-                            Falls du dich nicht registriert hast, kannst du diese E-Mail einfach ignorieren.
-                        </p>
-                        <div class="link-fallback">
-                            Falls der Button nicht funktionieren sollte, öffne diesen Link in deinem Browser:<br/>
-                            <a href="{{.VerifyLink}}" style="color: #046709;">{{.VerifyLink}}</a>
+
+                        <div class="content" style="padding: 16px 48px 64px 48px; color: #1f1f1f; line-height: 1.6; font-size: 16px;">
+                            <p class="salutation" style="font-weight: 600; font-size: 18px; margin-bottom: 16px;">Hallo {{.Name}},</p>
+                            <p>
+                                vielen Dank für deine Registrierung! Damit du deinen Account bei der <strong>FSV Informatik</strong> nutzen kannst, bestätige bitte kurz deine E-Mail-Adresse:
+                            </p>
+                            <a href="{{.VerifyLink}}" class="button" style="display: inline-block; background-color: #2f7957; color: #ffffff !important; text-decoration: none; padding: 0 40px; height: 52px; line-height: 52px; border-radius: 8px; font-weight: 700; margin-top: 32px; box-shadow: 0 4px 12px rgba(47, 121, 87, 0.2);">E-Mail bestätigen</a>
+                            <p class="disclaimer" style="margin-top: 40px; color: #5c5c5c; font-size: 14px;">
+                                Falls du dich nicht registriert hast, kannst du diese E-Mail einfach ignorieren.
+                            </p>
+                            <div class="link-fallback" style="margin-top: 40px; padding-top: 24px; border-top: 1px dashed #e0e3eb; font-size: 12px; color: #94a3b8; word-break: break-all;">
+                                Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:<br/>
+                                <a href="{{.VerifyLink}}" style="color: #2f7957; text-decoration: none;">{{.VerifyLink}}</a>
+                            </div>
                         </div>
                     </div>
-                    <div class="footer">
-                        &copy; 2025 FSV Informatik WH<br>
-                    </div>
-                </div>
-            </td>
-        </tr>
-    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
 </body>
 </html>

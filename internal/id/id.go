@@ -1,4 +1,4 @@
-package sid
+package id
 
 import (
 	"fmt"
@@ -10,24 +10,24 @@ import (
 var node *snowflake.Node
 
 func init() {
+	var instance int64 = 1
 	var err error
-	// Using Node ID 1. In a distributed system, this would be unique per instance.
-	node, err = snowflake.New(1)
+	node, err = snowflake.New(instance)
 	if err != nil {
 		panic(err)
 	}
 
-	// User requested epoch: 23.01.2026
-	epoch := time.Date(2026, 1, 23, 0, 0, 0, 0, time.UTC).UnixMilli()
+	// epoch set to 01.01.2025
+	ts := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	epoch := ts.UnixMilli()
 	node.SetEpoch(epoch)
 }
 
-// New generates a new snowflake ID as a string.
 func New() string {
 	id, err := node.Generate()
 	if err != nil {
-		// Fallback for safety
 		return fmt.Sprintf("%d", time.Now().UnixNano())
 	}
+
 	return fmt.Sprintf("%d", id)
 }

@@ -33,14 +33,16 @@ func NewSender(cfg *config.Config) *Sender {
 type verificationData struct {
 	Name       string
 	VerifyLink string
+	Domain     string
 }
 
 func (s *Sender) SendVerificationEmail(toEmail, name, token string) error {
 	link := fmt.Sprintf("%s/api/auth/verify?token=%s", s.cfg.Domain, token)
-	
+
 	data := verificationData{
 		Name:       name,
 		VerifyLink: link,
+		Domain:     s.cfg.Domain,
 	}
 
 	var body bytes.Buffer
@@ -49,7 +51,7 @@ func (s *Sender) SendVerificationEmail(toEmail, name, token string) error {
 	}
 
 	subject := "Bitte bestätige deine E-Mail-Adresse"
-	
+
 	headers := make(map[string]string)
 	headers["From"] = s.cfg.SMTPFrom
 	headers["To"] = toEmail
@@ -64,7 +66,7 @@ func (s *Sender) SendVerificationEmail(toEmail, name, token string) error {
 	message += "\r\n" + body.String()
 
 	addr := fmt.Sprintf("%s:%s", s.cfg.SMTPHost, s.cfg.SMTPPort)
-	
+
 	var auth smtp.Auth
 	if s.cfg.SMTPUser != "" {
 		auth = smtp.PlainAuth("", s.cfg.SMTPUser, s.cfg.SMTPPass, s.cfg.SMTPHost)

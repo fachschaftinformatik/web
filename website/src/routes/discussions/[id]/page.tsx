@@ -20,19 +20,26 @@ import {
     postForumPostsByIdVote,
     postForumCommentsByIdVote,
     deleteForumPostsById,
-    putForumCommentsById,
-    getAuthCsrf
+    putForumCommentsById
 } from "@lib/api";
 import {
-    Post, Comment, Vote, CommentsSection, isoToShort, Program
+    Post, Comment, Vote, CommentsSection, isoToShort
 } from "../components";
 
-const safeParseArray = (jsonString: unknown): unknown[] => {
+const isoToShort = (iso?: string) => {
+    if (!iso) return "Unbekannt";
     try {
-        const parsed = JSON.parse(jsonString as string);
-        return Array.isArray(parsed) ? parsed : [];
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return "Unbekanntes Datum";
+        return d.toLocaleString("de-DE", {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
     } catch {
-        return [];
+        return "Datum Fehler";
     }
 };
 
@@ -51,7 +58,6 @@ export default function ViewPost() {
 
     useEffect(() => {
         if (!id) return;
-        Promise.resolve().then(() => setLoading(true));
         Promise.all([
             getForumPostsById({ path: { id } }),
             getForumPostsByIdComments({ path: { id } })
@@ -61,8 +67,8 @@ export default function ViewPost() {
             } else {
                 const parsedPost: Post = {
                     ...postData,
-                    programs: safeParseArray(postData.programs) as Program[],
-                    tags: safeParseArray(postData.tags) as string[],
+                    programs: postData.programs || [],
+                    tags: postData.tags || [],
                     comments: []
                 };
 
@@ -71,7 +77,7 @@ export default function ViewPost() {
             }
         }).catch(err => {
             console.error(err);
-            setError("Ein ungewarteter Fehler ist aufgetreten.");
+            setError("Ein unerwarteter Fehler ist aufgetreten.");
         }).finally(() => setLoading(false));
     }, [id]);
 
@@ -80,7 +86,6 @@ export default function ViewPost() {
 
         const oldVote = (post.user_vote as Vote) || 0;
         const oldVotes = Number(post.votes) || 0;
-
         const targetVote = vote === oldVote ? 0 : vote;
 
         let diff = 0;
@@ -98,18 +103,13 @@ export default function ViewPost() {
         }
 
         const newVotes = oldVotes + diff;
-
         setPost(prev => prev ? ({ ...prev, user_vote: targetVote, votes: newVotes }) : null);
 
         try {
-            const { data: csrfData } = await getAuthCsrf();
-            if (csrfData?.csrf) {
-                await postForumPostsByIdVote({
-                    path: { id },
-                    body: { vote: targetVote },
-                    headers: { "X-CSRF-Token": csrfData.csrf }
-                });
-            }
+            await postForumPostsByIdVote({
+                path: { id },
+                body: { vote: targetVote }
+            });
         } catch (err) {
             console.error("Vote failed", err);
         }
@@ -117,19 +117,16 @@ export default function ViewPost() {
 
     const handleAddComment = async (parentId: string | null, text: string) => {
         if (!id || !user) return;
-        const { data: csrfData } = await getAuthCsrf();
-        if (!csrfData?.csrf) return;
 
         const { data } = await postForumPostsByIdComments({
             path: { id },
-            body: { parent_id: parentId ?? undefined, text },
-            headers: { "X-CSRF-Token": csrfData.csrf }
+            body: { parent_id: parentId ?? undefined, text }
         });
         if (data) {
             const newComment: Comment = {
                 ...data,
                 author_name: user.name || user.email,
-                author_avatar_url: user.avatar_url,
+                author_avatar_url: user.avatar_url || "",
                 author_id: user.id
             };
             setPost(prev => prev ? ({
@@ -142,20 +139,17 @@ export default function ViewPost() {
 
     const handleEditComment = async (commentId: string, text: string) => {
         if (!id || !user) return;
-        const { data: csrfData } = await getAuthCsrf();
-        if (!csrfData?.csrf) return;
 
         const { data } = await putForumCommentsById({
             path: { id: commentId },
-            body: { text },
-            headers: { "X-CSRF-Token": csrfData.csrf }
+            body: { text }
         });
 
         if (data) {
             setPost(prev => {
                 if (!prev) return null;
                 const newComments = prev.comments.map(c =>
-                    c.id === commentId ? { ...c, text: data.text, updated_at: data.updated_at } : c
+                    c.id === commentId ? { ...c, text: data.text || "", updated_at: data.updated_at || "" } : c
                 );
                 return { ...prev, comments: newComments };
             });
@@ -164,14 +158,11 @@ export default function ViewPost() {
 
     const handleVoteComment = async (commentId: string, vote: Vote) => {
         if (!post || !user) return;
-        const { data: csrfData } = await getAuthCsrf();
-        if (!csrfData?.csrf) return;
 
         try {
             await postForumCommentsByIdVote({
                 path: { id: commentId },
-                body: { vote },
-                headers: { "X-CSRF-Token": csrfData.csrf }
+                body: { vote }
             });
 
             setPost(prev => {
@@ -192,21 +183,15 @@ export default function ViewPost() {
         }
     };
 
-
     const handleDelete = async () => {
-        if (!id || !isAdmin && post?.author_id !== user?.id) return;
+        if (!id || (!isAdmin && post?.author_id !== user?.id)) return;
         if (!confirm("Beitrag wirklich löschen?")) return;
 
-        const { data: csrfData } = await getAuthCsrf();
-        if (!csrfData?.csrf) return;
-
         await deleteForumPostsById({
-            path: { id },
-            headers: { "X-CSRF-Token": csrfData.csrf }
+            path: { id }
         });
         navigate("/discussions");
     };
-
 
     if (loading) {
         return (
@@ -280,7 +265,7 @@ export default function ViewPost() {
                                             {post.author_name ? post.author_name[0].toUpperCase() : "A"}
                                         </Avatar>
                                         <Typography variant="body2" color="text.secondary">
-                                            von <Typography component={Link} to={`/user/${post.author_id}`} variant="body2" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author_name || "Anonym"}</Typography> · {isoToShort(post.created_at)}
+                                            von <Typography component={Link} to={`/user/${post.author_id}`} variant="body2" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author_name || "Anonym"}</Typography> · {isoToShort(post.created_at || "")}
                                         </Typography>
                                         {post.pinned === 1 && (
                                             <Chip label="Angepinnt" size="small" icon={<PushPinOutlinedIcon />} variant="outlined" sx={{ fontWeight: 600 }} />

@@ -7,7 +7,7 @@ INSERT INTO activities (
 RETURNING *;
 
 -- name: ListUserActivities :many
-SELECT a.*, u.name as user_name
+SELECT a.*, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name
 FROM activities a
 JOIN users u ON a.user_id = u.id
 WHERE a.user_id = sqlc.arg(user_id) AND a.created_at >= date('now', '-30 days')
@@ -20,7 +20,7 @@ FROM activities a
 WHERE a.user_id = sqlc.arg(user_id) AND a.created_at >= date('now', '-30 days');
 
 -- name: ListAllActivities :many
-SELECT a.*, u.name as user_name
+SELECT a.*, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name
 FROM activities a
 JOIN users u ON a.user_id = u.id
 WHERE a.created_at >= date('now', '-30 days')

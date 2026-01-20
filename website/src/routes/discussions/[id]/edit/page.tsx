@@ -18,7 +18,7 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
-import { getPrograms, getForumPostsById, putForumPostsById, getAuthCsrf } from "@lib/api";
+import { getPrograms, getForumPostsById, putForumPostsById } from "@lib/api";
 import type { AuthProgramResponse as Program } from "@lib/api";
 import { FORUM_CATEGORIES, FORUM_TAGS } from "../../components";
 
@@ -58,11 +58,7 @@ export default function EditPost() {
                     setBody(data.body || "");
                     setType(data.type || "forum");
 
-                    let loadedTags: string[] = [];
-                    try {
-                        loadedTags = data.tags ? JSON.parse(data.tags as unknown as string) as string[] : [];
-                    } catch { /* empty */ }
-
+                    const loadedTags = data.tags || [];
                     const foundCategory = loadedTags.find(t => FORUM_CATEGORIES.includes(t as typeof FORUM_CATEGORIES[number]));
                     if (foundCategory) {
                         setCategory(foundCategory);
@@ -88,11 +84,9 @@ export default function EditPost() {
 
         getForumPostsById({ path: { id } }).then(({ data }) => {
             if (data && data.programs) {
-                try {
-                    const names = JSON.parse(data.programs as unknown as string) as string[];
-                    const matched = programs.filter(p => p.name && names.includes(p.name));
-                    setSelectedPrograms(matched);
-                } catch { /* empty */ }
+                const names = data.programs;
+                const matched = programs.filter(p => p.name && names.includes(p.name));
+                setSelectedPrograms(matched);
             }
         });
     }, [id, programs]);
@@ -105,10 +99,6 @@ export default function EditPost() {
         setError("");
 
         try {
-            const { data: csrfData, error: csrfError } = await getAuthCsrf();
-            const token = csrfData?.csrf;
-            if (csrfError || !token) throw new Error("CSRF-Token fehlt. Bitte neu laden.");
-
             const finalTags = [category, ...tags];
 
             const { error: apiError } = await putForumPostsById({
@@ -121,8 +111,7 @@ export default function EditPost() {
                     tags: finalTags,
                     event_date: eventDate || undefined,
                     location: location || undefined
-                },
-                headers: { "X-CSRF-Token": token }
+                }
             });
 
             if (apiError) throw new Error((apiError as { message?: string }).message || "Fehler beim Speichern.");

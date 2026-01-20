@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteExamsIdData, DeleteExamsIdResponses, DeleteForumPostsByIdData, DeleteForumPostsByIdResponses, GetActivitiesData, GetActivitiesResponses, GetAuthAvatarsByUserIdByFilenameData, GetAuthAvatarsByUserIdByFilenameResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthNotificationsData, GetAuthNotificationsErrors, GetAuthNotificationsResponses, GetAuthVerifyData, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileResponses, GetExamsIdData, GetExamsIdErrors, GetExamsIdResponses, GetExamsResponses, GetExamVersionsData, GetExamVersionsErrors, GetExamVersionsResponses, GetForumPostsByIdCommentsData, GetForumPostsByIdCommentsResponses, GetForumPostsByIdData, GetForumPostsByIdResponses, GetForumPostsData, GetForumPostsResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetSearchData, GetSearchResponses, GetUsersByIdActivitiesData, GetUsersByIdActivitiesResponses, GetUsersByIdData, GetUsersByIdResponses, GetUsersData, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PostForumCommentsByIdVoteData, PostForumCommentsByIdVoteResponses, PostForumPostsByIdCommentsData, PostForumPostsByIdCommentsResponses, PostForumPostsByIdVoteData, PostForumPostsByIdVoteResponses, PostForumPostsData, PostForumPostsResponses, PutAuthMeData, PutAuthMeErrors, PutAuthMeResponses, PutAuthNotificationsIdReadData, PutAuthNotificationsIdReadErrors, PutAuthNotificationsIdReadResponses, PutAuthNotificationsReadAllData, PutAuthNotificationsReadAllErrors, PutAuthNotificationsReadAllResponses, PutExamsIdData, PutExamsIdResponses, PutForumCommentsByIdData, PutForumCommentsByIdResponses, PutForumPostsByIdData, PutForumPostsByIdResponses } from './types.gen';
+import type { DeleteExamsIdData, DeleteExamsIdResponses, DeleteForumPostsByIdData, DeleteForumPostsByIdResponses, GetActivitiesData, GetActivitiesResponses, GetAuthAvatarsByUserIdByFilenameData, GetAuthAvatarsByUserIdByFilenameResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthNotificationsData, GetAuthNotificationsErrors, GetAuthNotificationsResponses, GetAuthVerifyData, GetEventsByIdCoverData, GetEventsByIdCoverResponses, GetEventsData, GetEventsResponses, GetExamsData, GetExamsErrors, GetExamsFileData, GetExamsFileResponses, GetExamsIdData, GetExamsIdErrors, GetExamsIdResponses, GetExamsResponses, GetExamVersionsData, GetExamVersionsErrors, GetExamVersionsResponses, GetForumPostsByIdCommentsData, GetForumPostsByIdCommentsResponses, GetForumPostsByIdData, GetForumPostsByIdResponses, GetForumPostsData, GetForumPostsResponses, GetMediaByIdData, GetMediaByIdFileData, GetMediaByIdFileResponses, GetMediaByIdPreviewData, GetMediaByIdPreviewResponses, GetMediaByIdResponses, GetMediaData, GetMediaResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetSearchData, GetSearchResponses, GetUsersByIdActivitiesData, GetUsersByIdActivitiesResponses, GetUsersByIdData, GetUsersByIdResponses, GetUsersData, GetUsersResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostEventsData, PostEventsResponses, PostExamsData, PostExamsErrors, PostExamsResponses, PostForumCommentsByIdVoteData, PostForumCommentsByIdVoteResponses, PostForumPostsByIdCommentsData, PostForumPostsByIdCommentsResponses, PostForumPostsByIdVoteData, PostForumPostsByIdVoteResponses, PostForumPostsData, PostForumPostsResponses, PostMediaData, PostMediaResponses, PutAuthMeData, PutAuthMeErrors, PutAuthMeResponses, PutAuthNotificationsIdReadData, PutAuthNotificationsIdReadErrors, PutAuthNotificationsIdReadResponses, PutAuthNotificationsReadAllData, PutAuthNotificationsReadAllErrors, PutAuthNotificationsReadAllResponses, PutExamsIdData, PutExamsIdResponses, PutForumCommentsByIdData, PutForumCommentsByIdResponses, PutForumPostsByIdData, PutForumPostsByIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -98,6 +98,29 @@ export const postAuthRegister = <ThrowOnError extends boolean = false>(options: 
  * Verify user email
  */
 export const getAuthVerify = <ThrowOnError extends boolean = false>(options: Options<GetAuthVerifyData, ThrowOnError>) => (options.client ?? client).get<unknown, unknown, ThrowOnError>({ url: '/auth/verify', ...options });
+
+/**
+ * List events
+ */
+export const getEvents = <ThrowOnError extends boolean = false>(options?: Options<GetEventsData, ThrowOnError>) => (options?.client ?? client).get<GetEventsResponses, unknown, ThrowOnError>({ url: '/events', ...options });
+
+/**
+ * Create event
+ */
+export const postEvents = <ThrowOnError extends boolean = false>(options: Options<PostEventsData, ThrowOnError>) => (options.client ?? client).post<PostEventsResponses, unknown, ThrowOnError>({
+    ...formDataBodySerializer,
+    url: '/events',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Get event cover
+ */
+export const getEventsByIdCover = <ThrowOnError extends boolean = false>(options: Options<GetEventsByIdCoverData, ThrowOnError>) => (options.client ?? client).get<GetEventsByIdCoverResponses, unknown, ThrowOnError>({ url: '/events/{id}/cover', ...options });
 
 /**
  * List exams
@@ -242,6 +265,39 @@ export const postForumPostsByIdVote = <ThrowOnError extends boolean = false>(opt
         ...options.headers
     }
 });
+
+/**
+ * List media
+ */
+export const getMedia = <ThrowOnError extends boolean = false>(options: Options<GetMediaData, ThrowOnError>) => (options.client ?? client).get<GetMediaResponses, unknown, ThrowOnError>({ url: '/media', ...options });
+
+/**
+ * Upload media
+ */
+export const postMedia = <ThrowOnError extends boolean = false>(options: Options<PostMediaData, ThrowOnError>) => (options.client ?? client).post<PostMediaResponses, unknown, ThrowOnError>({
+    ...formDataBodySerializer,
+    url: '/media',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Get media by ID
+ */
+export const getMediaById = <ThrowOnError extends boolean = false>(options: Options<GetMediaByIdData, ThrowOnError>) => (options.client ?? client).get<GetMediaByIdResponses, unknown, ThrowOnError>({ url: '/media/{id}', ...options });
+
+/**
+ * Get media file
+ */
+export const getMediaByIdFile = <ThrowOnError extends boolean = false>(options: Options<GetMediaByIdFileData, ThrowOnError>) => (options.client ?? client).get<GetMediaByIdFileResponses, unknown, ThrowOnError>({ url: '/media/{id}/file', ...options });
+
+/**
+ * Get media preview
+ */
+export const getMediaByIdPreview = <ThrowOnError extends boolean = false>(options: Options<GetMediaByIdPreviewData, ThrowOnError>) => (options.client ?? client).get<GetMediaByIdPreviewResponses, unknown, ThrowOnError>({ url: '/media/{id}/preview', ...options });
 
 /**
  * List all programs
