@@ -1,6 +1,6 @@
 -- name: CreateSession :one
-INSERT INTO sessions (id, userid, expires_at)
-VALUES (sqlc.arg(id), sqlc.arg(userid), sqlc.arg(expires_at))
+INSERT INTO sessions (id, userid, expires_at, user_agent, ip_address)
+VALUES (sqlc.arg(id), sqlc.arg(userid), sqlc.arg(expires_at), sqlc.arg(user_agent), sqlc.arg(ip_address))
 RETURNING *;
 
 -- name: GetSession :one

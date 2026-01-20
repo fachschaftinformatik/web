@@ -60,7 +60,7 @@ func (q *Queries) CreateActivity(ctx context.Context, arg CreateActivityParams) 
 }
 
 const listAllActivities = `-- name: ListAllActivities :many
-SELECT a.id, a.user_id, a.type, a.target_id, a.created_at, a.target_name, u.name as user_name
+SELECT a.id, a.user_id, a.type, a.target_id, a.created_at, a.target_name, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name
 FROM activities a
 JOIN users u ON a.user_id = u.id
 WHERE a.created_at >= date('now', '-30 days')
@@ -115,7 +115,7 @@ func (q *Queries) ListAllActivities(ctx context.Context, arg ListAllActivitiesPa
 }
 
 const listUserActivities = `-- name: ListUserActivities :many
-SELECT a.id, a.user_id, a.type, a.target_id, a.created_at, a.target_name, u.name as user_name
+SELECT a.id, a.user_id, a.type, a.target_id, a.created_at, a.target_name, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name
 FROM activities a
 JOIN users u ON a.user_id = u.id
 WHERE a.user_id = ?1 AND a.created_at >= date('now', '-30 days')
