@@ -20,6 +20,8 @@ import (
 	"github.com/go-chi/httplog/v2"
 )
 
+var Version = "dev"
+
 func Run() error {
 	cfg := config.New()
 
@@ -75,7 +77,7 @@ func Run() error {
 	go handler.StartSessionSweeper(ctx, querier, logger)
 
 	go func() {
-		logger.Info("Server starting", "port", cfg.HTTPPort)
+		logger.Info("Server starting", "port", cfg.HTTPPort, "version", Version)
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("Server ListenAndServe error", "err", err)
 		}
