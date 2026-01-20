@@ -18,16 +18,18 @@ import {
 } from '@mui/material';
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
-import { getPrograms, getAuthCsrf, putAuthMe } from '@lib/api';
+import { getPrograms, putAuthMe } from '@lib/api';
 import type { AuthProgramResponse as Program, AuthUserResponse as User } from '@lib/api';
+import { zDtoUpdateProfileRequest } from '@lib/api/zod.gen';
 import { useThemeMode, type ThemePreference } from '@lib/theme';
+import { translateError } from '@lib/errors';
 import { alpha } from '@mui/material/styles';
 
 export default function SettingsPage() {
     const { user, login } = useAuth();
     const [programs, setPrograms] = useState<Program[]>([]);
     const [name, setName] = useState(user?.name || "");
-    const [programId, setProgramId] = useState<number>(Number(user?.programid) || 0);
+    const [programId, setProgramId] = useState<string>(user?.programid || "");
     const [themePreference, setThemePreference] = useState<ThemePreference>(user?.theme as ThemePreference || 'system');
     const [loading, setLoading] = useState(false);
     const [isPrivate, setIsPrivate] = useState(user?.private === 1);
@@ -40,7 +42,7 @@ export default function SettingsPage() {
     }
 
     const isDirty = name !== (user?.name || "") ||
-        programId !== (Number(user?.programid) || 0) ||
+        programId !== (user?.programid || "") ||
         isPrivate !== (user?.private === 1) ||
         themePreference !== (user?.theme || 'system');
 
@@ -54,28 +56,35 @@ export default function SettingsPage() {
     useEffect(() => {
         if (user) {
             setName(user.name || "");
-            setProgramId(Number(user.programid));
+            setProgramId(user.programid || "");
             setThemePreference(user.theme as ThemePreference || 'system');
             setIsPrivate(user.private === 1);
         }
     }, [user]);
 
     const handleSave = async () => {
+        const validation = zDtoUpdateProfileRequest.safeParse({
+            name,
+            programid: programId,
+            theme: themePreference,
+            private: isPrivate
+        });
+
+        if (!validation.success) {
+            setError("Ungültige Eingabe. Bitte prüfe deine Angaben.");
+            return;
+        }
+
         setLoading(true);
         setError("");
         setSuccess("");
         try {
-            const { data: csrfData } = await getAuthCsrf();
-            const token = csrfData?.csrf;
-
             const res = await putAuthMe({
-                body: { name, programid: programId, theme: themePreference, private: isPrivate },
-                headers: { "X-CSRF-Token": token || "" }
+                body: validation.data
             });
 
             if (res.error) {
-                const msg = (res.error as { message?: string }).message || "Fehler beim Speichern der Einstellungen.";
-                setError(msg);
+                setError(translateError(res.error));
             } else {
                 setSuccess("Einstellungen erfolgreich gespeichert.");
                 if (res.data) {
@@ -83,8 +92,8 @@ export default function SettingsPage() {
                     setPreference(themePreference);
                 }
             }
-        } catch {
-            setError("Netzwerkfehler beim Speichern.");
+        } catch (err) {
+            setError(translateError(err));
         } finally {
             setLoading(false);
         }
@@ -184,7 +193,7 @@ export default function SettingsPage() {
                                 select
                                 label="Studiengang"
                                 value={programId}
-                                onChange={(e) => setProgramId(Number(e.target.value))}
+                                onChange={(e) => setProgramId(e.target.value)}
                                 fullWidth
                             >
                                 {programs.length > 0 ? (
@@ -192,7 +201,7 @@ export default function SettingsPage() {
                                         <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
                                     ))
                                 ) : (
-                                    <MenuItem disabled value={0}>Lädt...</MenuItem>
+                                    <MenuItem disabled value="">Lädt...</MenuItem>
                                 )}
                             </TextField>
                         </Stack>

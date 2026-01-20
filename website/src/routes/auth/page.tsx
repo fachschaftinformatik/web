@@ -23,25 +23,27 @@ import { useThemeMode } from '@lib/theme';
 import { postAuthLogin, postAuthRegister, getPrograms } from '@lib/api';
 import type { AuthProgramResponse as Program } from '@lib/api';
 import { useAuth, REMEMBERED_FLAG_KEY } from '@lib/auth';
+import { translateError } from '@lib/errors';
+import { zDtoLoginRequest, zDtoRegisterRequest } from '@lib/api/zod.gen';
 
 const EMAIL_SUFFIX = '@studmail.w-hs.de';
 
-const loginSchema = z.object({
+const loginSchema = zDtoLoginRequest.omit({ email: true }).extend({
     emailPrefix: z.string().min(1, "Bitte gib dein E-Mail-Kürzel ein."),
     password: z.string().min(1, "Bitte gib dein Passwort ein."),
 });
 
-const registrationSchema = z.object({
+const registrationSchema = zDtoRegisterRequest.omit({ email: true }).extend({
     name: z.string().min(1, "Bitte gib deinen Namen ein."),
     emailPrefix: z.string().min(1, "Bitte gib dein E-Mail ein.").regex(/^[a-zA-Z0-9._-]+$/, "Die E-Mail enthält ungültige Zeichen."),
     password: z.string()
-        .min(12, "Das Passwort muss mindestens 12 Zeichen lang sein.")
+        .min(8, "Das Passwort muss mindestens 8 Zeichen lang sein.")
         .regex(/[A-Z]/, "Das Passwort muss mindestens einen Großbuchstaben enthalten.")
         .regex(/[a-z]/, "Das Passwort muss mindestens einen Kleinbuchstaben enthalten.")
         .regex(/[0-9]/, "Das Passwort muss mindestens eine Zahl enthalten.")
         .regex(/[^A-Za-z0-9]/, "Das Passwort muss mindestens ein Sonderzeichen enthalten."),
     confirmPassword: z.string(),
-    programid: z.coerce.number().min(1, "Bitte wähle einen Studiengang aus."),
+    programid: z.string().min(1, "Bitte wähle einen Studiengang aus."),
 }).superRefine((data, ctx) => {
     if (data.password !== data.confirmPassword) {
         ctx.addIssue({
@@ -50,14 +52,14 @@ const registrationSchema = z.object({
             path: ["confirmPassword"],
         });
     }
-    if (data.name && data.password.toLowerCase().includes(data.name.toLowerCase())) {
+    if (data.name && data.password && data.password.toLowerCase().includes(data.name.toLowerCase())) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Das Passwort darf deinen Namen nicht enthalten.",
             path: ["password"],
         });
     }
-    if (data.emailPrefix && data.password.toLowerCase().includes(data.emailPrefix.toLowerCase())) {
+    if (data.emailPrefix && data.password && data.password.toLowerCase().includes(data.emailPrefix.toLowerCase())) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Das Passwort darf deine E-Mail nicht enthalten.",
@@ -65,36 +67,6 @@ const registrationSchema = z.object({
         });
     }
 });
-
-const translateError = (err: unknown): string => {
-    const errorObj = err as { error?: string, statusText?: string, message?: string };
-    const code = errorObj?.error || errorObj?.statusText?.toLowerCase() || '';
-    const message = errorObj?.message || '';
-
-    const translations: Record<string, string> = {
-        'invalid_credentials': 'Ungültige Anmeldedaten.',
-        'unauthorized': 'Ungültige Anmeldedaten.',
-        'email_exists': 'Diese E-Mail-Adresse ist bereits registriert.',
-        'user_not_found': 'Benutzer nicht gefunden.',
-        'email_not_verified': message || 'Bitte bestätige erst deine E-Mail-Adresse.',
-        'invalid_request_body': 'Ungültige Anfrage. Bitte fülle alle Felder korrekt aus.',
-        'server_error': 'Serverfehler. Bitte versuche es später noch einmal.',
-        'database_error': 'Datenbankfehler. Bitte versuche es später noch einmal.',
-        'invalid_csrf': 'Sitzung abgelaufen. Bitte lade die Seite neu.'
-    };
-
-    if (translations[code]) return translations[code];
-
-    // Fuzzy matching for messages if code doesn't match
-    const msg = message.toLowerCase();
-    if (msg.includes('invalid email or password')) return 'Ungültige Anmeldedaten.';
-    if (msg.includes('already exists')) return 'Diese E-Mail-Adresse ist bereits registriert.';
-    if (msg.includes('failed to fetch')) return 'Verbindung zum Server fehlgeschlagen. Bitte prüfe deine Internetverbindung.';
-    if (msg.includes('network error')) return 'Netzwerkfehler. Bitte prüfe deine Verbindung.';
-    if (msg.includes('timeout')) return 'Zeitüberschreitung. Der Server antwortet nicht.';
-
-    return message || 'Ein unerwarteter Fehler ist aufgetreten.';
-};
 
 export default function AuthPage() {
     const navigate = useNavigate();
@@ -129,8 +101,14 @@ export default function AuthPage() {
     }, [tabValue, programs.length]);
 
     useEffect(() => {
-        if (searchParams.get('verified') === 'true') {
+        const verified = searchParams.get('verified');
+        const error = searchParams.get('error');
+
+        if (verified === 'true') {
             setSuccess('Deine E-Mail wurde erfolgreich bestätigt! Du kannst dich jetzt anmelden.');
+            setTabValue(0);
+        } else if (verified === 'false' && error) {
+            setErrors({ global: translateError({ error }) });
             setTabValue(0);
         }
     }, [searchParams]);
@@ -146,17 +124,20 @@ export default function AuthPage() {
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        console.log("Form submission started");
         setLoading(true);
         setErrors({});
         setSuccess('');
 
         const formData = new FormData(event.currentTarget);
         const rawData = Object.fromEntries(formData.entries()) as Record<string, string>;
+        console.log("Form data:", rawData);
 
         if (tabValue === 0) {
             // Login Flow
             const validationResult = loginSchema.safeParse(rawData);
             if (!validationResult.success) {
+                console.error("Validation failed:", validationResult.error);
                 const fieldErrors: Record<string, string> = {};
                 validationResult.error.issues.forEach((issue) => { fieldErrors[issue.path[0] as string] = issue.message; });
                 setErrors(fieldErrors);
@@ -167,7 +148,11 @@ export default function AuthPage() {
             const { emailPrefix, password } = validationResult.data;
             try {
                 const { data: user, error: apiError } = await postAuthLogin({
-                    body: { email: `${emailPrefix}${EMAIL_SUFFIX}`, password }
+                    body: { 
+                        email: `${emailPrefix}${EMAIL_SUFFIX}`, 
+                        password,
+                        remember: rememberMe
+                    }
                 });
 
                 if (apiError) {
@@ -186,11 +171,9 @@ export default function AuthPage() {
             }
         } else {
             // Register Flow
-            const validationResult = registrationSchema.safeParse({
-                ...rawData,
-                programid: Number(rawData.programid)
-            });
+            const validationResult = registrationSchema.safeParse(rawData);
             if (!validationResult.success) {
+                console.error("Validation failed:", validationResult.error);
                 const fieldErrors: Record<string, string> = {};
                 validationResult.error.issues.forEach((issue) => { fieldErrors[issue.path[0] as string] = issue.message; });
                 setErrors(fieldErrors);
@@ -310,14 +293,14 @@ export default function AuthPage() {
                             {tabValue === 1 && (
                                 <TextField
                                     required fullWidth id="name" label="Vollständiger Name" name="name"
-                                    autoComplete="name" autoFocus disabled={loading || !!success}
+                                    autoComplete="name" autoFocus disabled={loading || (tabValue === 1 && !!success)}
                                     error={!!errors.name} helperText={errors.name}
                                 />
                             )}
 
                             <TextField
                                 required fullWidth id="emailPrefix" label="E-Mail" name="emailPrefix"
-                                autoComplete="email" autoFocus={tabValue === 0} disabled={loading || !!success}
+                                autoComplete="email" autoFocus={tabValue === 0} disabled={loading || (tabValue === 1 && !!success)}
                                 error={!!errors.emailPrefix} helperText={errors.emailPrefix}
                                 InputProps={{
                                     endAdornment: <InputAdornment position="end">{EMAIL_SUFFIX}</InputAdornment>,
@@ -327,7 +310,7 @@ export default function AuthPage() {
                             {tabValue === 1 && (
                                 <TextField
                                     select required fullWidth name="programid" label="Studiengang" id="programid"
-                                    defaultValue="" disabled={loading || !!success} error={!!errors.programid} helperText={errors.programid}
+                                    defaultValue="" disabled={loading || (tabValue === 1 && !!success)} error={!!errors.programid} helperText={errors.programid}
                                 >
                                     {programs.length > 0 ? (
                                         programs.map((opt) => (
@@ -343,7 +326,7 @@ export default function AuthPage() {
                                 <InputLabel htmlFor="auth-password">Passwort</InputLabel>
                                 <OutlinedInput
                                     id="auth-password" name="password" type={showPassword ? 'text' : 'password'}
-                                    disabled={loading || !!success}
+                                    disabled={loading || (tabValue === 1 && !!success)}
                                     endAdornment={
                                         <InputAdornment position="end">
                                             <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
@@ -361,7 +344,7 @@ export default function AuthPage() {
                                     <InputLabel htmlFor="confirm-password">Passwort bestätigen</InputLabel>
                                     <OutlinedInput
                                         id="confirm-password" name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'}
-                                        disabled={loading || !!success}
+                                        disabled={loading || (tabValue === 1 && !!success)}
                                         endAdornment={
                                             <InputAdornment position="end">
                                                 <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end">
@@ -392,7 +375,7 @@ export default function AuthPage() {
 
                         <Button
                             type="submit" fullWidth variant="contained" size="large"
-                            disabled={loading || !!success}
+                            disabled={loading || (tabValue === 1 && !!success)}
                             sx={{ mt: 4, mb: 2, height: 52, borderRadius: 2, fontWeight: 700 }}
                         >
                             {loading ? (tabValue === 0 ? 'Melde an...' : 'Erstelle Account...') : (tabValue === 0 ? 'Anmelden' : 'Registrieren')}

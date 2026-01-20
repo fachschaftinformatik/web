@@ -1,4 +1,4 @@
-﻿import * as React from "react";
+import * as React from "react";
 import {
   Box, Stack, Paper, Typography, TextField, Button,
   IconButton, Chip, Dialog, DialogTitle, DialogContent,
@@ -26,7 +26,6 @@ import {
   postForumPostsByIdVote,
   deleteForumPostsById,
   putForumPostsById,
-  getAuthCsrf
 } from "@lib/api";
 import type {
   AuthPostResponse as ApiPost,
@@ -297,34 +296,11 @@ export default function ForumPage() {
 
       if (data) {
         const parsed: Post[] = (data as ApiPost[]).map((p: ApiPost) => {
-          let programs: Program[] = [];
-          let tags: string[] = [];
-
-          try {
-            if (p.programs) {
-              const res = JSON.parse(p.programs as string);
-              if (Array.isArray(res)) programs = res;
-            }
-            if (p.tags) {
-              const res = JSON.parse(p.tags as string);
-              if (Array.isArray(res)) tags = res;
-            }
-          } catch (e) {
-            console.error(p.id, e);
-          }
-          let links: string[] = [];
-          try {
-            if (p.links) {
-              const res = JSON.parse(p.links as string);
-              if (Array.isArray(res)) links = res;
-            }
-          } catch { /* empty */ }
-
           return {
             ...p,
-            programs,
-            tags,
-            links,
+            programs: p.programs || [],
+            tags: p.tags || [],
+            links: p.links || [],
             comments: []
           } as Post;
         });
@@ -373,12 +349,9 @@ export default function ForumPage() {
   const handleVote = async (id: string, newVote: Vote) => {
     if (!user) return;
     try {
-      const { data: csrfData } = await getAuthCsrf();
-      if (!csrfData?.csrf) return;
       await postForumPostsByIdVote({
         path: { id },
         body: { vote: newVote },
-        headers: { "X-CSRF-Token": csrfData.csrf }
       });
       setPosts(prev => prev.map(p => p.id === id ? { ...p, user_vote: newVote, votes: (Number(p.votes)) - (p.user_vote || 0) + newVote } : p));
     } catch (e) {
@@ -391,12 +364,9 @@ export default function ForumPage() {
     const post = posts.find(p => p.id === id);
     if (!post) return;
     try {
-      const { data: csrfData } = await getAuthCsrf();
-      if (!csrfData?.csrf) return;
       await putForumPostsById({
         path: { id },
         body: { pinned: post.pinned ? 0 : 1 },
-        headers: { "X-CSRF-Token": csrfData.csrf }
       });
       setPosts(prev => prev.map(p => p.id === id ? { ...p, pinned: post.pinned ? 0 : 1 } : p));
     } catch (e) { console.error(e); }
@@ -406,11 +376,8 @@ export default function ForumPage() {
     if (!isAdmin && user?.role !== "editor" && user?.id !== posts.find(p => p.id === id)?.author_id) return;
     if (!confirm("Wirklich löschen?")) return;
     try {
-      const { data: csrfData } = await getAuthCsrf();
-      if (!csrfData?.csrf) return;
       await deleteForumPostsById({
         path: { id },
-        headers: { "X-CSRF-Token": csrfData.csrf }
       });
       setPosts(prev => prev.filter(p => p.id !== id));
     } catch (e) { console.error(e); }

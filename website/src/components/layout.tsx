@@ -52,7 +52,6 @@ import type { AuthUserResponse as User, AuthNotificationResponse as Notification
 import { useThemeMode } from '@lib/theme';
 import { useAuth } from '@lib/auth';
 import {
-  getAuthCsrf,
   putAuthMe,
   getAuthNotifications,
   putAuthNotificationsIdRead,
@@ -362,8 +361,7 @@ const Sidebar = ({
 
   const handleMarkAllRead = async () => {
     try {
-      const { data: csrfData } = await getAuthCsrf();
-      await putAuthNotificationsReadAll({ headers: { 'X-CSRF-Token': csrfData?.csrf || '' } });
+      await putAuthNotificationsReadAll({});
       fetchNotifications();
     } catch (err) {
       console.error("Failed to mark all read", err);
@@ -372,10 +370,8 @@ const Sidebar = ({
 
   const handleMarkRead = async (id: string) => {
     try {
-      const { data: csrfData } = await getAuthCsrf();
       await putAuthNotificationsIdRead({
-        path: { id },
-        headers: { 'X-CSRF-Token': csrfData?.csrf || '' }
+        path: { id }
       });
       fetchNotifications();
     } catch (err) {
@@ -396,14 +392,12 @@ const Sidebar = ({
     setPreference(nextMode);
     if (user) {
       try {
-        const { data: csrfData } = await getAuthCsrf();
         const res = await putAuthMe({
           body: {
             name: user.name,
             programid: user.programid,
             theme: nextMode
-          },
-          headers: { "X-CSRF-Token": csrfData?.csrf || "" }
+          }
         });
         if (res.data) {
           login(res.data as User, window.localStorage.getItem('fs_remember_flag') === 'true');
@@ -796,4 +790,10 @@ const Sidebar = ({
   );
 };
 
-export { Sidebar };
+const PageLoader = () => (
+  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100%' }}>
+    <CircularProgress />
+  </Box>
+);
+
+export { Sidebar, PageLoader };

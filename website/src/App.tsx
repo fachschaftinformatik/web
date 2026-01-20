@@ -1,43 +1,70 @@
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
 
+// Fonts
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/500.css";
+import "@fontsource/manrope/600.css";
+import "@fontsource/manrope/700.css";
+import "@fontsource/space-grotesk/400.css";
+import "@fontsource/space-grotesk/500.css";
+import "@fontsource/space-grotesk/600.css";
+import "@fontsource/space-grotesk/700.css";
+import "@fontsource/roboto/300.css";
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/roboto/700.css";
+import "@fontsource/material-icons";
+import "@fontsource/material-icons-rounded";
+
 import { client } from '@lib/api/client.gen';
+import { getCsrfToken, getCsrfFromCookie, fetchCsrfToken } from '@lib/csrf';
 
 import { ThemeModeProvider } from '@lib/theme';
-
-import { AuthProvider, useAuth } from '@lib/auth';
-import ProtectedRoute from '@lib/routes';
-
-import { lazy, Suspense } from 'react';
-import { CircularProgress, Box } from '@mui/material';
+import { AuthProvider, useAuth, ProtectedRoute } from '@lib/auth';
+import { PageLoader } from '@components/layout';
 
 const AuthPage = lazy(() => import('@routes/auth/page'));
 const DashboardPage = lazy(() => import('@routes/user/[id]/page'));
-const ImagesPage = lazy(() => import('@routes/images/page'));
-const TeamPage = lazy(() => import('@routes/team/page'));
 const ExamsPage = lazy(() => import('@routes/exams/page'));
 const ExamDetailsPage = lazy(() => import('@routes/exams/[id]/page'));
+const SettingsPage = lazy(() => import('@routes/settings/page'));
 const ForumPage = lazy(() => import('@routes/discussions/page'));
+const ViewForumPost = lazy(() => import('@routes/discussions/[id]/page'));
 const CreateForumPost = lazy(() => import('@routes/discussions/create/page'));
 const EditForumPost = lazy(() => import('@routes/discussions/[id]/edit/page'));
-const ViewForumPost = lazy(() => import('@routes/discussions/[id]/page'));
+const ImagesPage = lazy(() => import('@routes/images/page'));
 const NewsFeedPage = lazy(() => import('@routes/home/page'));
+const TeamPage = lazy(() => import('@routes/team/page'));
 const ContactPage = lazy(() => import('@routes/contact/page'));
-const SettingsPage = lazy(() => import('@routes/settings/page'));
-
-const PageLoader = () => (
-  <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-    <CircularProgress />
-  </Box>
-);
 
 client.setConfig({
   baseUrl: '/api',
   credentials: 'include',
 });
+
+// CSRF Interceptor
+client.interceptors.request.use(async (request) => {
+  const method = request.method.toUpperCase();
+  const stateChangingMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
+
+  if (stateChangingMethods.includes(method)) {
+    let token = getCsrfToken() || getCsrfFromCookie();
+    
+    if (!token && !request.url.includes('/auth/csrf')) {
+      token = await fetchCsrfToken();
+    }
+
+    if (token) {
+      request.headers.set('X-CSRF-Token', token);
+    }
+  }
+  return request;
+});
+
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
