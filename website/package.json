@@ -9,10 +9,16 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "gen:api": "openapi-ts"
+
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@fontsource/manrope": "^5.2.8",
+    "@fontsource/material-icons": "^5.2.7",
+    "@fontsource/material-icons-rounded": "^4.5.4",
+    "@fontsource/roboto": "^5.2.9",
+    "@fontsource/space-grotesk": "^5.2.10",
     "@mui/icons-material": "7.3.7",
     "@mui/lab": "^7.0.1-beta.21",
     "@mui/material": "^7.3.7",
