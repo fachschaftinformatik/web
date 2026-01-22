@@ -10,7 +10,6 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
-
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
 import {
@@ -259,12 +258,12 @@ export default function ViewPost() {
                                     <Stack direction="row" spacing={1}>
                                         <Tooltip title="Bearbeiten">
                                             <IconButton onClick={() => navigate(`/d/${post.id}/edit`)}>
-                                                <EditIcon />
+                                                <EditIcon fontSize="small" />
                                             </IconButton>
                                         </Tooltip>
                                         <Tooltip title="Löschen">
                                             <IconButton onClick={handleDelete} color="error">
-                                                <DeleteOutlineIcon />
+                                                <DeleteOutlineIcon fontSize="small" />
                                             </IconButton>
                                         </Tooltip>
                                     </Stack>
