@@ -358,7 +358,7 @@ func (s *Server) PutDiscussionsId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload dto.CreateDiscussionPostRequest
+	var payload dto.UpdateDiscussionPostRequest
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		s.JsonError(w, "invalid_request_body", "Could not decode JSON body", http.StatusBadRequest)
 		return
@@ -370,8 +370,8 @@ func (s *Server) PutDiscussionsId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pinned := existing.Pinned
-	if user.Role == "admin" || user.Role == "editor" {
-		if payload.Pinned {
+	if payload.Pinned != nil && (user.Role == "admin" || user.Role == "editor") {
+		if *payload.Pinned {
 			pinned = 1
 		} else {
 			pinned = 0
@@ -380,8 +380,8 @@ func (s *Server) PutDiscussionsId(w http.ResponseWriter, r *http.Request) {
 
 	updated, err := s.DB.UpdateDiscussionPost(r.Context(), database.UpdateDiscussionPostParams{
 		ID:        int64(pid),
-		Title:     &payload.Title,
-		Body:      &payload.Body,
+		Title:     payload.Title,
+		Body:      payload.Body,
 		Pinned:    &pinned,
 		EventDate: payload.EventDate,
 		Location:  payload.Location,
