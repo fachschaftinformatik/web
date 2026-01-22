@@ -281,10 +281,6 @@ export default function DiscussionsPage() {
   const fetchPosts = React.useCallback(async () => {
     setLoading(true);
     try {
-      if (apiPrograms.length === 0) {
-        const { data: progData } = await getPrograms();
-        if (progData) setApiPrograms(progData);
-      }
       const offset = (page - 1) * POSTS_PER_PAGE;
       const { data, response } = await getDiscussions({
         query: {
@@ -314,6 +310,18 @@ export default function DiscussionsPage() {
       setLoading(false);
     }
   }, [page, q, sort, apiPrograms, activeProgramFilters]);
+
+  React.useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const { data } = await getPrograms();
+        if (data) setApiPrograms(data);
+      } catch (err) {
+        console.error("Failed to fetch programs:", err);
+      }
+    };
+    fetchPrograms();
+  }, []);
 
   React.useEffect(() => {
     fetchPosts();
