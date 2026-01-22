@@ -9,21 +9,57 @@ import (
 	"context"
 )
 
+const createProgram = `-- name: CreateProgram :one
+INSERT INTO programs (id, name) VALUES (?1, ?2) RETURNING id, name, created_at, updated_at, deleted_at
+`
+
+type CreateProgramParams struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+func (q *Queries) CreateProgram(ctx context.Context, arg CreateProgramParams) (Program, error) {
+	row := q.db.QueryRowContext(ctx, createProgram, arg.ID, arg.Name)
+	var i Program
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const createProgramVersion = `-- name: CreateProgramVersion :exec
+INSERT INTO program_versions (program_id, name) VALUES (?1, ?2)
+`
+
+type CreateProgramVersionParams struct {
+	ProgramID int64  `json:"program_id"`
+	Name      string `json:"name"`
+}
+
+func (q *Queries) CreateProgramVersion(ctx context.Context, arg CreateProgramVersionParams) error {
+	_, err := q.db.ExecContext(ctx, createProgramVersion, arg.ProgramID, arg.Name)
+	return err
+}
+
 const getProgramWithVersions = `-- name: GetProgramWithVersions :many
 SELECT p.id, p.name, pv.name as version
 FROM programs p
-JOIN program_versions pv ON p.id = pv.programid
-WHERE p.id = ?1
+JOIN program_versions pv ON p.id = pv.program_id
+WHERE p.id = ?1 AND p.deleted_at IS NULL
 ORDER BY pv.name DESC
 `
 
 type GetProgramWithVersionsRow struct {
-	ID      string `json:"id"`
+	ID      int64  `json:"id"`
 	Name    string `json:"name"`
 	Version string `json:"version"`
 }
 
-func (q *Queries) GetProgramWithVersions(ctx context.Context, id string) ([]GetProgramWithVersionsRow, error) {
+func (q *Queries) GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getProgramWithVersions, id)
 	if err != nil {
 		return nil, err
@@ -49,12 +85,13 @@ func (q *Queries) GetProgramWithVersions(ctx context.Context, id string) ([]GetP
 const listProgramsWithVersions = `-- name: ListProgramsWithVersions :many
 SELECT p.id, p.name, pv.name as version
 FROM programs p
-JOIN program_versions pv ON p.id = pv.programid
+JOIN program_versions pv ON p.id = pv.program_id
+WHERE p.deleted_at IS NULL
 ORDER BY p.name, pv.name DESC
 `
 
 type ListProgramsWithVersionsRow struct {
-	ID      string `json:"id"`
+	ID      int64  `json:"id"`
 	Name    string `json:"name"`
 	Version string `json:"version"`
 }

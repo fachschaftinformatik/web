@@ -5,134 +5,177 @@
 package database
 
 type Activity struct {
-	ID         string  `json:"id"`
-	UserID     string  `json:"user_id"`
+	ID         int64   `json:"id"`
+	UserID     int64   `json:"user_id"`
 	Type       string  `json:"type"`
 	TargetID   string  `json:"target_id"`
-	CreatedAt  string  `json:"created_at"`
 	TargetName *string `json:"target_name"`
+	CreatedAt  string  `json:"created_at"`
+	UpdatedAt  string  `json:"updated_at"`
+	DeletedAt  *string `json:"deleted_at"`
 }
 
-type Event struct {
-	ID        string  `json:"id"`
-	Title     string  `json:"title"`
-	CoverPath *string `json:"cover_path"`
-	CreatedAt string  `json:"created_at"`
-}
-
-type Exam struct {
-	ID          string  `json:"id"`
-	Userid      string  `json:"userid"`
-	Programid   string  `json:"programid"`
+type Archive struct {
+	ID          int64   `json:"id"`
+	GroupID     int64   `json:"group_id"`
+	UserID      int64   `json:"user_id"`
+	ModuleID    int64   `json:"module_id"`
 	Version     string  `json:"version"`
-	Moduleid    *string `json:"moduleid"`
-	Comment     *string `json:"comment"`
 	ExamDate    string  `json:"exam_date"`
-	UploadedAt  string  `json:"uploaded_at"`
-	Accesskey   string  `json:"accesskey"`
+	Comment     *string `json:"comment"`
+	EditVersion int64   `json:"edit_version"`
+	IsLatest    int64   `json:"is_latest"`
+	AccessKey   string  `json:"access_key"`
 	MimeType    string  `json:"mime_type"`
 	Nbytes      int64   `json:"nbytes"`
 	Checksum    string  `json:"checksum"`
-	GroupID     string  `json:"group_id"`
-	EditVersion int64   `json:"edit_version"`
-	IsLatest    int64   `json:"is_latest"`
+	CreatedAt   string  `json:"created_at"`
+	UpdatedAt   string  `json:"updated_at"`
+	DeletedAt   *string `json:"deleted_at"`
 }
 
-type ForumComment struct {
-	ID        string  `json:"id"`
-	PostID    string  `json:"post_id"`
-	AuthorID  string  `json:"author_id"`
-	ParentID  *string `json:"parent_id"`
+type DiscussionComment struct {
+	ID        int64   `json:"id"`
+	PostID    int64   `json:"post_id"`
+	UserID    int64   `json:"user_id"`
+	ParentID  *int64  `json:"parent_id"`
 	Text      string  `json:"text"`
 	CreatedAt string  `json:"created_at"`
 	UpdatedAt string  `json:"updated_at"`
-	Active    int64   `json:"active"`
+	DeletedAt *string `json:"deleted_at"`
 }
 
-type ForumCommentVote struct {
-	CommentID string `json:"comment_id"`
-	UserID    string `json:"user_id"`
-	Vote      int64  `json:"vote"`
+type DiscussionCommentVote struct {
+	CommentID int64 `json:"comment_id"`
+	UserID    int64 `json:"user_id"`
+	Vote      int64 `json:"vote"`
 }
 
-type ForumPost struct {
-	ID        string  `json:"id"`
+type DiscussionPost struct {
+	ID        int64   `json:"id"`
 	Title     string  `json:"title"`
 	Body      string  `json:"body"`
-	AuthorID  string  `json:"author_id"`
-	CreatedAt string  `json:"created_at"`
-	UpdatedAt string  `json:"updated_at"`
+	UserID    int64   `json:"user_id"`
 	Pinned    int64   `json:"pinned"`
 	Type      string  `json:"type"`
-	Programs  string  `json:"programs"`
-	Tags      string  `json:"tags"`
 	EventDate *string `json:"event_date"`
 	Location  *string `json:"location"`
 	ImageUrl  *string `json:"image_url"`
-	Links     string  `json:"links"`
-	Active    int64   `json:"active"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+	DeletedAt *string `json:"deleted_at"`
 }
 
-type ForumVote struct {
-	PostID string `json:"post_id"`
-	UserID string `json:"user_id"`
-	Vote   int64  `json:"vote"`
+type DiscussionPostLink struct {
+	ID     int64   `json:"id"`
+	PostID int64   `json:"post_id"`
+	Url    string  `json:"url"`
+	Label  *string `json:"label"`
+}
+
+type DiscussionPostProgram struct {
+	PostID    int64 `json:"post_id"`
+	ProgramID int64 `json:"program_id"`
+}
+
+type DiscussionPostTag struct {
+	PostID int64  `json:"post_id"`
+	Tag    string `json:"tag"`
+}
+
+type DiscussionVote struct {
+	PostID int64 `json:"post_id"`
+	UserID int64 `json:"user_id"`
+	Vote   int64 `json:"vote"`
+}
+
+type Event struct {
+	ID        int64   `json:"id"`
+	Title     string  `json:"title"`
+	CoverPath *string `json:"cover_path"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+	DeletedAt *string `json:"deleted_at"`
 }
 
 type Medium struct {
-	ID          string  `json:"id"`
-	EventID     string  `json:"event_id"`
-	Userid      string  `json:"userid"`
+	ID          int64   `json:"id"`
+	EventID     int64   `json:"event_id"`
+	UserID      int64   `json:"user_id"`
 	Title       *string `json:"title"`
 	Description *string `json:"description"`
-	Accesskey   string  `json:"accesskey"`
+	AccessKey   string  `json:"access_key"`
 	MimeType    string  `json:"mime_type"`
 	Nbytes      int64   `json:"nbytes"`
-	UploadedAt  string  `json:"uploaded_at"`
+	CreatedAt   string  `json:"created_at"`
+	UpdatedAt   string  `json:"updated_at"`
+	DeletedAt   *string `json:"deleted_at"`
 }
 
 type Module struct {
-	ID        string  `json:"id"`
-	Programid string  `json:"programid"`
+	ID        int64   `json:"id"`
+	ProgramID int64   `json:"program_id"`
 	Name      string  `json:"name"`
 	Alias     *string `json:"alias"`
 	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+	DeletedAt *string `json:"deleted_at"`
 }
 
 type Notification struct {
-	ID        string `json:"id"`
-	Userid    string `json:"userid"`
-	Title     string `json:"title"`
-	Message   string `json:"message"`
-	Type      string `json:"type"`
-	Link      string `json:"link"`
-	Read      int64  `json:"read"`
-	CreatedAt string `json:"created_at"`
+	ID        int64   `json:"id"`
+	UserID    int64   `json:"user_id"`
+	Title     string  `json:"title"`
+	Message   string  `json:"message"`
+	Type      string  `json:"type"`
+	Link      string  `json:"link"`
+	Read      int64   `json:"read"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+	DeletedAt *string `json:"deleted_at"`
 }
 
 type Program struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	CreatedAt string `json:"created_at"`
+	ID        int64   `json:"id"`
+	Name      string  `json:"name"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+	DeletedAt *string `json:"deleted_at"`
 }
 
 type ProgramVersion struct {
-	Programid string `json:"programid"`
+	ProgramID int64  `json:"program_id"`
 	Name      string `json:"name"`
+}
+
+type RefActivityType struct {
+	Type string `json:"type"`
+}
+
+type RefDiscussionType struct {
+	Type string `json:"type"`
+}
+
+type RefNotificationType struct {
+	Type string `json:"type"`
+}
+
+type RefUserRole struct {
+	Role string `json:"role"`
 }
 
 type Session struct {
 	ID        string  `json:"id"`
-	Userid    string  `json:"userid"`
+	UserID    int64   `json:"user_id"`
+	UserAgent *string `json:"user_agent"`
+	IpAddress *string `json:"ip_address"`
 	CreatedAt string  `json:"created_at"`
 	LastSeen  string  `json:"last_seen"`
 	ExpiresAt string  `json:"expires_at"`
-	UserAgent *string `json:"user_agent"`
-	IpAddress *string `json:"ip_address"`
 }
 
 type User struct {
-	ID                string  `json:"id"`
+	ID                int64   `json:"id"`
 	Email             string  `json:"email"`
 	Name              string  `json:"name"`
 	Password          string  `json:"password"`
@@ -140,12 +183,12 @@ type User struct {
 	Active            int64   `json:"active"`
 	Verified          int64   `json:"verified"`
 	VerifiedAt        *string `json:"verified_at"`
-	VerifiedUntil     *string `json:"verified_until"`
-	Programid         string  `json:"programid"`
+	VerificationToken *string `json:"verification_token"`
+	ProgramID         *int64  `json:"program_id"`
 	Theme             string  `json:"theme"`
 	Private           int64   `json:"private"`
 	AvatarUrl         *string `json:"avatar_url"`
-	VerificationToken *string `json:"verification_token"`
 	CreatedAt         string  `json:"created_at"`
 	UpdatedAt         string  `json:"updated_at"`
+	DeletedAt         *string `json:"deleted_at"`
 }
