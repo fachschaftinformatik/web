@@ -9,58 +9,71 @@ import (
 )
 
 type Querier interface {
-	ClearLatestFlag(ctx context.Context, groupID string) error
-	CountForumPosts(ctx context.Context, arg CountForumPostsParams) (int64, error)
-	CountUnreadNotifications(ctx context.Context, userid string) (int64, error)
-	CountUserActivities(ctx context.Context, userID string) (int64, error)
+	AddLinkToPost(ctx context.Context, arg AddLinkToPostParams) (DiscussionPostLink, error)
+	AddProgramToPost(ctx context.Context, arg AddProgramToPostParams) error
+	AddTagToPost(ctx context.Context, arg AddTagToPostParams) error
+	ClearLatestFlagByGroupId(ctx context.Context, groupID int64) error
+	ClearPostLinks(ctx context.Context, postID int64) error
+	ClearPostPrograms(ctx context.Context, postID int64) error
+	ClearPostTags(ctx context.Context, postID int64) error
+	CountDiscussionPosts(ctx context.Context, arg CountDiscussionPostsParams) (int64, error)
+	CountUnreadNotifications(ctx context.Context, userID int64) (int64, error)
+	CountUserActivities(ctx context.Context, userID int64) (int64, error)
 	CreateActivity(ctx context.Context, arg CreateActivityParams) (Activity, error)
+	CreateArchiveEntry(ctx context.Context, arg CreateArchiveEntryParams) (Archive, error)
+	CreateDiscussionComment(ctx context.Context, arg CreateDiscussionCommentParams) (DiscussionComment, error)
+	CreateDiscussionPost(ctx context.Context, arg CreateDiscussionPostParams) (DiscussionPost, error)
 	CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error)
-	CreateExam(ctx context.Context, arg CreateExamParams) (Exam, error)
-	CreateForumComment(ctx context.Context, arg CreateForumCommentParams) (ForumComment, error)
-	CreateForumPost(ctx context.Context, arg CreateForumPostParams) (ForumPost, error)
 	CreateMedia(ctx context.Context, arg CreateMediaParams) (Medium, error)
 	CreateModule(ctx context.Context, arg CreateModuleParams) (Module, error)
 	CreateNotification(ctx context.Context, arg CreateNotificationParams) (Notification, error)
+	CreateProgram(ctx context.Context, arg CreateProgramParams) (Program, error)
+	CreateProgramVersion(ctx context.Context, arg CreateProgramVersionParams) error
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	DeleteExam(ctx context.Context, id string) error
+	DeleteArchiveEntry(ctx context.Context, id int64) error
+	DeleteDiscussionComment(ctx context.Context, id int64) error
+	DeleteDiscussionPost(ctx context.Context, id int64) error
 	DeleteExpiredSessions(ctx context.Context) error
-	DeleteForumComment(ctx context.Context, id string) error
-	DeleteForumPost(ctx context.Context, id string) error
-	DeleteMedia(ctx context.Context, id string) error
+	DeleteMedia(ctx context.Context, id int64) error
 	DeleteSession(ctx context.Context, id string) error
-	DeleteUserSessions(ctx context.Context, userid string) error
-	GetEvent(ctx context.Context, id string) (Event, error)
-	GetExam(ctx context.Context, id string) (Exam, error)
-	GetExamDetails(ctx context.Context, id string) (GetExamDetailsRow, error)
-	GetForumComment(ctx context.Context, id string) (ForumComment, error)
-	GetForumPost(ctx context.Context, arg GetForumPostParams) (GetForumPostRow, error)
-	GetLatestByGroupId(ctx context.Context, groupID string) (Exam, error)
-	GetMedia(ctx context.Context, id string) (GetMediaRow, error)
-	GetModule(ctx context.Context, id string) (Module, error)
-	GetProgramWithVersions(ctx context.Context, id string) ([]GetProgramWithVersionsRow, error)
+	DeleteUserSessions(ctx context.Context, userID int64) error
+	GetArchiveEntry(ctx context.Context, id int64) (Archive, error)
+	GetArchiveEntryByMetadata(ctx context.Context, arg GetArchiveEntryByMetadataParams) (Archive, error)
+	GetArchiveEntryDetails(ctx context.Context, id int64) (GetArchiveEntryDetailsRow, error)
+	GetDiscussionComment(ctx context.Context, id int64) (DiscussionComment, error)
+	GetDiscussionPost(ctx context.Context, arg GetDiscussionPostParams) (GetDiscussionPostRow, error)
+	GetEvent(ctx context.Context, id int64) (Event, error)
+	GetLatestByGroupId(ctx context.Context, groupID int64) (Archive, error)
+	GetMedia(ctx context.Context, id int64) (GetMediaRow, error)
+	GetModule(ctx context.Context, id int64) (Module, error)
+	GetPostLinks(ctx context.Context, postID int64) ([]DiscussionPostLink, error)
+	GetPostPrograms(ctx context.Context, postID int64) ([]GetPostProgramsRow, error)
+	GetPostTags(ctx context.Context, postID int64) ([]string, error)
+	GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error)
 	GetSession(ctx context.Context, id string) (Session, error)
-	GetUser(ctx context.Context, id string) (User, error)
+	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByVerificationToken(ctx context.Context, verificationToken *string) (User, error)
 	ListAllActivities(ctx context.Context, arg ListAllActivitiesParams) ([]ListAllActivitiesRow, error)
+	ListArchiveEntries(ctx context.Context, arg ListArchiveEntriesParams) ([]ListArchiveEntriesRow, error)
+	ListArchiveVersions(ctx context.Context, groupID int64) ([]ListArchiveVersionsRow, error)
+	ListDiscussionComments(ctx context.Context, arg ListDiscussionCommentsParams) ([]ListDiscussionCommentsRow, error)
+	ListDiscussionPosts(ctx context.Context, arg ListDiscussionPostsParams) ([]ListDiscussionPostsRow, error)
+	ListDiscussionPostsTop(ctx context.Context, arg ListDiscussionPostsTopParams) ([]ListDiscussionPostsTopRow, error)
 	ListEvents(ctx context.Context) ([]Event, error)
-	ListExamVersions(ctx context.Context, groupID string) ([]ListExamVersionsRow, error)
-	ListExams(ctx context.Context, arg ListExamsParams) ([]ListExamsRow, error)
-	ListForumComments(ctx context.Context, arg ListForumCommentsParams) ([]ListForumCommentsRow, error)
-	ListForumPosts(ctx context.Context, arg ListForumPostsParams) ([]ListForumPostsRow, error)
-	ListForumPostsTop(ctx context.Context, arg ListForumPostsTopParams) ([]ListForumPostsTopRow, error)
-	ListMediaByEvent(ctx context.Context, eventID string) ([]ListMediaByEventRow, error)
-	ListModulesByProgram(ctx context.Context, programid string) ([]Module, error)
-	ListNotifications(ctx context.Context, userid string) ([]Notification, error)
+	ListMediaByEvent(ctx context.Context, eventID int64) ([]ListMediaByEventRow, error)
+	ListModulesByProgram(ctx context.Context, programID int64) ([]Module, error)
+	ListNotifications(ctx context.Context, userID int64) ([]Notification, error)
 	ListProgramsWithVersions(ctx context.Context) ([]ListProgramsWithVersionsRow, error)
 	ListUserActivities(ctx context.Context, arg ListUserActivitiesParams) ([]ListUserActivitiesRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
-	ListUsersForNotification(ctx context.Context) ([]string, error)
-	MarkAllNotificationsAsRead(ctx context.Context, userid string) error
+	ListUsersForNotification(ctx context.Context) ([]int64, error)
+	MarkAllNotificationsAsRead(ctx context.Context, userID int64) error
 	MarkNotificationAsRead(ctx context.Context, arg MarkNotificationAsReadParams) (Notification, error)
-	SearchExams(ctx context.Context, query *string) ([]SearchExamsRow, error)
-	SearchForumPosts(ctx context.Context, arg SearchForumPostsParams) ([]SearchForumPostsRow, error)
+	PromoteLatestInGroup(ctx context.Context, groupID int64) error
+	SearchArchive(ctx context.Context, query *string) ([]SearchArchiveRow, error)
+	SearchDiscussionPosts(ctx context.Context, arg SearchDiscussionPostsParams) ([]SearchDiscussionPostsRow, error)
 	SearchModules(ctx context.Context, query *string) ([]Module, error)
 	SearchUsers(ctx context.Context, query string) ([]User, error)
 	SetUserActive(ctx context.Context, arg SetUserActiveParams) (User, error)
@@ -68,17 +81,16 @@ type Querier interface {
 	SlideSession(ctx context.Context, arg SlideSessionParams) (Session, error)
 	SweepExpiredVerifications(ctx context.Context) error
 	TouchSession(ctx context.Context, id string) (Session, error)
-	UnverifyUser(ctx context.Context, id string) (User, error)
-	UpdateExam(ctx context.Context, arg UpdateExamParams) (Exam, error)
-	UpdateForumComment(ctx context.Context, arg UpdateForumCommentParams) (ForumComment, error)
-	UpdateForumPost(ctx context.Context, arg UpdateForumPostParams) (ForumPost, error)
+	UnverifyUser(ctx context.Context, id int64) (User, error)
+	UpdateDiscussionComment(ctx context.Context, arg UpdateDiscussionCommentParams) (DiscussionComment, error)
+	UpdateDiscussionPost(ctx context.Context, arg UpdateDiscussionPostParams) (DiscussionPost, error)
+	// Example logic
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarParams) (User, error)
 	UpdateUserToken(ctx context.Context, arg UpdateUserTokenParams) error
-	UpdateUserVerificationWindow(ctx context.Context, arg UpdateUserVerificationWindowParams) (User, error)
-	UpsertForumCommentVote(ctx context.Context, arg UpsertForumCommentVoteParams) (ForumCommentVote, error)
-	UpsertForumVote(ctx context.Context, arg UpsertForumVoteParams) (ForumVote, error)
-	VerifyUser(ctx context.Context, arg VerifyUserParams) (User, error)
+	UpsertDiscussionCommentVote(ctx context.Context, arg UpsertDiscussionCommentVoteParams) (DiscussionCommentVote, error)
+	UpsertDiscussionVote(ctx context.Context, arg UpsertDiscussionVoteParams) (DiscussionVote, error)
+	VerifyUser(ctx context.Context, id int64) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)
