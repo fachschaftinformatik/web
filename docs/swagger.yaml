@@ -17,43 +17,32 @@ definitions:
       user_name:
         type: string
     type: object
-  dto.CommentRequest:
+  dto.ArchiveEntryResponse:
     properties:
-      parent_id:
-        type: string
-      text:
-        maxLength: 2000
-        minLength: 1
-        type: string
-    required:
-    - text
-    type: object
-  dto.CommentResponse:
-    properties:
-      author_avatar_url:
-        type: string
-      author_id:
-        type: string
-      author_name:
+      comment:
         type: string
       created_at:
         type: string
+      edit_version:
+        type: integer
+      exam_date:
+        type: string
+      file_id:
+        type: string
       id:
         type: string
-      parent_id:
+      module_id:
         type: string
-      post_id:
+      module_name:
         type: string
-      text:
+      program_id:
         type: string
-      updated_at:
+      uploader_name:
         type: string
-      user_vote:
-        type: integer
-      votes:
-        type: integer
+      version:
+        type: string
     type: object
-  dto.CreatePostRequest:
+  dto.CreateDiscussionPostRequest:
     properties:
       body:
         maxLength: 10000
@@ -65,12 +54,12 @@ definitions:
         type: string
       links:
         items:
-          type: string
+          $ref: '#/definitions/dto.Link'
         type: array
       location:
         type: string
       pinned:
-        type: integer
+        type: boolean
       programs:
         items:
           type: string
@@ -85,7 +74,7 @@ definitions:
         type: string
       type:
         enum:
-        - forum
+        - discussion
         - news
         - event
         type: string
@@ -97,6 +86,91 @@ definitions:
     properties:
       csrf:
         type: string
+      signups_enabled:
+        type: boolean
+    type: object
+  dto.DiscussionCommentRequest:
+    properties:
+      parent_id:
+        type: string
+      text:
+        maxLength: 2000
+        minLength: 1
+        type: string
+    required:
+    - text
+    type: object
+  dto.DiscussionCommentResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      parent_id:
+        type: string
+      post_id:
+        type: string
+      text:
+        type: string
+      updated_at:
+        type: string
+      user_avatar_url:
+        type: string
+      user_id:
+        type: string
+      user_name:
+        type: string
+      user_vote:
+        type: integer
+      votes:
+        type: integer
+    type: object
+  dto.DiscussionPostResponse:
+    properties:
+      body:
+        type: string
+      comment_count:
+        type: integer
+      created_at:
+        type: string
+      event_date:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      links:
+        items:
+          $ref: '#/definitions/dto.Link'
+        type: array
+      location:
+        type: string
+      pinned:
+        type: integer
+      programs:
+        items:
+          $ref: '#/definitions/dto.PostProgramResponse'
+        type: array
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+      user_avatar_url:
+        type: string
+      user_id:
+        type: string
+      user_name:
+        type: string
+      user_vote:
+        type: integer
+      votes:
+        type: integer
     type: object
   dto.ErrorResponse:
     properties:
@@ -116,37 +190,17 @@ definitions:
       title:
         type: string
     type: object
-  dto.ExamResponse:
+  dto.Link:
     properties:
-      comment:
+      label:
         type: string
-      edit_version:
-        type: integer
-      exam_date:
-        type: string
-      group_id:
-        type: string
-      id:
-        type: string
-      is_latest:
-        type: integer
-      module_name:
-        type: string
-      moduleid:
-        type: string
-      programid:
-        type: string
-      uploaded_at:
-        type: string
-      uploader_name:
-        type: string
-      version:
+      url:
         type: string
     type: object
   dto.LoginRequest:
     properties:
       email:
-        example: user@studmail.w-hs.de
+        example: user@fsv-wh.de
         type: string
       password:
         example: secret123
@@ -161,6 +215,8 @@ definitions:
     type: object
   dto.MediaResponse:
     properties:
+      created_at:
+        type: string
       description:
         type: string
       event_id:
@@ -170,8 +226,6 @@ definitions:
       mime_type:
         type: string
       title:
-        type: string
-      uploaded_at:
         type: string
       uploader_name:
         type: string
@@ -184,7 +238,7 @@ definitions:
         type: string
       name:
         type: string
-      programid:
+      program_id:
         type: string
     type: object
   dto.NotificationResponse:
@@ -203,55 +257,15 @@ definitions:
         type: string
       type:
         type: string
+      user_id:
+        type: string
     type: object
-  dto.PostResponse:
+  dto.PostProgramResponse:
     properties:
-      active:
-        type: integer
-      author_avatar_url:
-        type: string
-      author_id:
-        type: string
-      author_name:
-        type: string
-      body:
-        type: string
-      comment_count:
-        type: integer
-      created_at:
-        type: string
-      event_date:
-        type: string
       id:
         type: string
-      image_url:
+      name:
         type: string
-      links:
-        items:
-          type: string
-        type: array
-      location:
-        type: string
-      pinned:
-        type: integer
-      programs:
-        items:
-          type: string
-        type: array
-      tags:
-        items:
-          type: string
-        type: array
-      title:
-        type: string
-      type:
-        type: string
-      updated_at:
-        type: string
-      user_vote:
-        type: integer
-      votes:
-        type: integer
     type: object
   dto.ProgramResponse:
     properties:
@@ -278,7 +292,7 @@ definitions:
         type: string
       private:
         type: integer
-      programid:
+      program_id:
         type: string
       role:
         type: string
@@ -290,7 +304,7 @@ definitions:
   dto.RegisterRequest:
     properties:
       email:
-        example: user@studmail.w-hs.de
+        example: user@fsv-wh.de
         type: string
       name:
         example: Max Mustermann
@@ -302,13 +316,12 @@ definitions:
         maxLength: 72
         minLength: 8
         type: string
-      programid:
+      program_id:
         type: string
     required:
     - email
     - name
     - password
-    - programid
     type: object
   dto.SearchResult:
     properties:
@@ -319,21 +332,19 @@ definitions:
       title:
         type: string
       type:
-        description: '"exam" or "module" or "user" or "post"'
+        description: '"archive" or "module" or "user" or "discussion"'
         type: string
       url:
         type: string
     type: object
-  dto.UpdateExamRequest:
+  dto.UpdateArchiveEntryRequest:
     properties:
       comment:
         maxLength: 1000
         type: string
       date:
         type: string
-      moduleid:
-        type: string
-      programid:
+      module_id:
         type: string
       version:
         maxLength: 32
@@ -341,8 +352,7 @@ definitions:
         type: string
     required:
     - date
-    - moduleid
-    - programid
+    - module_id
     - version
     type: object
   dto.UpdateProfileRequest:
@@ -354,7 +364,7 @@ definitions:
         type: string
       private:
         type: boolean
-      programid:
+      program_id:
         type: string
       theme:
         enum:
@@ -365,7 +375,6 @@ definitions:
         type: string
     required:
     - name
-    - programid
     - theme
     type: object
   dto.UserResponse:
@@ -384,7 +393,7 @@ definitions:
         type: string
       private:
         type: integer
-      programid:
+      program_id:
         type: string
       role:
         type: string
@@ -429,6 +438,261 @@ paths:
       summary: List all activities
       tags:
       - Activities
+  /admin/modules:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Module Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ModuleResponse'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ModuleResponse'
+      summary: Create a module
+      tags:
+      - Admin
+  /admin/programs:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Program Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ProgramResponse'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ProgramResponse'
+      summary: Create a program
+      tags:
+      - Admin
+  /admin/ref/discussion-types:
+    get:
+      operationId: getAdminRefDiscussionTypes
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+      summary: Get all discussion types
+      tags:
+      - Admin
+  /admin/ref/roles:
+    get:
+      operationId: getAdminRefRoles
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+      summary: Get all user roles
+      tags:
+      - Admin
+  /archive:
+    get:
+      operationId: getArchive
+      parameters:
+      - description: Program ID
+        in: query
+        name: program_id
+        type: string
+      - description: Version
+        in: query
+        name: version
+        type: string
+      - description: Module ID
+        in: query
+        name: module_id
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ArchiveEntryResponse'
+            type: array
+      summary: List archive entries
+      tags:
+      - Archive
+    post:
+      consumes:
+      - multipart/form-data
+      operationId: postArchive
+      parameters:
+      - description: CSRF Token
+        in: header
+        name: X-CSRF-Token
+        required: true
+        type: string
+      - description: Exam PDF
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Exam Date (YYYY-MM-DD)
+        in: formData
+        name: date
+        type: string
+      - description: Module ID
+        in: formData
+        name: module_id
+        type: string
+      - description: PO Version
+        in: formData
+        name: version
+        type: string
+      - description: Optional specific group ID to add revision to
+        in: formData
+        name: group_id
+        type: string
+      - description: Optional comment
+        in: formData
+        name: comment
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ArchiveEntryResponse'
+      summary: Upload archive entry
+      tags:
+      - Archive
+  /archive/{entryId}:
+    delete:
+      operationId: deleteArchiveId
+      parameters:
+      - description: Entry ID
+        in: path
+        name: entryId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete archive entry
+      tags:
+      - Archive
+    get:
+      operationId: getArchiveId
+      parameters:
+      - description: Entry ID
+        in: path
+        name: entryId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ArchiveEntryResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get archive entry details
+      tags:
+      - Archive
+    put:
+      operationId: putArchiveId
+      parameters:
+      - description: Entry ID
+        in: path
+        name: entryId
+        required: true
+        type: string
+      - description: Update Data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateArchiveEntryRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ArchiveEntryResponse'
+      summary: Update archive entry (new version)
+      tags:
+      - Archive
+  /archive/{entryId}/file:
+    get:
+      operationId: getArchiveFile
+      parameters:
+      - description: Entry ID
+        in: path
+        name: entryId
+        required: true
+        type: string
+      - description: Specific File ID (ignored in simple mode)
+        in: query
+        name: file_id
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Download archive file
+      tags:
+      - Archive
+  /archive/{entryId}/versions:
+    get:
+      operationId: getArchiveVersions
+      parameters:
+      - description: Entry ID
+        in: path
+        name: entryId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ArchiveEntryResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: List archive entry versions
+      tags:
+      - Archive
+  /archive/files/{fileId}:
+    delete:
+      operationId: deleteArchiveFile
+      parameters:
+      - description: File ID
+        in: path
+        name: fileId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a specific archive file version
+      tags:
+      - Archive
   /auth/avatars/{userId}/{filename}:
     get:
       parameters:
@@ -442,8 +706,14 @@ paths:
         name: filename
         required: true
         type: string
+      - description: Size (ignored, always serves source)
+        in: query
+        name: size
+        type: integer
       produces:
       - image/svg+xml
+      - image/jpeg
+      - image/png
       responses:
         "200":
           description: OK
@@ -491,12 +761,6 @@ paths:
       - Auth
   /auth/logout:
     post:
-      parameters:
-      - description: CSRF Token
-        in: header
-        name: X-CSRF-Token
-        required: true
-        type: string
       responses:
         "204":
           description: No Content
@@ -537,6 +801,26 @@ paths:
       summary: Update current user profile
       tags:
       - Auth
+  /auth/me/avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Avatar Image
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+      summary: Upload avatar
+      tags:
+      - Auth
   /auth/notifications:
     get:
       operationId: getAuthNotifications
@@ -554,13 +838,13 @@ paths:
       summary: List notifications
       tags:
       - Auth
-  /auth/notifications/{id}/read:
+  /auth/notifications/{notificationId}/read:
     put:
       operationId: putAuthNotificationsIdRead
       parameters:
       - description: Notification ID
         in: path
-        name: id
+        name: notificationId
         required: true
         type: string
       responses:
@@ -631,293 +915,16 @@ paths:
       summary: Verify user email
       tags:
       - Auth
-  /events:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dto.EventResponse'
-            type: array
-      summary: List events
-      tags:
-      - Media
-    post:
-      consumes:
-      - multipart/form-data
-      parameters:
-      - description: Event Title
-        in: formData
-        name: title
-        required: true
-        type: string
-      - description: Cover Image
-        in: formData
-        name: file
-        type: file
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/dto.EventResponse'
-      summary: Create event
-      tags:
-      - Media
-  /events/{id}/cover:
+  /discussions:
     get:
       parameters:
-      - description: Event ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - image/jpeg
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: file
-      summary: Get event cover
-      tags:
-      - Media
-  /exams:
-    get:
-      operationId: getExams
-      parameters:
-      - description: Program ID
-        in: query
-        name: programid
-        type: string
-      - description: Version
-        in: query
-        name: version
-        type: string
-      - description: Module ID
-        in: query
-        name: moduleid
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dto.ExamResponse'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: List exams
-      tags:
-      - Exams
-    post:
-      consumes:
-      - multipart/form-data
-      description: Upload a PDF and assign it to one or more modules
-      operationId: postExams
-      parameters:
-      - description: CSRF Token
-        in: header
-        name: X-CSRF-Token
-        required: true
-        type: string
-      - description: Exam PDF
-        in: formData
-        name: file
-        required: true
-        type: file
-      - description: Exam Date (YYYY-MM-DD)
-        in: formData
-        name: date
-        required: true
-        type: string
-      - description: 'JSON array of assignments: [{''programid'':1, ''version'':''PO2016'',
-          ''moduleid'':10}]'
-        in: formData
-        name: assignments
-        required: true
-        type: string
-      - description: Optional comment
-        in: formData
-        name: comment
-        type: string
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Upload exam
-      tags:
-      - Exams
-  /exams/{id}:
-    delete:
-      operationId: deleteExamsId
-      parameters:
-      - description: Exam ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "204":
-          description: No Content
-      summary: Delete exam
-      tags:
-      - Exams
-    get:
-      operationId: getExamsId
-      parameters:
-      - description: Exam ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.ExamResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Get exam details
-      tags:
-      - Exams
-    put:
-      operationId: putExamsId
-      parameters:
-      - description: Exam ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Update Data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UpdateExamRequest'
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.ExamResponse'
-      summary: Update exam
-      tags:
-      - Exams
-  /exams/{id}/file:
-    get:
-      operationId: getExamsFile
-      parameters:
-      - description: Exam ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: file
-      summary: Download file
-      tags:
-      - Exams
-  /exams/versions/{groupId}:
-    get:
-      operationId: getExamVersions
-      parameters:
-      - description: Exam Group ID
-        in: path
-        name: groupId
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dto.ExamResponse'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: List exam versions
-      tags:
-      - Exams
-  /forum/comments/{id}:
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: Comment ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Comment Content
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.CommentRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.CommentResponse'
-      summary: Update comment
-      tags:
-      - Forum
-  /forum/comments/{id}/vote:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Comment ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Vote Value
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.VoteRequest'
-      responses:
-        "204":
-          description: No Content
-      summary: Vote for comment
-      tags:
-      - Forum
-  /forum/posts:
-    get:
-      parameters:
-      - description: Post type (forum, news, event)
+      - description: Post type (discussion, news, event)
         in: query
         name: type
+        type: string
+      - description: Program ID filter
+        in: query
+        name: program_id
         type: string
       - description: Search query
         in: query
@@ -940,11 +947,11 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/dto.PostResponse'
+              $ref: '#/definitions/dto.DiscussionPostResponse'
             type: array
-      summary: List forum posts
+      summary: List discussion posts
       tags:
-      - Forum
+      - Discussions
     post:
       consumes:
       - application/json
@@ -954,18 +961,18 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.CreatePostRequest'
+          $ref: '#/definitions/dto.CreateDiscussionPostRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/dto.PostResponse'
-      summary: Create forum post
+            $ref: '#/definitions/dto.DiscussionPostResponse'
+      summary: Create discussion post
       tags:
-      - Forum
-  /forum/posts/{id}:
+      - Discussions
+  /discussions/{postId}:
     delete:
       parameters:
       - description: Post ID
@@ -976,9 +983,9 @@ paths:
       responses:
         "204":
           description: No Content
-      summary: Delete forum post
+      summary: Delete discussion post
       tags:
-      - Forum
+      - Discussions
     get:
       parameters:
       - description: Post ID
@@ -990,10 +997,10 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.PostResponse'
-      summary: Get forum post
+            $ref: '#/definitions/dto.DiscussionPostResponse'
+      summary: Get discussion post
       tags:
-      - Forum
+      - Discussions
     put:
       consumes:
       - application/json
@@ -1008,18 +1015,18 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.CreatePostRequest'
+          $ref: '#/definitions/dto.CreateDiscussionPostRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.PostResponse'
-      summary: Update forum post
+            $ref: '#/definitions/dto.DiscussionPostResponse'
+      summary: Update discussion post
       tags:
-      - Forum
-  /forum/posts/{id}/comments:
+      - Discussions
+  /discussions/{postId}/comments:
     get:
       parameters:
       - description: Post ID
@@ -1032,11 +1039,11 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/dto.CommentResponse'
+              $ref: '#/definitions/dto.DiscussionCommentResponse'
             type: array
       summary: List comments for post
       tags:
-      - Forum
+      - Discussions
     post:
       consumes:
       - application/json
@@ -1051,18 +1058,18 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.CommentRequest'
+          $ref: '#/definitions/dto.DiscussionCommentRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/dto.CommentResponse'
+            $ref: '#/definitions/dto.DiscussionCommentResponse'
       summary: Add comment to post
       tags:
-      - Forum
-  /forum/posts/{id}/vote:
+      - Discussions
+  /discussions/{postId}/vote:
     post:
       consumes:
       - application/json
@@ -1083,13 +1090,138 @@ paths:
           description: No Content
       summary: Vote for post
       tags:
-      - Forum
-  /media:
+      - Discussions
+  /discussions/comments/{commentId}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Comment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Comment Content
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DiscussionCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DiscussionCommentResponse'
+      summary: Update comment
+      tags:
+      - Discussions
+  /discussions/comments/{commentId}/vote:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Comment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Vote Value
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VoteRequest'
+      responses:
+        "204":
+          description: No Content
+      summary: Vote for comment
+      tags:
+      - Discussions
+  /events:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.EventResponse'
+            type: array
+      summary: List events
+      tags:
+      - Events
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Event Title
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: Cover Image
+        in: formData
+        name: file
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.EventResponse'
+      summary: Create event
+      tags:
+      - Events
+  /events/{eventId}:
     get:
       parameters:
       - description: Event ID
+        in: path
+        name: eventId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EventResponse'
+      summary: Get event details
+      tags:
+      - Events
+  /events/{eventId}/cover:
+    get:
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        required: true
+        type: string
+      - description: Size (200, 400, 600, 800, 1200, 1600)
         in: query
-        name: event_id
+        name: size
+        type: integer
+      produces:
+      - image/jpeg
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      summary: Get event cover
+      tags:
+      - Events
+  /events/{eventId}/media:
+    get:
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
         required: true
         type: string
       produces:
@@ -1101,16 +1233,16 @@ paths:
             items:
               $ref: '#/definitions/dto.MediaResponse'
             type: array
-      summary: List media
+      summary: List media for an event
       tags:
-      - Media
+      - Events
     post:
       consumes:
       - multipart/form-data
       parameters:
       - description: Event ID
-        in: formData
-        name: event_id
+        in: path
+        name: eventId
         required: true
         type: string
       - description: Title
@@ -1132,18 +1264,16 @@ paths:
         "201":
           description: Created
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Upload media
+            $ref: '#/definitions/dto.MediaResponse'
+      summary: Upload media to event
       tags:
-      - Media
-  /media/{id}:
+      - Events
+  /media/{mediaId}:
     get:
       parameters:
       - description: Media ID
         in: path
-        name: id
+        name: mediaId
         required: true
         type: string
       produces:
@@ -1155,13 +1285,13 @@ paths:
             $ref: '#/definitions/dto.MediaResponse'
       summary: Get media by ID
       tags:
-      - Media
-  /media/{id}/file:
+      - Events
+  /media/{mediaId}/file:
     get:
       parameters:
       - description: Media ID
         in: path
-        name: id
+        name: mediaId
         required: true
         type: string
       produces:
@@ -1173,15 +1303,19 @@ paths:
             type: file
       summary: Get media file
       tags:
-      - Media
-  /media/{id}/preview:
+      - Events
+  /media/{mediaId}/preview:
     get:
       parameters:
       - description: Media ID
         in: path
-        name: id
+        name: mediaId
         required: true
         type: string
+      - description: Size (200, 400, 600, 800, 1200, 1600)
+        in: query
+        name: size
+        type: integer
       produces:
       - image/jpeg
       responses:
@@ -1191,7 +1325,7 @@ paths:
             type: file
       summary: Get media preview
       tags:
-      - Media
+      - Events
   /programs:
     get:
       consumes:
@@ -1214,15 +1348,15 @@ paths:
       summary: List all programs
       tags:
       - Programs
-  /programs/{id}:
+  /programs/{programId}:
     get:
       operationId: getProgramsId
       parameters:
       - description: Program ID
         in: path
-        name: id
+        name: programId
         required: true
-        type: integer
+        type: string
       responses:
         "200":
           description: OK
@@ -1239,13 +1373,13 @@ paths:
       summary: Get program by ID
       tags:
       - Programs
-  /programs/{id}/modules:
+  /programs/{programId}/modules:
     get:
       operationId: getProgramModules
       parameters:
       - description: Program ID
         in: path
-        name: id
+        name: programId
         required: true
         type: string
       responses:
@@ -1302,12 +1436,12 @@ paths:
       summary: List users
       tags:
       - Users
-  /users/{id}:
+  /users/{userId}:
     get:
       parameters:
       - description: User ID
         in: path
-        name: id
+        name: userId
         required: true
         type: string
       produces:
@@ -1320,12 +1454,12 @@ paths:
       summary: Get user profile
       tags:
       - Users
-  /users/{id}/activities:
+  /users/{userId}/activities:
     get:
       parameters:
       - description: User ID
         in: path
-        name: id
+        name: userId
         required: true
         type: string
       - description: Limit

@@ -28,13 +28,13 @@ import { useNavigate, Link as RouterLink, Link } from 'react-router-dom';
 
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
-import { getForumPosts } from '@lib/api';
-import { client } from '@lib/api/client.gen';
-import type { AuthPostResponse } from '@lib/api';
+import { getDiscussions, getEvents } from '@lib/api';
+import type { DtoDiscussionPostResponse as ApiPost, DtoEventResponse } from '@lib/api';
+import { getSizedImageUrl, getImageSrcSet, getAvatarUrl } from '@lib/images';
 
-type NewsItem = AuthPostResponse;
+type NewsItem = ApiPost;
 
-type EventItem = { id: number; title: string; created_at: string; cover_path?: string };
+type EventItem = DtoEventResponse;
 type ForumPostSummary = { id: string; title: string; body: string; author: string; authorId: string; authorAvatarUrl: string | undefined; createdAt: string; replies: number; };
 type CalendarEvent = { id: string; title: string; date: string; time?: string; location?: string; category: string; };
 
@@ -58,14 +58,14 @@ const formatForumDate = (iso?: string) => {
   const d = new Date(iso);
   return isNaN(d.getTime()) ? 'k.A.' : d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
 };
-const loadForumPosts = (apiPosts: AuthPostResponse[] = []): ForumPostSummary[] => {
-  const normalize = (post: AuthPostResponse): ForumPostSummary => ({
+const loadForumPosts = (apiPosts: ApiPost[] = []): ForumPostSummary[] => {
+  const normalize = (post: ApiPost): ForumPostSummary => ({
     id: String(post.id ?? ''),
     title: String(post.title ?? 'Neuer Beitrag'),
     body: String(post.body ?? ''),
-    author: String(post.author_name ?? 'Anonym'),
-    authorId: String(post.author_id ?? ''),
-    authorAvatarUrl: post.author_avatar_url || undefined,
+    author: String(post.user_name ?? 'Anonym'),
+    authorId: String(post.user_id ?? ''),
+    authorAvatarUrl: post.user_avatar_url || undefined,
     createdAt: String(post.created_at ?? new Date().toISOString()),
     replies: Number(post.comment_count ?? 0),
   });
@@ -97,20 +97,20 @@ const NewsFeedPage: React.FC = () => {
   const [sidebarIndex, setSidebarIndex] = useState(0);
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [forumPosts, setForumPosts] = useState<ForumPostSummary[]>([]);
-  const [apiEvents, setApiEvents] = useState<AuthPostResponse[]>([]);
+  const [apiEvents, setApiEvents] = useState<ApiPost[]>([]);
 
   useEffect(() => {
-    getForumPosts({ query: { type: 'news', limit: 10 } }).then(({ data }) => {
-      if (data) setNewsItems(data as AuthPostResponse[]);
+    getDiscussions({ query: { type: 'news', limit: 10 } }).then(({ data }) => {
+      if (data) setNewsItems(data as ApiPost[]);
     });
-    getForumPosts({ query: { type: 'forum', limit: 5 } }).then(({ data }) => {
-      if (data) setForumPosts(loadForumPosts(data as AuthPostResponse[]));
+    getDiscussions({ query: { type: 'discussion', limit: 5 } }).then(({ data }) => {
+      if (data) setForumPosts(loadForumPosts(data as ApiPost[]));
     });
-    getForumPosts({ query: { type: 'event', limit: 20 } }).then(({ data }) => {
-      if (data) setApiEvents(data as AuthPostResponse[]);
+    getDiscussions({ query: { type: 'event', limit: 20 } }).then(({ data }) => {
+      if (data) setApiEvents(data as ApiPost[]);
     });
 
-    client.request({ method: 'GET', url: '/events' }).then(({ data }) => {
+    getEvents().then(({ data }) => {
       if (data) setEventsData(data as EventItem[]);
     });
   }, []);
@@ -165,7 +165,7 @@ const NewsFeedPage: React.FC = () => {
       }
 
       return {
-        id: post.id!,
+        id: String(post.id!),
         title: post.title!,
         date: datePart,
         time: timePart,
@@ -203,7 +203,7 @@ const NewsFeedPage: React.FC = () => {
           {eventsData.length > 0 ? (
             eventsData.map((ev, idx) => (
               <Box
-                key={ev.id}
+                key={String(ev.id)}
                 sx={{
                   position: 'absolute',
                   inset: 0,
@@ -214,7 +214,9 @@ const NewsFeedPage: React.FC = () => {
               >
                 <Box
                   component="img"
-                  src={ev.cover_path ? `/api/events/${ev.id}/cover` : `https://picsum.photos/seed/${ev.id}/1600/900`}
+                  src={ev.cover_path ? getSizedImageUrl(`/api/v1/events/${ev.id}/cover`, 1600) : undefined}
+                  srcSet={ev.cover_path ? getImageSrcSet(`/api/v1/events/${ev.id}/cover`) : undefined}
+                  sizes="100vw"
                   sx={{
                     width: '100%',
                     height: '100%',
@@ -295,7 +297,7 @@ const NewsFeedPage: React.FC = () => {
                 </Button>
                 <Button
                   component={RouterLink}
-                  to="/images"
+                  to="/events"
                   variant="outlined"
                   size="large"
                   sx={{
@@ -397,9 +399,9 @@ const NewsFeedPage: React.FC = () => {
                         <Stack spacing={1.5}>
                           {newsItems.slice(0, 3).map((item) => (
                             <Box
-                              key={item.id}
+                              key={String(item.id)}
                               component={RouterLink}
-                              to={`/discussions/${item.id}`}
+                              to={`/d/${item.id}`}
                               sx={{
                                 ...custom.newsCardLink,
                                 bgcolor: isDark ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.04),
@@ -411,7 +413,7 @@ const NewsFeedPage: React.FC = () => {
                             >
                               <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
                                 <Avatar
-                                  src={item.author_avatar_url || undefined}
+                                  src={getAvatarUrl(item.user_avatar_url)}
                                   sx={{
                                     width: 18,
                                     height: 18,
@@ -420,10 +422,10 @@ const NewsFeedPage: React.FC = () => {
                                     fontWeight: "bold"
                                   }}
                                 >
-                                  {item.author_name ? item.author_name[0].toUpperCase() : "A"}
+                                  {item.user_name ? item.user_name[0].toUpperCase() : "A"}
                                 </Avatar>
                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                  von <Typography component={Link} to={`/user/${item.author_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{item.author_name || "Anonym"}</Typography> · {formatNewsDate(item.created_at || "")}
+                                  von <Typography component={Link} to={`/u/${item.user_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{item.user_name || "Anonym"}</Typography> · {formatNewsDate(item.created_at || "")}
                                 </Typography>
                               </Stack>
                               <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{item.title}</Typography>
@@ -437,10 +439,10 @@ const NewsFeedPage: React.FC = () => {
                       ) : (
                         <Stack spacing={1.5}>
                           {forumPosts.slice(0, 3).map((post) => (
-                            <Box key={post.id} component={RouterLink} to={`/discussions/${post.id}`} sx={custom.newsCardLink}>
+                            <Box key={post.id} component={RouterLink} to={`/d/${post.id}`} sx={custom.newsCardLink}>
                               <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
                                 <Avatar
-                                  src={post.authorAvatarUrl || undefined}
+                                  src={getAvatarUrl(post.authorAvatarUrl)}
                                   sx={{
                                     width: 18,
                                     height: 18,
@@ -452,7 +454,7 @@ const NewsFeedPage: React.FC = () => {
                                   {post.author ? post.author[0].toUpperCase() : "A"}
                                 </Avatar>
                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                  von <Typography component={Link} to={`/user/${post.authorId}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author}</Typography> · {formatForumDate(post.createdAt)}
+                                  von <Typography component={Link} to={`/u/${post.authorId}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author}</Typography> · {formatForumDate(post.createdAt)}
                                 </Typography>
                               </Stack>
                               <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{post.title}</Typography>
@@ -517,7 +519,7 @@ const NewsFeedPage: React.FC = () => {
                               boxShadow: `0 0 20px ${alpha(accent, 0.4)}`
                             }
                           }}
-                          onClick={() => navigate(`/discussions/${event.id}`)}
+                          onClick={() => navigate(`/d/${event.id}`)}
                         >
                           <TimelineOppositeContent
                             sx={{ m: 'auto 0' }}

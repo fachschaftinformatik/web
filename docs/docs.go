@@ -48,10 +48,401 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/modules": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Create a module",
+                "parameters": [
+                    {
+                        "description": "Module Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ModuleResponse"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ModuleResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/programs": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Create a program",
+                "parameters": [
+                    {
+                        "description": "Program Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProgramResponse"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProgramResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/ref/discussion-types": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get all discussion types",
+                "operationId": "getAdminRefDiscussionTypes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/ref/roles": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get all user roles",
+                "operationId": "getAdminRefRoles",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/archive": {
+            "get": {
+                "tags": [
+                    "Archive"
+                ],
+                "summary": "List archive entries",
+                "operationId": "getArchive",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Program ID",
+                        "name": "program_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Version",
+                        "name": "version",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Module ID",
+                        "name": "module_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.ArchiveEntryResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Archive"
+                ],
+                "summary": "Upload archive entry",
+                "operationId": "postArchive",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "CSRF Token",
+                        "name": "X-CSRF-Token",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Exam PDF",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Exam Date (YYYY-MM-DD)",
+                        "name": "date",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Module ID",
+                        "name": "module_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "PO Version",
+                        "name": "version",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Optional specific group ID to add revision to",
+                        "name": "group_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Optional comment",
+                        "name": "comment",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArchiveEntryResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/archive/files/{fileId}": {
+            "delete": {
+                "tags": [
+                    "Archive"
+                ],
+                "summary": "Delete a specific archive file version",
+                "operationId": "deleteArchiveFile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File ID",
+                        "name": "fileId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/archive/{entryId}": {
+            "get": {
+                "tags": [
+                    "Archive"
+                ],
+                "summary": "Get archive entry details",
+                "operationId": "getArchiveId",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Entry ID",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArchiveEntryResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Archive"
+                ],
+                "summary": "Update archive entry (new version)",
+                "operationId": "putArchiveId",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Entry ID",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateArchiveEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArchiveEntryResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Archive"
+                ],
+                "summary": "Delete archive entry",
+                "operationId": "deleteArchiveId",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Entry ID",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/archive/{entryId}/file": {
+            "get": {
+                "tags": [
+                    "Archive"
+                ],
+                "summary": "Download archive file",
+                "operationId": "getArchiveFile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Entry ID",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Specific File ID (ignored in simple mode)",
+                        "name": "file_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/archive/{entryId}/versions": {
+            "get": {
+                "tags": [
+                    "Archive"
+                ],
+                "summary": "List archive entry versions",
+                "operationId": "getArchiveVersions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Entry ID",
+                        "name": "entryId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.ArchiveEntryResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/avatars/{userId}/{filename}": {
             "get": {
                 "produces": [
-                    "image/svg+xml"
+                    "image/svg+xml",
+                    "image/jpeg",
+                    "image/png"
                 ],
                 "tags": [
                     "Auth"
@@ -71,6 +462,12 @@ const docTemplate = `{
                         "name": "filename",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Size (ignored, always serves source)",
+                        "name": "size",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -147,15 +544,6 @@ const docTemplate = `{
                     "Auth"
                 ],
                 "summary": "Log out",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "CSRF Token",
-                        "name": "X-CSRF-Token",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "204": {
                         "description": "No Content"
@@ -216,6 +604,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/me/avatar": {
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Upload avatar",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Avatar Image",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/notifications": {
             "get": {
                 "tags": [
@@ -262,7 +681,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/notifications/{id}/read": {
+        "/auth/notifications/{notificationId}/read": {
             "put": {
                 "tags": [
                     "Auth"
@@ -273,7 +692,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Notification ID",
-                        "name": "id",
+                        "name": "notificationId",
                         "in": "path",
                         "required": true
                     }
@@ -361,442 +780,23 @@ const docTemplate = `{
                 }
             }
         },
-        "/events": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Media"
-                ],
-                "summary": "List events",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dto.EventResponse"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Media"
-                ],
-                "summary": "Create event",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Event Title",
-                        "name": "title",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "Cover Image",
-                        "name": "file",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/dto.EventResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/events/{id}/cover": {
-            "get": {
-                "produces": [
-                    "image/jpeg"
-                ],
-                "tags": [
-                    "Media"
-                ],
-                "summary": "Get event cover",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Event ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "file"
-                        }
-                    }
-                }
-            }
-        },
-        "/exams": {
+        "/discussions": {
             "get": {
                 "tags": [
-                    "Exams"
+                    "Discussions"
                 ],
-                "summary": "List exams",
-                "operationId": "getExams",
+                "summary": "List discussion posts",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Program ID",
-                        "name": "programid",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Version",
-                        "name": "version",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Module ID",
-                        "name": "moduleid",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dto.ExamResponse"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Upload a PDF and assign it to one or more modules",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Exams"
-                ],
-                "summary": "Upload exam",
-                "operationId": "postExams",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "CSRF Token",
-                        "name": "X-CSRF-Token",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "Exam PDF",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Exam Date (YYYY-MM-DD)",
-                        "name": "date",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "JSON array of assignments: [{'programid':1, 'version':'PO2016', 'moduleid':10}]",
-                        "name": "assignments",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Optional comment",
-                        "name": "comment",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/exams/versions/{groupId}": {
-            "get": {
-                "tags": [
-                    "Exams"
-                ],
-                "summary": "List exam versions",
-                "operationId": "getExamVersions",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Exam Group ID",
-                        "name": "groupId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/dto.ExamResponse"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/exams/{id}": {
-            "get": {
-                "tags": [
-                    "Exams"
-                ],
-                "summary": "Get exam details",
-                "operationId": "getExamsId",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Exam ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ExamResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "Exams"
-                ],
-                "summary": "Update exam",
-                "operationId": "putExamsId",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Exam ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Update Data",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdateExamRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ExamResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Exams"
-                ],
-                "summary": "Delete exam",
-                "operationId": "deleteExamsId",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Exam ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
-            }
-        },
-        "/exams/{id}/file": {
-            "get": {
-                "tags": [
-                    "Exams"
-                ],
-                "summary": "Download file",
-                "operationId": "getExamsFile",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Exam ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "file"
-                        }
-                    }
-                }
-            }
-        },
-        "/forum/comments/{id}": {
-            "put": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Forum"
-                ],
-                "summary": "Update comment",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Comment ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Comment Content",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.CommentRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.CommentResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/forum/comments/{id}/vote": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Forum"
-                ],
-                "summary": "Vote for comment",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Comment ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Vote Value",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.VoteRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
-            }
-        },
-        "/forum/posts": {
-            "get": {
-                "tags": [
-                    "Forum"
-                ],
-                "summary": "List forum posts",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Post type (forum, news, event)",
+                        "description": "Post type (discussion, news, event)",
                         "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Program ID filter",
+                        "name": "program_id",
                         "in": "query"
                     },
                     {
@@ -830,7 +830,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.PostResponse"
+                                "$ref": "#/definitions/dto.DiscussionPostResponse"
                             }
                         }
                     }
@@ -844,9 +844,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Forum"
+                    "Discussions"
                 ],
-                "summary": "Create forum post",
+                "summary": "Create discussion post",
                 "parameters": [
                     {
                         "description": "Post Content",
@@ -854,7 +854,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreatePostRequest"
+                            "$ref": "#/definitions/dto.CreateDiscussionPostRequest"
                         }
                     }
                 ],
@@ -862,18 +862,92 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.PostResponse"
+                            "$ref": "#/definitions/dto.DiscussionPostResponse"
                         }
                     }
                 }
             }
         },
-        "/forum/posts/{id}": {
+        "/discussions/comments/{commentId}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Discussions"
+                ],
+                "summary": "Update comment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Comment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Comment Content",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.DiscussionCommentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.DiscussionCommentResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/discussions/comments/{commentId}/vote": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Discussions"
+                ],
+                "summary": "Vote for comment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Comment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Vote Value",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.VoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/discussions/{postId}": {
             "get": {
                 "tags": [
-                    "Forum"
+                    "Discussions"
                 ],
-                "summary": "Get forum post",
+                "summary": "Get discussion post",
                 "parameters": [
                     {
                         "type": "string",
@@ -887,7 +961,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PostResponse"
+                            "$ref": "#/definitions/dto.DiscussionPostResponse"
                         }
                     }
                 }
@@ -900,9 +974,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Forum"
+                    "Discussions"
                 ],
-                "summary": "Update forum post",
+                "summary": "Update discussion post",
                 "parameters": [
                     {
                         "type": "string",
@@ -917,7 +991,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreatePostRequest"
+                            "$ref": "#/definitions/dto.CreateDiscussionPostRequest"
                         }
                     }
                 ],
@@ -925,16 +999,16 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PostResponse"
+                            "$ref": "#/definitions/dto.DiscussionPostResponse"
                         }
                     }
                 }
             },
             "delete": {
                 "tags": [
-                    "Forum"
+                    "Discussions"
                 ],
-                "summary": "Delete forum post",
+                "summary": "Delete discussion post",
                 "parameters": [
                     {
                         "type": "string",
@@ -951,10 +1025,10 @@ const docTemplate = `{
                 }
             }
         },
-        "/forum/posts/{id}/comments": {
+        "/discussions/{postId}/comments": {
             "get": {
                 "tags": [
-                    "Forum"
+                    "Discussions"
                 ],
                 "summary": "List comments for post",
                 "parameters": [
@@ -972,7 +1046,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.CommentResponse"
+                                "$ref": "#/definitions/dto.DiscussionCommentResponse"
                             }
                         }
                     }
@@ -986,7 +1060,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Forum"
+                    "Discussions"
                 ],
                 "summary": "Add comment to post",
                 "parameters": [
@@ -1003,7 +1077,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CommentRequest"
+                            "$ref": "#/definitions/dto.DiscussionCommentRequest"
                         }
                     }
                 ],
@@ -1011,19 +1085,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.CommentResponse"
+                            "$ref": "#/definitions/dto.DiscussionCommentResponse"
                         }
                     }
                 }
             }
         },
-        "/forum/posts/{id}/vote": {
+        "/discussions/{postId}/vote": {
             "post": {
                 "consumes": [
                     "application/json"
                 ],
                 "tags": [
-                    "Forum"
+                    "Discussions"
                 ],
                 "summary": "Vote for post",
                 "parameters": [
@@ -1051,21 +1125,140 @@ const docTemplate = `{
                 }
             }
         },
-        "/media": {
+        "/events": {
             "get": {
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Media"
+                    "Events"
                 ],
-                "summary": "List media",
+                "summary": "List events",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.EventResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Create event",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event Title",
+                        "name": "title",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Cover Image",
+                        "name": "file",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EventResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/{eventId}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Get event details",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Event ID",
-                        "name": "event_id",
-                        "in": "query",
+                        "name": "eventId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EventResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/{eventId}/cover": {
+            "get": {
+                "produces": [
+                    "image/jpeg"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Get event cover",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Size (200, 400, 600, 800, 1200, 1600)",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/{eventId}/media": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "List media for an event",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -1089,15 +1282,15 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Media"
+                    "Events"
                 ],
-                "summary": "Upload media",
+                "summary": "Upload media to event",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Event ID",
-                        "name": "event_id",
-                        "in": "formData",
+                        "name": "eventId",
+                        "in": "path",
                         "required": true
                     },
                     {
@@ -1124,29 +1317,26 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/dto.MediaResponse"
                         }
                     }
                 }
             }
         },
-        "/media/{id}": {
+        "/media/{mediaId}": {
             "get": {
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Media"
+                    "Events"
                 ],
                 "summary": "Get media by ID",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Media ID",
-                        "name": "id",
+                        "name": "mediaId",
                         "in": "path",
                         "required": true
                     }
@@ -1161,20 +1351,20 @@ const docTemplate = `{
                 }
             }
         },
-        "/media/{id}/file": {
+        "/media/{mediaId}/file": {
             "get": {
                 "produces": [
                     "application/octet-stream"
                 ],
                 "tags": [
-                    "Media"
+                    "Events"
                 ],
                 "summary": "Get media file",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Media ID",
-                        "name": "id",
+                        "name": "mediaId",
                         "in": "path",
                         "required": true
                     }
@@ -1189,22 +1379,28 @@ const docTemplate = `{
                 }
             }
         },
-        "/media/{id}/preview": {
+        "/media/{mediaId}/preview": {
             "get": {
                 "produces": [
                     "image/jpeg"
                 ],
                 "tags": [
-                    "Media"
+                    "Events"
                 ],
                 "summary": "Get media preview",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Media ID",
-                        "name": "id",
+                        "name": "mediaId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Size (200, 400, 600, 800, 1200, 1600)",
+                        "name": "size",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1250,7 +1446,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/programs/{id}": {
+        "/programs/{programId}": {
             "get": {
                 "tags": [
                     "Programs"
@@ -1259,9 +1455,9 @@ const docTemplate = `{
                 "operationId": "getProgramsId",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Program ID",
-                        "name": "id",
+                        "name": "programId",
                         "in": "path",
                         "required": true
                     }
@@ -1288,7 +1484,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/programs/{id}/modules": {
+        "/programs/{programId}/modules": {
             "get": {
                 "tags": [
                     "Programs"
@@ -1299,7 +1495,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Program ID",
-                        "name": "id",
+                        "name": "programId",
                         "in": "path",
                         "required": true
                     }
@@ -1385,7 +1581,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{id}": {
+        "/users/{userId}": {
             "get": {
                 "produces": [
                     "application/json"
@@ -1398,7 +1594,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "User ID",
-                        "name": "id",
+                        "name": "userId",
                         "in": "path",
                         "required": true
                     }
@@ -1413,7 +1609,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{id}/activities": {
+        "/users/{userId}/activities": {
             "get": {
                 "tags": [
                     "Activities"
@@ -1423,7 +1619,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "User ID",
-                        "name": "id",
+                        "name": "userId",
                         "in": "path",
                         "required": true
                     },
@@ -1481,61 +1677,45 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CommentRequest": {
-            "type": "object",
-            "required": [
-                "text"
-            ],
-            "properties": {
-                "parent_id": {
-                    "type": "string"
-                },
-                "text": {
-                    "type": "string",
-                    "maxLength": 2000,
-                    "minLength": 1
-                }
-            }
-        },
-        "dto.CommentResponse": {
+        "dto.ArchiveEntryResponse": {
             "type": "object",
             "properties": {
-                "author_avatar_url": {
-                    "type": "string"
-                },
-                "author_id": {
-                    "type": "string"
-                },
-                "author_name": {
+                "comment": {
                     "type": "string"
                 },
                 "created_at": {
                     "type": "string"
                 },
+                "edit_version": {
+                    "type": "integer"
+                },
+                "exam_date": {
+                    "type": "string"
+                },
+                "file_id": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
-                "parent_id": {
+                "module_id": {
                     "type": "string"
                 },
-                "post_id": {
+                "module_name": {
                     "type": "string"
                 },
-                "text": {
+                "program_id": {
                     "type": "string"
                 },
-                "updated_at": {
+                "uploader_name": {
                     "type": "string"
                 },
-                "user_vote": {
-                    "type": "integer"
-                },
-                "votes": {
-                    "type": "integer"
+                "version": {
+                    "type": "string"
                 }
             }
         },
-        "dto.CreatePostRequest": {
+        "dto.CreateDiscussionPostRequest": {
             "type": "object",
             "required": [
                 "body",
@@ -1556,14 +1736,14 @@ const docTemplate = `{
                 "links": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/dto.Link"
                     }
                 },
                 "location": {
                     "type": "string"
                 },
                 "pinned": {
-                    "type": "integer"
+                    "type": "boolean"
                 },
                 "programs": {
                     "type": "array",
@@ -1585,7 +1765,7 @@ const docTemplate = `{
                 "type": {
                     "type": "string",
                     "enum": [
-                        "forum",
+                        "discussion",
                         "news",
                         "event"
                     ]
@@ -1597,6 +1777,134 @@ const docTemplate = `{
             "properties": {
                 "csrf": {
                     "type": "string"
+                },
+                "signups_enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.DiscussionCommentRequest": {
+            "type": "object",
+            "required": [
+                "text"
+            ],
+            "properties": {
+                "parent_id": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "minLength": 1
+                }
+            }
+        },
+        "dto.DiscussionCommentResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "parent_id": {
+                    "type": "string"
+                },
+                "post_id": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_avatar_url": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                },
+                "user_vote": {
+                    "type": "integer"
+                },
+                "votes": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.DiscussionPostResponse": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "comment_count": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Link"
+                    }
+                },
+                "location": {
+                    "type": "string"
+                },
+                "pinned": {
+                    "type": "integer"
+                },
+                "programs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PostProgramResponse"
+                    }
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_avatar_url": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                },
+                "user_vote": {
+                    "type": "integer"
+                },
+                "votes": {
+                    "type": "integer"
                 }
             }
         },
@@ -1628,43 +1936,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ExamResponse": {
+        "dto.Link": {
             "type": "object",
             "properties": {
-                "comment": {
+                "label": {
                     "type": "string"
                 },
-                "edit_version": {
-                    "type": "integer"
-                },
-                "exam_date": {
-                    "type": "string"
-                },
-                "group_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_latest": {
-                    "type": "integer"
-                },
-                "module_name": {
-                    "type": "string"
-                },
-                "moduleid": {
-                    "type": "string"
-                },
-                "programid": {
-                    "type": "string"
-                },
-                "uploaded_at": {
-                    "type": "string"
-                },
-                "uploader_name": {
-                    "type": "string"
-                },
-                "version": {
+                "url": {
                     "type": "string"
                 }
             }
@@ -1678,7 +1956,7 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "user@studmail.w-hs.de"
+                    "example": "user@fsv-wh.de"
                 },
                 "password": {
                     "type": "string",
@@ -1694,6 +1972,9 @@ const docTemplate = `{
         "dto.MediaResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -1707,9 +1988,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "title": {
-                    "type": "string"
-                },
-                "uploaded_at": {
                     "type": "string"
                 },
                 "uploader_name": {
@@ -1729,7 +2007,7 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "programid": {
+                "program_id": {
                     "type": "string"
                 }
             }
@@ -1757,80 +2035,20 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
-        "dto.PostResponse": {
+        "dto.PostProgramResponse": {
             "type": "object",
             "properties": {
-                "active": {
-                    "type": "integer"
-                },
-                "author_avatar_url": {
-                    "type": "string"
-                },
-                "author_id": {
-                    "type": "string"
-                },
-                "author_name": {
-                    "type": "string"
-                },
-                "body": {
-                    "type": "string"
-                },
-                "comment_count": {
-                    "type": "integer"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "event_date": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
-                "image_url": {
+                "name": {
                     "type": "string"
-                },
-                "links": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "location": {
-                    "type": "string"
-                },
-                "pinned": {
-                    "type": "integer"
-                },
-                "programs": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "title": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_vote": {
-                    "type": "integer"
-                },
-                "votes": {
-                    "type": "integer"
                 }
             }
         },
@@ -1872,7 +2090,7 @@ const docTemplate = `{
                 "private": {
                     "type": "integer"
                 },
-                "programid": {
+                "program_id": {
                     "type": "string"
                 },
                 "role": {
@@ -1891,13 +2109,12 @@ const docTemplate = `{
             "required": [
                 "email",
                 "name",
-                "password",
-                "programid"
+                "password"
             ],
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "user@studmail.w-hs.de"
+                    "example": "user@fsv-wh.de"
                 },
                 "name": {
                     "type": "string",
@@ -1911,7 +2128,7 @@ const docTemplate = `{
                     "minLength": 8,
                     "example": "secret123"
                 },
-                "programid": {
+                "program_id": {
                     "type": "string"
                 }
             }
@@ -1929,7 +2146,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "description": "\"exam\" or \"module\" or \"user\" or \"post\"",
+                    "description": "\"archive\" or \"module\" or \"user\" or \"discussion\"",
                     "type": "string"
                 },
                 "url": {
@@ -1937,12 +2154,11 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateExamRequest": {
+        "dto.UpdateArchiveEntryRequest": {
             "type": "object",
             "required": [
                 "date",
-                "moduleid",
-                "programid",
+                "module_id",
                 "version"
             ],
             "properties": {
@@ -1953,10 +2169,7 @@ const docTemplate = `{
                 "date": {
                     "type": "string"
                 },
-                "moduleid": {
-                    "type": "string"
-                },
-                "programid": {
+                "module_id": {
                     "type": "string"
                 },
                 "version": {
@@ -1970,7 +2183,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "name",
-                "programid",
                 "theme"
             ],
             "properties": {
@@ -1983,7 +2195,7 @@ const docTemplate = `{
                 "private": {
                     "type": "boolean"
                 },
-                "programid": {
+                "program_id": {
                     "type": "string"
                 },
                 "theme": {
@@ -2021,7 +2233,7 @@ const docTemplate = `{
                 "private": {
                     "type": "integer"
                 },
-                "programid": {
+                "program_id": {
                     "type": "string"
                 },
                 "role": {

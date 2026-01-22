@@ -12,10 +12,12 @@ import (
 const countUserActivities = `-- name: CountUserActivities :one
 SELECT COUNT(*)
 FROM activities a
-WHERE a.user_id = ?1 AND a.created_at >= date('now', '-30 days')
+WHERE a.user_id = ?1 
+  AND a.deleted_at IS NULL
+  AND a.created_at >= date('now', '-30 days')
 `
 
-func (q *Queries) CountUserActivities(ctx context.Context, userID string) (int64, error) {
+func (q *Queries) CountUserActivities(ctx context.Context, userID int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countUserActivities, userID)
 	var count int64
 	err := row.Scan(&count)
@@ -28,12 +30,12 @@ INSERT INTO activities (
 ) VALUES (
     ?1, ?2, ?3, ?4, ?5
 )
-RETURNING id, user_id, type, target_id, created_at, target_name
+RETURNING id, user_id, type, target_id, target_name, created_at, updated_at, deleted_at
 `
 
 type CreateActivityParams struct {
-	ID         string  `json:"id"`
-	UserID     string  `json:"user_id"`
+	ID         int64   `json:"id"`
+	UserID     int64   `json:"user_id"`
 	Type       string  `json:"type"`
 	TargetID   string  `json:"target_id"`
 	TargetName *string `json:"target_name"`
@@ -53,17 +55,20 @@ func (q *Queries) CreateActivity(ctx context.Context, arg CreateActivityParams) 
 		&i.UserID,
 		&i.Type,
 		&i.TargetID,
-		&i.CreatedAt,
 		&i.TargetName,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const listAllActivities = `-- name: ListAllActivities :many
-SELECT a.id, a.user_id, a.type, a.target_id, a.created_at, a.target_name, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name
+SELECT a.id, a.user_id, a.type, a.target_id, a.target_name, a.created_at, a.updated_at, a.deleted_at, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name
 FROM activities a
 JOIN users u ON a.user_id = u.id
-WHERE a.created_at >= date('now', '-30 days')
+WHERE a.deleted_at IS NULL
+  AND a.created_at >= date('now', '-30 days')
 ORDER BY a.created_at DESC
 LIMIT ?2 OFFSET ?1
 `
@@ -74,12 +79,14 @@ type ListAllActivitiesParams struct {
 }
 
 type ListAllActivitiesRow struct {
-	ID         string  `json:"id"`
-	UserID     string  `json:"user_id"`
+	ID         int64   `json:"id"`
+	UserID     int64   `json:"user_id"`
 	Type       string  `json:"type"`
 	TargetID   string  `json:"target_id"`
-	CreatedAt  string  `json:"created_at"`
 	TargetName *string `json:"target_name"`
+	CreatedAt  string  `json:"created_at"`
+	UpdatedAt  string  `json:"updated_at"`
+	DeletedAt  *string `json:"deleted_at"`
 	UserName   string  `json:"user_name"`
 }
 
@@ -97,8 +104,10 @@ func (q *Queries) ListAllActivities(ctx context.Context, arg ListAllActivitiesPa
 			&i.UserID,
 			&i.Type,
 			&i.TargetID,
-			&i.CreatedAt,
 			&i.TargetName,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
 			&i.UserName,
 		); err != nil {
 			return nil, err
@@ -115,27 +124,31 @@ func (q *Queries) ListAllActivities(ctx context.Context, arg ListAllActivitiesPa
 }
 
 const listUserActivities = `-- name: ListUserActivities :many
-SELECT a.id, a.user_id, a.type, a.target_id, a.created_at, a.target_name, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name
+SELECT a.id, a.user_id, a.type, a.target_id, a.target_name, a.created_at, a.updated_at, a.deleted_at, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name
 FROM activities a
 JOIN users u ON a.user_id = u.id
-WHERE a.user_id = ?1 AND a.created_at >= date('now', '-30 days')
+WHERE a.user_id = ?1 
+  AND a.deleted_at IS NULL
+  AND a.created_at >= date('now', '-30 days')
 ORDER BY a.created_at DESC
 LIMIT ?3 OFFSET ?2
 `
 
 type ListUserActivitiesParams struct {
-	UserID string `json:"user_id"`
-	Offset int64  `json:"offset"`
-	Limit  int64  `json:"limit"`
+	UserID int64 `json:"user_id"`
+	Offset int64 `json:"offset"`
+	Limit  int64 `json:"limit"`
 }
 
 type ListUserActivitiesRow struct {
-	ID         string  `json:"id"`
-	UserID     string  `json:"user_id"`
+	ID         int64   `json:"id"`
+	UserID     int64   `json:"user_id"`
 	Type       string  `json:"type"`
 	TargetID   string  `json:"target_id"`
-	CreatedAt  string  `json:"created_at"`
 	TargetName *string `json:"target_name"`
+	CreatedAt  string  `json:"created_at"`
+	UpdatedAt  string  `json:"updated_at"`
+	DeletedAt  *string `json:"deleted_at"`
 	UserName   string  `json:"user_name"`
 }
 
@@ -153,8 +166,10 @@ func (q *Queries) ListUserActivities(ctx context.Context, arg ListUserActivities
 			&i.UserID,
 			&i.Type,
 			&i.TargetID,
-			&i.CreatedAt,
 			&i.TargetName,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
 			&i.UserName,
 		); err != nil {
 			return nil, err

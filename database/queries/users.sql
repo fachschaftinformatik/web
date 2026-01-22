@@ -1,12 +1,12 @@
 -- name: CreateUser :one
 INSERT INTO users (
-  id, email, name, password, role, active, verified, programid, verification_token, avatar_url
+  id, email, name, password, role, active, verified, program_id, verification_token, avatar_url
 ) VALUES (
   sqlc.arg(id), sqlc.arg(email), sqlc.arg(name), sqlc.arg(password),
   COALESCE(sqlc.arg(role), 'user'),
   COALESCE(sqlc.arg(active), 0),
   0,
-  sqlc.arg(programid),
+  sqlc.arg(program_id),
   sqlc.arg(verification_token),
   sqlc.arg(avatar_url)
 )
@@ -15,87 +15,78 @@ RETURNING *;
 -- name: GetUser :one
 SELECT *
 FROM users
-WHERE id = sqlc.arg(id)
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 LIMIT 1;
 
 -- name: GetUserByEmail :one
 SELECT *
 FROM users
-WHERE lower(email) = lower(sqlc.arg(email))
+WHERE lower(email) = lower(sqlc.arg(email)) AND deleted_at IS NULL
 LIMIT 1;
 
 -- name: GetUserByVerificationToken :one
 SELECT *
 FROM users
-WHERE verification_token = sqlc.arg(verification_token)
+WHERE verification_token = sqlc.arg(verification_token) AND deleted_at IS NULL
 LIMIT 1;
 
 -- name: SetUserActive :one
 UPDATE users
 SET active = sqlc.arg(active)
-WHERE id = sqlc.arg(id)
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 RETURNING *;
 
 -- name: SetUserRole :one
 UPDATE users
 SET role = sqlc.arg(role)
-WHERE id = sqlc.arg(id)
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 RETURNING *;
 
 -- name: VerifyUser :one
 UPDATE users
 SET verified = 1,
-    verified_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
-    verified_until = sqlc.arg(verified_until),
+    verified_at = strftime('%Y-%m-%dT%H:%M:%SZ','now'),
     verification_token = NULL
-WHERE id = sqlc.arg(id)
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 RETURNING *;
 
 -- name: UpdateUserToken :exec
 UPDATE users
 SET verification_token = sqlc.arg(verification_token)
-WHERE id = sqlc.arg(id);
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL;
 
 -- name: UnverifyUser :one
 UPDATE users
 SET verified = 0
-WHERE id = sqlc.arg(id)
-RETURNING *;
-
--- name: UpdateUserVerificationWindow :one
-UPDATE users
-SET verified_until = sqlc.arg(verified_until)
-WHERE id = sqlc.arg(id)
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 RETURNING *;
 
 -- name: SweepExpiredVerifications :exec
 UPDATE users
 SET verified = 0
 WHERE verified = 1
-  AND verified_until IS NOT NULL
-  AND verified_until < strftime('%Y-%m-%dT%H:%M:%fZ','now');
+  AND verified_at < strftime('%Y-%m-%dT%H:%M:%SZ','now', '-1 year'); -- Example logic
 
 -- name: UpdateUser :one
 UPDATE users
 SET name = sqlc.arg(name),
-    programid = sqlc.arg(programid),
+    program_id = sqlc.arg(program_id),
     theme = sqlc.arg(theme),
     private = sqlc.arg(private),
-    avatar_url = sqlc.arg(avatar_url),
-    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
-WHERE id = sqlc.arg(id)
+    avatar_url = sqlc.arg(avatar_url)
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 RETURNING *;
 
 -- name: UpdateUserAvatar :one
 UPDATE users
-SET avatar_url = sqlc.arg(avatar_url),
-    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
-WHERE id = sqlc.arg(id)
+SET avatar_url = sqlc.arg(avatar_url)
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 RETURNING *;
 
 -- name: ListUsers :many
 SELECT *
 FROM users
+WHERE deleted_at IS NULL
 ORDER BY created_at DESC
 LIMIT sqlc.arg(limit) OFFSET sqlc.arg(offset);
 
@@ -106,6 +97,6 @@ WHERE (
   lower(id) LIKE '%' || lower(sqlc.arg(query)) || '%' OR
   lower(name) LIKE '%' || lower(sqlc.arg(query)) || '%' OR
   lower(email) LIKE '%' || lower(sqlc.arg(query)) || '%'
-) AND active = 1 AND private = 0
+) AND active = 1 AND private = 0 AND deleted_at IS NULL
 ORDER BY name ASC
 LIMIT 10;

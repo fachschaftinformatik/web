@@ -11,7 +11,6 @@ import {
     Button,
     Alert,
     CircularProgress,
-    InputAdornment,
     Snackbar,
     Slide,
     type SlideProps
@@ -19,7 +18,7 @@ import {
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
 import { getPrograms, putAuthMe } from '@lib/api';
-import type { AuthProgramResponse as Program, AuthUserResponse as User } from '@lib/api';
+import type { DtoProgramResponse as Program, DtoUserResponse as User } from '@lib/api';
 import { zDtoUpdateProfileRequest } from '@lib/api/zod.gen';
 import { useThemeMode, type ThemePreference } from '@lib/theme';
 import { translateError } from '@lib/errors';
@@ -29,7 +28,7 @@ export default function SettingsPage() {
     const { user, login } = useAuth();
     const [programs, setPrograms] = useState<Program[]>([]);
     const [name, setName] = useState(user?.name || "");
-    const [programId, setProgramId] = useState<string>(user?.programid || "");
+    const [programId, setProgramId] = useState<string>(user?.program_id || "");
     const [themePreference, setThemePreference] = useState<ThemePreference>(user?.theme as ThemePreference || 'system');
     const [loading, setLoading] = useState(false);
     const [isPrivate, setIsPrivate] = useState(user?.private === 1);
@@ -42,7 +41,7 @@ export default function SettingsPage() {
     }
 
     const isDirty = name !== (user?.name || "") ||
-        programId !== (user?.programid || "") ||
+        String(programId) !== String(user?.program_id || "") ||
         isPrivate !== (user?.private === 1) ||
         themePreference !== (user?.theme || 'system');
 
@@ -56,7 +55,7 @@ export default function SettingsPage() {
     useEffect(() => {
         if (user) {
             setName(user.name || "");
-            setProgramId(user.programid || "");
+            setProgramId(user.program_id || "");
             setThemePreference(user.theme as ThemePreference || 'system');
             setIsPrivate(user.private === 1);
         }
@@ -65,13 +64,14 @@ export default function SettingsPage() {
     const handleSave = async () => {
         const validation = zDtoUpdateProfileRequest.safeParse({
             name,
-            programid: programId,
+            program_id: programId === "" ? undefined : programId,
             theme: themePreference,
             private: isPrivate
         });
 
         if (!validation.success) {
             setError("Ungültige Eingabe. Bitte prüfe deine Angaben.");
+            console.error(validation.error);
             return;
         }
 
@@ -171,16 +171,11 @@ export default function SettingsPage() {
                         <Stack spacing={2}>
                             <TextField
                                 label="E-Mail"
-                                value={user?.email?.split('@')[0] || ""}
+                                value={user?.email || ""}
                                 disabled
                                 fullWidth
                                 variant="outlined"
                                 helperText="Die E-Mail-Adresse kann nicht geändert werden."
-                                slotProps={{
-                                    input: {
-                                        endAdornment: <InputAdornment position="end">@studmail.w-hs.de</InputAdornment>,
-                                    },
-                                }}
                             />
                             <TextField
                                 label="Name"
@@ -196,6 +191,7 @@ export default function SettingsPage() {
                                 onChange={(e) => setProgramId(e.target.value)}
                                 fullWidth
                             >
+                                <MenuItem value=""><em>Kein Studiengang</em></MenuItem>
                                 {programs.length > 0 ? (
                                     programs.map((p) => (
                                         <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
@@ -254,7 +250,7 @@ export default function SettingsPage() {
                         <Button
                             variant="contained"
                             onClick={handleSave}
-                            disabled={loading || !name || !programId || !isDirty}
+                            disabled={loading || name.trim() === "" || !isDirty}
                             sx={{
                                 borderRadius: 2,
                                 px: 6,

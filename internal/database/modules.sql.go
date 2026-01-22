@@ -10,55 +10,65 @@ import (
 )
 
 const createModule = `-- name: CreateModule :one
-INSERT INTO modules (programid, name, alias) 
-VALUES (?1, ?2, ?3) 
-RETURNING id, programid, name, alias, created_at
+INSERT INTO modules (id, program_id, name, alias) 
+VALUES (?1, ?2, ?3, ?4) 
+RETURNING id, program_id, name, alias, created_at, updated_at, deleted_at
 `
 
 type CreateModuleParams struct {
-	Programid string  `json:"programid"`
+	ID        int64   `json:"id"`
+	ProgramID int64   `json:"program_id"`
 	Name      string  `json:"name"`
 	Alias     *string `json:"alias"`
 }
 
 func (q *Queries) CreateModule(ctx context.Context, arg CreateModuleParams) (Module, error) {
-	row := q.db.QueryRowContext(ctx, createModule, arg.Programid, arg.Name, arg.Alias)
+	row := q.db.QueryRowContext(ctx, createModule,
+		arg.ID,
+		arg.ProgramID,
+		arg.Name,
+		arg.Alias,
+	)
 	var i Module
 	err := row.Scan(
 		&i.ID,
-		&i.Programid,
+		&i.ProgramID,
 		&i.Name,
 		&i.Alias,
 		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const getModule = `-- name: GetModule :one
-SELECT id, programid, name, alias, created_at FROM modules WHERE id = ?1 LIMIT 1
+SELECT id, program_id, name, alias, created_at, updated_at, deleted_at FROM modules WHERE id = ?1 AND deleted_at IS NULL LIMIT 1
 `
 
-func (q *Queries) GetModule(ctx context.Context, id string) (Module, error) {
+func (q *Queries) GetModule(ctx context.Context, id int64) (Module, error) {
 	row := q.db.QueryRowContext(ctx, getModule, id)
 	var i Module
 	err := row.Scan(
 		&i.ID,
-		&i.Programid,
+		&i.ProgramID,
 		&i.Name,
 		&i.Alias,
 		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const listModulesByProgram = `-- name: ListModulesByProgram :many
-SELECT id, programid, name, alias, created_at FROM modules 
-WHERE programid = ?1 
+SELECT id, program_id, name, alias, created_at, updated_at, deleted_at FROM modules 
+WHERE program_id = ?1 AND deleted_at IS NULL
 ORDER BY name
 `
 
-func (q *Queries) ListModulesByProgram(ctx context.Context, programid string) ([]Module, error) {
-	rows, err := q.db.QueryContext(ctx, listModulesByProgram, programid)
+func (q *Queries) ListModulesByProgram(ctx context.Context, programID int64) ([]Module, error) {
+	rows, err := q.db.QueryContext(ctx, listModulesByProgram, programID)
 	if err != nil {
 		return nil, err
 	}
@@ -68,10 +78,51 @@ func (q *Queries) ListModulesByProgram(ctx context.Context, programid string) ([
 		var i Module
 		if err := rows.Scan(
 			&i.ID,
-			&i.Programid,
+			&i.ProgramID,
 			&i.Name,
 			&i.Alias,
 			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchModules = `-- name: SearchModules :many
+SELECT id, program_id, name, alias, created_at, updated_at, deleted_at FROM modules
+WHERE (name LIKE '%' || ?1 || '%'
+   OR alias LIKE '%' || ?1 || '%')
+   AND deleted_at IS NULL
+LIMIT 20
+`
+
+func (q *Queries) SearchModules(ctx context.Context, query *string) ([]Module, error) {
+	rows, err := q.db.QueryContext(ctx, searchModules, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Module
+	for rows.Next() {
+		var i Module
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProgramID,
+			&i.Name,
+			&i.Alias,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
