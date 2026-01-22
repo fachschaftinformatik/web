@@ -7,9 +7,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import ReplyIcon from "@mui/icons-material/Reply";
 
 import type {
-    AuthPostResponse as ApiPost,
-    AuthCommentResponse as ApiComment,
-    AuthUserResponse
+    DtoDiscussionPostResponse as ApiPost,
+    DtoDiscussionCommentResponse as ApiComment,
+    DtoUserResponse
 } from "@lib/api";
 import { Link } from "react-router-dom";
 import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
@@ -17,18 +17,13 @@ import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import MenuItem from "@mui/material/MenuItem";
+import { getAvatarUrl } from "@lib/images";
 
 export type Program = string;
 export type Vote = -1 | 0 | 1;
 
-export type Comment = ApiComment & {
-    author_name?: string;
-    votes?: number;
-    user_vote?: number;
-};
-export type Post = Omit<ApiPost, "programs" | "tags" | "links"> & {
-    programs: string[];
-    tags: string[];
+export type Comment = ApiComment;
+export type Post = ApiPost & {
     comments: Comment[];
 };
 
@@ -68,12 +63,12 @@ export function buildCommentTree(comments: Comment[]): CommentNode[] {
     const map = new Map<string, CommentNode>();
     const roots: CommentNode[] = [];
     comments.forEach((c) => {
-        if (c.id) map.set(c.id, { ...c, children: [] });
+        if (c.id) map.set(String(c.id), { ...c, children: [] });
     });
     comments.forEach((c) => {
         if (!c.id) return;
-        const node = map.get(c.id)!;
-        const pid = c.parent_id ?? null;
+        const node = map.get(String(c.id))!;
+        const pid = c.parent_id ? String(c.parent_id) : null;
         if (!pid) roots.push(node);
         else {
             const parent = map.get(pid);
@@ -134,14 +129,14 @@ export function CommentThread({
     onVote: (commentId: string, vote: Vote) => void;
     depth?: number;
     appearance: CommentAppearance;
-    currentUser: AuthUserResponse | null;
+    currentUser: DtoUserResponse | null;
 }) {
     const [replyOpen, setReplyOpen] = React.useState(false);
     const [editing, setEditing] = React.useState(false);
     const [repliesExpanded, setRepliesExpanded] = React.useState(false);
     const [editText, setEditText] = React.useState(node.text || "");
 
-    const isAuthor = currentUser?.id === node.author_id;
+    const isAuthor = String(currentUser?.id) === String(node.user_id);
     const canReply = !!currentUser;
     const canEdit = isAuthor || currentUser?.role === "admin" || currentUser?.role === "editor";
     const isEdited = node.updated_at && node.created_at && node.updated_at !== node.created_at;
@@ -168,7 +163,7 @@ export function CommentThread({
         >
             <Stack direction="row" spacing={{ xs: 1, sm: 2 }} alignItems="flex-start">
                 <Avatar
-                    src={node.author_avatar_url || undefined}
+                    src={getAvatarUrl(node.user_avatar_url)}
                     sx={{
                         width: depth ? { xs: 20, sm: 24 } : { xs: 28, sm: 32 },
                         height: depth ? { xs: 20, sm: 24 } : { xs: 28, sm: 32 },
@@ -178,7 +173,7 @@ export function CommentThread({
                         flexShrink: 0
                     }}
                 >
-                    {node.author_name ? node.author_name[0].toUpperCase() : "A"}
+                    {node.user_name ? node.user_name[0].toUpperCase() : "A"}
                 </Avatar>
 
                 <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -200,7 +195,7 @@ export function CommentThread({
                                 <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
                                     <Typography
                                         component={Link}
-                                        to={`/user/${node.author_id}`}
+                                        to={`/u/${node.user_id}`}
                                         variant="subtitle2"
                                         fontWeight={700}
                                         noWrap
@@ -211,7 +206,7 @@ export function CommentThread({
                                             "&:hover": { color: appearance.accent, cursor: "pointer" }
                                         }}
                                     >
-                                        {node.author_name || "Anonym"}
+                                        {node.user_name || "Anonym"}
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: appearance.textSecondary, whiteSpace: 'nowrap', fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                                         · {isoToShort(node.created_at ?? "")}
@@ -251,7 +246,7 @@ export function CommentThread({
                                             size="small"
                                             variant="contained"
                                             onClick={() => {
-                                                onEdit(node.id!, editText);
+                                                onEdit(String(node.id!), editText);
                                                 setEditing(false);
                                             }}
                                             sx={{ borderRadius: 2, fontSize: '0.75rem' }}
@@ -282,7 +277,7 @@ export function CommentThread({
                         <Stack direction="row" alignItems="center" spacing={0}>
                             <IconButton
                                 size="small"
-                                onClick={() => onVote(node.id!, userVote === 1 ? 0 : 1)}
+                                onClick={() => onVote(String(node.id!), userVote === 1 ? 0 : 1)}
                                 color={userVote === 1 ? "primary" : "default"}
                                 sx={{ p: { xs: 0.25, sm: 0.5 } }}
                             >
@@ -293,7 +288,7 @@ export function CommentThread({
                             </Typography>
                             <IconButton
                                 size="small"
-                                onClick={() => onVote(node.id!, userVote === -1 ? 0 : -1)}
+                                onClick={() => onVote(String(node.id!), userVote === -1 ? 0 : -1)}
                                 color={userVote === -1 ? "primary" : "default"}
                                 sx={{ p: { xs: 0.25, sm: 0.5 } }}
                             >
@@ -341,7 +336,7 @@ export function CommentThread({
                             <CommentsSection
                                 comments={[]}
                                 onAdd={(_, t) => {
-                                    onReply((node.id ?? null) as string | null, t);
+                                    onReply(String(node.id ?? null), t);
                                     setReplyOpen(false);
                                 }}
                                 appearance={appearance}
@@ -407,7 +402,7 @@ export function CommentsSection({
     onEdit?: (commentId: string, text: string) => void;
     onVote?: (commentId: string, vote: Vote) => void;
     appearance: CommentAppearance;
-    currentUser: AuthUserResponse | null;
+    currentUser: DtoUserResponse | null;
     disabledHelper?: string;
     flat?: boolean;
     disableCollapse?: boolean;
@@ -478,7 +473,7 @@ export function CommentsSection({
                     <Stack direction="row" spacing={2} alignItems="flex-start">
                         {currentUser && (
                             <Avatar
-                                src={currentUser.avatar_url || undefined}
+                                src={getAvatarUrl(currentUser.avatar_url)}
                                 sx={{
                                     width: 40, height: 40,
                                     bgcolor: appearance.accent,

@@ -14,37 +14,21 @@ import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
 import {
-    getForumPostsById,
-    getForumPostsByIdComments,
-    postForumPostsByIdComments,
-    postForumPostsByIdVote,
-    postForumCommentsByIdVote,
-    deleteForumPostsById,
-    putForumCommentsById
+    getDiscussionsByPostId,
+    getDiscussionsByPostIdComments,
+    postDiscussionsByPostIdComments,
+    postDiscussionsByPostIdVote,
+    postDiscussionsCommentsByCommentIdVote,
+    deleteDiscussionsByPostId,
+    putDiscussionsCommentsByCommentId
 } from "@lib/api";
 import {
     Post, Comment, Vote, CommentsSection, isoToShort
 } from "../components";
-
-const isoToShort = (iso?: string) => {
-    if (!iso) return "Unbekannt";
-    try {
-        const d = new Date(iso);
-        if (isNaN(d.getTime())) return "Unbekanntes Datum";
-        return d.toLocaleString("de-DE", {
-            year: "numeric",
-            month: "short",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    } catch {
-        return "Datum Fehler";
-    }
-};
+import { getAvatarUrl } from "@lib/images";
 
 export default function ViewPost() {
-    const { id } = useParams();
+    const { postId } = useParams<{ postId: string }>();
     const navigate = useNavigate();
     const { user } = useAuth();
     const theme = useTheme();
@@ -57,18 +41,16 @@ export default function ViewPost() {
     const isAdmin = user?.role === "admin" || user?.role === "editor";
 
     useEffect(() => {
-        if (!id) return;
+        if (!postId) return;
         Promise.all([
-            getForumPostsById({ path: { id } }),
-            getForumPostsByIdComments({ path: { id } })
+            getDiscussionsByPostId({ path: { postId } }),
+            getDiscussionsByPostIdComments({ path: { postId } })
         ]).then(([{ data: postData, error: postError }, { data: commentsData }]) => {
             if (postError || !postData) {
                 setError("Beitrag nicht gefunden oder Fehler beim Laden.");
             } else {
                 const parsedPost: Post = {
                     ...postData,
-                    programs: postData.programs || [],
-                    tags: postData.tags || [],
                     comments: []
                 };
 
@@ -79,10 +61,10 @@ export default function ViewPost() {
             console.error(err);
             setError("Ein unerwarteter Fehler ist aufgetreten.");
         }).finally(() => setLoading(false));
-    }, [id]);
+    }, [postId]);
 
     const handleVote = async (vote: Vote) => {
-        if (!post || !user || !id) return;
+        if (!post || !user || !postId) return;
 
         const oldVote = (post.user_vote as Vote) || 0;
         const oldVotes = Number(post.votes) || 0;
@@ -106,8 +88,8 @@ export default function ViewPost() {
         setPost(prev => prev ? ({ ...prev, user_vote: targetVote, votes: newVotes }) : null);
 
         try {
-            await postForumPostsByIdVote({
-                path: { id },
+            await postDiscussionsByPostIdVote({
+                path: { postId },
                 body: { vote: targetVote }
             });
         } catch (err) {
@@ -116,18 +98,18 @@ export default function ViewPost() {
     };
 
     const handleAddComment = async (parentId: string | null, text: string) => {
-        if (!id || !user) return;
+        if (!postId || !user) return;
 
-        const { data } = await postForumPostsByIdComments({
-            path: { id },
-            body: { parent_id: parentId ?? undefined, text }
+        const { data } = await postDiscussionsByPostIdComments({
+            path: { postId },
+            body: { parent_id: parentId ? String(parentId) : undefined, text }
         });
         if (data) {
             const newComment: Comment = {
                 ...data,
-                author_name: user.name || user.email,
-                author_avatar_url: user.avatar_url || "",
-                author_id: user.id
+                user_name: user.name || user.email || "Anonym",
+                user_avatar_url: user.avatar_url || "",
+                user_id: user.id
             };
             setPost(prev => prev ? ({
                 ...prev,
@@ -138,10 +120,10 @@ export default function ViewPost() {
     };
 
     const handleEditComment = async (commentId: string, text: string) => {
-        if (!id || !user) return;
+        if (!postId || !user) return;
 
-        const { data } = await putForumCommentsById({
-            path: { id: commentId },
+        const { data } = await putDiscussionsCommentsByCommentId({
+            path: { commentId },
             body: { text }
         });
 
@@ -149,7 +131,7 @@ export default function ViewPost() {
             setPost(prev => {
                 if (!prev) return null;
                 const newComments = prev.comments.map(c =>
-                    c.id === commentId ? { ...c, text: data.text || "", updated_at: data.updated_at || "" } : c
+                    String(c.id) === commentId ? { ...c, text: data.text || "", updated_at: data.updated_at || "" } : c
                 );
                 return { ...prev, comments: newComments };
             });
@@ -160,15 +142,15 @@ export default function ViewPost() {
         if (!post || !user) return;
 
         try {
-            await postForumCommentsByIdVote({
-                path: { id: commentId },
+            await postDiscussionsCommentsByCommentIdVote({
+                path: { commentId },
                 body: { vote }
             });
 
             setPost(prev => {
                 if (!prev) return null;
                 const newComments = prev.comments.map(c => {
-                    if (c.id === commentId) {
+                    if (String(c.id) === commentId) {
                         const oldUserVote = (c.user_vote || 0) as Vote;
                         const oldVotes = c.votes || 0;
                         const newVotes = oldVotes - oldUserVote + vote;
@@ -184,18 +166,18 @@ export default function ViewPost() {
     };
 
     const handleDelete = async () => {
-        if (!id || (!isAdmin && post?.author_id !== user?.id)) return;
+        if (!postId || (!isAdmin && String(post?.user_id) !== String(user?.id))) return;
         if (!confirm("Beitrag wirklich löschen?")) return;
 
-        await deleteForumPostsById({
-            path: { id }
+        await deleteDiscussionsByPostId({
+            path: { postId }
         });
         navigate("/discussions");
     };
 
     if (loading) {
         return (
-            <Sidebar user={user} title="Forum" maxWidth="md">
+            <Sidebar user={user} title="Diskussion" maxWidth="md">
                 <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>
             </Sidebar>
         );
@@ -203,9 +185,9 @@ export default function ViewPost() {
 
     if (error || !post) {
         return (
-            <Sidebar user={user} title="Forum" maxWidth="md">
+            <Sidebar user={user} title="Diskussion" maxWidth="md">
                 <Alert severity="error">{error || "Beitrag nicht gefunden"}</Alert>
-                <Button sx={{ mt: 2 }} startIcon={<ArrowBackIcon />} onClick={() => navigate("/discussions")}>Zurück zum Forum</Button>
+                <Button sx={{ mt: 2 }} startIcon={<ArrowBackIcon />} onClick={() => navigate("/d")}>Zurück zum Forum</Button>
             </Sidebar>
         );
     }
@@ -214,10 +196,10 @@ export default function ViewPost() {
     const userVote = (post.user_vote as Vote) || 0;
 
     return (
-        <Sidebar user={user} title="Forum" maxWidth="md">
+        <Sidebar user={user} title="Diskussion" maxWidth="md">
             <Box pb={6}>
                 <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/discussions")} sx={{ mb: 2, color: "text.secondary" }}>
-                    Zurück zum Forum
+                    Zurück zur Übersicht
                 </Button>
 
                 <Paper sx={{ p: { xs: 2, sm: 2.5, md: 4 }, borderRadius: 3 }}>
@@ -252,8 +234,8 @@ export default function ViewPost() {
                                     </Typography>
                                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                                         <Avatar
-                                            key={post.author_avatar_url || post.author_id}
-                                            src={post.author_avatar_url || undefined}
+                                            key={post.user_avatar_url || String(post.user_id)}
+                                            src={getAvatarUrl(post.user_avatar_url)}
                                             sx={{
                                                 width: 24,
                                                 height: 24,
@@ -262,10 +244,10 @@ export default function ViewPost() {
                                                 fontWeight: "bold"
                                             }}
                                         >
-                                            {post.author_name ? post.author_name[0].toUpperCase() : "A"}
+                                            {post.user_name ? post.user_name[0].toUpperCase() : "A"}
                                         </Avatar>
                                         <Typography variant="body2" color="text.secondary">
-                                            von <Typography component={Link} to={`/user/${post.author_id}`} variant="body2" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author_name || "Anonym"}</Typography> · {isoToShort(post.created_at || "")}
+                                            von <Typography component={Link} to={`/u/${post.user_id}`} variant="body2" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.user_name || "Anonym"}</Typography> · {isoToShort(post.created_at || "")}
                                         </Typography>
                                         {post.pinned === 1 && (
                                             <Chip label="Angepinnt" size="small" icon={<PushPinOutlinedIcon />} variant="outlined" sx={{ fontWeight: 600 }} />
@@ -273,10 +255,10 @@ export default function ViewPost() {
                                     </Stack>
                                 </Stack>
 
-                                {(isAdmin || user?.id === post.author_id) && (
+                                {(isAdmin || String(user?.id) === String(post.user_id)) && (
                                     <Stack direction="row" spacing={1}>
                                         <Tooltip title="Bearbeiten">
-                                            <IconButton onClick={() => navigate(`/discussions/${post.id}/edit`)}>
+                                            <IconButton onClick={() => navigate(`/d/${post.id}/edit`)}>
                                                 <EditIcon />
                                             </IconButton>
                                         </Tooltip>
@@ -297,10 +279,10 @@ export default function ViewPost() {
 
 
                             <Stack direction="row" spacing={1} flexWrap="wrap">
-                                {post.programs.map((p) => (
-                                    <Chip key={p} label={p} variant="outlined" size="small" />
+                                {(post.programs || []).map((p) => (
+                                    <Chip key={String(p.id)} label={p.name} variant="outlined" size="small" />
                                 ))}
-                                {post.tags.map(t => (
+                                {(post.tags || []).map(t => (
                                     <Chip key={t} label={t} variant="outlined" size="small" />
                                 ))}
                             </Stack>

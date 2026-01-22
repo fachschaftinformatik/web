@@ -14,40 +14,77 @@ export type DtoActivityResponse = {
     user_name?: string;
 };
 
-export type DtoCommentRequest = {
+export type DtoArchiveEntryResponse = {
+    comment?: string;
+    created_at?: string;
+    edit_version?: number;
+    exam_date?: string;
+    file_id?: string;
+    id?: string;
+    module_id?: string;
+    module_name?: string;
+    program_id?: string;
+    uploader_name?: string;
+    version?: string;
+};
+
+export type DtoCreateDiscussionPostRequest = {
+    body: string;
+    event_date?: string;
+    image_url?: string;
+    links?: Array<DtoLink>;
+    location?: string;
+    pinned?: boolean;
+    programs?: Array<string>;
+    tags?: Array<string>;
+    title: string;
+    type?: 'discussion' | 'news' | 'event';
+};
+
+export type DtoCsrfResponse = {
+    csrf?: string;
+    signups_enabled?: boolean;
+};
+
+export type DtoDiscussionCommentRequest = {
     parent_id?: string;
     text: string;
 };
 
-export type DtoCommentResponse = {
-    author_avatar_url?: string;
-    author_id?: string;
-    author_name?: string;
+export type DtoDiscussionCommentResponse = {
     created_at?: string;
     id?: string;
     parent_id?: string;
     post_id?: string;
     text?: string;
     updated_at?: string;
+    user_avatar_url?: string;
+    user_id?: string;
+    user_name?: string;
     user_vote?: number;
     votes?: number;
 };
 
-export type DtoCreatePostRequest = {
-    body: string;
+export type DtoDiscussionPostResponse = {
+    body?: string;
+    comment_count?: number;
+    created_at?: string;
     event_date?: string;
+    id?: string;
     image_url?: string;
-    links?: Array<string>;
+    links?: Array<DtoLink>;
     location?: string;
     pinned?: number;
-    programs?: Array<string>;
+    programs?: Array<DtoPostProgramResponse>;
     tags?: Array<string>;
-    title: string;
-    type?: 'forum' | 'news' | 'event';
-};
-
-export type DtoCsrfResponse = {
-    csrf?: string;
+    title?: string;
+    type?: string;
+    updated_at?: string;
+    user_avatar_url?: string;
+    user_id?: string;
+    user_name?: string;
+    user_vote?: number;
+    votes?: number;
 };
 
 export type DtoErrorResponse = {
@@ -62,19 +99,9 @@ export type DtoEventResponse = {
     title?: string;
 };
 
-export type DtoExamResponse = {
-    comment?: string;
-    edit_version?: number;
-    exam_date?: string;
-    group_id?: string;
-    id?: string;
-    is_latest?: number;
-    module_name?: string;
-    moduleid?: string;
-    programid?: string;
-    uploaded_at?: string;
-    uploader_name?: string;
-    version?: string;
+export type DtoLink = {
+    label?: string;
+    url?: string;
 };
 
 export type DtoLoginRequest = {
@@ -84,12 +111,12 @@ export type DtoLoginRequest = {
 };
 
 export type DtoMediaResponse = {
+    created_at?: string;
     description?: string;
     event_id?: string;
     id?: string;
     mime_type?: string;
     title?: string;
-    uploaded_at?: string;
     uploader_name?: string;
 };
 
@@ -97,7 +124,7 @@ export type DtoModuleResponse = {
     alias?: string;
     id?: string;
     name?: string;
-    programid?: string;
+    program_id?: string;
 };
 
 export type DtoNotificationResponse = {
@@ -108,29 +135,12 @@ export type DtoNotificationResponse = {
     read?: boolean;
     title?: string;
     type?: string;
+    user_id?: string;
 };
 
-export type DtoPostResponse = {
-    active?: number;
-    author_avatar_url?: string;
-    author_id?: string;
-    author_name?: string;
-    body?: string;
-    comment_count?: number;
-    created_at?: string;
-    event_date?: string;
+export type DtoPostProgramResponse = {
     id?: string;
-    image_url?: string;
-    links?: Array<string>;
-    location?: string;
-    pinned?: number;
-    programs?: Array<string>;
-    tags?: Array<string>;
-    title?: string;
-    type?: string;
-    updated_at?: string;
-    user_vote?: number;
-    votes?: number;
+    name?: string;
 };
 
 export type DtoProgramResponse = {
@@ -146,7 +156,7 @@ export type DtoPublicUserResponse = {
     id?: string;
     name?: string;
     private?: number;
-    programid?: string;
+    program_id?: string;
     role?: string;
     theme?: string;
     verified?: number;
@@ -156,7 +166,7 @@ export type DtoRegisterRequest = {
     email: string;
     name: string;
     password: string;
-    programid: string;
+    program_id?: string;
 };
 
 export type DtoSearchResult = {
@@ -164,24 +174,23 @@ export type DtoSearchResult = {
     subtitle?: string;
     title?: string;
     /**
-     * "exam" or "module" or "user" or "post"
+     * "archive" or "module" or "user" or "discussion"
      */
     type?: string;
     url?: string;
 };
 
-export type DtoUpdateExamRequest = {
+export type DtoUpdateArchiveEntryRequest = {
     comment?: string;
     date: string;
-    moduleid: string;
-    programid: string;
+    module_id: string;
     version: string;
 };
 
 export type DtoUpdateProfileRequest = {
     name: string;
     private?: boolean;
-    programid: string;
+    program_id?: string;
     theme: 'light' | 'dark' | 'system';
 };
 
@@ -193,7 +202,7 @@ export type DtoUserResponse = {
     id?: string;
     name?: string;
     private?: number;
-    programid?: string;
+    program_id?: string;
     role?: string;
     theme?: string;
     verified?: number;
@@ -228,6 +237,298 @@ export type GetActivitiesResponses = {
 
 export type GetActivitiesResponse = GetActivitiesResponses[keyof GetActivitiesResponses];
 
+export type PostAdminModulesData = {
+    /**
+     * Module Data
+     */
+    body: DtoModuleResponse;
+    path?: never;
+    query?: never;
+    url: '/admin/modules';
+};
+
+export type PostAdminModulesResponses = {
+    /**
+     * Created
+     */
+    201: DtoModuleResponse;
+};
+
+export type PostAdminModulesResponse = PostAdminModulesResponses[keyof PostAdminModulesResponses];
+
+export type PostAdminProgramsData = {
+    /**
+     * Program Data
+     */
+    body: DtoProgramResponse;
+    path?: never;
+    query?: never;
+    url: '/admin/programs';
+};
+
+export type PostAdminProgramsResponses = {
+    /**
+     * Created
+     */
+    201: DtoProgramResponse;
+};
+
+export type PostAdminProgramsResponse = PostAdminProgramsResponses[keyof PostAdminProgramsResponses];
+
+export type GetAdminRefDiscussionTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/ref/discussion-types';
+};
+
+export type GetAdminRefDiscussionTypesResponses = {
+    /**
+     * OK
+     */
+    200: Array<string>;
+};
+
+export type GetAdminRefDiscussionTypesResponse = GetAdminRefDiscussionTypesResponses[keyof GetAdminRefDiscussionTypesResponses];
+
+export type GetAdminRefRolesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/ref/roles';
+};
+
+export type GetAdminRefRolesResponses = {
+    /**
+     * OK
+     */
+    200: Array<string>;
+};
+
+export type GetAdminRefRolesResponse = GetAdminRefRolesResponses[keyof GetAdminRefRolesResponses];
+
+export type GetArchiveData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Program ID
+         */
+        program_id?: string;
+        /**
+         * Version
+         */
+        version?: string;
+        /**
+         * Module ID
+         */
+        module_id?: string;
+    };
+    url: '/archive';
+};
+
+export type GetArchiveResponses = {
+    /**
+     * OK
+     */
+    200: Array<DtoArchiveEntryResponse>;
+};
+
+export type GetArchiveResponse = GetArchiveResponses[keyof GetArchiveResponses];
+
+export type PostArchiveData = {
+    body: {
+        /**
+         * Exam PDF
+         */
+        file: Blob | File;
+        /**
+         * Exam Date (YYYY-MM-DD)
+         */
+        date?: string;
+        /**
+         * Module ID
+         */
+        module_id?: string;
+        /**
+         * PO Version
+         */
+        version?: string;
+        /**
+         * Optional specific group ID to add revision to
+         */
+        group_id?: string;
+        /**
+         * Optional comment
+         */
+        comment?: string;
+    };
+    headers: {
+        /**
+         * CSRF Token
+         */
+        'X-CSRF-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/archive';
+};
+
+export type PostArchiveResponses = {
+    /**
+     * Created
+     */
+    201: DtoArchiveEntryResponse;
+};
+
+export type PostArchiveResponse = PostArchiveResponses[keyof PostArchiveResponses];
+
+export type DeleteArchiveIdData = {
+    body?: never;
+    path: {
+        /**
+         * Entry ID
+         */
+        entryId: string;
+    };
+    query?: never;
+    url: '/archive/{entryId}';
+};
+
+export type DeleteArchiveIdResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type GetArchiveIdData = {
+    body?: never;
+    path: {
+        /**
+         * Entry ID
+         */
+        entryId: string;
+    };
+    query?: never;
+    url: '/archive/{entryId}';
+};
+
+export type GetArchiveIdErrors = {
+    /**
+     * Not Found
+     */
+    404: DtoErrorResponse;
+};
+
+export type GetArchiveIdError = GetArchiveIdErrors[keyof GetArchiveIdErrors];
+
+export type GetArchiveIdResponses = {
+    /**
+     * OK
+     */
+    200: DtoArchiveEntryResponse;
+};
+
+export type GetArchiveIdResponse = GetArchiveIdResponses[keyof GetArchiveIdResponses];
+
+export type PutArchiveIdData = {
+    /**
+     * Update Data
+     */
+    body: DtoUpdateArchiveEntryRequest;
+    path: {
+        /**
+         * Entry ID
+         */
+        entryId: string;
+    };
+    query?: never;
+    url: '/archive/{entryId}';
+};
+
+export type PutArchiveIdResponses = {
+    /**
+     * OK
+     */
+    200: DtoArchiveEntryResponse;
+};
+
+export type PutArchiveIdResponse = PutArchiveIdResponses[keyof PutArchiveIdResponses];
+
+export type GetArchiveFileData = {
+    body?: never;
+    path: {
+        /**
+         * Entry ID
+         */
+        entryId: string;
+    };
+    query?: {
+        /**
+         * Specific File ID (ignored in simple mode)
+         */
+        file_id?: string;
+    };
+    url: '/archive/{entryId}/file';
+};
+
+export type GetArchiveFileResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type GetArchiveVersionsData = {
+    body?: never;
+    path: {
+        /**
+         * Entry ID
+         */
+        entryId: string;
+    };
+    query?: never;
+    url: '/archive/{entryId}/versions';
+};
+
+export type GetArchiveVersionsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: DtoErrorResponse;
+};
+
+export type GetArchiveVersionsError = GetArchiveVersionsErrors[keyof GetArchiveVersionsErrors];
+
+export type GetArchiveVersionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<DtoArchiveEntryResponse>;
+};
+
+export type GetArchiveVersionsResponse = GetArchiveVersionsResponses[keyof GetArchiveVersionsResponses];
+
+export type DeleteArchiveFileData = {
+    body?: never;
+    path: {
+        /**
+         * File ID
+         */
+        fileId: string;
+    };
+    query?: never;
+    url: '/archive/files/{fileId}';
+};
+
+export type DeleteArchiveFileResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
 export type GetAuthAvatarsByUserIdByFilenameData = {
     body?: never;
     path: {
@@ -240,7 +541,12 @@ export type GetAuthAvatarsByUserIdByFilenameData = {
          */
         filename: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Size (ignored, always serves source)
+         */
+        size?: number;
+    };
     url: '/auth/avatars/{userId}/{filename}';
 };
 
@@ -297,12 +603,6 @@ export type PostAuthLoginResponse = PostAuthLoginResponses[keyof PostAuthLoginRe
 
 export type PostAuthLogoutData = {
     body?: never;
-    headers: {
-        /**
-         * CSRF Token
-         */
-        'X-CSRF-Token': string;
-    };
     path?: never;
     query?: never;
     url: '/auth/logout';
@@ -359,6 +659,27 @@ export type PutAuthMeResponses = {
 
 export type PutAuthMeResponse = PutAuthMeResponses[keyof PutAuthMeResponses];
 
+export type PostAuthMeAvatarData = {
+    body: {
+        /**
+         * Avatar Image
+         */
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/me/avatar';
+};
+
+export type PostAuthMeAvatarResponses = {
+    /**
+     * OK
+     */
+    200: DtoUserResponse;
+};
+
+export type PostAuthMeAvatarResponse = PostAuthMeAvatarResponses[keyof PostAuthMeAvatarResponses];
+
 export type GetAuthNotificationsData = {
     body?: never;
     path?: never;
@@ -390,10 +711,10 @@ export type PutAuthNotificationsIdReadData = {
         /**
          * Notification ID
          */
-        id: string;
+        notificationId: string;
     };
     query?: never;
-    url: '/auth/notifications/{id}/read';
+    url: '/auth/notifications/{notificationId}/read';
 };
 
 export type PutAuthNotificationsIdReadErrors = {
@@ -481,6 +802,243 @@ export type GetAuthVerifyData = {
     url: '/auth/verify';
 };
 
+export type GetDiscussionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Post type (discussion, news, event)
+         */
+        type?: string;
+        /**
+         * Program ID filter
+         */
+        program_id?: string;
+        /**
+         * Search query
+         */
+        query?: string;
+        /**
+         * Sort by (new, votes)
+         */
+        sort?: string;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/discussions';
+};
+
+export type GetDiscussionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<DtoDiscussionPostResponse>;
+};
+
+export type GetDiscussionsResponse = GetDiscussionsResponses[keyof GetDiscussionsResponses];
+
+export type PostDiscussionsData = {
+    /**
+     * Post Content
+     */
+    body: DtoCreateDiscussionPostRequest;
+    path?: never;
+    query?: never;
+    url: '/discussions';
+};
+
+export type PostDiscussionsResponses = {
+    /**
+     * Created
+     */
+    201: DtoDiscussionPostResponse;
+};
+
+export type PostDiscussionsResponse = PostDiscussionsResponses[keyof PostDiscussionsResponses];
+
+export type DeleteDiscussionsByPostIdData = {
+    body?: never;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/discussions/{postId}';
+};
+
+export type DeleteDiscussionsByPostIdResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type GetDiscussionsByPostIdData = {
+    body?: never;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/discussions/{postId}';
+};
+
+export type GetDiscussionsByPostIdResponses = {
+    /**
+     * OK
+     */
+    200: DtoDiscussionPostResponse;
+};
+
+export type GetDiscussionsByPostIdResponse = GetDiscussionsByPostIdResponses[keyof GetDiscussionsByPostIdResponses];
+
+export type PutDiscussionsByPostIdData = {
+    /**
+     * Post Content
+     */
+    body: DtoCreateDiscussionPostRequest;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/discussions/{postId}';
+};
+
+export type PutDiscussionsByPostIdResponses = {
+    /**
+     * OK
+     */
+    200: DtoDiscussionPostResponse;
+};
+
+export type PutDiscussionsByPostIdResponse = PutDiscussionsByPostIdResponses[keyof PutDiscussionsByPostIdResponses];
+
+export type GetDiscussionsByPostIdCommentsData = {
+    body?: never;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/discussions/{postId}/comments';
+};
+
+export type GetDiscussionsByPostIdCommentsResponses = {
+    /**
+     * OK
+     */
+    200: Array<DtoDiscussionCommentResponse>;
+};
+
+export type GetDiscussionsByPostIdCommentsResponse = GetDiscussionsByPostIdCommentsResponses[keyof GetDiscussionsByPostIdCommentsResponses];
+
+export type PostDiscussionsByPostIdCommentsData = {
+    /**
+     * Comment Content
+     */
+    body: DtoDiscussionCommentRequest;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/discussions/{postId}/comments';
+};
+
+export type PostDiscussionsByPostIdCommentsResponses = {
+    /**
+     * Created
+     */
+    201: DtoDiscussionCommentResponse;
+};
+
+export type PostDiscussionsByPostIdCommentsResponse = PostDiscussionsByPostIdCommentsResponses[keyof PostDiscussionsByPostIdCommentsResponses];
+
+export type PostDiscussionsByPostIdVoteData = {
+    /**
+     * Vote Value
+     */
+    body: DtoVoteRequest;
+    path: {
+        /**
+         * Post ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/discussions/{postId}/vote';
+};
+
+export type PostDiscussionsByPostIdVoteResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type PutDiscussionsCommentsByCommentIdData = {
+    /**
+     * Comment Content
+     */
+    body: DtoDiscussionCommentRequest;
+    path: {
+        /**
+         * Comment ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/discussions/comments/{commentId}';
+};
+
+export type PutDiscussionsCommentsByCommentIdResponses = {
+    /**
+     * OK
+     */
+    200: DtoDiscussionCommentResponse;
+};
+
+export type PutDiscussionsCommentsByCommentIdResponse = PutDiscussionsCommentsByCommentIdResponses[keyof PutDiscussionsCommentsByCommentIdResponses];
+
+export type PostDiscussionsCommentsByCommentIdVoteData = {
+    /**
+     * Vote Value
+     */
+    body: DtoVoteRequest;
+    path: {
+        /**
+         * Comment ID
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/discussions/comments/{commentId}/vote';
+};
+
+export type PostDiscussionsCommentsByCommentIdVoteResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
 export type GetEventsData = {
     body?: never;
     path?: never;
@@ -522,499 +1080,74 @@ export type PostEventsResponses = {
 
 export type PostEventsResponse = PostEventsResponses[keyof PostEventsResponses];
 
-export type GetEventsByIdCoverData = {
+export type GetEventsByEventIdData = {
     body?: never;
     path: {
         /**
          * Event ID
          */
-        id: string;
+        eventId: string;
     };
     query?: never;
-    url: '/events/{id}/cover';
+    url: '/events/{eventId}';
 };
 
-export type GetEventsByIdCoverResponses = {
+export type GetEventsByEventIdResponses = {
+    /**
+     * OK
+     */
+    200: DtoEventResponse;
+};
+
+export type GetEventsByEventIdResponse = GetEventsByEventIdResponses[keyof GetEventsByEventIdResponses];
+
+export type GetEventsByEventIdCoverData = {
+    body?: never;
+    path: {
+        /**
+         * Event ID
+         */
+        eventId: string;
+    };
+    query?: {
+        /**
+         * Size (200, 400, 600, 800, 1200, 1600)
+         */
+        size?: number;
+    };
+    url: '/events/{eventId}/cover';
+};
+
+export type GetEventsByEventIdCoverResponses = {
     /**
      * OK
      */
     200: unknown;
 };
 
-export type GetExamsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Program ID
-         */
-        programid?: string;
-        /**
-         * Version
-         */
-        version?: string;
-        /**
-         * Module ID
-         */
-        moduleid?: string;
-    };
-    url: '/exams';
-};
-
-export type GetExamsErrors = {
-    /**
-     * Unauthorized
-     */
-    401: DtoErrorResponse;
-};
-
-export type GetExamsError = GetExamsErrors[keyof GetExamsErrors];
-
-export type GetExamsResponses = {
-    /**
-     * OK
-     */
-    200: Array<DtoExamResponse>;
-};
-
-export type GetExamsResponse = GetExamsResponses[keyof GetExamsResponses];
-
-export type PostExamsData = {
-    body: {
-        /**
-         * Exam PDF
-         */
-        file: Blob | File;
-        /**
-         * Exam Date (YYYY-MM-DD)
-         */
-        date: string;
-        /**
-         * JSON array of assignments: [{'programid':1, 'version':'PO2016', 'moduleid':10}]
-         */
-        assignments: string;
-        /**
-         * Optional comment
-         */
-        comment?: string;
-    };
-    headers: {
-        /**
-         * CSRF Token
-         */
-        'X-CSRF-Token': string;
-    };
-    path?: never;
-    query?: never;
-    url: '/exams';
-};
-
-export type PostExamsErrors = {
-    /**
-     * Bad Request
-     */
-    400: DtoErrorResponse;
-    /**
-     * Forbidden
-     */
-    403: DtoErrorResponse;
-};
-
-export type PostExamsError = PostExamsErrors[keyof PostExamsErrors];
-
-export type PostExamsResponses = {
-    /**
-     * Created
-     */
-    201: {
-        [key: string]: string;
-    };
-};
-
-export type PostExamsResponse = PostExamsResponses[keyof PostExamsResponses];
-
-export type DeleteExamsIdData = {
+export type GetEventsByEventIdMediaData = {
     body?: never;
     path: {
-        /**
-         * Exam ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/exams/{id}';
-};
-
-export type DeleteExamsIdResponses = {
-    /**
-     * No Content
-     */
-    204: unknown;
-};
-
-export type GetExamsIdData = {
-    body?: never;
-    path: {
-        /**
-         * Exam ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/exams/{id}';
-};
-
-export type GetExamsIdErrors = {
-    /**
-     * Not Found
-     */
-    404: DtoErrorResponse;
-};
-
-export type GetExamsIdError = GetExamsIdErrors[keyof GetExamsIdErrors];
-
-export type GetExamsIdResponses = {
-    /**
-     * OK
-     */
-    200: DtoExamResponse;
-};
-
-export type GetExamsIdResponse = GetExamsIdResponses[keyof GetExamsIdResponses];
-
-export type PutExamsIdData = {
-    /**
-     * Update Data
-     */
-    body: DtoUpdateExamRequest;
-    path: {
-        /**
-         * Exam ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/exams/{id}';
-};
-
-export type PutExamsIdResponses = {
-    /**
-     * OK
-     */
-    200: DtoExamResponse;
-};
-
-export type PutExamsIdResponse = PutExamsIdResponses[keyof PutExamsIdResponses];
-
-export type GetExamsFileData = {
-    body?: never;
-    path: {
-        /**
-         * Exam ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/exams/{id}/file';
-};
-
-export type GetExamsFileResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type GetExamVersionsData = {
-    body?: never;
-    path: {
-        /**
-         * Exam Group ID
-         */
-        groupId: string;
-    };
-    query?: never;
-    url: '/exams/versions/{groupId}';
-};
-
-export type GetExamVersionsErrors = {
-    /**
-     * Unauthorized
-     */
-    401: DtoErrorResponse;
-};
-
-export type GetExamVersionsError = GetExamVersionsErrors[keyof GetExamVersionsErrors];
-
-export type GetExamVersionsResponses = {
-    /**
-     * OK
-     */
-    200: Array<DtoExamResponse>;
-};
-
-export type GetExamVersionsResponse = GetExamVersionsResponses[keyof GetExamVersionsResponses];
-
-export type PutForumCommentsByIdData = {
-    /**
-     * Comment Content
-     */
-    body: DtoCommentRequest;
-    path: {
-        /**
-         * Comment ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/forum/comments/{id}';
-};
-
-export type PutForumCommentsByIdResponses = {
-    /**
-     * OK
-     */
-    200: DtoCommentResponse;
-};
-
-export type PutForumCommentsByIdResponse = PutForumCommentsByIdResponses[keyof PutForumCommentsByIdResponses];
-
-export type PostForumCommentsByIdVoteData = {
-    /**
-     * Vote Value
-     */
-    body: DtoVoteRequest;
-    path: {
-        /**
-         * Comment ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/forum/comments/{id}/vote';
-};
-
-export type PostForumCommentsByIdVoteResponses = {
-    /**
-     * No Content
-     */
-    204: unknown;
-};
-
-export type GetForumPostsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Post type (forum, news, event)
-         */
-        type?: string;
-        /**
-         * Search query
-         */
-        query?: string;
-        /**
-         * Sort by (new, votes)
-         */
-        sort?: string;
-        /**
-         * Limit
-         */
-        limit?: number;
-        /**
-         * Offset
-         */
-        offset?: number;
-    };
-    url: '/forum/posts';
-};
-
-export type GetForumPostsResponses = {
-    /**
-     * OK
-     */
-    200: Array<DtoPostResponse>;
-};
-
-export type GetForumPostsResponse = GetForumPostsResponses[keyof GetForumPostsResponses];
-
-export type PostForumPostsData = {
-    /**
-     * Post Content
-     */
-    body: DtoCreatePostRequest;
-    path?: never;
-    query?: never;
-    url: '/forum/posts';
-};
-
-export type PostForumPostsResponses = {
-    /**
-     * Created
-     */
-    201: DtoPostResponse;
-};
-
-export type PostForumPostsResponse = PostForumPostsResponses[keyof PostForumPostsResponses];
-
-export type DeleteForumPostsByIdData = {
-    body?: never;
-    path: {
-        /**
-         * Post ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/forum/posts/{id}';
-};
-
-export type DeleteForumPostsByIdResponses = {
-    /**
-     * No Content
-     */
-    204: unknown;
-};
-
-export type GetForumPostsByIdData = {
-    body?: never;
-    path: {
-        /**
-         * Post ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/forum/posts/{id}';
-};
-
-export type GetForumPostsByIdResponses = {
-    /**
-     * OK
-     */
-    200: DtoPostResponse;
-};
-
-export type GetForumPostsByIdResponse = GetForumPostsByIdResponses[keyof GetForumPostsByIdResponses];
-
-export type PutForumPostsByIdData = {
-    /**
-     * Post Content
-     */
-    body: DtoCreatePostRequest;
-    path: {
-        /**
-         * Post ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/forum/posts/{id}';
-};
-
-export type PutForumPostsByIdResponses = {
-    /**
-     * OK
-     */
-    200: DtoPostResponse;
-};
-
-export type PutForumPostsByIdResponse = PutForumPostsByIdResponses[keyof PutForumPostsByIdResponses];
-
-export type GetForumPostsByIdCommentsData = {
-    body?: never;
-    path: {
-        /**
-         * Post ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/forum/posts/{id}/comments';
-};
-
-export type GetForumPostsByIdCommentsResponses = {
-    /**
-     * OK
-     */
-    200: Array<DtoCommentResponse>;
-};
-
-export type GetForumPostsByIdCommentsResponse = GetForumPostsByIdCommentsResponses[keyof GetForumPostsByIdCommentsResponses];
-
-export type PostForumPostsByIdCommentsData = {
-    /**
-     * Comment Content
-     */
-    body: DtoCommentRequest;
-    path: {
-        /**
-         * Post ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/forum/posts/{id}/comments';
-};
-
-export type PostForumPostsByIdCommentsResponses = {
-    /**
-     * Created
-     */
-    201: DtoCommentResponse;
-};
-
-export type PostForumPostsByIdCommentsResponse = PostForumPostsByIdCommentsResponses[keyof PostForumPostsByIdCommentsResponses];
-
-export type PostForumPostsByIdVoteData = {
-    /**
-     * Vote Value
-     */
-    body: DtoVoteRequest;
-    path: {
-        /**
-         * Post ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/forum/posts/{id}/vote';
-};
-
-export type PostForumPostsByIdVoteResponses = {
-    /**
-     * No Content
-     */
-    204: unknown;
-};
-
-export type GetMediaData = {
-    body?: never;
-    path?: never;
-    query: {
         /**
          * Event ID
          */
-        event_id: string;
+        eventId: string;
     };
-    url: '/media';
+    query?: never;
+    url: '/events/{eventId}/media';
 };
 
-export type GetMediaResponses = {
+export type GetEventsByEventIdMediaResponses = {
     /**
      * OK
      */
     200: Array<DtoMediaResponse>;
 };
 
-export type GetMediaResponse = GetMediaResponses[keyof GetMediaResponses];
+export type GetEventsByEventIdMediaResponse = GetEventsByEventIdMediaResponses[keyof GetEventsByEventIdMediaResponses];
 
-export type PostMediaData = {
+export type PostEventsByEventIdMediaData = {
     body: {
-        /**
-         * Event ID
-         */
-        event_id: string;
         /**
          * Title
          */
@@ -1028,75 +1161,83 @@ export type PostMediaData = {
          */
         file: Blob | File;
     };
-    path?: never;
+    path: {
+        /**
+         * Event ID
+         */
+        eventId: string;
+    };
     query?: never;
-    url: '/media';
+    url: '/events/{eventId}/media';
 };
 
-export type PostMediaResponses = {
+export type PostEventsByEventIdMediaResponses = {
     /**
      * Created
      */
-    201: {
-        [key: string]: string;
-    };
+    201: DtoMediaResponse;
 };
 
-export type PostMediaResponse = PostMediaResponses[keyof PostMediaResponses];
+export type PostEventsByEventIdMediaResponse = PostEventsByEventIdMediaResponses[keyof PostEventsByEventIdMediaResponses];
 
-export type GetMediaByIdData = {
+export type GetMediaByMediaIdData = {
     body?: never;
     path: {
         /**
          * Media ID
          */
-        id: string;
+        mediaId: string;
     };
     query?: never;
-    url: '/media/{id}';
+    url: '/media/{mediaId}';
 };
 
-export type GetMediaByIdResponses = {
+export type GetMediaByMediaIdResponses = {
     /**
      * OK
      */
     200: DtoMediaResponse;
 };
 
-export type GetMediaByIdResponse = GetMediaByIdResponses[keyof GetMediaByIdResponses];
+export type GetMediaByMediaIdResponse = GetMediaByMediaIdResponses[keyof GetMediaByMediaIdResponses];
 
-export type GetMediaByIdFileData = {
+export type GetMediaByMediaIdFileData = {
     body?: never;
     path: {
         /**
          * Media ID
          */
-        id: string;
+        mediaId: string;
     };
     query?: never;
-    url: '/media/{id}/file';
+    url: '/media/{mediaId}/file';
 };
 
-export type GetMediaByIdFileResponses = {
+export type GetMediaByMediaIdFileResponses = {
     /**
      * OK
      */
     200: unknown;
 };
 
-export type GetMediaByIdPreviewData = {
+export type GetMediaByMediaIdPreviewData = {
     body?: never;
     path: {
         /**
          * Media ID
          */
-        id: string;
+        mediaId: string;
     };
-    query?: never;
-    url: '/media/{id}/preview';
+    query?: {
+        /**
+         * Size (200, 400, 600, 800, 1200, 1600)
+         */
+        size?: number;
+    };
+    url: '/media/{mediaId}/preview';
 };
 
-export type GetMediaByIdPreviewResponses = {
+export type GetMediaByMediaIdPreviewResponses = {
     /**
      * OK
      */
@@ -1134,10 +1275,10 @@ export type GetProgramsIdData = {
         /**
          * Program ID
          */
-        id: number;
+        programId: string;
     };
     query?: never;
-    url: '/programs/{id}';
+    url: '/programs/{programId}';
 };
 
 export type GetProgramsIdErrors = {
@@ -1168,10 +1309,10 @@ export type GetProgramModulesData = {
         /**
          * Program ID
          */
-        id: string;
+        programId: string;
     };
     query?: never;
-    url: '/programs/{id}/modules';
+    url: '/programs/{programId}/modules';
 };
 
 export type GetProgramModulesErrors = {
@@ -1238,34 +1379,34 @@ export type GetUsersResponses = {
 
 export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
 
-export type GetUsersByIdData = {
+export type GetUsersByUserIdData = {
     body?: never;
     path: {
         /**
          * User ID
          */
-        id: string;
+        userId: string;
     };
     query?: never;
-    url: '/users/{id}';
+    url: '/users/{userId}';
 };
 
-export type GetUsersByIdResponses = {
+export type GetUsersByUserIdResponses = {
     /**
      * OK
      */
     200: DtoPublicUserResponse;
 };
 
-export type GetUsersByIdResponse = GetUsersByIdResponses[keyof GetUsersByIdResponses];
+export type GetUsersByUserIdResponse = GetUsersByUserIdResponses[keyof GetUsersByUserIdResponses];
 
-export type GetUsersByIdActivitiesData = {
+export type GetUsersByUserIdActivitiesData = {
     body?: never;
     path: {
         /**
          * User ID
          */
-        id: string;
+        userId: string;
     };
     query?: {
         /**
@@ -1277,14 +1418,14 @@ export type GetUsersByIdActivitiesData = {
          */
         offset?: number;
     };
-    url: '/users/{id}/activities';
+    url: '/users/{userId}/activities';
 };
 
-export type GetUsersByIdActivitiesResponses = {
+export type GetUsersByUserIdActivitiesResponses = {
     /**
      * OK
      */
     200: Array<DtoActivityResponse>;
 };
 
-export type GetUsersByIdActivitiesResponse = GetUsersByIdActivitiesResponses[keyof GetUsersByIdActivitiesResponses];
+export type GetUsersByUserIdActivitiesResponse = GetUsersByUserIdActivitiesResponses[keyof GetUsersByUserIdActivitiesResponses];

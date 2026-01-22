@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode, useCa
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 
 import { getAuthMe, postAuthLogout } from '@lib/api';
-import type { AuthUserResponse as User } from '@lib/api';
+import type { DtoUserResponse as User } from '@lib/api';
 import { useThemeMode, type ThemePreference } from '@lib/theme';
 
 const REMEMBERED_USER_KEY = 'fs_remembered_user';
@@ -17,7 +17,12 @@ const readRememberedUser = (): User | null => {
     if (!stored) {
       return null;
     }
-    return JSON.parse(stored) as User;
+    const parsed = JSON.parse(stored) as Record<string, unknown>;
+    // Migration: fix old typos in persisted data
+    if (parsed.programid && !parsed.program_id) {
+      parsed.program_id = parsed.programid;
+    }
+    return parsed as unknown as User;
   } catch {
     window.localStorage.removeItem(REMEMBERED_USER_KEY);
     window.localStorage.removeItem(REMEMBERED_FLAG_KEY);
@@ -105,7 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      await postAuthLogout({});
+      await postAuthLogout();
       setUser(null);
       clearRememberedUser();
     } catch (error) {

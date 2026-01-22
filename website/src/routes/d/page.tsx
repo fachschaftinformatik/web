@@ -21,28 +21,29 @@ import EditIcon from "@mui/icons-material/Edit";
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
 import {
-  getForumPosts,
+  getDiscussions,
   getPrograms,
-  postForumPostsByIdVote,
-  deleteForumPostsById,
-  putForumPostsById,
+  postDiscussionsByPostIdVote,
+  deleteDiscussionsByPostId,
+  putDiscussionsByPostId,
 } from "@lib/api";
 import type {
-  AuthPostResponse as ApiPost,
-  AuthUserResponse as User,
-  AuthProgramResponse
+  DtoDiscussionPostResponse as ApiPost,
+  DtoUserResponse as User,
+  DtoProgramResponse
 } from "@lib/api";
+import { getAvatarUrl } from "@lib/images";
 
 import {
   isoToShort,
   Post, Vote, Program, POSTS_PER_PAGE
 } from "./components";
+
 function PostItem({
   post,
   onVote,
   vote,
   onDelete,
-
   onTogglePin,
   user,
   isAdmin,
@@ -61,7 +62,7 @@ function PostItem({
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const netVotes = (Number(post.votes) || 0);
-  const canDelete = isAdmin || (user?.id === post.author_id);
+  const canDelete = isAdmin || (String(user?.id) === String(post.user_id));
   const [menuEl, setMenuEl] = React.useState<null | HTMLElement>(null);
   const openMenu = Boolean(menuEl);
 
@@ -73,7 +74,7 @@ function PostItem({
 
   return (
     <Paper
-      onClick={() => navigate(`/discussions/${post.id}`)}
+      onClick={() => navigate(`/d/${post.id}`)}
       elevation={0}
       sx={{
         p: 2,
@@ -101,7 +102,7 @@ function PostItem({
             size="small"
             onClick={(e) => {
               e.stopPropagation();
-              onVote(post.id!, vote === 1 ? 0 : 1);
+              onVote(String(post.id!), vote === 1 ? 0 : 1);
             }}
             color={vote === 1 ? "primary" : "default"}
           >
@@ -114,7 +115,7 @@ function PostItem({
             size="small"
             onClick={(e) => {
               e.stopPropagation();
-              onVote(post.id!, vote === -1 ? 0 : -1);
+              onVote(String(post.id!), vote === -1 ? 0 : -1);
             }}
             color={vote === -1 ? "primary" : "default"}
           >
@@ -142,12 +143,12 @@ function PostItem({
               onClick={(e) => e.stopPropagation()}
             >
 
-              {user?.id === post.author_id && (
+              {String(user?.id) === String(post.user_id) && (
                 <MenuItem
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCloseMenu();
-                    navigate(`/discussions/${post.id}/edit`);
+                    navigate(`/d/${post.id}/edit`);
                   }}
                 >
                   <ListItemIcon>
@@ -161,7 +162,7 @@ function PostItem({
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCloseMenu();
-                    onTogglePin(post.id!);
+                    onTogglePin(String(post.id!));
                   }}
                 >
                   <ListItemIcon>
@@ -175,7 +176,7 @@ function PostItem({
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCloseMenu();
-                  onReport(post.id!);
+                  onReport(String(post.id!));
                 }}
               >
                 <ListItemIcon>
@@ -188,7 +189,7 @@ function PostItem({
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCloseMenu();
-                    onDelete(post.id!);
+                    onDelete(String(post.id!));
                   }}
                   sx={{ color: "error.main" }}
                 >
@@ -216,7 +217,7 @@ function PostItem({
 
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
             <Avatar
-              src={post.author_avatar_url || undefined}
+              src={getAvatarUrl(post.user_avatar_url)}
               sx={{
                 width: 20,
                 height: 20,
@@ -225,10 +226,10 @@ function PostItem({
                 fontWeight: "bold"
               }}
             >
-              {post.author_name ? post.author_name[0].toUpperCase() : "A"}
+              {post.user_name ? post.user_name[0].toUpperCase() : "A"}
             </Avatar>
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-              von <Typography component={Link} to={`/user/${post.author_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author_name || "Anonym"}</Typography> · {isoToShort(post.created_at ?? "")}
+              von <Typography component={Link} to={`/u/${post.user_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.user_name || "Anonym"}</Typography> · {isoToShort(post.created_at ?? "")}
               {post.updated_at && post.created_at && post.updated_at !== post.created_at && " (bearbeitet)"}
               {" · "}
               {post.comment_count} {post.comment_count === 1 ? "Kommentar" : "Kommentare"}
@@ -236,15 +237,15 @@ function PostItem({
           </Stack>
 
           <Stack direction="row" spacing={0.5} flexWrap="wrap">
-            {post.programs.map((program) => (
+            {(post.programs || []).map((program) => (
               <Chip
-                key={program}
-                label={program}
+                key={String(program.id)}
+                label={program.name}
                 size="small"
                 variant="outlined"
               />
             ))}
-            {post.tags.slice(0, 3).map((tag) => (
+            {(post.tags || []).slice(0, 3).map((tag) => (
               <Chip
                 key={tag}
                 label={tag}
@@ -261,7 +262,7 @@ function PostItem({
 
 
 
-export default function ForumPage() {
+export default function DiscussionsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const navigate = useNavigate();
@@ -275,7 +276,7 @@ export default function ForumPage() {
   const [activeProgramFilters, setActiveProgramFilters] = React.useState<Program[]>([]);
   const [page, setPage] = React.useState(1);
 
-  const [apiPrograms, setApiPrograms] = React.useState<AuthProgramResponse[]>([]);
+  const [apiPrograms, setApiPrograms] = React.useState<DtoProgramResponse[]>([]);
 
   const fetchPosts = React.useCallback(async () => {
     setLoading(true);
@@ -285,12 +286,13 @@ export default function ForumPage() {
         if (progData) setApiPrograms(progData);
       }
       const offset = (page - 1) * POSTS_PER_PAGE;
-      const { data, response } = await getForumPosts({
+      const { data, response } = await getDiscussions({
         query: {
           limit: POSTS_PER_PAGE,
           offset,
           query: q.trim() || undefined,
           sort: sort === "votes" ? "votes" : undefined,
+          program_id: activeProgramFilters.length > 0 ? apiPrograms.find(p => p.name === activeProgramFilters[0])?.id : undefined
         }
       });
 
@@ -298,9 +300,6 @@ export default function ForumPage() {
         const parsed: Post[] = (data as ApiPost[]).map((p: ApiPost) => {
           return {
             ...p,
-            programs: p.programs || [],
-            tags: p.tags || [],
-            links: p.links || [],
             comments: []
           } as Post;
         });
@@ -314,7 +313,7 @@ export default function ForumPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, q, sort, apiPrograms.length]);
+  }, [page, q, sort, apiPrograms, activeProgramFilters]);
 
   React.useEffect(() => {
     fetchPosts();
@@ -325,7 +324,7 @@ export default function ForumPage() {
     const params = new URLSearchParams(window.location.search);
     const targetId = params.get("postId") || params.get("post");
     if (targetId) {
-      navigate(`/discussions/${targetId}`, { replace: true });
+      navigate(`/d/${targetId}`, { replace: true });
     }
   }, [navigate]);
 
@@ -333,27 +332,16 @@ export default function ForumPage() {
     setPage(1);
   }, [q, sort, activeProgramFilters]);
 
-  // Client-side filtering for programs (since backend doesn't support it yet)
-  const filteredPosts = React.useMemo(() => {
-    if (activeProgramFilters.length === 0) return posts;
-    return posts.filter((p) =>
-      p.programs.some((program) => activeProgramFilters.includes(program))
-    );
-  }, [posts, activeProgramFilters]);
-
-  // If we have local filters that change the count significantly, 
-  // we might need more complex logic, but for now we follow the user's request
-  // to implement pagination similar to activity feed.
   const pageCount = Math.ceil(totalCount / POSTS_PER_PAGE);
 
   const handleVote = async (id: string, newVote: Vote) => {
     if (!user) return;
     try {
-      await postForumPostsByIdVote({
-        path: { id },
+      await postDiscussionsByPostIdVote({
+        path: { postId: id },
         body: { vote: newVote },
       });
-      setPosts(prev => prev.map(p => p.id === id ? { ...p, user_vote: newVote, votes: (Number(p.votes)) - (p.user_vote || 0) + newVote } : p));
+      setPosts(prev => prev.map(p => String(p.id) === id ? { ...p, user_vote: newVote, votes: (Number(p.votes)) - (p.user_vote || 0) + newVote } : p));
     } catch (e) {
       console.error(e);
     }
@@ -361,29 +349,29 @@ export default function ForumPage() {
 
   const togglePin = async (id: string) => {
     if (!isAdmin && user?.role !== "editor") return;
-    const post = posts.find(p => p.id === id);
+    const post = posts.find(p => String(p.id) === id);
     if (!post) return;
     try {
-      await putForumPostsById({
-        path: { id },
-        body: { pinned: post.pinned ? 0 : 1 },
+      await putDiscussionsByPostId({
+        path: { postId: id },
+        body: { pinned: !post.pinned } as unknown as { pinned: boolean }, // pinned is boolean in request but int in response
       });
-      setPosts(prev => prev.map(p => p.id === id ? { ...p, pinned: post.pinned ? 0 : 1 } : p));
+      setPosts(prev => prev.map(p => String(p.id) === id ? { ...p, pinned: post.pinned ? 0 : 1 } : p));
     } catch (e) { console.error(e); }
   };
 
   const handleDelete = async (id: string) => {
-    if (!isAdmin && user?.role !== "editor" && user?.id !== posts.find(p => p.id === id)?.author_id) return;
+    if (!isAdmin && user?.role !== "editor" && String(user?.id) !== String(posts.find(p => String(p.id) === id)?.user_id)) return;
     if (!confirm("Wirklich löschen?")) return;
     try {
-      await deleteForumPostsById({
-        path: { id },
+      await deleteDiscussionsByPostId({
+        path: { postId: id },
       });
-      setPosts(prev => prev.filter(p => p.id !== id));
+      setPosts(prev => prev.filter(p => String(p.id) !== id));
     } catch (e) { console.error(e); }
   };
 
-  const handleOpenCreate = () => navigate("/discussions/create");
+  const handleOpenCreate = () => navigate("/d/new");
 
   const [reportFor, setReportFor] = React.useState<string | null>(null);
   const [reportReason, setReportReason] = React.useState("Spam / Werbung");
@@ -395,11 +383,11 @@ export default function ForumPage() {
   };
 
   return (
-    <Sidebar user={user} title="Forum" maxWidth="lg">
+    <Sidebar user={user} title="Diskussionen" maxWidth="lg">
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
           <Box>
-            <Typography variant="h4" fontWeight={700} gutterBottom>Forum</Typography>
+            <Typography variant="h4" fontWeight={700} gutterBottom>Diskussionen</Typography>
             <Typography variant="body1" color="text.secondary">Diskutiere mit deinen Kommilitonen über Studium, Campus und Events.</Typography>
           </Box>
         </Box>
@@ -444,7 +432,7 @@ export default function ForumPage() {
                     options={apiPrograms}
                     getOptionLabel={o => o.name || ""}
                     value={apiPrograms.filter(p => activeProgramFilters.includes(p.name || ""))}
-                    isOptionEqualToValue={(o, v) => o.id === v.id}
+                    isOptionEqualToValue={(o, v) => String(o.id) === String(v.id)}
                     onChange={(_, n) => setActiveProgramFilters(n.map(v => v.name || ""))}
                     renderInput={p => <TextField {...p} label="Studiengang" size="small" placeholder="Wählen..." />}
                     size="small"
@@ -467,9 +455,9 @@ export default function ForumPage() {
             </Paper>
 
             <Stack spacing={2} sx={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
-              {filteredPosts.map(p => (
+              {posts.map(p => (
                 <PostItem
-                  key={p.id}
+                  key={String(p.id)}
                   post={p}
                   vote={(p.user_vote ?? 0) as Vote}
                   onVote={handleVote}
@@ -480,7 +468,7 @@ export default function ForumPage() {
                   isAdmin={isAdmin}
                 />
               ))}
-              {filteredPosts.length === 0 && !loading && (
+              {posts.length === 0 && !loading && (
                 <Stack spacing={1.5}>
                   <Typography color="text.secondary">Keine Treffer. Suchbegriff oder Filter anpassen.</Typography>
                 </Stack>

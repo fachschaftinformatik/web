@@ -27,8 +27,9 @@ import LockRoundedIcon from '@mui/icons-material/LockRounded';
 
 import { useAuth } from '@lib/auth';
 import { Sidebar } from '@components/layout';
-import { getPrograms, getUsersByIdActivities, getUsersById } from '@lib/api';
-import type { AuthUserResponse as User, DatabaseActivity as Activity } from '@lib/api';
+import { getPrograms, getUsersByUserIdActivities, getUsersByUserId } from '@lib/api';
+import type { DtoPublicUserResponse as User, DtoActivityResponse as Activity } from '@lib/api';
+import { getAvatarUrl } from '@lib/images';
 
 
 const ProfilePage: React.FC = () => {
@@ -38,12 +39,12 @@ const ProfilePage: React.FC = () => {
 
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
-  const [programs, setPrograms] = useState<Record<number, string>>({});
+  const [programs, setPrograms] = useState<Record<string, string>>({});
   const [programsLoading, setProgramsLoading] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
 
-  const isOwnProfile = currentUser?.id === userId;
+  const isOwnProfile = String(currentUser?.id) === String(userId);
 
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
@@ -55,7 +56,7 @@ const ProfilePage: React.FC = () => {
     const fetchProfile = async () => {
       setProfileLoading(true);
       try {
-        const { data } = await getUsersById({ path: { id: userId } });
+        const { data } = await getUsersByUserId({ path: { userId } });
         if (data) {
           setProfileUser(data as User);
         }
@@ -85,8 +86,8 @@ const ProfilePage: React.FC = () => {
       setActivitiesLoading(true);
       try {
         const offset = (page - 1) * LIMIT;
-        const { data, response } = await getUsersByIdActivities({
-          path: { id: userId },
+        const { data, response } = await getUsersByUserIdActivities({
+          path: { userId },
           query: { limit: LIMIT, offset }
         });
 
@@ -116,8 +117,8 @@ const ProfilePage: React.FC = () => {
         const { data } = await getPrograms();
         if (!isMounted) return;
         if (data) {
-          const mapped = (Array.isArray(data) ? data : []).reduce<Record<number, string>>((acc, p) => {
-            if (p.id !== undefined) acc[p.id] = p.name ?? "Unbekannt";
+          const mapped = (Array.isArray(data) ? data : []).reduce<Record<string, string>>((acc, p) => {
+            if (p.id !== undefined) acc[String(p.id)] = p.name ?? "Unbekannt";
             return acc;
           }, {});
           setPrograms(mapped);
@@ -187,8 +188,8 @@ const ProfilePage: React.FC = () => {
 
   const programLabel = programsLoading
     ? 'Lädt...'
-    : (profileUser.programid !== undefined && programs[profileUser.programid])
-    ?? `Studiengang #${profileUser.programid ?? 'unbekannt'}`;
+    : (profileUser.program_id !== undefined && programs[String(profileUser.program_id)])
+    ?? `Studiengang #${profileUser.program_id ?? 'unbekannt'}`;
 
 
 
@@ -213,8 +214,8 @@ const ProfilePage: React.FC = () => {
           >
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="center">
               <Avatar
-                key={profileUser.avatar_url || profileUser.id}
-                src={profileUser.avatar_url || undefined}
+                key={profileUser.avatar_url || String(profileUser.id)}
+                src={getAvatarUrl(profileUser.avatar_url)}
                 sx={{
                   width: 120,
                   height: 120,
@@ -298,18 +299,22 @@ const ProfilePage: React.FC = () => {
                   const secondaryText = activity.created_at ? new Date(activity.created_at).toLocaleString() : '';
 
                   if (activity.type === 'POST_CREATED') {
-                    linkTarget = `/discussions/${activity.target_id}`;
+                    linkTarget = `/d/${activity.target_id}`;
                     primaryText = activity.target_name || "Neuer Beitrag";
                   } else if (activity.type === 'COMMENT_ADDED') {
-                    linkTarget = `/discussions/${activity.target_id}`;
+                    linkTarget = `/d/${activity.target_id}`;
                     primaryText = activity.target_name ? `Kommentar zu "${activity.target_name}"` : "Neuer Kommentar";
                   } else if (activity.type === 'EXAM_UPLOADED') {
-                    linkTarget = `/exams/${activity.target_id}`;
+                    linkTarget = `/archive/${activity.target_id}`;
                     primaryText = activity.target_name ? `Klausur für ${activity.target_name}` : "Neue Altklausur";
-                  } else if (activity.type === 'MEDIA_UPLOADED') {
-                    linkTarget = `/media?mediaId=${activity.target_id}`;
-                    primaryText = activity.target_name || "Neues Bild";
-                  }
+                    } else if (activity.type === 'MEDIA_UPLOADED') {
+                      linkTarget = `/events/${activity.target_id}`;
+                      primaryText = activity.target_name || "Neues Bild";
+                    } else if (activity.type === 'EVENT_CREATED') {
+                      linkTarget = `/events/${activity.target_id}`;
+                      primaryText = activity.target_name || "Neues Event";
+                    }
+
 
                   const getActivityColor = (type: string, attr: 'bg' | 'fg') => {
                     const isDark = theme.palette.mode === 'dark';
@@ -319,6 +324,7 @@ const ProfilePage: React.FC = () => {
                     if (type === 'COMMENT_ADDED') paletteColor = theme.palette.success;
                     if (type === 'EXAM_UPLOADED') paletteColor = theme.palette.info;
                     if (type === 'MEDIA_UPLOADED') paletteColor = theme.palette.warning;
+                    if (type === 'EVENT_CREATED') paletteColor = theme.palette.warning;
 
                     if (attr === 'bg') {
                       return alpha(paletteColor.main, isDark ? 0.2 : 0.12);
@@ -357,7 +363,7 @@ const ProfilePage: React.FC = () => {
                             {activity.type === 'POST_CREATED' && <PostAddIcon fontSize="small" />}
                             {activity.type === 'COMMENT_ADDED' && <QuestionAnswerRounded fontSize="small" />}
                             {activity.type === 'EXAM_UPLOADED' && <LibraryBooksRounded fontSize="small" />}
-                            {activity.type === 'MEDIA_UPLOADED' && <CollectionsIcon fontSize="small" />}
+                            {(activity.type === 'MEDIA_UPLOADED' || activity.type === 'EVENT_CREATED') && <CollectionsIcon fontSize="small" />}
                           </Avatar>
                         </ListItemIcon>
                         <ListItemText
