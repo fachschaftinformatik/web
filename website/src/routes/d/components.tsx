@@ -272,8 +272,8 @@ export function CommentThread({
                         </Stack>
                     </Paper>
 
-                    {/* Main Content */}
-                    <Stack spacing={1}>
+                    {/* Main Content Actions */}
+                    <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
                         <Stack direction="row" alignItems="center" spacing={0}>
                             <IconButton
                                 size="small"
