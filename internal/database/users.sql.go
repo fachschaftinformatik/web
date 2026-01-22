@@ -11,7 +11,7 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-  id, email, name, password, role, active, verified, programid, verification_token, avatar_url
+  id, email, name, password, role, active, verified, program_id, verification_token, avatar_url
 ) VALUES (
   ?1, ?2, ?3, ?4,
   COALESCE(?5, 'user'),
@@ -21,17 +21,17 @@ INSERT INTO users (
   ?8,
   ?9
 )
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 `
 
 type CreateUserParams struct {
-	ID                string      `json:"id"`
+	ID                int64       `json:"id"`
 	Email             string      `json:"email"`
 	Name              string      `json:"name"`
 	Password          string      `json:"password"`
 	Role              interface{} `json:"role"`
 	Active            interface{} `json:"active"`
-	Programid         string      `json:"programid"`
+	ProgramID         *int64      `json:"program_id"`
 	VerificationToken *string     `json:"verification_token"`
 	AvatarUrl         *string     `json:"avatar_url"`
 }
@@ -44,7 +44,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Password,
 		arg.Role,
 		arg.Active,
-		arg.Programid,
+		arg.ProgramID,
 		arg.VerificationToken,
 		arg.AvatarUrl,
 	)
@@ -58,26 +58,26 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Active,
 		&i.Verified,
 		&i.VerifiedAt,
-		&i.VerifiedUntil,
-		&i.Programid,
+		&i.VerificationToken,
+		&i.ProgramID,
 		&i.Theme,
 		&i.Private,
 		&i.AvatarUrl,
-		&i.VerificationToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 FROM users
-WHERE id = ?1
+WHERE id = ?1 AND deleted_at IS NULL
 LIMIT 1
 `
 
-func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
+func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUser, id)
 	var i User
 	err := row.Scan(
@@ -89,22 +89,22 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 		&i.Active,
 		&i.Verified,
 		&i.VerifiedAt,
-		&i.VerifiedUntil,
-		&i.Programid,
+		&i.VerificationToken,
+		&i.ProgramID,
 		&i.Theme,
 		&i.Private,
 		&i.AvatarUrl,
-		&i.VerificationToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 FROM users
-WHERE lower(email) = lower(?1)
+WHERE lower(email) = lower(?1) AND deleted_at IS NULL
 LIMIT 1
 `
 
@@ -120,22 +120,22 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Active,
 		&i.Verified,
 		&i.VerifiedAt,
-		&i.VerifiedUntil,
-		&i.Programid,
+		&i.VerificationToken,
+		&i.ProgramID,
 		&i.Theme,
 		&i.Private,
 		&i.AvatarUrl,
-		&i.VerificationToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const getUserByVerificationToken = `-- name: GetUserByVerificationToken :one
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 FROM users
-WHERE verification_token = ?1
+WHERE verification_token = ?1 AND deleted_at IS NULL
 LIMIT 1
 `
 
@@ -151,21 +151,22 @@ func (q *Queries) GetUserByVerificationToken(ctx context.Context, verificationTo
 		&i.Active,
 		&i.Verified,
 		&i.VerifiedAt,
-		&i.VerifiedUntil,
-		&i.Programid,
+		&i.VerificationToken,
+		&i.ProgramID,
 		&i.Theme,
 		&i.Private,
 		&i.AvatarUrl,
-		&i.VerificationToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 FROM users
+WHERE deleted_at IS NULL
 ORDER BY created_at DESC
 LIMIT ?2 OFFSET ?1
 `
@@ -193,14 +194,14 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 			&i.Active,
 			&i.Verified,
 			&i.VerifiedAt,
-			&i.VerifiedUntil,
-			&i.Programid,
+			&i.VerificationToken,
+			&i.ProgramID,
 			&i.Theme,
 			&i.Private,
 			&i.AvatarUrl,
-			&i.VerificationToken,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -216,13 +217,13 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 }
 
 const searchUsers = `-- name: SearchUsers :many
-SELECT id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 FROM users
 WHERE (
   lower(id) LIKE '%' || lower(?1) || '%' OR
   lower(name) LIKE '%' || lower(?1) || '%' OR
   lower(email) LIKE '%' || lower(?1) || '%'
-) AND active = 1 AND private = 0
+) AND active = 1 AND private = 0 AND deleted_at IS NULL
 ORDER BY name ASC
 LIMIT 10
 `
@@ -245,14 +246,14 @@ func (q *Queries) SearchUsers(ctx context.Context, query string) ([]User, error)
 			&i.Active,
 			&i.Verified,
 			&i.VerifiedAt,
-			&i.VerifiedUntil,
-			&i.Programid,
+			&i.VerificationToken,
+			&i.ProgramID,
 			&i.Theme,
 			&i.Private,
 			&i.AvatarUrl,
-			&i.VerificationToken,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.DeletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -270,13 +271,13 @@ func (q *Queries) SearchUsers(ctx context.Context, query string) ([]User, error)
 const setUserActive = `-- name: SetUserActive :one
 UPDATE users
 SET active = ?1
-WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+WHERE id = ?2 AND deleted_at IS NULL
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 `
 
 type SetUserActiveParams struct {
-	Active int64  `json:"active"`
-	ID     string `json:"id"`
+	Active int64 `json:"active"`
+	ID     int64 `json:"id"`
 }
 
 func (q *Queries) SetUserActive(ctx context.Context, arg SetUserActiveParams) (User, error) {
@@ -291,14 +292,14 @@ func (q *Queries) SetUserActive(ctx context.Context, arg SetUserActiveParams) (U
 		&i.Active,
 		&i.Verified,
 		&i.VerifiedAt,
-		&i.VerifiedUntil,
-		&i.Programid,
+		&i.VerificationToken,
+		&i.ProgramID,
 		&i.Theme,
 		&i.Private,
 		&i.AvatarUrl,
-		&i.VerificationToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
@@ -306,13 +307,13 @@ func (q *Queries) SetUserActive(ctx context.Context, arg SetUserActiveParams) (U
 const setUserRole = `-- name: SetUserRole :one
 UPDATE users
 SET role = ?1
-WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+WHERE id = ?2 AND deleted_at IS NULL
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 `
 
 type SetUserRoleParams struct {
 	Role string `json:"role"`
-	ID   string `json:"id"`
+	ID   int64  `json:"id"`
 }
 
 func (q *Queries) SetUserRole(ctx context.Context, arg SetUserRoleParams) (User, error) {
@@ -327,14 +328,14 @@ func (q *Queries) SetUserRole(ctx context.Context, arg SetUserRoleParams) (User,
 		&i.Active,
 		&i.Verified,
 		&i.VerifiedAt,
-		&i.VerifiedUntil,
-		&i.Programid,
+		&i.VerificationToken,
+		&i.ProgramID,
 		&i.Theme,
 		&i.Private,
 		&i.AvatarUrl,
-		&i.VerificationToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
@@ -343,8 +344,7 @@ const sweepExpiredVerifications = `-- name: SweepExpiredVerifications :exec
 UPDATE users
 SET verified = 0
 WHERE verified = 1
-  AND verified_until IS NOT NULL
-  AND verified_until < strftime('%Y-%m-%dT%H:%M:%fZ','now')
+  AND verified_at < strftime('%Y-%m-%dT%H:%M:%SZ','now', '-1 year')
 `
 
 func (q *Queries) SweepExpiredVerifications(ctx context.Context) error {
@@ -355,11 +355,11 @@ func (q *Queries) SweepExpiredVerifications(ctx context.Context) error {
 const unverifyUser = `-- name: UnverifyUser :one
 UPDATE users
 SET verified = 0
-WHERE id = ?1
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+WHERE id = ?1 AND deleted_at IS NULL
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 `
 
-func (q *Queries) UnverifyUser(ctx context.Context, id string) (User, error) {
+func (q *Queries) UnverifyUser(ctx context.Context, id int64) (User, error) {
 	row := q.db.QueryRowContext(ctx, unverifyUser, id)
 	var i User
 	err := row.Scan(
@@ -371,43 +371,44 @@ func (q *Queries) UnverifyUser(ctx context.Context, id string) (User, error) {
 		&i.Active,
 		&i.Verified,
 		&i.VerifiedAt,
-		&i.VerifiedUntil,
-		&i.Programid,
+		&i.VerificationToken,
+		&i.ProgramID,
 		&i.Theme,
 		&i.Private,
 		&i.AvatarUrl,
-		&i.VerificationToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const updateUser = `-- name: UpdateUser :one
+
 UPDATE users
 SET name = ?1,
-    programid = ?2,
+    program_id = ?2,
     theme = ?3,
     private = ?4,
-    avatar_url = ?5,
-    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
-WHERE id = ?6
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+    avatar_url = ?5
+WHERE id = ?6 AND deleted_at IS NULL
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 `
 
 type UpdateUserParams struct {
 	Name      string  `json:"name"`
-	Programid string  `json:"programid"`
+	ProgramID *int64  `json:"program_id"`
 	Theme     string  `json:"theme"`
 	Private   int64   `json:"private"`
 	AvatarUrl *string `json:"avatar_url"`
-	ID        string  `json:"id"`
+	ID        int64   `json:"id"`
 }
 
+// Example logic
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, updateUser,
 		arg.Name,
-		arg.Programid,
+		arg.ProgramID,
 		arg.Theme,
 		arg.Private,
 		arg.AvatarUrl,
@@ -423,29 +424,28 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.Active,
 		&i.Verified,
 		&i.VerifiedAt,
-		&i.VerifiedUntil,
-		&i.Programid,
+		&i.VerificationToken,
+		&i.ProgramID,
 		&i.Theme,
 		&i.Private,
 		&i.AvatarUrl,
-		&i.VerificationToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const updateUserAvatar = `-- name: UpdateUserAvatar :one
 UPDATE users
-SET avatar_url = ?1,
-    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
-WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+SET avatar_url = ?1
+WHERE id = ?2 AND deleted_at IS NULL
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 `
 
 type UpdateUserAvatarParams struct {
 	AvatarUrl *string `json:"avatar_url"`
-	ID        string  `json:"id"`
+	ID        int64   `json:"id"`
 }
 
 func (q *Queries) UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarParams) (User, error) {
@@ -460,14 +460,14 @@ func (q *Queries) UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarPara
 		&i.Active,
 		&i.Verified,
 		&i.VerifiedAt,
-		&i.VerifiedUntil,
-		&i.Programid,
+		&i.VerificationToken,
+		&i.ProgramID,
 		&i.Theme,
 		&i.Private,
 		&i.AvatarUrl,
-		&i.VerificationToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
@@ -475,12 +475,12 @@ func (q *Queries) UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarPara
 const updateUserToken = `-- name: UpdateUserToken :exec
 UPDATE users
 SET verification_token = ?1
-WHERE id = ?2
+WHERE id = ?2 AND deleted_at IS NULL
 `
 
 type UpdateUserTokenParams struct {
 	VerificationToken *string `json:"verification_token"`
-	ID                string  `json:"id"`
+	ID                int64   `json:"id"`
 }
 
 func (q *Queries) UpdateUserToken(ctx context.Context, arg UpdateUserTokenParams) error {
@@ -488,59 +488,17 @@ func (q *Queries) UpdateUserToken(ctx context.Context, arg UpdateUserTokenParams
 	return err
 }
 
-const updateUserVerificationWindow = `-- name: UpdateUserVerificationWindow :one
-UPDATE users
-SET verified_until = ?1
-WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
-`
-
-type UpdateUserVerificationWindowParams struct {
-	VerifiedUntil *string `json:"verified_until"`
-	ID            string  `json:"id"`
-}
-
-func (q *Queries) UpdateUserVerificationWindow(ctx context.Context, arg UpdateUserVerificationWindowParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, updateUserVerificationWindow, arg.VerifiedUntil, arg.ID)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Email,
-		&i.Name,
-		&i.Password,
-		&i.Role,
-		&i.Active,
-		&i.Verified,
-		&i.VerifiedAt,
-		&i.VerifiedUntil,
-		&i.Programid,
-		&i.Theme,
-		&i.Private,
-		&i.AvatarUrl,
-		&i.VerificationToken,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const verifyUser = `-- name: VerifyUser :one
 UPDATE users
 SET verified = 1,
-    verified_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
-    verified_until = ?1,
+    verified_at = strftime('%Y-%m-%dT%H:%M:%SZ','now'),
     verification_token = NULL
-WHERE id = ?2
-RETURNING id, email, name, password, role, active, verified, verified_at, verified_until, programid, theme, private, avatar_url, verification_token, created_at, updated_at
+WHERE id = ?1 AND deleted_at IS NULL
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
 `
 
-type VerifyUserParams struct {
-	VerifiedUntil *string `json:"verified_until"`
-	ID            string  `json:"id"`
-}
-
-func (q *Queries) VerifyUser(ctx context.Context, arg VerifyUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, verifyUser, arg.VerifiedUntil, arg.ID)
+func (q *Queries) VerifyUser(ctx context.Context, id int64) (User, error) {
+	row := q.db.QueryRowContext(ctx, verifyUser, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -551,14 +509,14 @@ func (q *Queries) VerifyUser(ctx context.Context, arg VerifyUserParams) (User, e
 		&i.Active,
 		&i.Verified,
 		&i.VerifiedAt,
-		&i.VerifiedUntil,
-		&i.Programid,
+		&i.VerificationToken,
+		&i.ProgramID,
 		&i.Theme,
 		&i.Private,
 		&i.AvatarUrl,
-		&i.VerificationToken,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
