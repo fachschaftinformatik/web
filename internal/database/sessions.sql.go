@@ -10,14 +10,14 @@ import (
 )
 
 const createSession = `-- name: CreateSession :one
-INSERT INTO sessions (id, userid, expires_at, user_agent, ip_address)
+INSERT INTO sessions (id, user_id, expires_at, user_agent, ip_address)
 VALUES (?1, ?2, ?3, ?4, ?5)
-RETURNING id, userid, created_at, last_seen, expires_at, user_agent, ip_address
+RETURNING id, user_id, user_agent, ip_address, created_at, last_seen, expires_at
 `
 
 type CreateSessionParams struct {
 	ID        string  `json:"id"`
-	Userid    string  `json:"userid"`
+	UserID    int64   `json:"user_id"`
 	ExpiresAt string  `json:"expires_at"`
 	UserAgent *string `json:"user_agent"`
 	IpAddress *string `json:"ip_address"`
@@ -26,7 +26,7 @@ type CreateSessionParams struct {
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error) {
 	row := q.db.QueryRowContext(ctx, createSession,
 		arg.ID,
-		arg.Userid,
+		arg.UserID,
 		arg.ExpiresAt,
 		arg.UserAgent,
 		arg.IpAddress,
@@ -34,19 +34,19 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 	var i Session
 	err := row.Scan(
 		&i.ID,
-		&i.Userid,
+		&i.UserID,
+		&i.UserAgent,
+		&i.IpAddress,
 		&i.CreatedAt,
 		&i.LastSeen,
 		&i.ExpiresAt,
-		&i.UserAgent,
-		&i.IpAddress,
 	)
 	return i, err
 }
 
 const deleteExpiredSessions = `-- name: DeleteExpiredSessions :exec
 DELETE FROM sessions
-WHERE expires_at < strftime('%Y-%m-%dT%H:%M:%fZ','now')
+WHERE expires_at < strftime('%Y-%m-%dT%H:%M:%SZ','now')
 `
 
 func (q *Queries) DeleteExpiredSessions(ctx context.Context) error {
@@ -64,16 +64,16 @@ func (q *Queries) DeleteSession(ctx context.Context, id string) error {
 }
 
 const deleteUserSessions = `-- name: DeleteUserSessions :exec
-DELETE FROM sessions WHERE userid = ?1
+DELETE FROM sessions WHERE user_id = ?1
 `
 
-func (q *Queries) DeleteUserSessions(ctx context.Context, userid string) error {
-	_, err := q.db.ExecContext(ctx, deleteUserSessions, userid)
+func (q *Queries) DeleteUserSessions(ctx context.Context, userID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteUserSessions, userID)
 	return err
 }
 
 const getSession = `-- name: GetSession :one
-SELECT id, userid, created_at, last_seen, expires_at, user_agent, ip_address FROM sessions
+SELECT id, user_id, user_agent, ip_address, created_at, last_seen, expires_at FROM sessions
 WHERE id = ?1
 LIMIT 1
 `
@@ -83,22 +83,22 @@ func (q *Queries) GetSession(ctx context.Context, id string) (Session, error) {
 	var i Session
 	err := row.Scan(
 		&i.ID,
-		&i.Userid,
+		&i.UserID,
+		&i.UserAgent,
+		&i.IpAddress,
 		&i.CreatedAt,
 		&i.LastSeen,
 		&i.ExpiresAt,
-		&i.UserAgent,
-		&i.IpAddress,
 	)
 	return i, err
 }
 
 const slideSession = `-- name: SlideSession :one
 UPDATE sessions
-SET last_seen = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+SET last_seen = strftime('%Y-%m-%dT%H:%M:%SZ','now'),
     expires_at = ?1
 WHERE id = ?2
-RETURNING id, userid, created_at, last_seen, expires_at, user_agent, ip_address
+RETURNING id, user_id, user_agent, ip_address, created_at, last_seen, expires_at
 `
 
 type SlideSessionParams struct {
@@ -111,21 +111,21 @@ func (q *Queries) SlideSession(ctx context.Context, arg SlideSessionParams) (Ses
 	var i Session
 	err := row.Scan(
 		&i.ID,
-		&i.Userid,
+		&i.UserID,
+		&i.UserAgent,
+		&i.IpAddress,
 		&i.CreatedAt,
 		&i.LastSeen,
 		&i.ExpiresAt,
-		&i.UserAgent,
-		&i.IpAddress,
 	)
 	return i, err
 }
 
 const touchSession = `-- name: TouchSession :one
 UPDATE sessions
-SET last_seen = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+SET last_seen = strftime('%Y-%m-%dT%H:%M:%SZ','now')
 WHERE id = ?1
-RETURNING id, userid, created_at, last_seen, expires_at, user_agent, ip_address
+RETURNING id, user_id, user_agent, ip_address, created_at, last_seen, expires_at
 `
 
 func (q *Queries) TouchSession(ctx context.Context, id string) (Session, error) {
@@ -133,12 +133,12 @@ func (q *Queries) TouchSession(ctx context.Context, id string) (Session, error) 
 	var i Session
 	err := row.Scan(
 		&i.ID,
-		&i.Userid,
+		&i.UserID,
+		&i.UserAgent,
+		&i.IpAddress,
 		&i.CreatedAt,
 		&i.LastSeen,
 		&i.ExpiresAt,
-		&i.UserAgent,
-		&i.IpAddress,
 	)
 	return i, err
 }

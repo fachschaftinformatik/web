@@ -10,17 +10,16 @@ import (
 	"math"
 	"strings"
 
-	"github.com/fachschaftinformatik/web/internal/buckets"
-	"github.com/fachschaftinformatik/web/internal/id"
+	"github.com/fachschaftinformatik/web/internal/storage"
 )
 
 type Service struct {
-	buckets *buckets.Client
+	storage storage.Provider
 }
 
-func NewService(buckets *buckets.Client) *Service {
+func NewService(storage storage.Provider) *Service {
 	return &Service{
-		buckets: buckets,
+		storage: storage,
 	}
 }
 
@@ -84,14 +83,13 @@ func (s *Service) GenerateSVG(userID string) []byte {
 
 func (s *Service) StoreAvatar(ctx context.Context, objectName string, data []byte) error {
 	reader := bytes.NewReader(data)
-	return s.buckets.Upload(ctx, objectName, reader, int64(len(data)), "image/svg+xml")
+	return s.storage.Upload(ctx, objectName, reader, int64(len(data)), "image/svg+xml")
 }
 
 func (s *Service) GenerateAndStoreAvatar(ctx context.Context, userID string) (string, error) {
 	data := s.GenerateSVG(userID)
 
-	avatarID := id.New()
-	objectName := fmt.Sprintf("avatars/%s/%s.svg", userID, avatarID)
+	objectName := storage.AvatarSourceKey(userID)
 
 	err := s.StoreAvatar(ctx, objectName, data)
 	if err != nil {

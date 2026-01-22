@@ -3,10 +3,10 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/fachschaftinformatik/web/internal/api/dto"
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/id"
 )
 
 // @Summary Global search
@@ -30,65 +30,57 @@ func (s *Server) GetSearch(w http.ResponseWriter, r *http.Request) {
 
 	results := []dto.SearchResult{}
 
-	// Search Modules
 	modules, err := s.DB.SearchModules(r.Context(), &query)
 	if err == nil {
 		for _, m := range modules {
 			results = append(results, dto.SearchResult{
 				Type:     "module",
-				ID:       m.ID,
+				ID:       id.ID(m.ID).String(),
 				Title:    m.Name,
 				Subtitle: "Modul",
-				URL:      fmt.Sprintf("/exams/%s?mod=%s", m.ID, url.QueryEscape(m.Name)),
+				URL:      fmt.Sprintf("/archive?module_id=%s", id.ID(m.ID).String()),
 			})
 		}
 	}
 
-	// Search Exams
-	exams, err := s.DB.SearchExams(r.Context(), &query)
+	archive, err := s.DB.SearchArchive(r.Context(), &query)
 	if err == nil {
-		for _, e := range exams {
-			var modID string
-			if e.Moduleid != nil {
-				modID = *e.Moduleid
-			}
+		for _, e := range archive {
 			results = append(results, dto.SearchResult{
-				Type:     "exam",
-				ID:       e.ID,
+				Type:     "archive",
+				ID:       id.ID(e.ID).String(),
 				Title:    e.ModuleName,
-				Subtitle: "Klausur",
-				URL:      fmt.Sprintf("/exams/%s?mod=%s&examId=%s", modID, url.QueryEscape(e.ModuleName), url.QueryEscape(e.ID)),
+				Subtitle: "Archiv",
+				URL:      fmt.Sprintf("/archive/%s", id.ID(e.ID).String()),
 			})
 		}
 	}
 
-	// Search Users
 	users, err := s.DB.SearchUsers(r.Context(), query)
 	if err == nil {
 		for _, u := range users {
 			results = append(results, dto.SearchResult{
 				Type:     "user",
-				ID:       u.ID,
+				ID:       id.ID(u.ID).String(),
 				Title:    s.ToPublicUserResponse(u).Name,
 				Subtitle: "Benutzer",
-				URL:      fmt.Sprintf("/user/%s", u.ID),
+				URL:      fmt.Sprintf("/u/%s", id.ID(u.ID).String()),
 			})
 		}
 	}
 
-	// Search Forum Posts
-	posts, err := s.DB.SearchForumPosts(r.Context(), database.SearchForumPostsParams{
+	posts, err := s.DB.SearchDiscussionPosts(r.Context(), database.SearchDiscussionPostsParams{
 		Query:         query,
 		CurrentUserID: &user.ID,
 	})
 	if err == nil {
 		for _, p := range posts {
 			results = append(results, dto.SearchResult{
-				Type:     "post",
-				ID:       p.ID,
+				Type:     "discussion",
+				ID:       id.ID(p.ID).String(),
 				Title:    p.Title,
-				Subtitle: "Forum: " + p.AuthorName,
-				URL:      fmt.Sprintf("/forum/%s", p.ID),
+				Subtitle: "Diskussion: " + p.UserName,
+				URL:      fmt.Sprintf("/d/%s", id.ID(p.ID).String()),
 			})
 		}
 	}
