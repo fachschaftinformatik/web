@@ -1,11 +1,12 @@
 package handler
 
 import (
-	"github.com/fachschaftinformatik/web/internal/id"
+	"context"
 	"net/http"
 
 	"github.com/fachschaftinformatik/web/internal/api/dto"
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/id"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -28,7 +29,8 @@ func (s *Server) GetAuthNotifications(w http.ResponseWriter, r *http.Request) {
 	resp := make([]dto.NotificationResponse, 0, len(rows))
 	for _, row := range rows {
 		resp = append(resp, dto.NotificationResponse{
-			ID:        row.ID,
+			ID:        id.ID(row.ID),
+			UserID:    id.ID(row.UserID),
 			Title:     row.Title,
 			Message:   row.Message,
 			Type:      row.Type,
@@ -44,18 +46,24 @@ func (s *Server) GetAuthNotifications(w http.ResponseWriter, r *http.Request) {
 // @Summary Mark notification as read
 // @Tags Auth
 // @ID putAuthNotificationsIdRead
-// @Param id path string true "Notification ID"
+// @Param notificationId path string true "Notification ID"
 // @Success 200 {object} dto.NotificationResponse
 // @Failure 401 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
-// @Router /auth/notifications/{id}/read [put]
+// @Router /auth/notifications/{notificationId}/read [put]
 func (s *Server) PutAuthNotificationsIdRead(w http.ResponseWriter, r *http.Request) {
-	notificationID := chi.URLParam(r, "id")
+	idStr := chi.URLParam(r, "notificationId")
+	nid, err := id.Parse(idStr)
+	if err != nil {
+		s.JsonError(w, "invalid_id", "Invalid notification ID", http.StatusBadRequest)
+		return
+	}
+
 	user, _ := s.User(r)
 
 	row, err := s.DB.MarkNotificationAsRead(r.Context(), database.MarkNotificationAsReadParams{
-		ID:     notificationID,
-		Userid: user.ID,
+		ID:     int64(nid),
+		UserID: user.ID,
 	})
 	if err != nil {
 		s.Log.Error("Failed to mark notification as read", "err", err)
@@ -64,7 +72,8 @@ func (s *Server) PutAuthNotificationsIdRead(w http.ResponseWriter, r *http.Reque
 	}
 
 	s.RespondJSON(w, http.StatusOK, dto.NotificationResponse{
-		ID:        row.ID,
+		ID:        id.ID(row.ID),
+		UserID:    id.ID(row.UserID),
 		Title:     row.Title,
 		Message:   row.Message,
 		Type:      row.Type,
@@ -92,10 +101,10 @@ func (s *Server) PutAuthNotificationsReadAll(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *Server) createNotification(r *http.Request, userid, title, message, nType, link string) error {
-	_, err := s.DB.CreateNotification(r.Context(), database.CreateNotificationParams{
-		ID:      id.New(),
-		Userid:  userid,
+func (s *Server) createNotification(ctx context.Context, userID int64, title, message, nType, link string) error {
+	_, err := s.DB.CreateNotification(ctx, database.CreateNotificationParams{
+		ID:      int64(id.New()),
+		UserID:  userID,
 		Title:   title,
 		Message: message,
 		Type:    nType,
@@ -112,7 +121,7 @@ func (s *Server) broadcastNotification(r *http.Request, title, message, nType, l
 	}
 
 	for _, uID := range users {
-		if err := s.createNotification(r, uID, title, message, nType, link); err != nil {
+		if err := s.createNotification(r.Context(), uID, title, message, nType, link); err != nil {
 			s.Log.Error("Failed to create notification", "userID", uID, "err", err)
 		}
 	}
