@@ -21,21 +21,24 @@ import {
 
 import { useThemeMode } from '@lib/theme';
 import { postAuthLogin, postAuthRegister, getPrograms } from '@lib/api';
-import type { AuthProgramResponse as Program } from '@lib/api';
+import type { DtoProgramResponse as Program } from '@lib/api';
 import { useAuth, REMEMBERED_FLAG_KEY } from '@lib/auth';
 import { translateError } from '@lib/errors';
 import { zDtoLoginRequest, zDtoRegisterRequest } from '@lib/api/zod.gen';
+import { fetchCsrfToken } from '@lib/csrf';
 
-const EMAIL_SUFFIX = '@studmail.w-hs.de';
+const ALLOWED_DOMAINS = ['@studmail.w-hs.de', '@fsv-wh.de'];
 
 const loginSchema = zDtoLoginRequest.omit({ email: true }).extend({
     emailPrefix: z.string().min(1, "Bitte gib dein E-Mail-Kürzel ein."),
+    emailDomain: z.string().min(1),
     password: z.string().min(1, "Bitte gib dein Passwort ein."),
 });
 
-const registrationSchema = zDtoRegisterRequest.omit({ email: true }).extend({
+const registrationSchema = zDtoRegisterRequest.omit({ email: true, program_id: true }).extend({
     name: z.string().min(1, "Bitte gib deinen Namen ein."),
     emailPrefix: z.string().min(1, "Bitte gib dein E-Mail ein.").regex(/^[a-zA-Z0-9._-]+$/, "Die E-Mail enthält ungültige Zeichen."),
+    emailDomain: z.string().min(1),
     password: z.string()
         .min(8, "Das Passwort muss mindestens 8 Zeichen lang sein.")
         .regex(/[A-Z]/, "Das Passwort muss mindestens einen Großbuchstaben enthalten.")
@@ -43,7 +46,7 @@ const registrationSchema = zDtoRegisterRequest.omit({ email: true }).extend({
         .regex(/[0-9]/, "Das Passwort muss mindestens eine Zahl enthalten.")
         .regex(/[^A-Za-z0-9]/, "Das Passwort muss mindestens ein Sonderzeichen enthalten."),
     confirmPassword: z.string(),
-    programid: z.string().min(1, "Bitte wähle einen Studiengang aus."),
+    program_id: z.string().min(1, "Bitte wähle einen Studiengang aus."),
 }).superRefine((data, ctx) => {
     if (data.password !== data.confirmPassword) {
         ctx.addIssue({
@@ -81,6 +84,7 @@ export default function AuthPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [programs, setPrograms] = useState<Program[]>([]);
+    const [signupsEnabled, setSignupsEnabled] = useState(true);
     const [rememberMe, setRememberMe] = useState(() => {
         if (typeof window === 'undefined') return false;
         return window.localStorage.getItem(REMEMBERED_FLAG_KEY) === 'true';
@@ -90,6 +94,18 @@ export default function AuthPage() {
     const { login } = useAuth();
     const { mode, setPreference } = useThemeMode();
     const theme = useTheme();
+
+    useEffect(() => {
+        fetchCsrfToken().then(data => {
+            if (data) {
+                setSignupsEnabled(data.signups_enabled);
+                if (!data.signups_enabled && tabValue === 1) {
+                    setTabValue(0);
+                    navigate('/login');
+                }
+            }
+        });
+    }, [navigate, tabValue]);
 
     useEffect(() => {
         document.title = tabValue === 0 ? "Anmelden | FSV Informatik" : "Registrieren | FSV Informatik";
@@ -114,6 +130,7 @@ export default function AuthPage() {
     }, [searchParams]);
 
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+        if (newValue === 1 && !signupsEnabled) return;
         setTabValue(newValue);
         setErrors({});
         setSuccess('');
@@ -124,20 +141,17 @@ export default function AuthPage() {
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        console.log("Form submission started");
         setLoading(true);
         setErrors({});
         setSuccess('');
 
         const formData = new FormData(event.currentTarget);
         const rawData = Object.fromEntries(formData.entries()) as Record<string, string>;
-        console.log("Form data:", rawData);
 
         if (tabValue === 0) {
             // Login Flow
             const validationResult = loginSchema.safeParse(rawData);
             if (!validationResult.success) {
-                console.error("Validation failed:", validationResult.error);
                 const fieldErrors: Record<string, string> = {};
                 validationResult.error.issues.forEach((issue) => { fieldErrors[issue.path[0] as string] = issue.message; });
                 setErrors(fieldErrors);
@@ -145,11 +159,11 @@ export default function AuthPage() {
                 return;
             }
 
-            const { emailPrefix, password } = validationResult.data;
+            const { emailPrefix, emailDomain, password } = validationResult.data;
             try {
                 const { data: user, error: apiError } = await postAuthLogin({
                     body: { 
-                        email: `${emailPrefix}${EMAIL_SUFFIX}`, 
+                        email: `${emailPrefix}${emailDomain}`, 
                         password,
                         remember: rememberMe
                     }
@@ -162,7 +176,7 @@ export default function AuthPage() {
                 }
                 if (user) {
                     login(user, rememberMe);
-                    navigate(`/user/${user.id}`);
+                    navigate(`/u/${user.id}`);
                 }
             } catch (err) {
                 setErrors({ global: translateError(err) });
@@ -173,7 +187,6 @@ export default function AuthPage() {
             // Register Flow
             const validationResult = registrationSchema.safeParse(rawData);
             if (!validationResult.success) {
-                console.error("Validation failed:", validationResult.error);
                 const fieldErrors: Record<string, string> = {};
                 validationResult.error.issues.forEach((issue) => { fieldErrors[issue.path[0] as string] = issue.message; });
                 setErrors(fieldErrors);
@@ -185,10 +198,10 @@ export default function AuthPage() {
             try {
                 const { data: newUser, error: apiError } = await postAuthRegister({
                     body: {
-                        email: `${validData.emailPrefix}${EMAIL_SUFFIX}`,
+                        email: `${validData.emailPrefix}${validData.emailDomain}`,
                         name: validData.name,
                         password: validData.password,
-                        programid: validData.programid,
+                        program_id: validData.program_id,
                     }
                 });
 
@@ -242,7 +255,7 @@ export default function AuthPage() {
                         }}
                     >
                         <Tab label="Anmelden" sx={{ fontWeight: 700 }} />
-                        <Tab label="Registrieren" sx={{ fontWeight: 700 }} />
+                        {signupsEnabled && <Tab label="Registrieren" sx={{ fontWeight: 700 }} />}
                     </Tabs>
                 </Box>
 
@@ -298,23 +311,32 @@ export default function AuthPage() {
                                 />
                             )}
 
-                            <TextField
-                                required fullWidth id="emailPrefix" label="E-Mail" name="emailPrefix"
-                                autoComplete="email" autoFocus={tabValue === 0} disabled={loading || (tabValue === 1 && !!success)}
-                                error={!!errors.emailPrefix} helperText={errors.emailPrefix}
-                                InputProps={{
-                                    endAdornment: <InputAdornment position="end">{EMAIL_SUFFIX}</InputAdornment>,
-                                }}
-                            />
+                            <Stack direction="row" spacing={1}>
+                                <TextField
+                                    required fullWidth id="emailPrefix" label="E-Mail" name="emailPrefix"
+                                    autoComplete="email" autoFocus={tabValue === 0} disabled={loading || (tabValue === 1 && !!success)}
+                                    error={!!errors.emailPrefix} helperText={errors.emailPrefix}
+                                    sx={{ flexGrow: 1 }}
+                                />
+                                <TextField
+                                    select required name="emailDomain" id="emailDomain"
+                                    defaultValue={ALLOWED_DOMAINS[0]} disabled={loading || (tabValue === 1 && !!success)}
+                                    sx={{ minWidth: 160 }}
+                                >
+                                    {ALLOWED_DOMAINS.map((domain) => (
+                                        <MenuItem key={domain} value={domain}>{domain}</MenuItem>
+                                    ))}
+                                </TextField>
+                            </Stack>
 
                             {tabValue === 1 && (
                                 <TextField
-                                    select required fullWidth name="programid" label="Studiengang" id="programid"
-                                    defaultValue="" disabled={loading || (tabValue === 1 && !!success)} error={!!errors.programid} helperText={errors.programid}
+                                    select required fullWidth name="program_id" label="Studiengang" id="program_id"
+                                    defaultValue="" disabled={loading || (tabValue === 1 && !!success)} error={!!errors.program_id} helperText={errors.program_id}
                                 >
                                     {programs.length > 0 ? (
                                         programs.map((opt) => (
-                                            <MenuItem key={opt.id} value={opt.id}>{opt.name}</MenuItem>
+                                            <MenuItem key={String(opt.id)} value={String(opt.id)}>{opt.name}</MenuItem>
                                         ))
                                     ) : (
                                         <MenuItem disabled value="">Lädt Studiengänge...</MenuItem>

@@ -1,7 +1,8 @@
 package id
 
 import (
-	"fmt"
+	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/ruhrcloud/snowflake"
@@ -23,11 +24,54 @@ func init() {
 	node.SetEpoch(epoch)
 }
 
-func New() string {
+// ID is a custom type for Snowflake IDs that serializes to/from strings in JSON.
+type ID int64
+
+func New() ID {
 	id, err := node.Generate()
 	if err != nil {
-		return fmt.Sprintf("%d", time.Now().UnixNano())
+		return ID(time.Now().UnixNano())
 	}
 
-	return fmt.Sprintf("%d", id)
+	return ID(id)
+}
+
+func (id ID) String() string {
+	return strconv.FormatInt(int64(id), 10)
+}
+
+func (id ID) Int64() int64 {
+	return int64(id)
+}
+
+func Parse(s string) (ID, error) {
+	val, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return ID(val), nil
+}
+
+func (id ID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strconv.FormatInt(int64(id), 10))
+}
+
+func (id *ID) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		// Try unmarshaling as int if string fails
+		var i int64
+		if err := json.Unmarshal(b, &i); err != nil {
+			return err
+		}
+		*id = ID(i)
+		return nil
+	}
+
+	val, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return err
+	}
+	*id = ID(val)
+	return nil
 }

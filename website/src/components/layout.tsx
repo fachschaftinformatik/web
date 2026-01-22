@@ -48,7 +48,7 @@ import DoneAllRounded from '@mui/icons-material/DoneAllRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
-import type { AuthUserResponse as User, AuthNotificationResponse as Notification } from '@lib/api/types.gen';
+import type { DtoUserResponse as User, DtoNotificationResponse as Notification } from '@lib/api/types.gen';
 import { useThemeMode } from '@lib/theme';
 import { useAuth } from '@lib/auth';
 import {
@@ -58,6 +58,7 @@ import {
   putAuthNotificationsReadAll
 } from '@lib/api';
 import { client } from '@lib/api/client.gen';
+import { getAvatarUrl } from '@lib/images';
 
 const drawerWidthOpen = 240;
 const drawerWidthClosed = 72;
@@ -103,7 +104,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 interface SearchResult {
-  type: 'exam' | 'module' | 'user' | 'post';
+  type: 'archive' | 'module' | 'user' | 'discussion';
   id: string;
   title: string;
   subtitle: string;
@@ -197,7 +198,7 @@ const GlobalSearch = () => {
         open={open && inputValue.length >= 2}
         onOpen={() => setOpen(true)}
         onClose={() => setOpen(false)}
-        isOptionEqualToValue={(option, value) => option.id === value.id}
+        isOptionEqualToValue={(option, value) => String(option.id) === String(value.id)}
         getOptionLabel={(option) => option.title}
         filterOptions={(x) => x}
         options={options}
@@ -255,11 +256,16 @@ const GlobalSearch = () => {
           </Search>
         )}
         renderOption={(props, option) => (
-          <ListItem {...props} key={option.id + option.type}>
+          <ListItem {...props} key={String(option.id) + option.type}>
             <ListItemIcon sx={{ minWidth: 40 }}>
               {option.type === 'module' ? <DashboardRounded fontSize="small" /> :
-                option.type === 'user' ? <PeopleRounded fontSize="small" /> :
-                  option.type === 'post' ? <QuestionAnswerRounded fontSize="small" /> :
+                option.type === 'user' ? (
+                  <Avatar 
+                    src={getAvatarUrl(`/api/v1/auth/avatars/${option.id}/generated_v4.svg`)}
+                    sx={{ width: 24, height: 24 }}
+                  />
+                ) :
+                  option.type === 'discussion' ? <QuestionAnswerRounded fontSize="small" /> :
                     <SchoolRounded fontSize="small" />}
             </ListItemIcon>
             <ListItemText
@@ -283,8 +289,8 @@ const GlobalSearch = () => {
 const navItems = [
   { label: 'Startseite', href: '/', icon: <DashboardRounded />, isRoute: true },
   { label: 'Diskussionen', href: '/discussions', icon: <QuestionAnswerRounded />, isRoute: true },
-  { label: 'Galerie', href: '/images', icon: <CollectionsRounded />, isRoute: true },
-  { label: 'Rekos', href: '/exams', icon: <LibraryBooksRounded />, isRoute: true },
+  { label: 'Galerie', href: '/events', icon: <CollectionsRounded />, isRoute: true },
+  { label: 'Archiv', href: '/archive', icon: <LibraryBooksRounded />, isRoute: true },
   { label: 'Team', href: '/team', icon: <PeopleRounded />, isRoute: true },
   { label: 'Kontakt', href: '/contact', icon: <MailRounded />, isRoute: true },
 ];
@@ -361,7 +367,7 @@ const Sidebar = ({
 
   const handleMarkAllRead = async () => {
     try {
-      await putAuthNotificationsReadAll({});
+      await putAuthNotificationsReadAll();
       fetchNotifications();
     } catch (err) {
       console.error("Failed to mark all read", err);
@@ -371,7 +377,7 @@ const Sidebar = ({
   const handleMarkRead = async (id: string) => {
     try {
       await putAuthNotificationsIdRead({
-        path: { id }
+        path: { notificationId: id }
       });
       fetchNotifications();
     } catch (err) {
@@ -394,8 +400,8 @@ const Sidebar = ({
       try {
         const res = await putAuthMe({
           body: {
-            name: user.name,
-            programid: user.programid,
+            name: user.name || "",
+            program_id: Number(user.program_id),
             theme: nextMode
           }
         });
@@ -605,9 +611,9 @@ const Sidebar = ({
                 <List sx={{ p: 0 }}>
                   {notifications.map((noti) => (
                     <MenuItem
-                      key={noti.id}
+                      key={String(noti.id)}
                       onClick={() => {
-                        if (noti.id) handleMarkRead(noti.id);
+                        if (noti.id) handleMarkRead(String(noti.id));
                         if (noti.link) navigate(noti.link);
                         handleNotiClose();
                       }}
@@ -629,17 +635,17 @@ const Sidebar = ({
                           height: 32,
                           bgcolor: noti.type === 'news'
                             ? alpha(theme.palette.info.main, 0.12)
-                            : noti.type === 'forum'
+                            : noti.type === 'discussion'
                               ? alpha(theme.palette.success.main, 0.12)
                               : alpha(theme.palette.warning.main, 0.12),
                           color: noti.type === 'news'
                             ? 'info.main'
-                            : noti.type === 'forum'
+                            : noti.type === 'discussion'
                               ? 'success.main'
                               : 'warning.main',
                           fontSize: '1rem'
                         }}>
-                          {noti.type === 'news' ? <CampaignRounded fontSize="small" /> : noti.type === 'forum' ? <QuestionAnswerRounded fontSize="small" /> : <SchoolRounded fontSize="small" />}
+                          {noti.type === 'news' ? <CampaignRounded fontSize="small" /> : noti.type === 'discussion' ? <QuestionAnswerRounded fontSize="small" /> : <SchoolRounded fontSize="small" />}
                         </Avatar>
                       </ListItemIcon>
                       <Box sx={{ flexGrow: 1 }}>
@@ -677,8 +683,8 @@ const Sidebar = ({
                   size="small"
                 >
                   <Avatar
-                    key={user?.id || 'anonymous'}
-                    src={user?.avatar_url || undefined}
+                    key={String(user?.id) || 'anonymous'}
+                    src={getAvatarUrl(user?.avatar_url)}
                     sx={{ width: 32, height: 32, fontSize: '0.9rem', fontWeight: 600 }}
                   />
                 </IconButton>
@@ -707,7 +713,7 @@ const Sidebar = ({
                   },
                 }}
               >
-                <MenuItem component={RouterLink} to={user ? `/user/${user.id}` : "/login"} sx={{ py: 1.2 }}>
+                <MenuItem component={RouterLink} to={user ? `/u/${user.id}` : "/login"} sx={{ py: 1.2 }}>
                   <ListItemIcon>
                     <PersonRounded fontSize="small" />
                   </ListItemIcon>

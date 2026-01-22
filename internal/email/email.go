@@ -37,7 +37,7 @@ type verificationData struct {
 }
 
 func (s *Sender) SendVerificationEmail(toEmail, name, token string) error {
-	link := fmt.Sprintf("%s/api/auth/verify?token=%s", s.cfg.Domain, token)
+	link := fmt.Sprintf("%s/api/v1/auth/verify?token=%s", s.cfg.Domain, token)
 
 	data := verificationData{
 		Name:       name,

@@ -21,28 +21,28 @@ import "@fontsource/material-icons";
 import "@fontsource/material-icons-rounded";
 
 import { client } from '@lib/api/client.gen';
-import { getCsrfToken, getCsrfFromCookie, fetchCsrfToken } from '@lib/csrf';
+import { getCsrfFromCookie, fetchCsrfToken } from '@lib/csrf';
 
 import { ThemeModeProvider } from '@lib/theme';
 import { AuthProvider, useAuth, ProtectedRoute } from '@lib/auth';
 import { PageLoader } from '@components/layout';
 
 const AuthPage = lazy(() => import('@routes/auth/page'));
-const DashboardPage = lazy(() => import('@routes/user/[id]/page'));
-const ExamsPage = lazy(() => import('@routes/exams/page'));
-const ExamDetailsPage = lazy(() => import('@routes/exams/[id]/page'));
+const UserProfilePage = lazy(() => import('@routes/u/[id]/page'));
+const ArchivePage = lazy(() => import('@routes/archive/page'));
+const ArchiveDetailsPage = lazy(() => import('@routes/archive/[id]/page'));
 const SettingsPage = lazy(() => import('@routes/settings/page'));
-const ForumPage = lazy(() => import('@routes/discussions/page'));
-const ViewForumPost = lazy(() => import('@routes/discussions/[id]/page'));
-const CreateForumPost = lazy(() => import('@routes/discussions/create/page'));
-const EditForumPost = lazy(() => import('@routes/discussions/[id]/edit/page'));
-const ImagesPage = lazy(() => import('@routes/images/page'));
+const DiscussionsPage = lazy(() => import('@routes/d/page'));
+const ViewDiscussionPost = lazy(() => import('@routes/d/[id]/page'));
+const CreateDiscussionPost = lazy(() => import('@routes/d/create/page'));
+const EditDiscussionPost = lazy(() => import('@routes/d/[id]/edit/page'));
+const EventsPage = lazy(() => import('@routes/events/page'));
 const NewsFeedPage = lazy(() => import('@routes/home/page'));
 const TeamPage = lazy(() => import('@routes/team/page'));
 const ContactPage = lazy(() => import('@routes/contact/page'));
 
 client.setConfig({
-  baseUrl: '/api',
+  baseUrl: '/api/v1',
   credentials: 'include',
 });
 
@@ -52,14 +52,16 @@ client.interceptors.request.use(async (request) => {
   const stateChangingMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
 
   if (stateChangingMethods.includes(method)) {
-    let token = getCsrfToken() || getCsrfFromCookie();
+    // Prefer cookie as it is the source of truth for the server
+    let tokenValue = getCsrfFromCookie();
     
-    if (!token && !request.url.includes('/auth/csrf')) {
-      token = await fetchCsrfToken();
+    if (!tokenValue && !request.url.includes('/auth/csrf')) {
+      const data = await fetchCsrfToken();
+      tokenValue = data?.csrf || null;
     }
 
-    if (token) {
-      request.headers.set('X-CSRF-Token', token);
+    if (tokenValue) {
+      request.headers.set('X-CSRF-Token', tokenValue);
     }
   }
   return request;
@@ -76,9 +78,9 @@ const ScrollToTop = () => {
   return null;
 };
 
-const ForumRedirect = () => {
+const DiscussionRedirect = () => {
   const { id } = useParams();
-  return <Navigate to={`/discussions/${id}`} replace />;
+  return <Navigate to={`/d/${id}`} replace />;
 };
 
 const AuthRedirector: React.FC = () => {
@@ -105,26 +107,32 @@ function App() {
                 <Route path="/register" element={<AuthPage />} />
               </Route>
               <Route element={<ProtectedRoute />}>
-                <Route path="/exams" element={<ExamsPage />} />
-                <Route path="/exams/:id" element={<ExamDetailsPage />} />
+                <Route path="/archive" element={<ArchivePage />} />
+                <Route path="/archive/:moduleId" element={<ArchiveDetailsPage />} />
+                <Route path="/archive/:moduleId/:examId" element={<ArchiveDetailsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/discussions/create" element={<CreateForumPost />} />
-                <Route path="/discussions/:id/edit" element={<EditForumPost />} />
+                <Route path="/d/new" element={<CreateDiscussionPost />} />
+                <Route path="/d/:postId/edit" element={<EditDiscussionPost />} />
               </Route>
 
-              <Route path="/user/:userId" element={<DashboardPage />} />
+              <Route path="/u/:userId" element={<UserProfilePage />} />
+              <Route path="/discussions" element={<DiscussionsPage />} />
+              <Route path="/d/:postId" element={<ViewDiscussionPost />} />
 
-              <Route path="/discussions" element={<ForumPage />} />
-              <Route path="/discussions/:id" element={<ViewForumPost />} />
-
+              {/* Legacy Redirects */}
+              <Route path="/d" element={<Navigate to="/discussions" replace />} />
+              <Route path="/discussions/:id" element={<DiscussionRedirect />} />
               <Route path="/forum" element={<Navigate to="/discussions" replace />} />
-              <Route path="/forum/:id" element={<ForumRedirect />} />
+              <Route path="/forum/:id" element={<DiscussionRedirect />} />
+              <Route path="/exams" element={<Navigate to="/archive" replace />} />
+              <Route path="/exams/:id" element={<Navigate to="/archive/:id" replace />} />
 
-              <Route path="/images" element={<ImagesPage />} />
-              <Route path="/images/:eventId" element={<ImagesPage />} />
-              <Route path="/images/:eventId/:imageId" element={<ImagesPage />} />
+              <Route path="/events" element={<EventsPage />} />
+              <Route path="/events/:eventId" element={<EventsPage />} />
+              <Route path="/events/:eventId/:mediaId" element={<EventsPage />} />
 
-              <Route path="/media" element={<Navigate to="/images" replace />} />
+              <Route path="/images" element={<Navigate to="/events" replace />} />
+              <Route path="/media" element={<Navigate to="/events" replace />} />
 
               <Route path="/team" element={<TeamPage />} />
               <Route path="/contact" element={<ContactPage />} />
