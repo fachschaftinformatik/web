@@ -97,6 +97,19 @@ type CreateDiscussionPostRequest struct {
 	Links     []Link   `json:"links"`
 }
 
+type UpdateDiscussionPostRequest struct {
+	Title     *string  `json:"title" validate:"omitempty,min=3,max=255"`
+	Body      *string  `json:"body" validate:"omitempty,min=10,max=10000"`
+	Type      *string  `json:"type" validate:"omitempty,oneof=discussion news event"`
+	Pinned    *bool    `json:"pinned"`
+	Programs  []id.ID  `json:"programs" swaggertype:"array,string"`
+	Tags      []string `json:"tags"`
+	EventDate *string  `json:"event_date,omitempty"`
+	Location  *string  `json:"location,omitempty"`
+	ImageURL  *string  `json:"image_url,omitempty"`
+	Links     []Link   `json:"links"`
+}
+
 type DiscussionCommentResponse struct {
 	ID            id.ID  `json:"id" swaggertype:"string"`
 	PostID        id.ID  `json:"post_id" swaggertype:"string"`
