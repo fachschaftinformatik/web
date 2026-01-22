@@ -13,10 +13,10 @@ import (
 
 	"github.com/fachschaftinformatik/web/internal/api/handler"
 	"github.com/fachschaftinformatik/web/internal/avatars"
-	"github.com/fachschaftinformatik/web/internal/buckets"
 	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/email"
+	"github.com/fachschaftinformatik/web/internal/storage/s3"
 	"github.com/go-chi/httplog/v2"
 )
 
@@ -45,7 +45,7 @@ func Run() error {
 	}
 	defer sqlDB.Close()
 
-	store, err := buckets.NewClient(cfg)
+	store, err := s3.NewClient(cfg)
 	if err != nil {
 		return err
 	}

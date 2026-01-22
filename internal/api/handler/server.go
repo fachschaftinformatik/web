@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -11,10 +10,11 @@ import (
 	"github.com/fachschaftinformatik/web/internal/api/dto"
 	"github.com/fachschaftinformatik/web/internal/api/middleware"
 	"github.com/fachschaftinformatik/web/internal/avatars"
-	"github.com/fachschaftinformatik/web/internal/buckets"
 	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/email"
+	"github.com/fachschaftinformatik/web/internal/id"
+	"github.com/fachschaftinformatik/web/internal/storage"
 	"github.com/go-chi/httplog/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/microcosm-cc/bluemonday"
@@ -24,7 +24,8 @@ const (
 	SessionCookieName = "__Host-session"
 	CsrfCookieName    = "__Host-csrf"
 	SessionDuration   = 24 * time.Hour
-	CsrfDuration      = 15 * time.Minute
+	CsrfDuration      = 24 * time.Hour
+	maxUploadSize     = 256 << 20 // 256 MB
 )
 
 type Server struct {
@@ -33,13 +34,13 @@ type Server struct {
 	Config        *config.Config
 	Email         *email.Sender
 	Avatars       *avatars.Service
-	Store         *buckets.Client
+	Store         storage.Provider
 	SecureCookies bool
 	policy        *bluemonday.Policy
 	validator     *validator.Validate
 }
 
-func NewServer(db database.Querier, logger *httplog.Logger, cfg *config.Config, emailSender *email.Sender, store *buckets.Client, avatarService *avatars.Service) *Server {
+func NewServer(db database.Querier, logger *httplog.Logger, cfg *config.Config, emailSender *email.Sender, store storage.Provider, avatarService *avatars.Service) *Server {
 	return &Server{
 		DB:            db,
 		Log:           logger,
@@ -81,18 +82,24 @@ func (s *Server) RespondJSON(w http.ResponseWriter, status int, payload interfac
 }
 
 func (s *Server) toUserResponse(user database.User) dto.UserResponse {
+	var programID *id.ID
+	if user.ProgramID != nil {
+		pid := id.ID(*user.ProgramID)
+		programID = &pid
+	}
+
 	return dto.UserResponse{
-		ID:        user.ID,
+		ID:        id.ID(user.ID),
 		Email:     user.Email,
 		Name:      user.Name,
 		Role:      user.Role,
 		Active:    user.Active,
 		Verified:  user.Verified,
-		Programid: user.Programid,
+		ProgramID: programID,
 		CreatedAt: user.CreatedAt,
 		Theme:     user.Theme,
 		Private:   user.Private,
-		AvatarUrl: s.FormatAvatarURL(user.AvatarUrl, user.ID, 0), // Use 0 for private flag here since it's the owner's view
+		AvatarUrl: s.FormatAvatarURL(user.AvatarUrl, id.ID(user.ID), 0), // Use 0 for private flag here since it's the owner's view
 	}
 }
 
@@ -101,17 +108,24 @@ func (s *Server) ToPublicUserResponse(user database.User) dto.PublicUserResponse
 	if user.Private == 1 {
 		name = "Anonym"
 	}
+
+	var programID *id.ID
+	if user.ProgramID != nil {
+		pid := id.ID(*user.ProgramID)
+		programID = &pid
+	}
+
 	return dto.PublicUserResponse{
-		ID:        user.ID,
+		ID:        id.ID(user.ID),
 		Name:      name,
 		Role:      user.Role,
 		Active:    user.Active,
 		Verified:  user.Verified,
-		Programid: user.Programid,
+		ProgramID: programID,
 		CreatedAt: user.CreatedAt,
 		Theme:     user.Theme,
 		Private:   user.Private,
-		AvatarUrl: s.FormatAvatarURL(user.AvatarUrl, user.ID, user.Private),
+		AvatarUrl: s.FormatAvatarURL(user.AvatarUrl, id.ID(user.ID), user.Private),
 	}
 }
 
@@ -172,7 +186,7 @@ func (s *Server) Authenticate(w http.ResponseWriter, r *http.Request) (database.
 		})
 	}
 
-	user, err := s.DB.GetUser(ctx, session.Userid)
+	user, err := s.DB.GetUser(ctx, session.UserID)
 	if err != nil {
 		return database.Session{}, database.User{}, errors.New("user not found")
 	}
@@ -202,21 +216,21 @@ func (s *Server) BoolToInt(b bool) int64 {
 	return 0
 }
 
-func (s *Server) FormatAvatarURL(path *string, userID string, private int64) *string {
+func (s *Server) FormatAvatarURL(path *string, userID id.ID, private int64) *string {
 	if private == 1 {
-		url := fmt.Sprintf("/api/auth/avatars/%s/generated_v4.svg?private=true", userID)
+		url := "/api/v1/auth/avatars/" + userID.String() + "/generated_v4.svg?private=true"
 		return &url
 	}
 
 	if path != nil && *path != "" {
-		if strings.HasPrefix(*path, "/api/auth/avatars/") {
+		if strings.HasPrefix(*path, "/api/v1/auth/avatars/") {
 			return path
 		}
-		cleanPath := strings.TrimPrefix(*path, "avatars/")
-		url := fmt.Sprintf("/api/auth/avatars/%s", cleanPath)
+		// Standardized path is avatars/{userId}/source
+		url := "/api/v1/auth/avatars/" + userID.String() + "/source"
 		return &url
 	}
 
-	url := fmt.Sprintf("/api/auth/avatars/%s/generated_v4.svg", userID)
+	url := "/api/v1/auth/avatars/" + userID.String() + "/generated_v4.svg"
 	return &url
 }

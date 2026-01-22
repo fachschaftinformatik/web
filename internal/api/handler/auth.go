@@ -1,15 +1,12 @@
 package handler
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/fachschaftinformatik/web/internal/id"
 	"io"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +14,8 @@ import (
 	"github.com/fachschaftinformatik/web/internal/api/dto"
 	"github.com/fachschaftinformatik/web/internal/api/middleware"
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/id"
+	"github.com/fachschaftinformatik/web/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -31,16 +30,18 @@ import (
 // @Failure 400 {object} dto.ErrorResponse
 // @Router /auth/register [post]
 func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
-	s.Log.Info("Registration request received")
+	if !s.Config.SignupsEnabled {
+		s.JsonError(w, "signups_disabled", "Registrierungen sind momentan deaktiviert.", http.StatusForbidden)
+		return
+	}
+
 	var payload dto.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		s.Log.Error("Registration: Failed to decode body", "err", err)
 		s.JsonError(w, "invalid_request_body", "Could not decode JSON body", http.StatusBadRequest)
 		return
 	}
 
 	if err := s.Validate(payload); err != nil {
-		s.Log.Error("Registration: Validation failed", "err", err)
 		s.JsonError(w, "invalid_input", err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -53,22 +54,34 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	verificationToken := uuid.NewString()
+	userID := id.New()
 
-	params := database.CreateUserParams{
-		ID:                id.New(),
-		Email:             string(payload.Email),
-		Name:              s.Sanitize(payload.Name),
-		Password:          string(hashedPassword),
-		Role:              "user",
-		Active:            1,
-		Programid:         payload.Programid,
-		VerificationToken: &verificationToken,
-		AvatarUrl:         nil,
+	role := "user"
+	count, _ := s.DB.ListUsers(r.Context(), database.ListUsersParams{Limit: 1, Offset: 0})
+	if len(count) == 0 {
+		role = "admin"
 	}
 
-	avatarPath, err := s.Avatars.GenerateAndStoreAvatar(r.Context(), params.ID)
+	var pid *int64
+	if payload.ProgramID != nil {
+		v := int64(*payload.ProgramID)
+		pid = &v
+	}
+
+	params := database.CreateUserParams{
+		ID:                int64(userID),
+		Email:             payload.Email,
+		Name:              s.Sanitize(payload.Name),
+		Password:          string(hashedPassword),
+		Role:              role,
+		Active:            1,
+		ProgramID:         pid,
+		VerificationToken: &verificationToken,
+	}
+
+	avatarPath, err := s.Avatars.GenerateAndStoreAvatar(r.Context(), userID.String())
 	if err != nil {
-		s.Log.Error("Failed to generate avatar", "userID", params.ID, "err", err)
+		s.Log.Error("Failed to generate avatar", "userID", userID, "err", err)
 	} else {
 		params.AvatarUrl = &avatarPath
 	}
@@ -76,7 +89,6 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 	dbUser, err := s.DB.CreateUser(r.Context(), params)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			s.Log.Warn("Registration: Email already exists", "email", payload.Email)
 			s.JsonError(w, "email_exists", "A user with this email already exists", http.StatusConflict)
 		} else {
 			s.Log.Error("Registration: Database error", "err", err)
@@ -85,47 +97,18 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.Log.Info("Registration: User created successfully", "userID", dbUser.ID)
-
-	if s.Config.SignupsVerify {
+	if s.Config.SignupsVerify && role != "admin" {
 		go func() {
 			if err := s.Email.SendVerificationEmail(dbUser.Email, dbUser.Name, verificationToken); err != nil {
 				s.Log.Error("Failed to send verification email", "email", dbUser.Email, "err", err)
 			}
 		}()
 	} else {
-		var verifiedUntil *string
-		now := time.Now()
-
-		if strings.HasSuffix(dbUser.Email, "@studmail.w-hs.de") {
-			year := now.Year()
-			march1 := time.Date(year, time.March, 1, 0, 0, 0, 0, time.UTC)
-			oct1 := time.Date(year, time.October, 1, 0, 0, 0, 0, time.UTC)
-
-			var nextDate time.Time
-			if now.Before(march1) {
-				nextDate = march1
-			} else if now.Before(oct1) {
-				nextDate = oct1
-			} else {
-				nextDate = time.Date(year+1, time.March, 1, 0, 0, 0, 0, time.UTC)
-			}
-			tStr := nextDate.Format(time.RFC3339)
-			verifiedUntil = &tStr
-		} else {
-			verifiedUntil = nil
-		}
-
-		updatedUser, err := s.DB.VerifyUser(r.Context(), database.VerifyUserParams{
-			ID:            dbUser.ID,
-			VerifiedUntil: verifiedUntil,
-		})
+		_, err = s.DB.VerifyUser(r.Context(), dbUser.ID)
 		if err != nil {
 			s.Log.Error("Failed to auto-verify user", "err", err)
-			s.JsonError(w, "database_error", "Could not verify user", http.StatusInternalServerError)
-			return
 		}
-		dbUser = updatedUser
+		dbUser.Verified = 1
 	}
 
 	s.RespondJSON(w, http.StatusCreated, s.toUserResponse(dbUser))
@@ -140,14 +123,13 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} dto.ErrorResponse
 // @Router /auth/login [post]
 func (s *Server) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
-	s.Log.Info("Login request received")
 	var payload dto.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		s.JsonError(w, "invalid_request_body", "Could not decode JSON body", http.StatusBadRequest)
 		return
 	}
 
-	dbUser, err := s.DB.GetUserByEmail(r.Context(), string(payload.Email))
+	dbUser, err := s.DB.GetUserByEmail(r.Context(), payload.Email)
 	if err != nil {
 		s.JsonError(w, "invalid_credentials", "Invalid email or password", http.StatusUnauthorized)
 		return
@@ -165,45 +147,28 @@ func (s *Server) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if dbUser.Verified == 0 {
-		newToken := uuid.NewString()
-		if err := s.DB.UpdateUserToken(r.Context(), database.UpdateUserTokenParams{
-			ID:                dbUser.ID,
-			VerificationToken: &newToken,
-		}); err != nil {
-			s.Log.Error("Failed to update token for user", "userID", dbUser.ID, "err", err)
-		} else {
-			go func() {
-				if err := s.Email.SendVerificationEmail(dbUser.Email, dbUser.Name, newToken); err != nil {
-					s.Log.Error("Failed to resend verification email", "email", dbUser.Email, "err", err)
-				}
-			}()
-		}
-
-		s.JsonError(w, "email_not_verified", "Du musst erst deine E-Mail bestätigen. Wir haben dir eine neue E-Mail gesendet.", http.StatusForbidden)
+		s.JsonError(w, "email_not_verified", "Du musst erst deine E-Mail bestätigen.", http.StatusForbidden)
 		return
 	}
 
-	// OWASP: Session Fixation Protection
 	s.SetCookie(w, SessionCookieName, "", -time.Hour, true)
-	s.SetCookie(w, CsrfCookieName, "", -time.Hour, false)
 
-	sessionID := id.New()
-
+	sessionID := id.New().String()
 	duration := SessionDuration
 	if payload.Remember {
-		duration = 30 * 24 * time.Hour // 30 days
+		duration = 30 * 24 * time.Hour
 	}
 	expiresAt := time.Now().Add(duration)
 
-	userAgent := r.UserAgent()
-	ipAddress := r.RemoteAddr
+	ua := r.UserAgent()
+	ip := r.RemoteAddr
 
 	_, err = s.DB.CreateSession(r.Context(), database.CreateSessionParams{
 		ID:        sessionID,
-		Userid:    dbUser.ID,
+		UserID:    dbUser.ID,
 		ExpiresAt: expiresAt.Format(time.RFC3339),
-		UserAgent: &userAgent,
-		IpAddress: &ipAddress,
+		UserAgent: &ua,
+		IpAddress: &ip,
 	})
 	if err != nil {
 		s.Log.Error("Failed to create session", "err", err)
@@ -229,43 +194,12 @@ func (s *Server) GetAuthVerify(w http.ResponseWriter, r *http.Request) {
 
 	dbUser, err := s.DB.GetUserByVerificationToken(r.Context(), &token)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			http.Redirect(w, r, fmt.Sprintf("%s/login?verified=false&error=invalid_token", s.Config.Domain), http.StatusFound)
-		} else {
-			s.Log.Error("Failed to lookup token", "err", err)
-			http.Redirect(w, r, fmt.Sprintf("%s/login?verified=false&error=server_error", s.Config.Domain), http.StatusFound)
-		}
+		http.Redirect(w, r, fmt.Sprintf("%s/login?verified=false&error=not_found", s.Config.Domain), http.StatusFound)
 		return
 	}
 
-	var verifiedUntil *string
-	now := time.Now()
-
-	if strings.HasSuffix(dbUser.Email, "@studmail.w-hs.de") {
-		year := now.Year()
-		march1 := time.Date(year, time.March, 1, 0, 0, 0, 0, time.UTC)
-		oct1 := time.Date(year, time.October, 1, 0, 0, 0, 0, time.UTC)
-
-		var nextDate time.Time
-		if now.Before(march1) {
-			nextDate = march1
-		} else if now.Before(oct1) {
-			nextDate = oct1
-		} else {
-			nextDate = time.Date(year+1, time.March, 1, 0, 0, 0, 0, time.UTC)
-		}
-		tStr := nextDate.Format(time.RFC3339)
-		verifiedUntil = &tStr
-	} else {
-		verifiedUntil = nil
-	}
-
-	_, err = s.DB.VerifyUser(r.Context(), database.VerifyUserParams{
-		ID:            dbUser.ID,
-		VerifiedUntil: verifiedUntil,
-	})
+	_, err = s.DB.VerifyUser(r.Context(), dbUser.ID)
 	if err != nil {
-		s.Log.Error("Failed to verify user", "err", err)
 		http.Redirect(w, r, fmt.Sprintf("%s/login?verified=false&error=server_error", s.Config.Domain), http.StatusFound)
 		return
 	}
@@ -304,10 +238,16 @@ func (s *Server) PutAuthMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var pid *int64
+	if payload.ProgramID != nil {
+		v := int64(*payload.ProgramID)
+		pid = &v
+	}
+
 	updatedUser, err := s.DB.UpdateUser(r.Context(), database.UpdateUserParams{
 		ID:        authUser.ID,
 		Name:      s.Sanitize(payload.Name),
-		Programid: payload.Programid,
+		ProgramID: pid,
 		Theme:     payload.Theme,
 		Private:   s.BoolToInt(payload.Private),
 	})
@@ -321,7 +261,6 @@ func (s *Server) PutAuthMe(w http.ResponseWriter, r *http.Request) {
 
 // @Summary Log out
 // @Tags Auth
-// @Param X-CSRF-Token header string true "CSRF Token"
 // @Success 204
 // @Router /auth/logout [post]
 func (s *Server) PostAuthLogout(w http.ResponseWriter, r *http.Request) {
@@ -331,12 +270,9 @@ func (s *Server) PostAuthLogout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.DB.DeleteSession(r.Context(), session.ID); err != nil {
-		s.Log.Error("Failed to delete session", "err", err)
-	}
+	_ = s.DB.DeleteSession(r.Context(), session.ID)
 
 	s.SetCookie(w, SessionCookieName, "", -time.Hour, true)
-	s.SetCookie(w, CsrfCookieName, "", -time.Hour, false)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -348,7 +284,10 @@ func (s *Server) PostAuthLogout(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetAuthCsrf(w http.ResponseWriter, r *http.Request) {
 	csrfToken := uuid.NewString()
 	s.SetCookie(w, CsrfCookieName, csrfToken, CsrfDuration, false)
-	s.RespondJSON(w, http.StatusOK, dto.CsrfResponse{Csrf: csrfToken})
+	s.RespondJSON(w, http.StatusOK, dto.CsrfResponse{
+		Csrf:           csrfToken,
+		SignupsEnabled: s.Config.SignupsEnabled,
+	})
 }
 
 // @Summary List users
@@ -385,14 +324,20 @@ func (s *Server) GetUsers(w http.ResponseWriter, r *http.Request) {
 // @Summary Get user profile
 // @Tags Users
 // @Produce json
-// @Param id path string true "User ID"
+// @Param userId path string true "User ID"
 // @Success 200 {object} dto.PublicUserResponse
-// @Router /users/{id} [get]
+// @Router /users/{userId} [get]
 func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	idStr := chi.URLParam(r, "userId")
+	uid, err := id.Parse(idStr)
+	if err != nil {
+		s.JsonError(w, "invalid_id", "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
 	authUser, hasAuth := s.User(r)
 
-	dbUser, err := s.DB.GetUser(r.Context(), id)
+	dbUser, err := s.DB.GetUser(r.Context(), int64(uid))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			s.JsonError(w, "not_found", "User not found", http.StatusNotFound)
@@ -403,102 +348,86 @@ func (s *Server) GetUsersId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if hasAuth && (authUser.ID == id || authUser.Role == "admin") {
+	if hasAuth && (authUser.ID == dbUser.ID || authUser.Role == "admin") {
 		s.RespondJSON(w, http.StatusOK, s.toUserResponse(dbUser))
 		return
 	}
 
-	if dbUser.Private == 1 {
-		s.RespondJSON(w, http.StatusOK, dto.PublicUserResponse{
-			ID:        dbUser.ID,
-			Name:      "Anonym",
-			Role:      dbUser.Role,
-			Private:   1,
-			CreatedAt: dbUser.CreatedAt,
-			AvatarUrl: s.FormatAvatarURL(dbUser.AvatarUrl, dbUser.ID, 1),
-		})
+	s.RespondJSON(w, http.StatusOK, s.ToPublicUserResponse(dbUser))
+}
+
+// @Summary Upload avatar
+// @Tags Auth
+// @Accept mpfd
+// @Produce json
+// @Param file formData file true "Avatar Image"
+// @Success 200 {object} dto.UserResponse
+// @Router /auth/me/avatar [post]
+func (s *Server) PostAuthAvatar(w http.ResponseWriter, r *http.Request) {
+	user, _ := s.User(r)
+
+	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
+		s.JsonError(w, "bad_request", "Upload failed", http.StatusBadRequest)
 		return
 	}
 
-	s.RespondJSON(w, http.StatusOK, dto.PublicUserResponse{
-		ID:        dbUser.ID,
-		Name:      dbUser.Name,
-		Role:      dbUser.Role,
-		Active:    dbUser.Active,
-		Verified:  dbUser.Verified,
-		Programid: dbUser.Programid,
-		CreatedAt: dbUser.CreatedAt,
-		Theme:     dbUser.Theme,
-		Private:   dbUser.Private,
-		AvatarUrl: s.FormatAvatarURL(dbUser.AvatarUrl, dbUser.ID, dbUser.Private),
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		s.JsonError(w, "bad_request", "File upload failed", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	contentType := header.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "image/") {
+		s.JsonError(w, "bad_request", "Only images allowed", http.StatusBadRequest)
+		return
+	}
+
+	userIDStr := id.ID(user.ID).String()
+	objectKey := storage.AvatarSourceKey(userIDStr)
+
+	if err := s.Store.Upload(r.Context(), objectKey, file, header.Size, contentType); err != nil {
+		s.Log.Error("S3 Upload failed", "err", err)
+		s.JsonError(w, "server_error", "Upload failed", http.StatusInternalServerError)
+		return
+	}
+
+	updatedUser, err := s.DB.UpdateUserAvatar(r.Context(), database.UpdateUserAvatarParams{
+		ID:        user.ID,
+		AvatarUrl: &objectKey,
 	})
+	if err != nil {
+		s.Log.Error("Failed to update user avatar", "err", err)
+		s.JsonError(w, "database_error", "Failed to update profile", http.StatusInternalServerError)
+		return
+	}
+
+	s.RespondJSON(w, http.StatusOK, s.toUserResponse(updatedUser))
 }
 
 // @Summary Get user avatar
 // @Tags Auth
 // @Param userId path string true "User ID"
 // @Param filename path string true "Filename"
-// @Produce image/svg+xml
+// @Param size query int false "Size (ignored, always serves source)"
+// @Produce image/svg+xml,image/jpeg,image/png
 // @Success 200 {file} binary
 // @Router /auth/avatars/{userId}/{filename} [get]
 func (s *Server) GetAvatar(w http.ResponseWriter, r *http.Request) {
-	userID := filepath.Base(chi.URLParam(r, "userId"))
-	filename := filepath.Base(chi.URLParam(r, "filename"))
+	userIDStr := chi.URLParam(r, "userId")
 
-	if !strings.HasSuffix(filename, ".svg") {
-		s.JsonError(w, "bad_request", "Only SVG avatars are supported", http.StatusBadRequest)
-		return
-	}
-
-	objectName := fmt.Sprintf("avatars/%s/%s", userID, filename)
-
+	// Always serve from the 'source' path in storage
+	objectName := storage.AvatarSourceKey(userIDStr)
 	obj, err := s.Store.GetObject(r.Context(), objectName)
-	if err != nil {
-		data := s.Avatars.GenerateSVG(userID)
 
-		// Store it in the bucket asynchronously or just serve it
-		go func() {
-			if err := s.Avatars.StoreAvatar(context.Background(), objectName, data); err != nil {
-				s.Log.Error("Failed to cache generated avatar", "userID", userID, "err", err)
-			}
-		}()
-
-		w.Header().Set("Content-Type", "image/svg+xml")
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
-		w.Header().Set("Cache-Control", "no-cache, must-revalidate")
-		w.Header().Set("Content-Security-Policy", "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'")
-		w.Write(data)
-		return
-	}
-	defer obj.Close()
-
-	info, err := obj.Stat()
-	if err != nil {
-		data := s.Avatars.GenerateSVG(userID)
-
-		w.Header().Set("Content-Type", "image/svg+xml")
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
-		w.Header().Set("Cache-Control", "no-cache, must-revalidate")
-		w.Header().Set("Content-Security-Policy", "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'")
-		w.Write(data)
-		return
-	}
-
-	w.Header().Set("Content-Type", info.ContentType)
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", info.Size))
-	w.Header().Set("ETag", info.ETag)
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'")
-
-	if strings.HasSuffix(filename, ".svg") && !strings.Contains(filename, "generated") {
-		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-	} else {
+	if err == nil {
+		defer obj.Close()
+		w.Header().Set("Content-Type", obj.Info.ContentType)
 		w.Header().Set("Cache-Control", "public, max-age=3600")
-	}
-
-	if r.Header.Get("If-None-Match") == info.ETag {
-		w.WriteHeader(http.StatusNotModified)
+		_, _ = io.Copy(w, obj)
 		return
 	}
 
-	io.Copy(w, obj)
+	http.Error(w, "Avatar not found", http.StatusNotFound)
 }

@@ -4,30 +4,36 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/api/dto"
+	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/id"
 	"github.com/go-chi/chi/v5"
 )
 
 // @Summary List user activities
 // @Tags Activities
-// @Param id path string true "User ID"
+// @Param userId path string true "User ID"
 // @Param limit query int false "Limit"
 // @Param offset query int false "Offset"
 // @Success 200 {array} dto.ActivityResponse
-// @Router /users/{id}/activities [get]
+// @Router /users/{userId}/activities [get]
 func (s *Server) GetUsersActivities(w http.ResponseWriter, r *http.Request) {
-	userID := chi.URLParam(r, "id")
+	idStr := chi.URLParam(r, "userId")
+	uid, err := id.Parse(idStr)
+	if err != nil {
+		s.JsonError(w, "invalid_id", "Invalid user ID", http.StatusBadRequest)
+		return
+	}
 
 	// Check for privacy
-	targetUser, err := s.DB.GetUser(r.Context(), userID)
+	targetUser, err := s.DB.GetUser(r.Context(), int64(uid))
 	if err != nil {
 		s.JsonError(w, "not_found", "User not found", http.StatusNotFound)
 		return
 	}
 
 	authUser, hasAuth := s.User(r)
-	isOwnerOrAdmin := hasAuth && (authUser.ID == userID || authUser.Role == "admin")
+	isOwnerOrAdmin := hasAuth && (id.ID(authUser.ID) == id.ID(uid) || authUser.Role == "admin")
 
 	if targetUser.Private == 1 && !isOwnerOrAdmin {
 		w.Header().Set("X-Total-Count", "0")
@@ -42,7 +48,7 @@ func (s *Server) GetUsersActivities(w http.ResponseWriter, r *http.Request) {
 	offset, _ := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 64)
 
 	activities, err := s.DB.ListUserActivities(r.Context(), database.ListUserActivitiesParams{
-		UserID: userID,
+		UserID: int64(uid),
 		Limit:  limit,
 		Offset: offset,
 	})
@@ -52,7 +58,7 @@ func (s *Server) GetUsersActivities(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := s.DB.CountUserActivities(r.Context(), userID)
+	count, err := s.DB.CountUserActivities(r.Context(), int64(uid))
 	if err != nil {
 		s.Log.Error("Failed to count user activities", "err", err)
 		count = 0
@@ -62,8 +68,8 @@ func (s *Server) GetUsersActivities(w http.ResponseWriter, r *http.Request) {
 	resp := make([]dto.ActivityResponse, 0, len(activities))
 	for _, a := range activities {
 		resp = append(resp, dto.ActivityResponse{
-			ID:         a.ID,
-			UserID:     a.UserID,
+			ID:         id.ID(a.ID),
+			UserID:     id.ID(a.UserID),
 			UserName:   a.UserName,
 			Type:       a.Type,
 			TargetID:   a.TargetID,
@@ -100,8 +106,8 @@ func (s *Server) GetActivities(w http.ResponseWriter, r *http.Request) {
 	resp := make([]dto.ActivityResponse, 0, len(activities))
 	for _, a := range activities {
 		resp = append(resp, dto.ActivityResponse{
-			ID:         a.ID,
-			UserID:     a.UserID,
+			ID:         id.ID(a.ID),
+			UserID:     id.ID(a.UserID),
 			UserName:   a.UserName,
 			Type:       a.Type,
 			TargetID:   a.TargetID,
