@@ -18,8 +18,8 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
-import { getPrograms, postForumPosts } from "@lib/api";
-import type { AuthProgramResponse as Program } from "@lib/api";
+import { getPrograms, postDiscussions } from "@lib/api";
+import type { DtoProgramResponse as Program } from "@lib/api";
 import { FORUM_CATEGORIES, FORUM_TAGS } from "@lib/config";
 
 export default function CreatePost() {
@@ -31,7 +31,7 @@ export default function CreatePost() {
     const [body, setBody] = useState("");
     const [category, setCategory] = useState<string>("");
     const isStaff = user?.role === "admin" || user?.role === "editor";
-    const type: "forum" | "news" | "event" = category === "Ankündigung" ? "news" : (category === "Termin" ? "event" : "forum");
+    const type: "discussion" | "news" | "event" = category === "Ankündigung" ? "news" : (category === "Termin" ? "event" : "discussion");
     const [selectedPrograms, setSelectedPrograms] = useState<Program[]>([]);
     const [tags, setTags] = useState<string[]>([]);
 
@@ -57,12 +57,12 @@ export default function CreatePost() {
             // Combine category and tags
             const finalTags = [category, ...tags];
 
-            const { error: apiError } = await postForumPosts({
+            const { error: apiError } = await postDiscussions({
                 body: {
                     title,
                     body,
                     type,
-                    programs: selectedPrograms.map(p => p.name || ""),
+                    programs: selectedPrograms.map(p => String(p.id)),
                     tags: finalTags,
                     event_date: eventDate || undefined,
                     location: location || undefined
@@ -82,14 +82,14 @@ export default function CreatePost() {
 
 
     return (
-        <Sidebar user={user} title="Beitrag erstellen" maxWidth="md">
+        <Sidebar user={user} title="Diskussion erstellen" maxWidth="md">
             <Box>
                 <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
                     <IconButton onClick={() => navigate("/discussions")} sx={{ bgcolor: 'action.hover' }}>
                         <ArrowBackRoundedIcon />
                     </IconButton>
                     <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
-                        Neuen Beitrag erstellen
+                        Neue Diskussion erstellen
                     </Typography>
                 </Box>
 
@@ -138,7 +138,7 @@ export default function CreatePost() {
                                 options={programs}
                                 getOptionLabel={(option) => option.name || ""}
                                 value={selectedPrograms}
-                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                isOptionEqualToValue={(option, value) => String(option.id) === String(value.id)}
                                 onChange={(_, newValue) => setSelectedPrograms(newValue)}
                                 renderInput={(params) => (
                                     <TextField {...params} label="Studiengänge (Optional)" placeholder="Wählen..." />
@@ -167,7 +167,7 @@ export default function CreatePost() {
                             />
                         </Stack>
 
-                        {type !== 'forum' && (
+                        {type === 'event' && (
                             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                                 <TextField
                                     label="Event Datum"

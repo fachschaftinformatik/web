@@ -20,19 +20,16 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
-import { client } from "@lib/api/client.gen";
+import { getEvents, getEventsByEventIdMedia, postEvents, postEventsByEventIdMedia } from "@lib/api";
+import type { DtoEventResponse as EventItem, DtoMediaResponse as MediaItem } from "@lib/api";
+import { getSizedImageUrl, getImageSrcSet } from "@lib/images";
 
-
-type EventItem = { id: string; title: string; created_at: string; cover_path?: string };
-type MediaItem = { id: string; event_id: string; title: string; description: string; mime_type: string; uploaded_at: string };
 
 const IMAGES_PER_PAGE = 10;
 
-const pic = (seed: number) => `https://picsum.photos/seed/${seed}/300/200`;
-
 export default function Galerie() {
   const { user } = useAuth();
-  const { eventId: urlEventId, imageId: urlImageId } = useParams();
+  const { eventId: urlEventId, mediaId: urlMediaId } = useParams<{ eventId: string; mediaId: string }>();
 
   const [events, setEvents] = useState<EventItem[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -60,19 +57,18 @@ export default function Galerie() {
 
   const fetchEvents = useCallback(async () => {
     try {
-      const res = await client.request({ method: 'GET', url: '/events' });
-      if (res.data) {
-        const list = res.data as EventItem[];
-        setEvents(list);
+      const { data } = await getEvents();
+      if (data) {
+        setEvents(data);
 
-        if (!urlEventId && list.length > 0) {
-          navigate(`/images/${list[0].id}`, { replace: true });
+        if (!urlEventId && data.length > 0) {
+          navigate(`/events/${data[0].id}`, { replace: true });
         }
       }
     } catch (e) {
       console.error("Fehler beim Laden der Events", e);
     }
-  }, [urlEventId, navigate, setEvents]);
+  }, [urlEventId, navigate]);
 
   useEffect(() => {
     void fetchEvents();
@@ -84,53 +80,39 @@ export default function Galerie() {
       return;
     }
 
-    const abortController = new AbortController();
-    const fetchMedia = async () => {
+    const fetchMediaData = async () => {
       setLoadingMedia(true);
       try {
-        const res = await client.request({
-          method: 'GET',
-          url: '/media',
-          query: { event_id: selectedEventId },
-          signal: abortController.signal as never
+        const { data } = await getEventsByEventIdMedia({
+          path: { eventId: selectedEventId }
         });
-        
-        if (abortController.signal.aborted) return;
-
-        const mediaList = res.data as MediaItem[] || [];
-        setMedia(mediaList);
+        setMedia(data || []);
       } catch (e: unknown) {
-        if (e instanceof Error && e.name === 'AbortError') return;
         console.error("Fehler beim Laden der Medien", e);
       } finally {
-        if (!abortController.signal.aborted) {
-          setLoadingMedia(false);
-        }
+        setLoadingMedia(false);
       }
     };
-    void fetchMedia();
-
-    return () => {
-      abortController.abort();
-    };
+    void fetchMediaData();
   }, [selectedEventId]);
 
   useEffect(() => {
-    if (urlImageId && media.length > 0 && selectedEventId === urlEventId) {
-      const index = media.findIndex(m => m.id === urlImageId);
+    if (urlMediaId && media.length > 0 && selectedEventId === urlEventId) {
+      const index = media.findIndex(m => String(m.id) === urlMediaId);
       if (index !== -1) {
         setPage(Math.floor(index / IMAGES_PER_PAGE) + 1);
         setLightboxIndex(index);
         setLightboxOpen(true);
       }
-    } else if (!urlImageId) {
+    } else if (!urlMediaId) {
       setLightboxOpen(false);
     }
-  }, [urlImageId, media, selectedEventId, urlEventId]);
+  }, [urlMediaId, media, selectedEventId, urlEventId]);
 
-  const getImageUrl = (id: string) => `/api/media/${id}/file`;
-  const getPreviewUrl = (id: string) => `/api/media/${id}/preview`;
-  const getEventCoverUrl = (ev: EventItem) => ev.cover_path ? `/api/events/${ev.id}/cover` : pic(Number(ev.id.toString().slice(-4)));
+  const getPreviewUrl = (id: string, size: number | string = 400) => getSizedImageUrl(`/api/v1/media/${id}/preview`, size);
+  const getEventCoverUrl = (ev: EventItem, size: number | string = 400) => ev.cover_path ? getSizedImageUrl(`/api/v1/events/${ev.id}/cover`, size) : undefined;
+  const getEventCoverSrcSet = (ev: EventItem) => ev.cover_path ? getImageSrcSet(`/api/v1/events/${ev.id}/cover`) : undefined;
+  const getMediaSrcSet = (id: string) => getImageSrcSet(`/api/v1/media/${id}/preview`);
 
   const pageCount = Math.max(Math.ceil(media.length / IMAGES_PER_PAGE), 1);
   const displayedMedia = media.slice((page - 1) * IMAGES_PER_PAGE, page * IMAGES_PER_PAGE);
@@ -141,12 +123,12 @@ export default function Galerie() {
     setLightboxIndex(absoluteIdx);
     setLightboxOpen(true);
     const img = media[absoluteIdx];
-    if (img) navigate(`/images/${selectedEventId}/${img.id}`, { replace: true });
+    if (img) navigate(`/events/${selectedEventId}/${img.id}`, { replace: true });
   };
 
   const closeLightbox = useCallback(() => {
     setLightboxOpen(false);
-    navigate(`/images/${selectedEventId}`, { replace: true });
+    navigate(`/events/${selectedEventId}`, { replace: true });
   }, [selectedEventId, navigate]);
 
   const nextImage = useCallback(() => {
@@ -155,7 +137,7 @@ export default function Galerie() {
     setLightboxIndex(nextIdx);
     setPage(Math.floor(nextIdx / IMAGES_PER_PAGE) + 1);
     const img = media[nextIdx];
-    if (img) navigate(`/images/${selectedEventId}/${img.id}`, { replace: true });
+    if (img) navigate(`/events/${selectedEventId}/${img.id}`, { replace: true });
   }, [lightboxIndex, selectedEventId, navigate, media]);
 
   const prevImage = useCallback(() => {
@@ -164,7 +146,7 @@ export default function Galerie() {
     setLightboxIndex(prevIdx);
     setPage(Math.floor(prevIdx / IMAGES_PER_PAGE) + 1);
     const img = media[prevIdx];
-    if (img) navigate(`/images/${selectedEventId}/${img.id}`, { replace: true });
+    if (img) navigate(`/events/${selectedEventId}/${img.id}`, { replace: true });
   }, [lightboxIndex, selectedEventId, navigate, media]);
 
   useEffect(() => {
@@ -180,7 +162,7 @@ export default function Galerie() {
 
   const handleCopyLink = () => {
     if (!currentImage) return;
-    const url = window.location.origin + `/images/${selectedEventId}/${currentImage.id}`;
+    const url = window.location.origin + `/events/${selectedEventId}/${currentImage.id}`;
     navigator.clipboard.writeText(url).then(() => {
       setSuccessMessage("Link in die Zwischenablage kopiert!");
     });
@@ -196,7 +178,7 @@ export default function Galerie() {
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
             <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
-              Galerie
+              Events & Galerie
             </Typography>
             <Typography variant="body1" color="text.secondary">
               Fotos von Veranstaltungen, Partys und Events der Fachschaft.
@@ -247,15 +229,15 @@ export default function Galerie() {
                 })}
               >
                 {events.map((ev) => {
-                  const selected = ev.id === selectedEventId;
+                  const selected = String(ev.id) === selectedEventId;
 
                     return (
                       <ImageListItem
-                        key={ev.id}
+                        key={String(ev.id)}
                         onClick={() => {
-                          setMedia([]); // Clear media immediately
-                          setPage(1); // Reset page
-                          navigate(`/images/${ev.id}`);
+                          setMedia([]); 
+                          setPage(1);
+                          navigate(`/events/${ev.id}`);
                         }}
                         sx={(theme) => ({
                         cursor: "pointer",
@@ -280,7 +262,9 @@ export default function Galerie() {
                       <Box sx={{ overflow: "hidden", borderRadius: 2, bgcolor: "background.default" }}>
                         <Box
                           component="img"
-                          src={getEventCoverUrl(ev)}
+                          src={getEventCoverUrl(ev, 400)}
+                          srcSet={getEventCoverSrcSet(ev)}
+                          sizes="160px"
                           alt={ev.title}
                           loading="lazy"
                           sx={{ width: "100%", height: 100, objectFit: "cover", display: "block" }}
@@ -339,7 +323,7 @@ export default function Galerie() {
           >
             {displayedMedia.map((item, idx) => (
               <Card
-                key={item.id}
+                key={String(item.id)}
                 onClick={() => openLightbox(idx)}
                 elevation={0}
                 sx={(theme) => ({
@@ -358,7 +342,9 @@ export default function Galerie() {
               >
                 <CardMedia
                   component="img"
-                  image={getPreviewUrl(item.id)}
+                  image={getPreviewUrl(String(item.id), 600)}
+                  srcSet={getMediaSrcSet(String(item.id))}
+                  sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, (max-width: 1200px) 25vw, 200px"
                   alt={item.title || "Bild"}
                   sx={{ width: "100%", aspectRatio: "3/2", objectFit: "cover" }}
                 />
@@ -463,7 +449,9 @@ export default function Galerie() {
             {currentImage && (
               <Box
                 component="img"
-                src={getImageUrl(currentImage.id)}
+                src={getPreviewUrl(String(currentImage.id), 1600)}
+                srcSet={getMediaSrcSet(String(currentImage.id))}
+                sizes="100vw"
                 alt={currentImage.title}
                 sx={{
                   display: "block",
@@ -474,7 +462,7 @@ export default function Galerie() {
               />
             )}
 
-            {displayedMedia.length > 1 && (
+            {media.length > 1 && (
               <>
                 <IconButton
                   aria-label="previous"
@@ -517,7 +505,7 @@ export default function Galerie() {
 }
 
 function getFriendlyErrorMessage(error: { message?: string; error?: string } | string | unknown): string {
-  const msg = typeof error === 'string' ? error : (error as { message?: string })?.message || (error as { error?: string })?.error || "";
+  const msg = typeof error === 'string' ? error : (error as Record<string, string>)?.message || (error as Record<string, string>)?.error || "";
   const errorMap: Record<string, string> = {
     "File too large": "Die Datei ist zu groß (maximal 256MB erlaubt).",
     "File upload failed": "Der Upload ist fehlgeschlagen. Bitte versuche es erneut.",
@@ -585,23 +573,16 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
     for (let i = 0; i < total; i++) {
       const file = files[i];
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("event_id", String(eventId));
-        if (title) formData.append("title", title);
-        if (description) formData.append("description", description);
-
-        const res = await client.request({
-          method: 'POST',
-          url: '/media',
-          body: formData,
-          bodySerializer: null,
-          headers: {
-            "Content-Type": null
+        const { error: apiError } = await postEventsByEventIdMedia({
+          path: { eventId: String(eventId) },
+          body: {
+            file: file,
+            title: title || undefined,
+            description: description || undefined
           }
         });
 
-        if (res.error) throw res.error;
+        if (apiError) throw apiError;
         successCount++;
         setProgress(Math.round(((i + 1) / total) * 100));
       } catch (e: unknown) {
@@ -658,7 +639,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
               disabled={uploading}
             >
               {events.length > 0 ? (
-                events.map((e) => <MenuItem key={e.id} value={e.id}>{e.title}</MenuItem>)
+                events.map((e) => <MenuItem key={String(e.id)} value={String(e.id)}>{e.title}</MenuItem>)
               ) : (
                 <MenuItem disabled value="">Keine Events verfügbar</MenuItem>
               )}
@@ -784,29 +765,21 @@ function CreateEventDialog({ open, onClose, onSuccess }: {
     setLoading(true);
     setError("");
     try {
-      const formData = new FormData();
-      formData.append("title", title);
-      if (file) {
-        formData.append("file", file);
-      }
-
-      const res = await client.request({
-        method: 'POST',
-        url: '/events',
-        body: formData,
-        bodySerializer: null,
-        headers: {
-          "Content-Type": null
+      const { data, error: apiError } = await postEvents({
+        body: {
+          title,
+          file: file || undefined
         }
       });
 
-      if (res.error) throw res.error;
+      if (apiError) throw apiError;
 
-      const newEvent = res.data as { id: string };
-      onSuccess(newEvent.id);
-      onClose();
-      setTitle("");
-      setFile(null);
+      if (data && data.id) {
+        onSuccess(String(data.id));
+        onClose();
+        setTitle("");
+        setFile(null);
+      }
     } catch (e: unknown) {
       setError(getFriendlyErrorMessage(e));
     } finally {

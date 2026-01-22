@@ -35,8 +35,8 @@ import { Link as RouterLink } from "react-router-dom";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
-import { getPrograms, getProgramModules, postExams, getExams } from "@lib/api";
-import type { AuthProgramResponse as Program, AuthModuleResponse as Module } from "@lib/api";
+import { getPrograms, getProgramModules, postArchive, getArchive } from "@lib/api";
+import type { DtoProgramResponse as Program, DtoModuleResponse as Module } from "@lib/api";
 
 function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; onClose: () => void; programs: Program[]; onSuccess: () => void }) {
     const [file, setFile] = useState<File | null>(null);
@@ -56,7 +56,7 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
 
     useEffect(() => {
         if (currentProgram && currentProgram.id !== undefined) {
-            getProgramModules({ path: { id: currentProgram.id } })
+            getProgramModules({ path: { programId: String(currentProgram.id) } })
                 .then(({ data }) => setProgramModules(data || []))
                 .catch(() => setProgramModules([]));
 
@@ -86,9 +86,9 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
     const handleAddAssignment = () => {
         if (currentProgram && currentPo && currentModule) {
             const exists = assignments.some(a =>
-                a.program.id === currentProgram.id &&
+                String(a.program.id) === String(currentProgram.id) &&
                 a.version === currentPo &&
-                a.module.id === currentModule.id
+                String(a.module.id) === String(currentModule.id)
             );
 
             if (!exists) {
@@ -123,36 +123,39 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
         setLoading(true);
 
         try {
-            const assignmentData = finalAssignments.map(a => ({
-                programid: a.program.id,
-                version: a.version,
-                moduleid: a.module.id
-            }));
+            // Note: The new postArchive only supports ONE module_id per call currently based on DTO
+            // If we want multiple assignments, we need to loop or change API
+            // Let's loop for now if multiple, but DTO seems to favor one
+            
+            for (const a of finalAssignments) {
+                const { error: apiError } = await postArchive({
+                    body: {
+                        file: file,
+                        date: examDate,
+                        module_id: String(a.module.id),
+                        version: a.version,
+                        comment: comment || undefined
+                    },
+                    headers: {
+                        'X-CSRF-Token': '' // Will be filled by interceptor
+                    }
+                });
 
-            const formData = {
-                file: file,
-                date: examDate,
-                assignments: JSON.stringify(assignmentData),
-                comment: comment
-            };
-
-            const { error: apiError } = await postExams({
-                body: formData,
-            });
-
-
-            if (apiError) {
-                const msg = (apiError as { message?: string }).message || "Fehler beim Hochladen.";
-                setError(msg);
-            } else {
-                onSuccess();
-                onClose();
-                setFile(null);
-                setAssignments([]);
-                setComment("");
-                setExamDate("");
-                setCurrentModule(null);
+                if (apiError) {
+                    const msg = (apiError as { message?: string }).message || "Fehler beim Hochladen.";
+                    setError(msg);
+                    setLoading(false);
+                    return;
+                }
             }
+
+            onSuccess();
+            onClose();
+            setFile(null);
+            setAssignments([]);
+            setComment("");
+            setExamDate("");
+            setCurrentModule(null);
         } catch (err) {
             console.error("Fehler beim Hochladen:", err);
             setError(err instanceof Error ? err.message : "Netzwerkfehler.");
@@ -220,14 +223,14 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                             label="Studiengang"
                             fullWidth
                             size="small"
-                            value={currentProgram?.id || ""}
+                            value={String(currentProgram?.id || "")}
                             onChange={(e) => {
-                                const prog = programs.find(p => p.id === e.target.value);
+                                const prog = programs.find(p => String(p.id) === String(e.target.value));
                                 setCurrentProgram(prog || null);
                             }}
                         >
                             {programs.length > 0 ? (
-                                programs.map((p) => (<MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>))
+                                programs.map((p) => (<MenuItem key={String(p.id)} value={String(p.id)}>{p.name}</MenuItem>))
                             ) : (
                                 <MenuItem disabled value="">Keine Studiengänge verfügbar</MenuItem>
                             )}
@@ -265,6 +268,7 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                                 value={currentModule}
                                 onChange={(_, newValue) => setCurrentModule(newValue)}
                                 disabled={!currentProgram}
+                                isOptionEqualToValue={(o, v) => String(o.id) === String(v.id)}
                                 fullWidth
                                 renderInput={(params) => (
                                     <TextField
@@ -384,7 +388,7 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
     );
 }
 
-export default function Exams() {
+export default function Archive() {
     const { user } = useAuth();
     const canUpload = user?.role === "admin" || user?.role === "editor";
 
@@ -413,29 +417,28 @@ export default function Exams() {
                 setPrograms(data);
 
                 let defaultProg = data[0];
-                if (user?.programid) {
-                    const userProg = data.find(p => p.id === user.programid);
+                if (user?.program_id) {
+                    const userProg = data.find(p => String(p.id) === String(user.program_id));
                     if (userProg) defaultProg = userProg;
                 }
 
                 setSelectedPrograms([defaultProg]);
 
                 if (defaultProg.versions && defaultProg.versions.length > 0) {
-                    if (!selectedPo) {
+                    if (selectedPo === undefined || selectedPo === "") {
                         setSelectedPo("all");
                     }
                 }
             }
         });
-    }, [user?.programid, selectedPo]);
+    }, [user?.program_id, selectedPo]);
 
     useEffect(() => {
         if (selectedPrograms.length > 0) {
-            Promise.all(selectedPrograms.map(p => getProgramModules({ path: { id: p.id } })))
+            Promise.all(selectedPrograms.map(p => getProgramModules({ path: { programId: String(p.id) } })))
                 .then(results => {
                     const allModules = results.flatMap(r => r.data || []);
-                    // Filter duplicates by ID
-                    const uniqueModules = Array.from(new Map(allModules.map(m => [m.id, m])).values());
+                    const uniqueModules = Array.from(new Map(allModules.map(m => [String(m.id), m])).values());
                     setModules(uniqueModules);
                 });
 
@@ -443,38 +446,38 @@ export default function Exams() {
                 setSelectedPo("all");
             });
         } else if (programs.length > 0) {
-            Promise.all(programs.map(p => getProgramModules({ path: { id: p.id } })))
+            Promise.all(programs.map(p => getProgramModules({ path: { programId: String(p.id) } })))
                 .then(results => {
                     const allModules = results.flatMap(r => r.data || []);
-                    const uniqueModules = Array.from(new Map(allModules.map(m => [m.id, m])).values());
+                    const uniqueModules = Array.from(new Map(allModules.map(m => [String(m.id), m])).values());
                     setModules(uniqueModules);
                 });
         } else {
             Promise.resolve().then(() => setModules([]));
         }
-    }, [selectedPrograms, selectedPo, sortedPos, programs]);
+    }, [selectedPrograms, programs]);
 
     useEffect(() => {
         if (selectedPrograms.length > 0 && selectedPo) {
             const fetchExams = selectedPrograms.map(p => {
-                const query: { programid: string; version?: string } = { programid: p.id as string };
+                const query: { program_id: string; version?: string } = { program_id: String(p.id) };
                 if (selectedPo !== "all") {
                     query.version = selectedPo;
                 }
-                return getExams({ query });
+                return getArchive({ query });
             });
 
             Promise.all(fetchExams)
                 .then(results => {
                     const allExams = results.flatMap(r => r.data || []);
-                    const ids = new Set(allExams.map(e => e.moduleid).filter((id): id is string => id !== undefined));
+                    const ids = new Set(allExams.map(e => String(e.module_id)).filter((id): id is string => id !== "undefined"));
                     setActiveModuleIds(ids);
                 })
                 .catch(() => setActiveModuleIds(new Set()));
         } else if (selectedPrograms.length === 0) {
-            getExams({ query: {} })
+            getArchive({ query: {} })
                 .then(({ data }) => {
-                    const ids = new Set((data || []).map(e => e.moduleid).filter((id): id is string => id !== undefined));
+                    const ids = new Set((data || []).map(e => String(e.module_id)).filter((id): id is string => id !== "undefined"));
                     setActiveModuleIds(ids);
                 })
                 .catch(() => setActiveModuleIds(new Set()));
@@ -484,7 +487,7 @@ export default function Exams() {
     }, [selectedPrograms, selectedPo, refreshTrigger]);
 
     const filteredModules = useMemo(() => {
-        let res = modules.filter(m => m.id !== undefined && activeModuleIds.has(m.id as string));
+        let res = modules.filter(m => m.id !== undefined && activeModuleIds.has(String(m.id)));
         if (search) {
             const s = search.toLowerCase();
             res = res.filter(m =>
@@ -502,7 +505,7 @@ export default function Exams() {
                 <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box>
                         <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
-                            Modulverzeichnis
+                            Archiv
                         </Typography>
                         <Typography variant="body1" color="text.secondary">
                             Verwalte deine Module und Klausuranmeldungen.
@@ -550,7 +553,7 @@ export default function Exams() {
                                 options={programs}
                                 getOptionLabel={(option) => option.name || ""}
                                 value={selectedPrograms}
-                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                isOptionEqualToValue={(option, value) => String(option.id) === String(value.id)}
                                 onChange={(_, newValue) => setSelectedPrograms(newValue)}
                                 noOptionsText="Keine Ergebnisse"
                                 renderInput={(params) => (
@@ -591,15 +594,15 @@ export default function Exams() {
                             <Typography variant="h6" color="primary.main" fontWeight={600} sx={{ mb: 1, px: 2 }}>Module</Typography>
                             <List sx={{ p: 0 }}>
                                 {filteredModules.map((mod, index) => (
-                                    <ListItem key={mod.id} disablePadding divider={index < filteredModules.length - 1}>
+                                    <ListItem key={String(mod.id)} disablePadding divider={index < filteredModules.length - 1}>
                                         <ListItemButton
                                             component={RouterLink}
-                                            to={`/exams/${mod.id}`}
+                                            to={`/archive/${mod.id}`}
                                             state={{
                                                 studiengang: selectedPrograms.length === 1 ? selectedPrograms[0].name : "Mehrere",
                                                 po: selectedPo,
                                                 modul: mod.name,
-                                                modulId: mod.id
+                                                modulId: String(mod.id)
                                             }}
                                             sx={{ borderRadius: 1, py: 1.5 }}
                                         >

@@ -18,19 +18,19 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
-import { getPrograms, getForumPostsById, putForumPostsById } from "@lib/api";
-import type { AuthProgramResponse as Program } from "@lib/api";
+import { getPrograms, getDiscussionsByPostId, putDiscussionsByPostId } from "@lib/api";
+import type { DtoProgramResponse as Program } from "@lib/api";
 import { FORUM_CATEGORIES, FORUM_TAGS } from "../../components";
 
 export default function EditPost() {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const { id } = useParams();
+    const { postId } = useParams<{ postId: string }>();
 
     const [programs, setPrograms] = useState<Program[]>([]);
     const [title, setTitle] = useState("");
     const [body, setBody] = useState("");
-    const [type, setType] = useState("forum");
+    const [type, setType] = useState<"discussion" | "news" | "event">("discussion");
     const isStaff = user?.role === "admin" || user?.role === "editor";
     const [category, setCategory] = useState<string>("");
     const [selectedPrograms, setSelectedPrograms] = useState<Program[]>([]);
@@ -49,17 +49,17 @@ export default function EditPost() {
     }, []);
 
     useEffect(() => {
-        if (!id) return;
+        if (!postId) return;
         setLoading(true);
-        getForumPostsById({ path: { id } })
+        getDiscussionsByPostId({ path: { postId } })
             .then(({ data, error }) => {
                 if (data) {
                     setTitle(data.title || "");
                     setBody(data.body || "");
-                    setType(data.type || "forum");
+                    setType(data.type as "discussion" | "news" | "event" || "discussion");
 
                     const loadedTags = data.tags || [];
-                    const foundCategory = loadedTags.find(t => FORUM_CATEGORIES.includes(t as typeof FORUM_CATEGORIES[number]));
+                    const foundCategory = loadedTags.find(t => (FORUM_CATEGORIES as readonly string[]).includes(t));
                     if (foundCategory) {
                         setCategory(foundCategory);
                         setTags(loadedTags.filter(t => t !== foundCategory));
@@ -77,23 +77,23 @@ export default function EditPost() {
             })
             .catch(() => setError("Fehler beim Laden."))
             .finally(() => setLoading(false));
-    }, [id]);
+    }, [postId]);
 
     useEffect(() => {
-        if (!id || programs.length === 0) return;
+        if (!postId || programs.length === 0) return;
 
-        getForumPostsById({ path: { id } }).then(({ data }) => {
+        getDiscussionsByPostId({ path: { postId } }).then(({ data }) => {
             if (data && data.programs) {
-                const names = data.programs;
-                const matched = programs.filter(p => p.name && names.includes(p.name));
+                const ids = data.programs.map(p => String(p.id));
+                const matched = programs.filter(p => p.id && ids.includes(String(p.id)));
                 setSelectedPrograms(matched);
             }
         });
-    }, [id, programs]);
+    }, [postId, programs]);
 
 
     const handleSubmit = async () => {
-        if (!title || !body || !id || !category) return;
+        if (!title || !body || !postId || !category) return;
 
         setSaving(true);
         setError("");
@@ -101,13 +101,13 @@ export default function EditPost() {
         try {
             const finalTags = [category, ...tags];
 
-            const { error: apiError } = await putForumPostsById({
-                path: { id },
+            const { error: apiError } = await putDiscussionsByPostId({
+                path: { postId },
                 body: {
                     title,
                     body,
                     type,
-                    programs: selectedPrograms.map(p => p.name || ""),
+                    programs: selectedPrograms.map(p => String(p.id)),
                     tags: finalTags,
                     event_date: eventDate || undefined,
                     location: location || undefined
@@ -164,7 +164,7 @@ export default function EditPost() {
                             onChange={(e) => {
                                 const val = e.target.value;
                                 setCategory(val);
-                                setType(val === "Ankündigung" ? "news" : "forum");
+                                setType(val === "Ankündigung" ? "news" : "discussion");
                             }}
                             fullWidth
                             required
@@ -192,7 +192,7 @@ export default function EditPost() {
                                 options={programs}
                                 getOptionLabel={(option) => option.name || ""}
                                 value={selectedPrograms}
-                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                isOptionEqualToValue={(option, value) => String(option.id) === String(value.id)}
                                 onChange={(_, newValue) => setSelectedPrograms(newValue)}
                                 renderInput={(params) => (
                                     <TextField {...params} label="Studiengänge (Optional)" placeholder="Wählen..." />
@@ -221,7 +221,7 @@ export default function EditPost() {
                             />
                         </Stack>
 
-                        {(type === 'news' || type === 'event') && (
+                        {type === 'event' && (
                             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                                 <TextField
                                     label="Event Datum"

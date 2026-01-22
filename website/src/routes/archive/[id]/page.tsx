@@ -16,7 +16,12 @@ import {
     TextField,
     MenuItem,
     Autocomplete,
-    Tooltip
+    Tooltip,
+    List,
+    ListItem,
+    ListItemText,
+    ListItemButton,
+    Divider
 } from "@mui/material";
 import { useLocation, useSearchParams, useNavigate, useParams } from "react-router-dom";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
@@ -25,31 +30,23 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
-import {
-    List,
-    ListItem,
-    ListItemText,
-    ListItemButton,
-    Divider
-} from "@mui/material";
 
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
-import { getExams, getExamsFile, getPrograms, getProgramModules, getExamVersions } from "@lib/api";
-import { client } from "@lib/api/client.gen";
-import type { AuthExamResponse as ExamListEntry, AuthProgramResponse as Program, AuthModuleResponse as Module } from "@lib/api";
+import { getArchive, getArchiveFile, getPrograms, getProgramModules, getArchiveVersions, putArchiveId, deleteArchiveId, deleteArchiveFile } from "@lib/api";
+import type { DtoArchiveEntryResponse as ExamListEntry, DtoProgramResponse as Program, DtoModuleResponse as Module } from "@lib/api";
 
 export default function ExamDetailsPage() {
     const { user } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
-    const { id } = useParams();
+    const { moduleId, examId } = useParams<{ moduleId: string; examId?: string }>();
     const [params] = useSearchParams();
 
     const state = location.state as { studiengang?: string; po?: string; modul?: string; modulId?: string } || {};
 
     const modulName = state.modul || params.get("mod") || "Modul";
-    const modulId = id || state.modulId || params.get("modulId") || null;
+    const actualModuleId = moduleId || state.modulId || params.get("module_id") || null;
 
     const [exams, setExams] = useState<ExamListEntry[]>([]);
     const [loading, setLoading] = useState(false);
@@ -77,9 +74,9 @@ export default function ExamDetailsPage() {
     const canEdit = user?.role === "admin" || user?.role === "editor";
 
     const fetchExams = useCallback(() => {
-        if (!modulId) return;
+        if (!actualModuleId) return;
         setLoading(true);
-        getExams({ query: { moduleid: modulId } })
+        getArchive({ query: { module_id: String(actualModuleId) } })
             .then(({ data, error: apiError }) => {
                 if (apiError) {
                     setError("Fehler beim Laden der Klausuren.");
@@ -90,11 +87,16 @@ export default function ExamDetailsPage() {
                         return dateB - dateA;
                     });
                     setExams(sorted);
+                    
+                    if (examId) {
+                        const target = sorted.find(e => String(e.id) === String(examId));
+                        if (target) setSelectedExam(target);
+                    }
                 }
             })
             .catch(() => setError("Netzwerkfehler."))
             .finally(() => setLoading(false));
-    }, [modulId]);
+    }, [actualModuleId, examId]);
 
     useEffect(() => {
         fetchExams();
@@ -102,33 +104,6 @@ export default function ExamDetailsPage() {
             if (data) setPrograms(data);
         });
     }, [fetchExams]);
-
-    useEffect(() => {
-        const examId = params.get("examId");
-        if (examId && !modulId) {
-            client.request({ method: "GET", url: `/exams/${examId}` }).then(({ data }) => {
-                const exam = data as ExamListEntry;
-                if (exam && exam.moduleid) {
-                    const newParams = new URLSearchParams(params);
-                    newParams.delete("modulId");
-                    if (exam.module_name) newParams.set("mod", exam.module_name);
-                    navigate(`/exams/${exam.moduleid}?${newParams.toString()}`, { replace: true });
-                }
-            }).catch(() => {
-                // Silently fail if exam not found for deep link
-            });
-        }
-    }, [params, modulId, navigate]);
-
-    useEffect(() => {
-        const examId = params.get("examId");
-        if (examId && exams.length > 0) {
-            const exam = exams.find(e => e.id === examId);
-            if (exam) {
-                setSelectedExam(exam);
-            }
-        }
-    }, [exams, params]);
 
     useEffect(() => {
         if (!selectedExam) {
@@ -144,35 +119,33 @@ export default function ExamDetailsPage() {
         setFormPo(selectedExam.version || "");
         setIsEditing(false);
 
-        getPrograms().then(({ data }) => {
-            if (data) {
-                setPrograms(data);
-                const prog = data.find(p => p.id === selectedExam.programid);
-                setFormProgram(prog || null);
+        const prog = programs.find(p => String(p.id) === String(selectedExam.program_id));
+        setFormProgram(prog || null);
 
-                if (prog && prog.id !== undefined) {
-                    getProgramModules({ path: { id: prog.id } }).then(({ data: mods }) => {
-                        const modules = mods || [];
-                        setProgramModules(modules);
-                        const mod = modules.find(m => m.id === selectedExam.moduleid);
-                        setFormModule(mod || null);
-                    });
-                }
-            }
-        });
+        if (prog && prog.id !== undefined) {
+            getProgramModules({ path: { programId: String(prog.id) } }).then(({ data: mods }) => {
+                const modules = mods || [];
+                setProgramModules(modules);
+                const mod = modules.find(m => String(m.id) === String(selectedExam.module_id));
+                setFormModule(mod || null);
+            });
+        }
 
-        if (selectedExam.group_id) {
+        if (selectedExam.id) {
             setFetchingVersions(true);
-            getExamVersions({ path: { groupId: selectedExam.group_id } })
+            getArchiveVersions({ path: { entryId: String(selectedExam.id) } })
                 .then(({ data }) => setExamVersions(data || []))
                 .finally(() => setFetchingVersions(false));
         }
 
         let active = true;
-        getExamsFile({ path: { id: String(selectedExam.id) } })
+        getArchiveFile({ 
+            path: { entryId: String(selectedExam.id) },
+            query: { file_id: String(selectedExam.file_id) }
+        })
             .then(({ data }) => {
                 if (active && data) {
-                    const blob = data instanceof Blob ? data : new Blob([data as BlobPart]);
+                    const blob = data instanceof Blob ? data : new Blob([data as BlobPart], { type: 'application/pdf' });
                     const url = URL.createObjectURL(blob);
                     setPreviewUrl(prev => {
                         if (prev) URL.revokeObjectURL(prev);
@@ -185,12 +158,12 @@ export default function ExamDetailsPage() {
         return () => {
             active = false;
         };
-    }, [selectedExam]);
+    }, [selectedExam, programs]);
 
     useEffect(() => {
         if (!isEditing || !formProgram || formProgram.id === undefined) return;
 
-        getProgramModules({ path: { id: formProgram.id } })
+        getProgramModules({ path: { programId: String(formProgram.id) } })
             .then(({ data }) => setProgramModules(data || []));
 
         if (formPo && formProgram.versions && !formProgram.versions.includes(formPo)) {
@@ -203,28 +176,22 @@ export default function ExamDetailsPage() {
         setIsSaving(true);
 
         try {
-            const res = await client.request({
-                method: "PUT",
-                url: "/exams/" + selectedExam.id,
+            const { data, error } = await putArchiveId({
+                path: { entryId: String(selectedExam.id) },
                 body: {
-                    programid: formProgram.id,
+                    module_id: String(formModule.id),
                     version: formPo,
-                    moduleid: formModule.id,
                     date: formDate,
                     comment: formComment
                 }
             });
 
-            if (res.error) {
+            if (error) {
                 alert("Fehler beim Speichern.");
             } else {
                 setIsEditing(false);
                 fetchExams();
-
-                if (res.data) {
-                    const updated = res.data as ExamListEntry;
-                    setSelectedExam(prev => prev ? ({ ...prev, ...updated }) : null);
-                }
+                if (data) setSelectedExam(data);
             }
         } catch (err) {
             console.error(err);
@@ -238,18 +205,40 @@ export default function ExamDetailsPage() {
         if (!selectedExam) return;
         setIsDeleting(true);
         try {
-            const res = await client.request({
-                method: "DELETE",
-                url: "/exams/" + selectedExam.id,
-            });
-
-            if (res.error) {
-                alert("Fehler beim Löschen.");
+            if (examVersions.length > 1) {
+                // Delete specific version
+                const { error } = await deleteArchiveFile({
+                    path: { fileId: String(selectedExam.file_id) },
+                });
+                if (error) {
+                    alert("Fehler beim Löschen der Revision.");
+                } else {
+                    setDeleteConfirmOpen(false);
+                    setIsEditing(false);
+                    fetchExams();
+                    // Auto-select latest
+                    const { data } = await getArchive({ query: { module_id: String(actualModuleId) } });
+                    if (data && data.length > 0) {
+                        const entry = data.find(e => String(e.id) === String(selectedExam.id));
+                        if (entry) setSelectedExam(entry);
+                        else setSelectedExam(null);
+                    }
+                }
             } else {
-                setDeleteConfirmOpen(false);
-                setSelectedExam(null);
-                setIsEditing(false);
-                fetchExams();
+                // Delete whole entry
+                const { error } = await deleteArchiveId({
+                    path: { entryId: String(selectedExam.id) },
+                });
+
+                if (error) {
+                    alert("Fehler beim Löschen.");
+                } else {
+                    setDeleteConfirmOpen(false);
+                    setSelectedExam(null);
+                    setIsEditing(false);
+                    fetchExams();
+                    navigate(`/archive/${actualModuleId}`);
+                }
             }
         } catch (err) {
             console.error(err);
@@ -261,17 +250,27 @@ export default function ExamDetailsPage() {
 
     const handleCloseDialog = () => {
         if (isSaving || isDeleting) return;
-        setSelectedExam(null);
+        navigate(`/archive/${actualModuleId}`);
     };
 
-    return (
-        <Sidebar user={user} title="Rekos" maxWidth="lg">
-            <Box>
+    useEffect(() => {
+        if (!examId) {
+            setSelectedExam(null);
+            return;
+        }
+        if (exams.length > 0) {
+            const target = exams.find(e => String(e.id) === String(examId));
+            if (target) setSelectedExam(target);
+        }
+    }, [examId, exams]);
 
+    return (
+        <Sidebar user={user} title="Archiv" maxWidth="lg">
+            <Box>
                 <Box>
                     <Button
                         startIcon={<ArrowBackRoundedIcon />}
-                        onClick={() => navigate(-1)}
+                        onClick={() => navigate('/archive')}
                         sx={{ mb: 2, color: "text.secondary", px: 0, minWidth: 0, justifyContent: 'flex-start' }}
                         disableRipple
                     >
@@ -294,13 +293,17 @@ export default function ExamDetailsPage() {
                     <Paper elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3, overflow: 'hidden' }}>
                         <List disablePadding>
                             {exams?.map((exam, idx) => {
-                                const prog = programs?.find(p => p.id === exam.programid);
+                                const prog = programs?.find(p => String(p.id) === String(exam.program_id));
                                 const poLabel = prog ? `${prog.name} (${exam.version})` : (exam.version || "");
                                 return (
-                                    <Box key={exam.id}>
+                                    <Box key={String(exam.id)}>
                                         {idx > 0 && <Divider />}
                                         <ListItem disablePadding>
-                                            <ListItemButton onClick={() => setSelectedExam(exam)} sx={{ py: 2 }}>
+                                            <ListItemButton 
+                                                onClick={() => navigate(`/archive/${actualModuleId}/${exam.id}`)} 
+                                                sx={{ py: 2 }}
+                                                selected={String(exam.id) === String(examId)}
+                                            >
                                                 <ListItemText
                                                     primary={poLabel}
                                                     secondary={
@@ -343,7 +346,7 @@ export default function ExamDetailsPage() {
                         <>
                             <DialogTitle sx={{ m: 0, p: 3, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography variant="h6" component="span" fontWeight={700}>
-                                    {isEditing ? "Reko bearbeiten" : "Details zur Reko"}
+                                    {isEditing ? "Details bearbeiten" : "Details zur Reko"}
                                 </Typography>
                                 <Box>
                                     {canEdit && !isEditing && (
@@ -359,7 +362,7 @@ export default function ExamDetailsPage() {
 
                                     {isEditing && (
                                         <>
-                                            <Tooltip title="Löschen">
+                                            <Tooltip title={examVersions.length > 1 ? "Diese Revision löschen" : "Ganze Klausur löschen"}>
                                                 <IconButton
                                                     onClick={() => setDeleteConfirmOpen(true)}
                                                     disabled={isSaving || isDeleting}
@@ -431,13 +434,7 @@ export default function ExamDetailsPage() {
                                             sx={{ width: 150 }}
                                             size="small"
                                         >
-                                            {(!formProgram?.versions || formProgram.versions.length === 0) && formPo ? (
-                                                <MenuItem value={formPo}>{formPo}</MenuItem>
-                                            ) : null}
                                             {formProgram?.versions && formProgram.versions?.map((v) => (<MenuItem key={v} value={v}>{v}</MenuItem>))}
-                                            {(!formProgram?.versions || formProgram.versions.length === 0) && !formPo && (
-                                                <MenuItem value=""><em>PO</em></MenuItem>
-                                            )}
                                         </TextField>
 
                                         <TextField
@@ -447,21 +444,15 @@ export default function ExamDetailsPage() {
                                             label="Studiengang"
                                             fullWidth
                                             size="small"
-                                            value={formProgram?.id || ""}
+                                            value={String(formProgram?.id || "")}
                                             onChange={(e) => {
-                                                const prog = programs.find(p => p.id === e.target.value);
+                                                const prog = programs.find(p => String(p.id) === String(e.target.value));
                                                 setFormProgram(prog || null);
                                             }}
                                             disabled={!isEditing}
                                             sx={{ flexGrow: 1 }}
                                         >
-                                            {programs.length === 0 && formProgram?.id ? (
-                                                <MenuItem value={formProgram.id}>{formProgram.name}</MenuItem>
-                                            ) : null}
-                                            {programs?.map((p) => (<MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>))}
-                                            {programs.length === 0 && !formProgram && (
-                                                <MenuItem value=""><em>Wähle einen Studiengang</em></MenuItem>
-                                            )}
+                                            {programs?.map((p) => (<MenuItem key={String(p.id)} value={String(p.id)}>{p.name}</MenuItem>))}
                                         </TextField>
                                     </Stack>
 
@@ -471,21 +462,21 @@ export default function ExamDetailsPage() {
                                             label="Revision"
                                             size="small"
                                             sx={{ width: 150 }}
-                                            value={selectedExam.id}
+                                            value={String(selectedExam.file_id)}
                                             disabled={isEditing || fetchingVersions}
                                             onChange={(e) => {
-                                                const version = examVersions.find(v => v.id === e.target.value);
+                                                const version = examVersions.find(v => String(v.file_id) === String(e.target.value));
                                                 if (version) setSelectedExam(version);
                                             }}
                                         >
                                             {examVersions.length === 0 ? (
-                                                <MenuItem value={selectedExam.id}>
+                                                <MenuItem value={String(selectedExam.file_id)}>
                                                     {selectedExam.edit_version}
                                                 </MenuItem>
                                             ) : (
                                                 examVersions?.map((v) => (
-                                                    <MenuItem key={v.id} value={v.id}>
-                                                        {v.edit_version} {v.is_latest ? "(neu)" : ""}
+                                                    <MenuItem key={String(v.file_id)} value={String(v.file_id)}>
+                                                        {v.edit_version} {v.file_id === selectedExam.file_id ? "(aktuell)" : ""}
                                                     </MenuItem>
                                                 ))
                                             )}
@@ -515,7 +506,7 @@ export default function ExamDetailsPage() {
                                                     size="small"
                                                 />
                                             )}
-                                            isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                                            isOptionEqualToValue={(opt, val) => String(opt.id) === String(val.id)}
                                         />
                                     </Stack>
                                 </Stack>
