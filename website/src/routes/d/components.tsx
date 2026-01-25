@@ -1,10 +1,11 @@
 import * as React from "react";
 import {
-    Box, Stack, Paper, Typography, TextField, Button, Avatar, IconButton
+    Box, Stack, Paper, Typography, TextField, Button, Avatar, IconButton, Tooltip
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import EditIcon from "@mui/icons-material/Edit";
 import ReplyIcon from "@mui/icons-material/Reply";
+import ShareIcon from "@mui/icons-material/Share";
 
 import type {
     DtoDiscussionPostResponse as ApiPost,
@@ -135,6 +136,7 @@ export function CommentThread({
     const [editing, setEditing] = React.useState(false);
     const [repliesExpanded, setRepliesExpanded] = React.useState(false);
     const [editText, setEditText] = React.useState(node.text || "");
+    const [copied, setCopied] = React.useState(false);
 
     const isAuthor = String(currentUser?.id) === String(node.user_id);
     const canReply = !!currentUser;
@@ -150,8 +152,31 @@ export function CommentThread({
         return count(node);
     }, [node]);
 
+    const handleShare = () => {
+        const url = `${window.location.origin}${window.location.pathname}#${node.id}`;
+        navigator.clipboard.writeText(url).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    };
+
+    React.useEffect(() => {
+        const hash = window.location.hash.replace("#", "");
+        if (hash === String(node.id)) {
+            // Target found
+        } else if (hash) {
+            const hasTargetChild = (n: CommentNode): boolean =>
+                n.children.some(c => String(c.id) === hash || hasTargetChild(c));
+
+            if (hasTargetChild(node)) {
+                setRepliesExpanded(true);
+            }
+        }
+    }, [node]);
+
     return (
         <Box
+            id={String(node.id)}
             sx={{
                 mt: 1.5,
                 pl: depth ? { xs: 0.75, sm: 2 } : 0,
@@ -273,7 +298,7 @@ export function CommentThread({
                     </Paper>
 
                     {/* Main Content Actions */}
-                    <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+                    <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" sx={{ px: { xs: 1.5, sm: 2 } }}>
                         <Stack direction="row" alignItems="center" spacing={0}>
                             <IconButton
                                 size="small"
@@ -312,6 +337,23 @@ export function CommentThread({
                         >
                             Antworten
                         </Button>
+                        <Tooltip title={copied ? "Kopiert!" : "Link kopieren"}>
+                            <Button
+                                size="small"
+                                startIcon={<ShareIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />}
+                                onClick={handleShare}
+                                sx={{
+                                    color: appearance.textSecondary,
+                                    minWidth: 0,
+                                    px: { xs: 0.5, sm: 1 },
+                                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                                    textTransform: 'none',
+                                    "&:hover": { color: appearance.accent, bgcolor: "transparent" }
+                                }}
+                            >
+                                Teilen
+                            </Button>
+                        </Tooltip>
                         {canEdit && !editing && (
                             <Button
                                 size="small"
@@ -332,7 +374,7 @@ export function CommentThread({
                     </Stack>
 
                     {replyOpen && (
-                        <Box sx={{ mt: 2, ml: 0 }}>
+                        <Box sx={{ mt: 2, ml: { xs: 1.5, sm: 2 } }}>
                             <CommentsSection
                                 comments={[]}
                                 onAdd={(_, t) => {
@@ -430,6 +472,13 @@ export function CommentsSection({
         }
         return sorted.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
     }, [visibleComments, sortOrder]);
+
+    React.useEffect(() => {
+        const hash = window.location.hash.replace("#", "");
+        if (hash && safeComments.some(c => String(c.id) === hash)) {
+            setExpanded(true);
+        }
+    }, [safeComments]);
 
     const tree = React.useMemo(() => buildCommentTree(sortedComments), [sortedComments]);
     const [text, setText] = React.useState("");
