@@ -9,6 +9,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
+import ShareIcon from "@mui/icons-material/Share";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
@@ -36,6 +37,7 @@ export default function ViewPost() {
     const [post, setPost] = useState<Post | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
 
     const isAdmin = user?.role === "admin" || user?.role === "editor";
 
@@ -55,12 +57,47 @@ export default function ViewPost() {
 
                 const comments = (commentsData || []) as Comment[];
                 setPost({ ...parsedPost, comments });
+
+                // Scroll to comment if hash is present
+                const hash = window.location.hash.replace("#", "");
+                if (hash) {
+                    setTimeout(() => {
+                        const element = document.getElementById(hash);
+                        if (element) {
+                            element.scrollIntoView({ behavior: "smooth", block: "center" });
+                            
+                            // Find the text box (Paper) for a more targeted highlight
+                            const textBox = element.querySelector(".MuiPaper-root") as HTMLElement;
+                            if (textBox) {
+                                textBox.style.transition = "all 0.5s ease";
+                                const originalBorder = textBox.style.borderColor;
+                                const originalShadow = textBox.style.boxShadow;
+                                
+                                textBox.style.borderColor = theme.palette.primary.main;
+                                textBox.style.boxShadow = `0 0 0 2px ${theme.palette.primary.main}33`; // 33 is ~20% alpha
+                                
+                                setTimeout(() => {
+                                    textBox.style.borderColor = originalBorder;
+                                    textBox.style.boxShadow = originalShadow;
+                                }, 3000);
+                            }
+                        }
+                    }, 800);
+                }
             }
         }).catch(err => {
             console.error(err);
             setError("Ein unerwarteter Fehler ist aufgetreten.");
         }).finally(() => setLoading(false));
-    }, [postId]);
+    }, [postId, theme.palette.action.selected, theme.palette.primary.main]);
+
+    const handleShare = () => {
+        const url = window.location.origin + window.location.pathname;
+        navigator.clipboard.writeText(url).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    };
 
     const handleVote = async (vote: Vote) => {
         if (!post || !user || !postId) return;
@@ -254,20 +291,27 @@ export default function ViewPost() {
                                     </Stack>
                                 </Stack>
 
-                                {(isAdmin || String(user?.id) === String(post.user_id)) && (
-                                    <Stack direction="row" spacing={1}>
-                                        <Tooltip title="Bearbeiten">
-                                            <IconButton onClick={() => navigate(`/d/${post.id}/edit`)}>
-                                                <EditIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Löschen">
-                                            <IconButton onClick={handleDelete} color="error">
-                                                <DeleteOutlineIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </Stack>
-                                )}
+                                <Stack direction="row" spacing={1}>
+                                    <Tooltip title={copied ? "Kopiert!" : "Link kopieren"}>
+                                        <IconButton onClick={handleShare}>
+                                            <ShareIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                    {(isAdmin || String(user?.id) === String(post.user_id)) && (
+                                        <>
+                                            <Tooltip title="Bearbeiten">
+                                                <IconButton onClick={() => navigate(`/d/${post.id}/edit`)}>
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Löschen">
+                                                <IconButton onClick={handleDelete} color="error">
+                                                    <DeleteOutlineIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </>
+                                    )}
+                                </Stack>
                             </Stack>
 
                             <Divider />
