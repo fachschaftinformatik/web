@@ -10,6 +10,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/Add";
 import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
+import ShareIcon from "@mui/icons-material/Share";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -48,6 +49,7 @@ function PostItem({
   user,
   isAdmin,
   onReport,
+  onShare,
 }: {
   post: Post;
   onVote: (id: string, v: Vote) => void;
@@ -57,6 +59,7 @@ function PostItem({
   user: User | null;
   isAdmin: boolean;
   onReport: (id: string) => void;
+  onShare: (id: string) => void;
 }) {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -71,6 +74,12 @@ function PostItem({
     setMenuEl(e.currentTarget);
   };
   const handleCloseMenu = () => setMenuEl(null);
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleCloseMenu();
+    onShare(String(post.id!));
+  };
 
   return (
     <Paper
@@ -171,6 +180,14 @@ function PostItem({
                   <ListItemText>{post.pinned === 1 ? "Entpinnen" : "Anpinnen"}</ListItemText>
                 </MenuItem>
               )}
+               <MenuItem
+                onClick={handleShare}
+              >
+                <ListItemIcon>
+                  <ShareIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Teilen</ListItemText>
+              </MenuItem>
               <MenuItem
                 disabled
                 onClick={(e) => {
@@ -381,6 +398,11 @@ export default function DiscussionsPage() {
 
   const handleOpenCreate = () => navigate("/d/new");
 
+  const handleShare = (id: string) => {
+    const url = `${window.location.origin}/d/${id}`;
+    navigator.clipboard.writeText(url);
+  };
+
   const [reportFor, setReportFor] = React.useState<string | null>(null);
   const [reportReason, setReportReason] = React.useState("Spam / Werbung");
   const [reportNote, setReportNote] = React.useState("");
@@ -471,9 +493,10 @@ export default function DiscussionsPage() {
                   onVote={handleVote}
                   onDelete={handleDelete}
                   onReport={openReport}
-                  onTogglePin={togglePin}
+                   onTogglePin={togglePin}
                   user={user}
                   isAdmin={isAdmin}
+                  onShare={handleShare}
                 />
               ))}
               {posts.length === 0 && !loading && (
