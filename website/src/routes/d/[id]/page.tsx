@@ -307,9 +307,6 @@ export default function ViewPost() {
                                         <Typography variant="body2" color="text.secondary">
                                             von <Typography component={Link} to={`/u/${post.user_id}`} variant="body2" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.user_name || "Anonym"}</Typography> · {isoToShort(post.created_at || "")}
                                         </Typography>
-                                        {post.pinned === 1 && (
-                                            <Chip label="Angepinnt" size="small" icon={<PushPinOutlinedIcon />} variant="outlined" sx={{ fontWeight: 600 }} />
-                                        )}
                                     </Stack>
                                 </Stack>
 
