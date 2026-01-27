@@ -13,9 +13,7 @@ import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import ShareIcon from "@mui/icons-material/Share";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
-import ListItemIcon from "@mui/material/ListItemIcon";
 import { useNavigate, Link } from "react-router-dom";
-import ListItemText from "@mui/material/ListItemText";
 import ReportOutlinedIcon from "@mui/icons-material/ReportOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
@@ -138,9 +136,9 @@ function PostItem({
               <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
                 {post.title}
               </Typography>
-              {post.pinned === 1 && (
-                <PushPinOutlinedIcon fontSize="small" sx={{ color: theme.palette.secondary.main }} />
-              )}
+               {post.pinned === 1 && (
+                 <PushPinOutlinedIcon fontSize="small" sx={{ color: 'primary.main' }} />
+               )}
             </Stack>
             <IconButton size="small" onClick={handleOpenMenu}>
               <MoreVertIcon fontSize="small" />
@@ -150,6 +148,22 @@ function PostItem({
               open={openMenu}
               onClose={handleCloseMenu}
               onClick={(e) => e.stopPropagation()}
+              disableScrollLock
+              PaperProps={{
+                elevation: 3,
+                sx: {
+                  borderRadius: 2,
+                  mt: 0.5,
+                  minWidth: 160,
+                  '& .MuiMenuItem-root': {
+                    px: 2,
+                    py: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5
+                  }
+                }
+              }}
             >
 
               {String(user?.id) === String(post.user_id) && (
@@ -160,10 +174,8 @@ function PostItem({
                     navigate(`/d/${post.id}/edit`);
                   }}
                 >
-                  <ListItemIcon>
-                    <EditIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText>Bearbeiten</ListItemText>
+                  <EditIcon sx={{ fontSize: 18 }} />
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Bearbeiten</Typography>
                 </MenuItem>
               )}
               {(isAdmin || user?.role === "editor") && (
@@ -174,19 +186,15 @@ function PostItem({
                     onTogglePin(String(post.id!));
                   }}
                 >
-                  <ListItemIcon>
-                    <PushPinOutlinedIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText>{post.pinned === 1 ? "Entpinnen" : "Anpinnen"}</ListItemText>
+                  <PushPinOutlinedIcon sx={{ fontSize: 18 }} />
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{post.pinned === 1 ? "Entpinnen" : "Anpinnen"}</Typography>
                 </MenuItem>
               )}
-               <MenuItem
+              <MenuItem
                 onClick={handleShare}
               >
-                <ListItemIcon>
-                  <ShareIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Teilen</ListItemText>
+                <ShareIcon sx={{ fontSize: 18 }} />
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>Teilen</Typography>
               </MenuItem>
               <MenuItem
                 disabled
@@ -196,10 +204,8 @@ function PostItem({
                   onReport(String(post.id!));
                 }}
               >
-                <ListItemIcon>
-                  <ReportOutlinedIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Melden</ListItemText>
+                <ReportOutlinedIcon sx={{ fontSize: 18 }} />
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>Melden</Typography>
               </MenuItem>
               {canDelete && (
                 <MenuItem
@@ -210,10 +216,8 @@ function PostItem({
                   }}
                   sx={{ color: "error.main" }}
                 >
-                  <ListItemIcon>
-                    <DeleteOutlineIcon fontSize="small" color="error" />
-                  </ListItemIcon>
-                  <ListItemText>Löschen</ListItemText>
+                  <DeleteOutlineIcon sx={{ fontSize: 18, color: "inherit" }} />
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>Löschen</Typography>
                 </MenuItem>
               )}
             </Menu>

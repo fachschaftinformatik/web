@@ -24,12 +24,14 @@ import {
     Divider
 } from "@mui/material";
 import { useLocation, useSearchParams, useNavigate, useParams } from "react-router-dom";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import EditRoundedIcon from "@mui/icons-material/EditRounded";
-import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
-import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
-import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
+import {
+    ArrowBackRounded,
+    CloseRounded as CloseRoundedIcon,
+    EditRounded as EditRoundedIcon,
+    SaveRounded as SaveRoundedIcon,
+    DeleteRounded as DeleteRoundedIcon,
+    CancelRounded as CancelRoundedIcon
+} from "@mui/icons-material";
 
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
@@ -269,10 +271,14 @@ export default function ExamDetailsPage() {
             <Box>
                 <Box>
                     <Button
-                        startIcon={<ArrowBackRoundedIcon />}
+                        startIcon={<ArrowBackRounded />}
                         onClick={() => navigate('/archive')}
-                        sx={{ mb: 2, color: "text.secondary", px: 0, minWidth: 0, justifyContent: 'flex-start' }}
-                        disableRipple
+                        sx={{
+                            mb: 2,
+                            color: 'text.secondary',
+                            textTransform: 'none',
+                            '&:hover': { color: 'primary.main', bgcolor: 'transparent', textDecoration: 'underline' }
+                        }}
                     >
                         Zurück
                     </Button>
