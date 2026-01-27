@@ -10,8 +10,7 @@ import {
     DeleteOutline as DeleteOutlineIcon,
     ThumbUpOutlined,
     ThumbDownOutlined,
-    Share as ShareIcon,
-    PushPinOutlined as PushPinOutlinedIcon
+    Share as ShareIcon
 } from "@mui/icons-material";
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
