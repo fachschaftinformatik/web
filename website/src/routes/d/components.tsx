@@ -1,11 +1,15 @@
 import * as React from "react";
 import {
-    Box, Stack, Paper, Typography, TextField, Button, Avatar, IconButton, Tooltip
+    Box, Stack, Paper, Typography, TextField, Button, Avatar, IconButton, Tooltip, Menu, MenuItem
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import EditIcon from "@mui/icons-material/Edit";
 import ReplyIcon from "@mui/icons-material/Reply";
 import ShareIcon from "@mui/icons-material/Share";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import ReportOutlinedIcon from "@mui/icons-material/ReportOutlined";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 
 import type {
     DtoDiscussionPostResponse as ApiPost,
@@ -17,7 +21,6 @@ import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import MenuItem from "@mui/material/MenuItem";
 import { getAvatarUrl } from "@lib/images";
 
 export type Program = string;
@@ -137,6 +140,11 @@ export function CommentThread({
     const [repliesExpanded, setRepliesExpanded] = React.useState(false);
     const [editText, setEditText] = React.useState(node.text || "");
     const [copied, setCopied] = React.useState(false);
+    const [menuAnchorEl, setMenuAnchorEl] = React.useState<null | HTMLElement>(null);
+
+    const openMenu = Boolean(menuAnchorEl);
+    const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => setMenuAnchorEl(event.currentTarget);
+    const handleCloseMenu = () => setMenuAnchorEl(null);
 
     const isAuthor = String(currentUser?.id) === String(node.user_id);
     const canReply = !!currentUser;
@@ -354,22 +362,56 @@ export function CommentThread({
                                 Teilen
                             </Button>
                         </Tooltip>
-                        {canEdit && !editing && (
-                            <Button
-                                size="small"
-                                startIcon={<EditIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />}
-                                onClick={() => setEditing(true)}
-                                sx={{
-                                    color: appearance.textSecondary,
-                                    minWidth: 0,
-                                    px: { xs: 0.5, sm: 1 },
-                                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                    textTransform: 'none',
-                                    "&:hover": { color: appearance.accent, bgcolor: "transparent" }
-                                }}
-                            >
-                                Bearbeiten
-                            </Button>
+                        {!editing && (
+                            <>
+                                <IconButton
+                                    size="small"
+                                    onClick={handleOpenMenu}
+                                    sx={{
+                                        color: appearance.textSecondary,
+                                        "&:hover": { color: appearance.accent, bgcolor: "transparent" }
+                                    }}
+                                >
+                                    <MoreHorizIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
+                                </IconButton>
+                                <Menu
+                                    anchorEl={menuAnchorEl}
+                                    open={openMenu}
+                                    onClose={handleCloseMenu}
+                                    disableScrollLock
+                                    PaperProps={{
+                                        elevation: 2,
+                                        sx: {
+                                            borderRadius: 2,
+                                            mt: 0.5,
+                                            minWidth: 140,
+                                            '& .MuiMenuItem-root': {
+                                                px: 2,
+                                                py: 1,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 1.5
+                                            }
+                                        }
+                                    }}
+                                >
+                                    {canEdit && (
+                                        <MenuItem
+                                            onClick={() => {
+                                                handleCloseMenu();
+                                                setEditing(true);
+                                            }}
+                                        >
+                                            <EditIcon sx={{ fontSize: 18 }} />
+                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>Bearbeiten</Typography>
+                                        </MenuItem>
+                                    )}
+                                    <MenuItem disabled onClick={handleCloseMenu}>
+                                        <ReportOutlinedIcon sx={{ fontSize: 18 }} />
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>Melden</Typography>
+                                    </MenuItem>
+                                </Menu>
+                            </>
                         )}
                     </Stack>
 
