@@ -4,13 +4,15 @@ import {
     Avatar, Box, Stack, Typography, Button, IconButton, Chip, Divider, Tooltip, CircularProgress, Alert, Paper
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
-import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
-import ShareIcon from "@mui/icons-material/Share";
-import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
+import {
+    ArrowBackRounded,
+    Edit as EditIcon,
+    DeleteOutline as DeleteOutlineIcon,
+    ThumbUpOutlined,
+    ThumbDownOutlined,
+    Share as ShareIcon,
+    PushPinOutlined as PushPinOutlinedIcon
+} from "@mui/icons-material";
 import { Sidebar } from "@components/layout";
 import { useAuth } from "@lib/auth";
 import {
@@ -223,7 +225,18 @@ export default function ViewPost() {
         return (
             <Sidebar user={user} title="Diskussion" maxWidth="md">
                 <Alert severity="error">{error || "Beitrag nicht gefunden"}</Alert>
-                <Button sx={{ mt: 2 }} startIcon={<ArrowBackIcon />} onClick={() => navigate("/d")}>Zurück zum Forum</Button>
+                <Button
+                    startIcon={<ArrowBackRounded />}
+                    onClick={() => navigate("/discussions")}
+                    sx={{
+                        mt: 2,
+                        color: 'text.secondary',
+                        textTransform: 'none',
+                        '&:hover': { color: 'primary.main', bgcolor: 'transparent', textDecoration: 'underline' }
+                    }}
+                >
+                    Zurück zum Forum
+                </Button>
             </Sidebar>
         );
     }
@@ -234,7 +247,16 @@ export default function ViewPost() {
     return (
         <Sidebar user={user} title="Diskussion" maxWidth="md">
             <Box pb={6}>
-                <Button startIcon={<ArrowBackIcon />} onClick={() => navigate("/discussions")} sx={{ mb: 2, color: "text.secondary" }}>
+                <Button
+                    startIcon={<ArrowBackRounded />}
+                    onClick={() => navigate("/discussions")}
+                    sx={{
+                        mb: 2,
+                        color: 'text.secondary',
+                        textTransform: 'none',
+                        '&:hover': { color: 'primary.main', bgcolor: 'transparent', textDecoration: 'underline' }
+                    }}
+                >
                     Zurück zur Übersicht
                 </Button>
 
