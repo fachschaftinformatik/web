@@ -17,13 +17,14 @@ import {
   Pagination,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
 import HistoryIcon from '@mui/icons-material/History';
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import QuestionAnswerRounded from '@mui/icons-material/QuestionAnswerRounded';
 import LibraryBooksRounded from '@mui/icons-material/LibraryBooksRounded';
 import CollectionsIcon from '@mui/icons-material/Collections';
 import LockRoundedIcon from '@mui/icons-material/LockRounded';
+import { ArrowBackRounded } from '@mui/icons-material';
 
 import { useAuth } from '@lib/auth';
 import { Sidebar } from '@components/layout';
@@ -35,6 +36,7 @@ import { getAvatarUrl } from '@lib/images';
 const ProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
   const theme = useTheme();
 
   const [profileUser, setProfileUser] = useState<User | null>(null);
@@ -180,7 +182,18 @@ const ProfilePage: React.FC = () => {
       <Sidebar user={currentUser} title="Profil nicht gefunden">
         <Box sx={{ mt: 5, textAlign: 'center' }}>
           <Typography variant="h5">Dieser Nutzer existiert nicht.</Typography>
-          <Button component={RouterLink} to="/" sx={{ mt: 2 }}>Zurück zur Startseite</Button>
+          <Button
+            startIcon={<ArrowBackRounded />}
+            onClick={() => navigate('/')}
+            sx={{
+              mt: 2,
+              color: 'text.secondary',
+              textTransform: 'none',
+              '&:hover': { color: 'primary.main', bgcolor: 'transparent', textDecoration: 'underline' }
+            }}
+          >
+            Zurück zur Startseite
+          </Button>
         </Box>
       </Sidebar>
     );

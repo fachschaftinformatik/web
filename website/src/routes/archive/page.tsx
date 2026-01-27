@@ -499,16 +499,16 @@ export default function Archive() {
     }, [modules, search, activeModuleIds]);
 
     return (
-        <Sidebar user={user} title="Rekos" maxWidth="lg">
+        <Sidebar user={user} title="Archiv" maxWidth="lg">
             <Box>
 
                 <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box>
                         <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
-                            Archiv
+                            Klausurrekonstruktionen
                         </Typography>
                         <Typography variant="body1" color="text.secondary">
-                            Verwalte deine Module und Klausuranmeldungen.
+                            Zur Vorbereitung auf Eure Prüfungen stellen wir Euch eine Ansammlung von Klausurrekonstruktionen zur Verfügung.
                         </Typography>
                     </Box>
                 </Box>
