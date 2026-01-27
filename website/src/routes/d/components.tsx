@@ -8,8 +8,6 @@ import ReplyIcon from "@mui/icons-material/Reply";
 import ShareIcon from "@mui/icons-material/Share";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import ReportOutlinedIcon from "@mui/icons-material/ReportOutlined";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 
 import type {
     DtoDiscussionPostResponse as ApiPost,
