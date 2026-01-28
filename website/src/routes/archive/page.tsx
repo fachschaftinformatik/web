@@ -21,7 +21,8 @@ import {
     Tooltip,
     Divider,
     ListItemSecondaryAction,
-    CircularProgress
+    CircularProgress,
+    Skeleton
 } from "@mui/material";
 
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
@@ -401,6 +402,7 @@ export default function Archive() {
 
     const [activeModuleIds, setActiveModuleIds] = useState<Set<string>>(new Set());
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [loading, setLoading] = useState(true);
 
     const sortedPos = useMemo(() => {
         if (selectedPrograms.length === 0) return [];
@@ -412,6 +414,7 @@ export default function Archive() {
     }, [selectedPrograms]);
 
     useEffect(() => {
+        setLoading(true);
         getPrograms().then(({ data }) => {
             if (data && data.length > 0) {
                 setPrograms(data);
@@ -430,6 +433,9 @@ export default function Archive() {
                     }
                 }
             }
+        }).finally(() => {
+            // If programs is empty or fails, we still want to stop loading eventually
+            // but the other effects will handle the rest.
         });
     }, [user?.program_id, selectedPo]);
 
@@ -458,32 +464,39 @@ export default function Archive() {
     }, [selectedPrograms, programs]);
 
     useEffect(() => {
-        if (selectedPrograms.length > 0 && selectedPo) {
-            const fetchExams = selectedPrograms.map(p => {
-                const query: { program_id: string; version?: string } = { program_id: String(p.id) };
-                if (selectedPo !== "all") {
-                    query.version = selectedPo;
-                }
-                return getArchive({ query });
-            });
+        const fetchArchiveData = async () => {
+            // No need to set loading here again if we want to avoid double-flashing
+            // but we want to ensure it's false at the end.
+            try {
+                if (selectedPrograms.length > 0 && selectedPo) {
+                    const fetchExams = selectedPrograms.map(p => {
+                        const query: { program_id: string; version?: string } = { program_id: String(p.id) };
+                        if (selectedPo !== "all") {
+                            query.version = selectedPo;
+                        }
+                        return getArchive({ query });
+                    });
 
-            Promise.all(fetchExams)
-                .then(results => {
+                    const results = await Promise.all(fetchExams);
                     const allExams = results.flatMap(r => r.data || []);
                     const ids = new Set(allExams.map(e => String(e.module_id)).filter((id): id is string => id !== "undefined"));
                     setActiveModuleIds(ids);
-                })
-                .catch(() => setActiveModuleIds(new Set()));
-        } else if (selectedPrograms.length === 0) {
-            getArchive({ query: {} })
-                .then(({ data }) => {
+                } else if (selectedPrograms.length === 0) {
+                    const { data } = await getArchive({ query: {} });
                     const ids = new Set((data || []).map(e => String(e.module_id)).filter((id): id is string => id !== "undefined"));
                     setActiveModuleIds(ids);
-                })
-                .catch(() => setActiveModuleIds(new Set()));
-        } else {
-            Promise.resolve().then(() => setActiveModuleIds(new Set()));
-        }
+                } else {
+                    setActiveModuleIds(new Set());
+                }
+            } catch (err) {
+                console.error(err);
+                setActiveModuleIds(new Set());
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchArchiveData();
     }, [selectedPrograms, selectedPo, refreshTrigger]);
 
     const filteredModules = useMemo(() => {
@@ -589,7 +602,18 @@ export default function Archive() {
                 </Paper>
 
                 <Stack spacing={4}>
-                    {filteredModules.length > 0 ? (
+                    {loading ? (
+                        <Box>
+                            <Skeleton variant="text" width={100} sx={{ mb: 1, ml: 2 }} />
+                            <List sx={{ p: 0 }}>
+                                {[1, 2, 3, 4, 5].map((i) => (
+                                    <ListItem key={i} divider={i < 5} sx={{ py: 1.5 }}>
+                                        <Skeleton variant="text" width="60%" height={24} />
+                                    </ListItem>
+                                ))}
+                            </List>
+                        </Box>
+                    ) : filteredModules.length > 0 ? (
                         <Box>
                             <Typography variant="h6" color="primary.main" fontWeight={600} sx={{ mb: 1, px: 2 }}>Module</Typography>
                             <List sx={{ p: 0 }}>

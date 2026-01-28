@@ -3,7 +3,7 @@ import {
   Typography, Card, CardMedia, Box, Dialog, DialogTitle, DialogContent,
   DialogActions, IconButton, ImageList, ImageListItem, ImageListItemBar, Pagination,
   Button, Stack, TextField, MenuItem, Snackbar, Alert, CircularProgress, Tooltip, Paper,
-  LinearProgress, List, ListItem, ListItemText
+  LinearProgress, List, ListItem, ListItemText, Skeleton
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
@@ -289,6 +289,15 @@ export default function Galerie() {
                   );
                 })}
               </ImageList>
+            ) : events.length === 0 && selectedEventId === null ? (
+              <Stack direction="row" spacing={3} sx={{ p: 3, pt: 1, overflow: 'hidden' }}>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Box key={i} sx={{ width: 160, flexShrink: 0 }}>
+                    <Skeleton variant="rectangular" height={100} sx={{ borderRadius: 2, mb: 1 }} />
+                    <Skeleton variant="text" width="80%" />
+                  </Box>
+                ))}
+              </Stack>
             ) : (
               <Typography color="text.secondary" sx={{ py: 2, px: 2 }}>Keine Events vorhanden.</Typography>
             )}
@@ -297,7 +306,26 @@ export default function Galerie() {
 
 
         {loadingMedia ? (
-          <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", md: "repeat(4, 1fr)", lg: "repeat(5, 1fr)" },
+              gap: 2
+            }}
+          >
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <Skeleton
+                key={i}
+                variant="rectangular"
+                sx={{
+                  borderRadius: 2,
+                  aspectRatio: "3/2",
+                  width: "100%",
+                  height: "auto"
+                }}
+              />
+            ))}
+          </Box>
         ) : media.length === 0 ? (
           <Box
             py={8}
