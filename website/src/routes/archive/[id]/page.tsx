@@ -21,7 +21,8 @@ import {
     ListItem,
     ListItemText,
     ListItemButton,
-    Divider
+    Divider,
+    Skeleton
 } from "@mui/material";
 import { useLocation, useSearchParams, useNavigate, useParams } from "react-router-dom";
 import {
@@ -290,7 +291,21 @@ export default function ExamDetailsPage() {
                 {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
                 {loading ? (
-                    <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>
+                    <Paper elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3, overflow: 'hidden' }}>
+                        <List disablePadding>
+                            {[1, 2, 3].map((i) => (
+                                <Box key={i}>
+                                    {i > 1 && <Divider />}
+                                    <ListItem sx={{ py: 2, px: 3 }}>
+                                        <ListItemText
+                                            primary={<Skeleton variant="text" width="40%" height={24} />}
+                                            secondary={<Skeleton variant="text" width="60%" height={20} />}
+                                        />
+                                    </ListItem>
+                                </Box>
+                            ))}
+                        </List>
+                    </Paper>
                 ) : exams.length === 0 ? (
                     <Paper sx={{ p: 4, textAlign: "center", borderRadius: 2, bgcolor: "background.default", border: "1px dashed", borderColor: "divider" }}>
                         <Typography color="text.secondary">Keine Rekonstruktionen für dieses Modul gefunden.</Typography>
@@ -536,9 +551,10 @@ export default function ExamDetailsPage() {
                                             title="Vorschau"
                                         />
                                     ) : (
-                                        <Box display="flex" alignItems="center" justifyContent="center" height="100%">
-                                            <CircularProgress size={30} />
-                                            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>Lade Vorschau...</Typography>
+                                        <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" sx={{ p: 4 }}>
+                                            <Skeleton variant="rectangular" width="100%" height="100%" sx={{ position: 'absolute', inset: 0, borderRadius: 0 }} />
+                                            <CircularProgress size={30} sx={{ zIndex: 1 }} />
+                                            <Typography variant="body2" color="text.secondary" sx={{ ml: 2, mt: 1, zIndex: 1, fontWeight: 500 }}>Lade Vorschau...</Typography>
                                         </Box>
                                     )}
                                 </Box>

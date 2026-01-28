@@ -3,7 +3,7 @@ import {
   Box, Stack, Paper, Typography, TextField, Button,
   IconButton, Chip, Dialog, DialogTitle, DialogContent,
   DialogActions, InputAdornment, Menu, MenuItem,
-  Select, Tooltip, Pagination, Autocomplete, Avatar
+  Select, Tooltip, Pagination, Autocomplete, Avatar, Skeleton
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
@@ -427,7 +427,37 @@ export default function DiscussionsPage() {
         </Box>
 
         {loading && posts.length === 0 ? (
-          <Box display="flex" justifyContent="center" py={8}><Typography>Lädt...</Typography></Box>
+          <Stack spacing={2}>
+            <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider" }}>
+              <Stack spacing={2}>
+                <Skeleton variant="rectangular" height={40} sx={{ borderRadius: 2 }} />
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Skeleton variant="rectangular" height={40} sx={{ flex: 2, borderRadius: 2 }} />
+                  <Skeleton variant="rectangular" height={40} sx={{ flex: 1, borderRadius: 2 }} />
+                </Box>
+              </Stack>
+            </Paper>
+            {[1, 2, 3, 4, 5].map(i => (
+              <Paper key={i} elevation={0} sx={{ p: 2, borderRadius: 3, border: "1px solid", borderColor: "divider" }}>
+                <Stack direction="row" spacing={2}>
+                  <Stack alignItems="center" spacing={1}>
+                    <Skeleton variant="circular" width={32} height={32} />
+                    <Skeleton variant="text" width={20} />
+                    <Skeleton variant="circular" width={32} height={32} />
+                  </Stack>
+                  <Stack spacing={1} sx={{ flex: 1 }}>
+                    <Skeleton variant="text" width="60%" height={32} />
+                    <Skeleton variant="text" width="90%" height={20} />
+                    <Skeleton variant="text" width="40%" height={20} />
+                    <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                      <Skeleton variant="circular" width={20} height={20} />
+                      <Skeleton variant="text" width="30%" />
+                    </Stack>
+                  </Stack>
+                </Stack>
+              </Paper>
+            ))}
+          </Stack>
         ) : (
           <>
             <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider" }}>
