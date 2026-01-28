@@ -8,6 +8,7 @@ import {
   Typography,
   alpha,
   useTheme,
+  Skeleton,
 } from '@mui/material';
 import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded';
 import GroupsRounded from '@mui/icons-material/GroupsRounded';
@@ -93,26 +94,38 @@ const NewsFeedPage: React.FC = () => {
   };
 
   const [eventsData, setEventsData] = useState<EventItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [carouselIndex, setCarouselIndex] = useState(0);
+
+  const handleImageLoad = (id: string) => {
+    setLoadedImages((prev) => ({ ...prev, [id]: true }));
+  };
   const [sidebarIndex, setSidebarIndex] = useState(0);
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [forumPosts, setForumPosts] = useState<ForumPostSummary[]>([]);
   const [apiEvents, setApiEvents] = useState<ApiPost[]>([]);
 
   useEffect(() => {
-    getDiscussions({ query: { type: 'news', limit: 10 } }).then(({ data }) => {
-      if (data) setNewsItems(data as ApiPost[]);
-    });
-    getDiscussions({ query: { type: 'discussion', limit: 5 } }).then(({ data }) => {
-      if (data) setForumPosts(loadForumPosts(data as ApiPost[]));
-    });
-    getDiscussions({ query: { type: 'event', limit: 20 } }).then(({ data }) => {
-      if (data) setApiEvents(data as ApiPost[]);
-    });
+    const fetchData = async () => {
+      try {
+        const [news, forum, apiEvs, events] = await Promise.all([
+          getDiscussions({ query: { type: 'news', limit: 10 } }),
+          getDiscussions({ query: { type: 'discussion', limit: 5 } }),
+          getDiscussions({ query: { type: 'event', limit: 20 } }),
+          getEvents()
+        ]);
 
-    getEvents().then(({ data }) => {
-      if (data) setEventsData(data as EventItem[]);
-    });
+        if (news.data) setNewsItems(news.data as ApiPost[]);
+        if (forum.data) setForumPosts(loadForumPosts(forum.data as ApiPost[]));
+        if (apiEvs.data) setApiEvents(apiEvs.data as ApiPost[]);
+        if (events.data) setEventsData(events.data as EventItem[]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -200,7 +213,17 @@ const NewsFeedPage: React.FC = () => {
             borderColor: 'divider',
           }}
         >
-          {eventsData.length > 0 ? (
+          {isLoading ? (
+            <Skeleton
+              variant="rectangular"
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: 6,
+                bgcolor: alpha(theme.palette.action.hover, 0.1),
+              }}
+            />
+          ) : eventsData.length > 0 ? (
             eventsData.map((ev, idx) => (
               <Box
                 key={String(ev.id)}
@@ -217,10 +240,13 @@ const NewsFeedPage: React.FC = () => {
                   src={ev.cover_path ? getSizedImageUrl(`/api/v1/events/${ev.id}/cover`, 1600) : undefined}
                   srcSet={ev.cover_path ? getImageSrcSet(`/api/v1/events/${ev.id}/cover`) : undefined}
                   sizes="100vw"
+                  onLoad={() => handleImageLoad(String(ev.id))}
                   sx={{
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
+                    transition: 'opacity 0.6s ease-in-out',
+                    opacity: loadedImages[String(ev.id)] ? 1 : 0,
                   }}
                 />
                 <Box
@@ -261,21 +287,29 @@ const NewsFeedPage: React.FC = () => {
                 <Typography variant="overline" sx={{ ...custom.heroOverline, color: 'primary.main', fontWeight: 800, fontSize: { xs: '0.8rem', md: '1.1rem' }, letterSpacing: '0.15em' }}>
                   fsInformatik
                 </Typography>
-                <Typography variant="h1" sx={{
-                  fontFamily: '"Space Grotesk", sans-serif',
-                  fontWeight: 800,
-                  fontSize: { xs: '2rem', sm: '3rem', md: '4rem' },
-                  lineHeight: 1.1,
-                  mb: { xs: 0.5, md: 2 },
-                  textShadow: isDark ? '0 0 40px rgba(0,0,0,0.5)' : 'none',
-                }}>
-                  {eventsData[carouselIndex]?.title || 'Dein Hub für das Studium'}
-                </Typography>
+                {isLoading ? (
+                  <Skeleton variant="text" width="60%" sx={{ fontSize: { xs: '2rem', sm: '3rem', md: '4rem' }, mb: 1 }} />
+                ) : (
+                  <Typography variant="h1" sx={{
+                    fontFamily: '"Space Grotesk", sans-serif',
+                    fontWeight: 800,
+                    fontSize: { xs: '2rem', sm: '3rem', md: '4rem' },
+                    lineHeight: 1.1,
+                    mb: { xs: 0.5, md: 2 },
+                    textShadow: isDark ? '0 0 40px rgba(0,0,0,0.5)' : 'none',
+                  }}>
+                    {eventsData[carouselIndex]?.title || 'Dein Hub für das Studium'}
+                  </Typography>
+                )}
               </Box>
 
-              <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400, fontSize: { xs: '0.9rem', md: '1.25rem' }, maxWidth: 600, mb: { xs: 0.5, md: 2 } }}>
-                Bleib informiert über Events, Klausuren und alles Wichtige rund um dein Studium an der Westfälischen Hochschule.
-              </Typography>
+              {isLoading ? (
+                <Skeleton variant="text" width="80%" sx={{ fontSize: '1.25rem', mb: 2 }} />
+              ) : (
+                <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400, fontSize: { xs: '0.9rem', md: '1.25rem' }, maxWidth: 600, mb: { xs: 0.5, md: 2 } }}>
+                  Bleib informiert über Events, Klausuren und alles Wichtige rund um dein Studium an der Westfälischen Hochschule.
+                </Typography>
+              )}
 
               <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{ mt: 1 }}>
                 <Button
@@ -395,7 +429,20 @@ const NewsFeedPage: React.FC = () => {
                     </Stack>
 
                     <Box sx={{ flex: 1 }}>
-                      {sidebarIndex === 0 ? (
+                      {isLoading ? (
+                        <Stack spacing={1.5}>
+                          {[1, 2, 3].map((i) => (
+                            <Box key={i} sx={{ ...custom.newsCardLink, cursor: 'default' }}>
+                              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                                <Skeleton variant="circular" width={18} height={18} />
+                                <Skeleton variant="text" width="40%" height={14} />
+                              </Stack>
+                              <Skeleton variant="text" width="70%" height={24} />
+                              <Skeleton variant="text" width="90%" height={20} />
+                            </Box>
+                          ))}
+                        </Stack>
+                      ) : sidebarIndex === 0 ? (
                         <Stack spacing={1.5}>
                           {newsItems.slice(0, 3).map((item) => (
                             <Box
@@ -500,7 +547,24 @@ const NewsFeedPage: React.FC = () => {
                       m: 0,
                     }}
                   >
-                    {upcomingPreview.length ? upcomingPreview.slice(0, 5).map((event) => {
+                    {isLoading ? (
+                      [1, 2, 3, 4].map((i) => (
+                        <TimelineItem key={i}>
+                          <TimelineOppositeContent sx={{ m: 'auto 0' }}>
+                            <Skeleton variant="text" width={40} />
+                          </TimelineOppositeContent>
+                          <TimelineSeparator>
+                            <TimelineConnector />
+                            <TimelineDot />
+                            <TimelineConnector />
+                          </TimelineSeparator>
+                          <TimelineContent sx={{ py: '12px', px: 2 }}>
+                            <Skeleton variant="text" width="80%" />
+                            <Skeleton variant="text" width="40%" />
+                          </TimelineContent>
+                        </TimelineItem>
+                      ))
+                    ) : upcomingPreview.length ? upcomingPreview.slice(0, 5).map((event) => {
                       const accent = getCategoryColor(event.category);
                       const eventDate = parseDateKey(event.date);
 
