@@ -166,7 +166,7 @@ func (s *Server) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
 	_, err = s.DB.CreateSession(r.Context(), database.CreateSessionParams{
 		ID:        sessionID,
 		UserID:    dbUser.ID,
-		ExpiresAt: expiresAt.Format(time.RFC3339),
+		ExpiresAt: expiresAt.UTC().Format(time.RFC3339),
 		UserAgent: &ua,
 		IpAddress: &ip,
 	})
@@ -273,6 +273,10 @@ func (s *Server) PostAuthLogout(w http.ResponseWriter, r *http.Request) {
 	_ = s.DB.DeleteSession(r.Context(), session.ID)
 
 	s.SetCookie(w, SessionCookieName, "", -time.Hour, true)
+	s.SetCookie(w, CsrfCookieName, "", -time.Hour, false)
+
+	// Thoroughly flush browser state
+	w.Header().Set("Clear-Site-Data", "\"cookies\", \"cache\"")
 	w.WriteHeader(http.StatusNoContent)
 }
 
