@@ -22,7 +22,9 @@ import {
     ListItemText,
     ListItemButton,
     Divider,
-    Skeleton
+    Skeleton,
+    useMediaQuery,
+    useTheme
 } from "@mui/material";
 import { useLocation, useSearchParams, useNavigate, useParams } from "react-router-dom";
 import {
@@ -31,7 +33,8 @@ import {
     EditRounded as EditRoundedIcon,
     SaveRounded as SaveRoundedIcon,
     DeleteRounded as DeleteRoundedIcon,
-    CancelRounded as CancelRoundedIcon
+    CancelRounded as CancelRoundedIcon,
+    PictureAsPdfRounded as PictureAsPdfIcon
 } from "@mui/icons-material";
 
 import { Sidebar } from "@components/layout";
@@ -40,6 +43,8 @@ import { getArchive, getArchiveFile, getPrograms, getProgramModules, getArchiveV
 import type { DtoArchiveEntryResponse as ExamListEntry, DtoProgramResponse as Program, DtoModuleResponse as Module } from "@lib/api";
 
 export default function ExamDetailsPage() {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { user } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
@@ -361,7 +366,7 @@ export default function ExamDetailsPage() {
                     onClose={handleCloseDialog}
                     fullWidth
                     maxWidth="sm"
-                    PaperProps={{ sx: { borderRadius: 3, height: '90vh' } }}
+                    PaperProps={{ sx: { borderRadius: 3, height: isMobile ? 'auto' : '90vh' } }}
                 >
                     {selectedExam && (
                         <>
@@ -532,32 +537,47 @@ export default function ExamDetailsPage() {
                                     </Stack>
                                 </Stack>
 
-                                <Box sx={{
-                                    width: '100%',
-                                    flexGrow: 1,
-                                    bgcolor: 'grey.100',
-                                    borderRadius: 2,
-                                    overflow: 'hidden',
-                                    border: '1px solid',
-                                    borderColor: 'divider',
-                                    position: 'relative',
-                                }}>
-                                    {previewUrl ? (
-                                        <iframe
-                                            src={previewUrl}
-                                            width="100%"
-                                            height="100%"
-                                            style={{ border: 'none' }}
-                                            title="Vorschau"
-                                        />
-                                    ) : (
-                                        <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" sx={{ p: 4 }}>
-                                            <Skeleton variant="rectangular" width="100%" height="100%" sx={{ position: 'absolute', inset: 0, borderRadius: 0 }} />
-                                            <CircularProgress size={30} sx={{ zIndex: 1 }} />
-                                            <Typography variant="body2" color="text.secondary" sx={{ ml: 2, mt: 1, zIndex: 1, fontWeight: 500 }}>Lade Vorschau...</Typography>
-                                        </Box>
-                                    )}
-                                </Box>
+                                {isMobile ? (
+                                    previewUrl && (
+                                        <Button
+                                            fullWidth
+                                            variant="outlined"
+                                            startIcon={<PictureAsPdfIcon />}
+                                            onClick={() => window.open(previewUrl, '_blank')}
+                                            sx={{ borderRadius: 2, py: 1.5 }}
+                                        >
+                                            PDF öffnen
+                                        </Button>
+                                    )
+                                ) : (
+                                    <Box sx={{
+                                        width: '100%',
+                                        flexGrow: 1,
+                                        bgcolor: 'grey.100',
+                                        borderRadius: 2,
+                                        overflow: 'hidden',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        position: 'relative',
+                                        minHeight: 400
+                                    }}>
+                                        {previewUrl ? (
+                                            <iframe
+                                                src={previewUrl}
+                                                width="100%"
+                                                height="100%"
+                                                style={{ border: 'none' }}
+                                                title="Vorschau"
+                                            />
+                                        ) : (
+                                            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" sx={{ p: 4 }}>
+                                                <Skeleton variant="rectangular" width="100%" height="100%" sx={{ position: 'absolute', inset: 0, borderRadius: 0 }} />
+                                                <CircularProgress size={30} sx={{ zIndex: 1 }} />
+                                                <Typography variant="body2" color="text.secondary" sx={{ ml: 2, mt: 1, zIndex: 1, fontWeight: 500 }}>Lade Vorschau...</Typography>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                )}
 
                                 <TextField
                                     id="edit-exam-comment"
