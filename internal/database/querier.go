@@ -41,6 +41,7 @@ type Querier interface {
 	GetArchiveEntry(ctx context.Context, id int64) (Archive, error)
 	GetArchiveEntryByMetadata(ctx context.Context, arg GetArchiveEntryByMetadataParams) (Archive, error)
 	GetArchiveEntryDetails(ctx context.Context, id int64) (GetArchiveEntryDetailsRow, error)
+	GetConfig(ctx context.Context) (GlobalConfig, error)
 	GetDiscussionComment(ctx context.Context, id int64) (DiscussionComment, error)
 	GetDiscussionPost(ctx context.Context, arg GetDiscussionPostParams) (GetDiscussionPostRow, error)
 	GetEvent(ctx context.Context, id int64) (Event, error)
@@ -84,6 +85,7 @@ type Querier interface {
 	UnverifyUser(ctx context.Context, id int64) (User, error)
 	UpdateDiscussionComment(ctx context.Context, arg UpdateDiscussionCommentParams) (DiscussionComment, error)
 	UpdateDiscussionPost(ctx context.Context, arg UpdateDiscussionPostParams) (DiscussionPost, error)
+	UpdateOfficeOccupied(ctx context.Context, officeOccupied int64) error
 	// Example logic
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarParams) (User, error)
