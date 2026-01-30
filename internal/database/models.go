@@ -98,6 +98,12 @@ type Event struct {
 	DeletedAt *string `json:"deleted_at"`
 }
 
+type GlobalConfig struct {
+	ID             int64  `json:"id"`
+	OfficeOccupied int64  `json:"office_occupied"`
+	UpdatedAt      string `json:"updated_at"`
+}
+
 type Medium struct {
 	ID          int64   `json:"id"`
 	EventID     int64   `json:"event_id"`

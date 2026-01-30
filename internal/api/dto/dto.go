@@ -247,3 +247,11 @@ type ListResponse[T any] struct {
 	Items      []T   `json:"items"`
 	TotalCount int64 `json:"total_count"`
 }
+
+type OfficeStatusResponse struct {
+	Occupied bool `json:"occupied"`
+}
+
+type UpdateOfficeStatusRequest struct {
+	Occupied bool `json:"occupied"`
+}

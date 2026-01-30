@@ -260,6 +260,11 @@ definitions:
       user_id:
         type: string
     type: object
+  dto.OfficeStatusResponse:
+    properties:
+      occupied:
+        type: boolean
+    type: object
   dto.PostProgramResponse:
     properties:
       id:
@@ -354,6 +359,11 @@ definitions:
     - date
     - module_id
     - version
+    type: object
+  dto.UpdateOfficeStatusRequest:
+    properties:
+      occupied:
+        type: boolean
     type: object
   dto.UpdateProfileRequest:
     properties:
@@ -1326,6 +1336,38 @@ paths:
       summary: Get media preview
       tags:
       - Events
+  /office-status:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OfficeStatusResponse'
+      summary: Get office occupancy status
+      tags:
+      - Settings
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Office Status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateOfficeStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OfficeStatusResponse'
+      summary: Update office occupancy status
+      tags:
+      - Settings
   /programs:
     get:
       consumes:
