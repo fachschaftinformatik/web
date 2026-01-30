@@ -118,6 +118,10 @@ export const zDtoNotificationResponse = z.object({
     user_id: z.optional(z.string())
 });
 
+export const zDtoOfficeStatusResponse = z.object({
+    occupied: z.optional(z.boolean())
+});
+
 export const zDtoPostProgramResponse = z.object({
     id: z.optional(z.string()),
     name: z.optional(z.string())
@@ -184,6 +188,10 @@ export const zDtoUpdateArchiveEntryRequest = z.object({
     date: z.string(),
     module_id: z.string(),
     version: z.string().min(2).max(32)
+});
+
+export const zDtoUpdateOfficeStatusRequest = z.object({
+    occupied: z.optional(z.boolean())
 });
 
 export const zDtoUpdateProfileRequest = z.object({
@@ -727,6 +735,28 @@ export const zGetMediaByMediaIdPreviewData = z.object({
         size: z.optional(z.int())
     }))
 });
+
+export const zGetOfficeStatusData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetOfficeStatusResponse = zDtoOfficeStatusResponse;
+
+export const zPutOfficeStatusData = z.object({
+    body: zDtoUpdateOfficeStatusRequest,
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zPutOfficeStatusResponse = zDtoOfficeStatusResponse;
 
 export const zGetProgramsData = z.object({
     body: z.optional(z.never()),
