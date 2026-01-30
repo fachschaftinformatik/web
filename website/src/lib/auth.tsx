@@ -4,6 +4,7 @@ import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { getAuthMe, postAuthLogout } from '@lib/api';
 import type { DtoUserResponse as User } from '@lib/api';
 import { useThemeMode, type ThemePreference } from '@lib/theme';
+import { clearCsrfToken } from './csrf';
 
 const REMEMBERED_USER_KEY = 'fs_remembered_user';
 export const REMEMBERED_FLAG_KEY = 'fs_remember_flag';
@@ -113,10 +114,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await postAuthLogout();
       setUser(null);
       clearRememberedUser();
+      clearCsrfToken();
     } catch (error) {
       console.error('Abmeldung fehlgeschlagen:', error);
       setUser(null);
       clearRememberedUser();
+      clearCsrfToken();
     }
   };
 
