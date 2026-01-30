@@ -199,14 +199,14 @@ const NewsFeedPage: React.FC = () => {
 
   return (
     <Sidebar user={user} title="Startseite" maxWidth="xl">
-      <Stack spacing={4} sx={{ mt: 1 }}>
+      <Stack spacing={3} sx={{ mt: 0 }}>
 
 
         <Box
           component="section"
           sx={{
             position: 'relative',
-            height: { xs: 240, md: 400 },
+            height: { xs: 240, md: 360 },
             borderRadius: 6,
             overflow: 'hidden',
             border: '1px solid',
@@ -390,12 +390,12 @@ const NewsFeedPage: React.FC = () => {
                   borderColor: 'divider',
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: 380,
+                  minHeight: 320,
                   overflow: 'hidden'
                 }}
               >
-                <Box sx={{ p: { xs: 2.2, md: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <Stack spacing={2.5} sx={{ flex: 1 }}>
+                <Box sx={{ p: { xs: 2, md: 2.5 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Stack spacing={2} sx={{ flex: 1 }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center">
                       <Stack direction="row" spacing={2} alignItems="center">
                         <Typography
@@ -535,8 +535,8 @@ const NewsFeedPage: React.FC = () => {
                 </Box>
               </Paper>
               <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' }, display: 'flex', justifyContent: 'center' }}>
-                <Stack spacing={2} sx={{ width: '100%', maxWidth: 400, pt: { xs: 2.2, md: 3 } }}>
-                  <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mb: 2 }}>
+                <Stack spacing={1.5} sx={{ width: '100%', maxWidth: 400, pt: { xs: 2, md: 2.5 } }}>
+                  <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mb: 1 }}>
                     <Typography variant="h5" sx={{ fontWeight: 800 }}>Agenda</Typography>
                   </Stack>
 
@@ -558,7 +558,7 @@ const NewsFeedPage: React.FC = () => {
                             <TimelineDot />
                             <TimelineConnector />
                           </TimelineSeparator>
-                          <TimelineContent sx={{ py: '12px', px: 2 }}>
+                          <TimelineContent sx={{ py: '8px', px: 2 }}>
                             <Skeleton variant="text" width="80%" />
                             <Skeleton variant="text" width="40%" />
                           </TimelineContent>
@@ -577,6 +577,7 @@ const NewsFeedPage: React.FC = () => {
                         <TimelineItem
                           key={event.id}
                           sx={{
+                            minHeight: 64,
                             cursor: 'pointer',
                             '&:hover .MuiTimelineDot-root': {
                               transform: 'scale(1.15)',
@@ -604,19 +605,19 @@ const NewsFeedPage: React.FC = () => {
                               sx={{
                                 bgcolor: accent,
                                 boxShadow: 'none',
-                                p: 1.2,
+                                p: 1,
                                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                 border: 'none',
                               }}
                             >
-                              <Icon sx={{ fontSize: 20, color: '#fff' }} />
+                              <Icon sx={{ fontSize: 18, color: '#fff' }} />
                             </TimelineDot>
                             <TimelineConnector sx={{ bgcolor: alpha(theme.palette.divider, 0.5) }} />
                           </TimelineSeparator>
-                          <TimelineContent sx={{ py: '12px', px: 2, m: 'auto 0' }}>
+                          <TimelineContent sx={{ py: '8px', px: 2, m: 'auto 0' }}>
                             <Typography variant="h6" component="span" sx={{
                               fontWeight: 800,
-                              fontSize: '0.95rem',
+                              fontSize: '0.875rem',
                               lineHeight: 1.2,
                               color: 'text.primary',
                               display: 'block'
@@ -625,7 +626,7 @@ const NewsFeedPage: React.FC = () => {
                             </Typography>
                             {event.location && (
                               <Typography variant="caption" color="text.secondary" sx={{
-                                fontSize: '0.8rem',
+                                fontSize: '0.75rem',
                                 display: '-webkit-box',
                                 WebkitLineClamp: 1,
                                 WebkitBoxOrient: 'vertical',

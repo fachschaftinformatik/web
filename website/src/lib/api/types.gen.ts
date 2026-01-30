@@ -138,6 +138,10 @@ export type DtoNotificationResponse = {
     user_id?: string;
 };
 
+export type DtoOfficeStatusResponse = {
+    occupied?: boolean;
+};
+
 export type DtoPostProgramResponse = {
     id?: string;
     name?: string;
@@ -185,6 +189,10 @@ export type DtoUpdateArchiveEntryRequest = {
     date: string;
     module_id: string;
     version: string;
+};
+
+export type DtoUpdateOfficeStatusRequest = {
+    occupied?: boolean;
 };
 
 export type DtoUpdateProfileRequest = {
@@ -1243,6 +1251,41 @@ export type GetMediaByMediaIdPreviewResponses = {
      */
     200: unknown;
 };
+
+export type GetOfficeStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/office-status';
+};
+
+export type GetOfficeStatusResponses = {
+    /**
+     * OK
+     */
+    200: DtoOfficeStatusResponse;
+};
+
+export type GetOfficeStatusResponse = GetOfficeStatusResponses[keyof GetOfficeStatusResponses];
+
+export type PutOfficeStatusData = {
+    /**
+     * Office Status
+     */
+    body: DtoUpdateOfficeStatusRequest;
+    path?: never;
+    query?: never;
+    url: '/office-status';
+};
+
+export type PutOfficeStatusResponses = {
+    /**
+     * OK
+     */
+    200: DtoOfficeStatusResponse;
+};
+
+export type PutOfficeStatusResponse = PutOfficeStatusResponses[keyof PutOfficeStatusResponses];
 
 export type GetProgramsData = {
     body?: never;
