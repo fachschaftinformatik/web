@@ -7,7 +7,6 @@ import {
   alpha,
   useTheme,
   CircularProgress,
-  Collapse
 } from '@mui/material';
 import MeetingRoomRounded from '@mui/icons-material/MeetingRoomRounded';
 import { getOfficeStatus, putOfficeStatus } from '@lib/api';
