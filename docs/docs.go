@@ -1413,6 +1413,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/office-status": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Get office occupancy status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.OfficeStatusResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Update office occupancy status",
+                "parameters": [
+                    {
+                        "description": "Office Status",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateOfficeStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.OfficeStatusResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/programs": {
             "get": {
                 "description": "Returns a list of study programs and their valid PO versions",
@@ -2041,6 +2091,14 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.OfficeStatusResponse": {
+            "type": "object",
+            "properties": {
+                "occupied": {
+                    "type": "boolean"
+                }
+            }
+        },
         "dto.PostProgramResponse": {
             "type": "object",
             "properties": {
@@ -2176,6 +2234,14 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 32,
                     "minLength": 2
+                }
+            }
+        },
+        "dto.UpdateOfficeStatusRequest": {
+            "type": "object",
+            "properties": {
+                "occupied": {
+                    "type": "boolean"
                 }
             }
         },

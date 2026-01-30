@@ -50,6 +50,8 @@ func NewRouter(s *handler.Server, logger *httplog.Logger) http.Handler {
 		r.Get("/programs/{programId}", s.GetProgramsId)
 		r.Get("/programs/{programId}/modules", s.GetProgramModules)
 
+		r.Get("/office-status", s.GetOfficeStatus)
+
 		r.Get("/events", s.GetEvents)
 		r.Get("/events/{eventId}", s.GetEventsId)
 		r.Get("/events/{eventId}/media", s.GetEventMedia)
@@ -104,6 +106,7 @@ func NewRouter(s *handler.Server, logger *httplog.Logger) http.Handler {
 				r.Delete("/archive/files/{fileId}", s.DeleteArchiveFile)
 				r.Post("/events", s.PostEvents)
 				r.Post("/events/{eventId}/media", s.PostEventMedia)
+				r.Put("/office-status", s.PutOfficeStatus)
 			})
 
 			r.Group(func(r chi.Router) {
