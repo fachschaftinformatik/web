@@ -174,6 +174,12 @@ type Session struct {
 	ExpiresAt string  `json:"expires_at"`
 }
 
+type Setting struct {
+	Key       string `json:"key"`
+	Value     string `json:"value"`
+	UpdatedAt string `json:"updated_at"`
+}
+
 type User struct {
 	ID                int64   `json:"id"`
 	Email             string  `json:"email"`
