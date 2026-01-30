@@ -52,6 +52,7 @@ type Querier interface {
 	GetPostTags(ctx context.Context, postID int64) ([]string, error)
 	GetProgramWithVersions(ctx context.Context, id int64) ([]GetProgramWithVersionsRow, error)
 	GetSession(ctx context.Context, id string) (Session, error)
+	GetSetting(ctx context.Context, key string) (string, error)
 	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByVerificationToken(ctx context.Context, verificationToken *string) (User, error)
@@ -84,6 +85,7 @@ type Querier interface {
 	UnverifyUser(ctx context.Context, id int64) (User, error)
 	UpdateDiscussionComment(ctx context.Context, arg UpdateDiscussionCommentParams) (DiscussionComment, error)
 	UpdateDiscussionPost(ctx context.Context, arg UpdateDiscussionPostParams) (DiscussionPost, error)
+	UpdateSetting(ctx context.Context, arg UpdateSettingParams) error
 	// Example logic
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarParams) (User, error)
