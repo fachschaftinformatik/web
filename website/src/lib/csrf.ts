@@ -9,6 +9,11 @@ export const setCsrfToken = (token: string) => {
     csrfToken = token;
 };
 
+export const clearCsrfToken = () => {
+    csrfToken = null;
+    fetchPromise = null;
+};
+
 export const fetchCsrfToken = async (): Promise<DtoCsrfResponse | null> => {
     if (fetchPromise) return fetchPromise;
 
