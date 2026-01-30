@@ -350,7 +350,10 @@ const Sidebar = ({
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const fetchNotifications = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setNotifications([]);
+      return;
+    }
     try {
       const { data } = await getAuthNotifications();
       if (data) setNotifications(data as Notification[]);

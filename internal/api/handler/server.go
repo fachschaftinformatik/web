@@ -167,19 +167,27 @@ func (s *Server) Authenticate(w http.ResponseWriter, r *http.Request) (database.
 	}
 
 	if session.UserAgent != nil && *session.UserAgent != r.UserAgent() {
-		s.Log.Warn("Session hijack attempt?", "sessionID", session.ID, "expectedUA", *session.UserAgent, "gotUA", r.UserAgent())
-		s.DB.DeleteSession(ctx, session.ID)
-		return database.Session{}, database.User{}, errors.New("invalid session binding")
+		s.Log.Warn("Session user agent mismatch (potential hijack or browser update)", "sessionID", session.ID, "expectedUA", *session.UserAgent, "gotUA", r.UserAgent())
 	}
 
-	expiresAt, _ := time.Parse(time.RFC3339, session.ExpiresAt)
-	if expiresAt.Before(time.Now()) {
-		return database.Session{}, database.User{}, errors.New("session expired")
+	expiresAt, err := time.Parse(time.RFC3339, session.ExpiresAt)
+	if err != nil || expiresAt.Before(time.Now()) {
+		return database.Session{}, database.User{}, errors.New("session expired or invalid")
 	}
 
-	lastSeen, _ := time.Parse(time.RFC3339, session.LastSeen)
-	if time.Since(lastSeen) > 5*time.Minute {
-		newExpires := time.Now().Add(SessionDuration).Format(time.RFC3339)
+	lastSeen, err := time.Parse(time.RFC3339, session.LastSeen)
+	if err == nil && time.Since(lastSeen) > 5*time.Minute {
+		createdAt, err := time.Parse(time.RFC3339, session.CreatedAt)
+		if err != nil {
+			createdAt = time.Now()
+		}
+
+		extension := SessionDuration
+		if expiresAt.Sub(createdAt) > 25*time.Hour {
+			extension = 30 * 24 * time.Hour
+		}
+
+		newExpires := time.Now().UTC().Add(extension).Format(time.RFC3339)
 		s.DB.SlideSession(ctx, database.SlideSessionParams{
 			ID:        session.ID,
 			ExpiresAt: newExpires,
