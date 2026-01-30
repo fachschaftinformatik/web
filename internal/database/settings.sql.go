@@ -9,27 +9,22 @@ import (
 	"context"
 )
 
-const getSetting = `-- name: GetSetting :one
-SELECT value FROM settings WHERE key = ?
+const getConfig = `-- name: GetConfig :one
+SELECT id, office_occupied, updated_at FROM global_config WHERE id = 1
 `
 
-func (q *Queries) GetSetting(ctx context.Context, key string) (string, error) {
-	row := q.db.QueryRowContext(ctx, getSetting, key)
-	var value string
-	err := row.Scan(&value)
-	return value, err
+func (q *Queries) GetConfig(ctx context.Context) (GlobalConfig, error) {
+	row := q.db.QueryRowContext(ctx, getConfig)
+	var i GlobalConfig
+	err := row.Scan(&i.ID, &i.OfficeOccupied, &i.UpdatedAt)
+	return i, err
 }
 
-const updateSetting = `-- name: UpdateSetting :exec
-UPDATE settings SET value = ? WHERE key = ?
+const updateOfficeOccupied = `-- name: UpdateOfficeOccupied :exec
+UPDATE global_config SET office_occupied = ? WHERE id = 1
 `
 
-type UpdateSettingParams struct {
-	Value string `json:"value"`
-	Key   string `json:"key"`
-}
-
-func (q *Queries) UpdateSetting(ctx context.Context, arg UpdateSettingParams) error {
-	_, err := q.db.ExecContext(ctx, updateSetting, arg.Value, arg.Key)
+func (q *Queries) UpdateOfficeOccupied(ctx context.Context, officeOccupied int64) error {
+	_, err := q.db.ExecContext(ctx, updateOfficeOccupied, officeOccupied)
 	return err
 }

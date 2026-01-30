@@ -98,6 +98,12 @@ type Event struct {
 	DeletedAt *string `json:"deleted_at"`
 }
 
+type GlobalConfig struct {
+	ID             int64  `json:"id"`
+	OfficeOccupied int64  `json:"office_occupied"`
+	UpdatedAt      string `json:"updated_at"`
+}
+
 type Medium struct {
 	ID          int64   `json:"id"`
 	EventID     int64   `json:"event_id"`
@@ -172,12 +178,6 @@ type Session struct {
 	CreatedAt string  `json:"created_at"`
 	LastSeen  string  `json:"last_seen"`
 	ExpiresAt string  `json:"expires_at"`
-}
-
-type Setting struct {
-	Key       string `json:"key"`
-	Value     string `json:"value"`
-	UpdatedAt string `json:"updated_at"`
 }
 
 type User struct {

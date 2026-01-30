@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/fachschaftinformatik/web/internal/api/dto"
-	"github.com/fachschaftinformatik/web/internal/database"
 )
 
 // @Summary Get office occupancy status
@@ -14,13 +13,13 @@ import (
 // @Success 200 {object} dto.OfficeStatusResponse
 // @Router /office-status [get]
 func (s *Server) GetOfficeStatus(w http.ResponseWriter, r *http.Request) {
-	val, err := s.DB.GetSetting(r.Context(), "office_occupied")
+	config, err := s.DB.GetConfig(r.Context())
 	if err != nil {
 		s.RespondJSON(w, http.StatusOK, dto.OfficeStatusResponse{Occupied: false})
 		return
 	}
 
-	s.RespondJSON(w, http.StatusOK, dto.OfficeStatusResponse{Occupied: val == "true"})
+	s.RespondJSON(w, http.StatusOK, dto.OfficeStatusResponse{Occupied: config.OfficeOccupied == 1})
 }
 
 // @Summary Update office occupancy status
@@ -37,15 +36,7 @@ func (s *Server) PutOfficeStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	val := "false"
-	if payload.Occupied {
-		val = "true"
-	}
-
-	err := s.DB.UpdateSetting(r.Context(), database.UpdateSettingParams{
-		Key:   "office_occupied",
-		Value: val,
-	})
+	err := s.DB.UpdateOfficeOccupied(r.Context(), s.BoolToInt(payload.Occupied))
 	if err != nil {
 		s.JsonError(w, "database_error", "Could not update office status", http.StatusInternalServerError)
 		return
