@@ -1,5 +1,5 @@
--- name: GetSetting :one
-SELECT value FROM settings WHERE key = ?;
+-- name: GetConfig :one
+SELECT * FROM global_config WHERE id = 1;
 
--- name: UpdateSetting :exec
-UPDATE settings SET value = ? WHERE key = ?;
+-- name: UpdateOfficeOccupied :exec
+UPDATE global_config SET office_occupied = ? WHERE id = 1;
