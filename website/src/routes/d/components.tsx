@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link as RouterLink } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
@@ -226,7 +227,7 @@ export function CommentThread({
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
                                     <Typography
-                                        component={Link}
+                                        component={RouterLink}
                                         to={`/u/${node.user_id}`}
                                         variant="subtitle2"
                                         fontWeight={700}

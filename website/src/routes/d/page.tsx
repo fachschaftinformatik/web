@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
@@ -265,7 +265,7 @@ function PostItem({
               {post.user_name ? post.user_name[0].toUpperCase() : "A"}
             </Avatar>
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-              von <Typography component={Link} to={`/u/${post.user_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.user_name || "Anonym"}</Typography> · {isoToShort(post.created_at ?? "")}
+              von <Typography component={RouterLink} to={`/u/${post.user_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.user_name || "Anonym"}</Typography> · {isoToShort(post.created_at ?? "")}
               {post.updated_at && post.created_at && post.updated_at !== post.created_at && " (bearbeitet)"}
               {" · "}
               {post.comment_count} {post.comment_count === 1 ? "Kommentar" : "Kommentare"}
