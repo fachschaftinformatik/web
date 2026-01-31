@@ -1,11 +1,10 @@
-import { useTheme, alpha } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
-import Chip from '@mui/material/Chip';
 import { LineChart } from '@mui/x-charts/LineChart';
 import React from 'react';
 
@@ -33,21 +32,12 @@ function AreaGradient({ color, id }: { color: string; id: string }) {
 export default function GrowthChart({ 
   title, 
   value, 
-  trend = 'up',
-  caption = 'Sitzungen pro Tag in den letzten 90 Tagen',
+  caption,
   data, 
   labels, 
   loading = false 
 }: GrowthChartProps) {
   const theme = useTheme();
-
-  const labelColors = {
-    up: 'success' as const,
-    down: 'error' as const,
-    neutral: 'default' as const,
-  };
-
-  const trendValues = { up: '+35%', down: '-12%', neutral: '+2%' };
 
   return (
     <Card variant="outlined" sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2, overflow: 'hidden' }}>

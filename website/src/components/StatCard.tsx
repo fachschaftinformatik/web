@@ -1,8 +1,7 @@
-import { useTheme, alpha } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
@@ -46,15 +45,7 @@ export default function StatCard({
     neutral: theme.palette.grey[500],
   };
 
-  const labelColors = {
-    up: 'success' as const,
-    down: 'error' as const,
-    neutral: 'default' as const,
-  };
-
-  const color = labelColors[trend];
   const chartColor = trendColors[trend];
-  const trendValues = { up: '+25%', down: '-8%', neutral: '+5%' };
 
   const id = `area-gradient-${title.replace(/\s+/g, '-').toLowerCase()}`;
 

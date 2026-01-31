@@ -1,11 +1,10 @@
-import { useTheme, alpha } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
-import Chip from '@mui/material/Chip';
 import { BarChart } from '@mui/x-charts/BarChart';
 import React from 'react';
 
@@ -22,21 +21,15 @@ interface ActivityChartProps {
 export default function ActivityChart({ 
   title, 
   value, 
-  trend = 'down',
-  caption = 'Aktivitäten pro Tag in den letzten 90 Tagen',
+  caption,
   data, 
   labels, 
   loading = false 
 }: ActivityChartProps) {
   const theme = useTheme();
 
-  const labelColors = {
-    up: 'success' as const,
-    down: 'error' as const,
-    neutral: 'default' as const,
-  };
-
   return (
+
     <Card variant="outlined" sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2, overflow: 'hidden' }}>
       <CardContent sx={{ p: 2, pb: 0, flexGrow: 1, display: 'flex', flexDirection: 'column', '&:last-child': { pb: 0 } }}>
         <Typography component="h2" variant="caption" gutterBottom fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.85rem' }}>

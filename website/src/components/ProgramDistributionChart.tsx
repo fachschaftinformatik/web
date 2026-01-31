@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useDrawingArea } from '@mui/x-charts/hooks';
-import { styled, useTheme } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import { Typography, Card, CardContent, Box, Skeleton, Stack } from '@mui/material';
 
 interface StyledTextProps {
@@ -55,8 +55,6 @@ interface ProgramDistributionChartProps {
 }
 
 export default function ProgramDistributionChart({ title, data, loading = false }: ProgramDistributionChartProps) {
-  const theme = useTheme();
-  
   const total = data.reduce((acc, curr) => acc + curr.value, 0);
   
   const colors = [

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Typography,
   Box,
-  useTheme,
 } from '@mui/material';
 
 import { getAdminDashboard, type DtoAdminDashboardResponse } from '@lib/api';
@@ -18,7 +17,6 @@ const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const [data, setData] = useState<DtoAdminDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const theme = useTheme();
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -38,7 +36,6 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   const growthData = data?.user_growth_trend?.map(item => Number(item.count) || 0) || [];
-  const growthLabels = data?.user_growth_trend?.map(item => item.date ? new Date(item.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '') || [];
 
   const sessionData = data?.session_trend?.map(item => Number(item.count) || 0) || [];
   const sessionLabels = data?.session_trend?.map(item => item.date ? new Date(item.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '') || [];
