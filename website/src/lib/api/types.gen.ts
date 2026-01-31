@@ -14,6 +14,30 @@ export type DtoActivityResponse = {
     user_name?: string;
 };
 
+export type DtoAdminDashboardResponse = {
+    activity_trend?: Array<DtoDashboardTrendItem>;
+    discussion_growth_trend?: Array<DtoDashboardTrendItem>;
+    exam_growth_trend?: Array<DtoDashboardTrendItem>;
+    module_growth_trend?: Array<DtoDashboardTrendItem>;
+    program_distribution?: Array<DtoProgramDistributionItem>;
+    program_growth_trend?: Array<DtoDashboardTrendItem>;
+    recent_activities?: Array<DtoActivityResponse>;
+    session_trend?: Array<DtoDashboardTrendItem>;
+    stats?: DtoAdminStatsResponse;
+    user_growth_trend?: Array<DtoDashboardTrendItem>;
+};
+
+export type DtoAdminStatsResponse = {
+    activity_count?: number;
+    archive_count?: number;
+    event_count?: number;
+    module_count?: number;
+    post_count?: number;
+    program_count?: number;
+    session_count?: number;
+    user_count?: number;
+};
+
 export type DtoArchiveEntryResponse = {
     comment?: string;
     created_at?: string;
@@ -44,6 +68,11 @@ export type DtoCreateDiscussionPostRequest = {
 export type DtoCsrfResponse = {
     csrf?: string;
     signups_enabled?: boolean;
+};
+
+export type DtoDashboardTrendItem = {
+    count?: number;
+    date?: string;
 };
 
 export type DtoDiscussionCommentRequest = {
@@ -147,6 +176,11 @@ export type DtoPostProgramResponse = {
     name?: string;
 };
 
+export type DtoProgramDistributionItem = {
+    name?: string;
+    value?: number;
+};
+
 export type DtoProgramResponse = {
     id?: string;
     name?: string;
@@ -245,6 +279,22 @@ export type GetActivitiesResponses = {
 
 export type GetActivitiesResponse = GetActivitiesResponses[keyof GetActivitiesResponses];
 
+export type GetAdminDashboardData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/dashboard';
+};
+
+export type GetAdminDashboardResponses = {
+    /**
+     * OK
+     */
+    200: DtoAdminDashboardResponse;
+};
+
+export type GetAdminDashboardResponse = GetAdminDashboardResponses[keyof GetAdminDashboardResponses];
+
 export type PostAdminModulesData = {
     /**
      * Module Data
@@ -314,6 +364,22 @@ export type GetAdminRefRolesResponses = {
 };
 
 export type GetAdminRefRolesResponse = GetAdminRefRolesResponses[keyof GetAdminRefRolesResponses];
+
+export type GetAdminStatsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/stats';
+};
+
+export type GetAdminStatsResponses = {
+    /**
+     * OK
+     */
+    200: DtoAdminStatsResponse;
+};
+
+export type GetAdminStatsResponse = GetAdminStatsResponses[keyof GetAdminStatsResponses];
 
 export type GetArchiveData = {
     body?: never;

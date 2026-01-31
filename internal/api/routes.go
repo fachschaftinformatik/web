@@ -112,6 +112,8 @@ func NewRouter(s *handler.Server, logger *httplog.Logger) http.Handler {
 			r.Group(func(r chi.Router) {
 				r.Use(middleware.RequireRole("admin"))
 				r.Get("/users", s.GetUsers)
+				r.Get("/admin/stats", s.GetAdminStats)
+				r.Get("/admin/dashboard", s.GetAdminDashboard)
 				r.Get("/admin/ref/roles", s.GetAdminRefRoles)
 				r.Get("/admin/ref/discussion-types", s.GetAdminRefDiscussionTypes)
 				r.Post("/admin/programs", s.PostAdminPrograms)

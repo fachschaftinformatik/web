@@ -150,3 +150,16 @@ export const ProtectedRoute: React.FC<{ children?: React.ReactNode }> = ({ child
 
   return <>{children || <Outlet />}</>;
 };
+
+export const AdminRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) return null;
+
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
+
+  return <>{children || <Outlet />}</>;
+};

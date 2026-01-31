@@ -252,6 +252,40 @@ type OfficeStatusResponse struct {
 	Occupied bool `json:"occupied"`
 }
 
+type AdminStatsResponse struct {
+	UserCount     int64 `json:"user_count"`
+	PostCount     int64 `json:"post_count"`
+	ArchiveCount  int64 `json:"archive_count"`
+	EventCount    int64 `json:"event_count"`
+	ModuleCount   int64 `json:"module_count"`
+	ProgramCount  int64 `json:"program_count"`
+	ActivityCount int64 `json:"activity_count"`
+	SessionCount  int64 `json:"session_count"`
+}
+
+type DashboardTrendItem struct {
+	Date  string `json:"date"`
+	Count int64  `json:"count"`
+}
+
+type ProgramDistributionItem struct {
+	Name  string `json:"name"`
+	Value int64  `json:"value"`
+}
+
+type AdminDashboardResponse struct {
+	Stats                 AdminStatsResponse        `json:"stats"`
+	UserGrowthTrend       []DashboardTrendItem      `json:"user_growth_trend"`
+	ExamGrowthTrend       []DashboardTrendItem      `json:"exam_growth_trend"`
+	DiscussionGrowthTrend []DashboardTrendItem      `json:"discussion_growth_trend"`
+	ModuleGrowthTrend     []DashboardTrendItem      `json:"module_growth_trend"`
+	ProgramGrowthTrend    []DashboardTrendItem      `json:"program_growth_trend"`
+	ActivityTrend         []DashboardTrendItem      `json:"activity_trend"`
+	SessionTrend          []DashboardTrendItem      `json:"session_trend"`
+	ProgramDistribution   []ProgramDistributionItem `json:"program_distribution"`
+	RecentActivities      []ActivityResponse        `json:"recent_activities"`
+}
+
 type UpdateOfficeStatusRequest struct {
 	Occupied bool `json:"occupied"`
 }
