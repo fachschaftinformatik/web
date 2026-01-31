@@ -1,5 +1,7 @@
 import React from 'react';
-import { Fab, Tooltip, alpha } from '@mui/material';
+import Fab from '@mui/material/Fab';
+import Tooltip from '@mui/material/Tooltip';
+import { alpha } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { PaletteMode, PaletteOptions, Theme, ThemeOptions, ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
 

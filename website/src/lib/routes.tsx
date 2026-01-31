@@ -1,7 +1,8 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@lib/auth';
-import { CircularProgress, Box } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 
 const ProtectedRoute: React.FC = () => {
   const { user, isLoading } = useAuth();

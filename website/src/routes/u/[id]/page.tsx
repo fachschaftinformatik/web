@@ -1,30 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Avatar,
-  Box,
-  Button,
-  Chip,
-  Paper,
-  Stack,
-  Typography,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  Skeleton,
-  Pagination,
-} from '@mui/material';
+import Avatar from '@mui/material/Avatar';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
+import Skeleton from '@mui/material/Skeleton';
+import Pagination from '@mui/material/Pagination';
 import { alpha, useTheme } from '@mui/material/styles';
-import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
 import HistoryIcon from '@mui/icons-material/History';
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import QuestionAnswerRounded from '@mui/icons-material/QuestionAnswerRounded';
 import LibraryBooksRounded from '@mui/icons-material/LibraryBooksRounded';
 import CollectionsIcon from '@mui/icons-material/Collections';
 import LockRoundedIcon from '@mui/icons-material/LockRounded';
-import { ArrowBackRounded } from '@mui/icons-material';
+import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 
 import { useAuth } from '@lib/auth';
 import { Sidebar } from '@components/layout';

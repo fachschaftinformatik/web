@@ -1,13 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Typography,
-  Switch,
-  FormControlLabel,
-  alpha,
-  useTheme,
-  CircularProgress,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+import { useTheme, alpha } from '@mui/material/styles';
 import MeetingRoomRounded from '@mui/icons-material/MeetingRoomRounded';
 import { getOfficeStatus, putOfficeStatus } from '@lib/api';
 import type { DtoUserResponse as User } from '@lib/api/types.gen';
@@ -44,8 +39,9 @@ const OfficeStatus = ({ user }: OfficeStatusProps) => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleToggle = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = event.target.checked;
+  const handleToggle = async () => {
+    if (!isAuthorized || updating) return;
+    const newValue = !occupied;
     setUpdating(true);
     try {
       await putOfficeStatus({
@@ -73,6 +69,46 @@ const OfficeStatus = ({ user }: OfficeStatusProps) => {
     ? theme.palette.success.main
     : theme.palette.text.secondary;
 
+  const content = (
+    <Box
+      onClick={isAuthorized ? handleToggle : undefined}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        width: '100%',
+        maxWidth: 'lg',
+        px: { xs: 2.5, md: 5 },
+        cursor: isAuthorized ? 'pointer' : 'default',
+        '&:hover': isAuthorized ? {
+          opacity: 0.8,
+        } : {},
+        transition: 'opacity 0.2s ease',
+      }}
+    >
+      <MeetingRoomRounded sx={{ color, fontSize: 22 }} />
+      <Typography
+        variant="body1"
+        sx={{
+          fontWeight: 800,
+          color: color,
+          flexGrow: 1,
+          fontFamily: '"Space Grotesk", sans-serif',
+          letterSpacing: '0.02em',
+          lineHeight: 1.2,
+          textTransform: 'uppercase',
+          fontSize: '0.95rem',
+          userSelect: 'none',
+        }}
+      >
+        {occupied ? 'Büro besetzt' : 'Büro nicht besetzt'}
+      </Typography>
+      {updating && (
+        <CircularProgress size={16} color="inherit" sx={{ opacity: 0.5, ml: 1 }} />
+      )}
+    </Box>
+  );
+
   return (
     <Box
       sx={{
@@ -87,56 +123,8 @@ const OfficeStatus = ({ user }: OfficeStatusProps) => {
         transition: 'all 0.3s ease',
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          width: '100%',
-          maxWidth: 'lg',
-          px: { xs: 2.5, md: 5 },
-        }}
-      >
-        <MeetingRoomRounded sx={{ color, fontSize: 20 }} />
-        <Typography
-          variant="body2"
-          sx={{
-            fontWeight: 800,
-            color: color,
-            flexGrow: 1,
-            fontFamily: '"Space Grotesk", sans-serif',
-            letterSpacing: '0.02em',
-            lineHeight: 1.2,
-            textTransform: 'uppercase',
-          }}
-        >
-          {occupied ? 'Büro besetzt' : 'Büro nicht besetzt'}
-        </Typography>
-          {isAuthorized && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {updating && <CircularProgress size={16} color="inherit" sx={{ opacity: 0.5 }} />}
-              <FormControlLabel
-                control={
-                  <Switch
-                    size="small"
-                    checked={occupied}
-                    onChange={handleToggle}
-                    disabled={updating}
-                    color="success"
-                  />
-                }
-                label={
-                  <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}>
-                    Status ändern
-                  </Typography>
-                }
-                labelPlacement="start"
-                sx={{ m: 0 }}
-              />
-            </Box>
-          )}
-        </Box>
-      </Box>
+      {content}
+    </Box>
   );
 };
 
