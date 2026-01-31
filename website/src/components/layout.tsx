@@ -40,7 +40,7 @@ import QuestionAnswerRounded from '@mui/icons-material/QuestionAnswerRounded';
 import CollectionsRounded from '@mui/icons-material/CollectionsRounded';
 import PeopleRounded from '@mui/icons-material/PeopleRounded';
 import PersonRounded from '@mui/icons-material/PersonRounded';
-import SettingsRounded from '@mui/icons-material/SettingsRounded';
+import SettingsRounded from '@mui/material/SettingsRounded';
 import LogoutRounded from '@mui/icons-material/LogoutRounded';
 import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
 import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
@@ -341,6 +341,8 @@ const Sidebar = ({
 
   const navOpen = isMdUp ? desktopOpen : mobileOpen;
 
+  const displayNavItems = [...navItems];
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notiAnchorEl, setNotiAnchorEl] = useState<null | HTMLElement>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -450,7 +452,7 @@ const Sidebar = ({
       msOverflowStyle: 'none'
     }}>
       <List sx={{ pt: 1, flexGrow: 1 }}>
-        {navItems.map((item) => (
+        {displayNavItems.map((item) => (
           <Tooltip key={item.label} title={navOpen ? '' : item.label} placement="right">
             <ListItemButton
               component={item.isRoute ? RouterLink : 'a'}
@@ -543,26 +545,53 @@ const Sidebar = ({
 
           {user ? (
             <>
-              <Tooltip title="Posteingang">
-                <span>
-                  <IconButton color="inherit" size="large" disabled>
-                    <MailRounded />
-                  </IconButton>
-                </span>
-              </Tooltip>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Tooltip title="Posteingang">
+                  <span>
+                    <IconButton color="inherit" size="large" disabled>
+                      <MailRounded />
+                    </IconButton>
+                  </span>
+                </Tooltip>
 
-              <Tooltip title="Benachrichtigungen">
-                <IconButton
-                  color="inherit"
-                  size="large"
-                  sx={{ mr: 1 }}
-                  onClick={handleNotiClick}
-                >
-                  <Badge badgeContent={unreadCount} color="error">
-                    <NotificationsNoneRounded />
-                  </Badge>
-                </IconButton>
-              </Tooltip>
+                <Tooltip title="Benachrichtigungen">
+                  <IconButton
+                    color="inherit"
+                    size="large"
+                    onClick={handleNotiClick}
+                  >
+                    <Badge badgeContent={unreadCount} color="error">
+                      <NotificationsNoneRounded />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
+
+                {user?.role === 'admin' && (
+                  <Tooltip title="Administration">
+                    <IconButton
+                      component={RouterLink}
+                      to="/admin"
+                      color="inherit"
+                      size="large"
+                    >
+                      <SettingsRounded />
+                    </IconButton>
+                  </Tooltip>
+                )}
+
+                <Tooltip title="Account">
+                  <IconButton
+                    onClick={(e) => setAnchorEl(e.currentTarget)}
+                    size="small"
+                  >
+                    <Avatar
+                      key={String(user?.id) || 'anonymous'}
+                      src={getAvatarUrl(user?.avatar_url)}
+                      sx={{ width: 32, height: 32, fontSize: '0.9rem', fontWeight: 600 }}
+                    />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
 
               <Menu
                 anchorEl={notiAnchorEl}
@@ -680,19 +709,6 @@ const Sidebar = ({
                   </Box>
                 )}
               </Menu>
-
-              <Tooltip title="Account">
-                <IconButton
-                  onClick={(e) => setAnchorEl(e.currentTarget)}
-                  size="small"
-                >
-                  <Avatar
-                    key={String(user?.id) || 'anonymous'}
-                    src={getAvatarUrl(user?.avatar_url)}
-                    sx={{ width: 32, height: 32, fontSize: '0.9rem', fontWeight: 600 }}
-                  />
-                </IconButton>
-              </Tooltip>
 
               <Menu
                 anchorEl={anchorEl}
