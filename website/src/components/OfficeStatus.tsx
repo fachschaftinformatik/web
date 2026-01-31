@@ -1,11 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Typography,
-  useTheme,
-  CircularProgress,
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+import { useTheme, alpha } from '@mui/material/styles';
 import MeetingRoomRounded from '@mui/icons-material/MeetingRoomRounded';
 import { getOfficeStatus, putOfficeStatus } from '@lib/api';
 import type { DtoUserResponse as User } from '@lib/api/types.gen';

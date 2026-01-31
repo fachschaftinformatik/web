@@ -2,22 +2,39 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 
-import {
-    Avatar, Button, CssBaseline, TextField, Box, Typography,
-    Container, Alert, Stack, FormControlLabel, Checkbox, IconButton,
-    OutlinedInput, InputLabel, InputAdornment, FormControl, FormHelperText,
-    Tooltip, MenuItem, Tab, Tabs, Zoom, Fade
-} from '@mui/material';
+import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
+import CssBaseline from '@mui/material/CssBaseline';
+import TextField from '@mui/material/TextField';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
+import IconButton from '@mui/material/IconButton';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import InputLabel from '@mui/material/InputLabel';
+import InputAdornment from '@mui/material/InputAdornment';
+import FormControl from '@mui/material/FormControl';
+import FormHelperText from '@mui/material/FormHelperText';
+import Tooltip from '@mui/material/Tooltip';
+import MenuItem from '@mui/material/MenuItem';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import Zoom from '@mui/material/Zoom';
+import Fade from '@mui/material/Fade';
 import { useTheme, alpha } from '@mui/material/styles';
-import {
-    Visibility, VisibilityOff,
-    Brightness4Rounded, Brightness7Rounded,
-    PersonAddRounded as PersonAddIcon,
-    LoginRounded as LoginIcon,
-    ArrowBackRounded,
-    ErrorOutlineRounded,
-    CheckCircleOutlineRounded
-} from '@mui/icons-material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
+import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
+import PersonAddIcon from '@mui/icons-material/PersonAddRounded';
+import LoginIcon from '@mui/icons-material/LoginRounded';
+import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
+import ErrorOutlineRounded from '@mui/icons-material/ErrorOutlineRounded';
+import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
 
 import { useThemeMode } from '@lib/theme';
 import { postAuthLogin, postAuthRegister, getPrograms } from '@lib/api';

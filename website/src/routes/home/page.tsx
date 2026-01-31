@@ -1,15 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Avatar,
-  Box,
-  Button,
-  Paper,
-  Stack,
-  Typography,
-  alpha,
-  useTheme,
-  Skeleton,
-} from '@mui/material';
+import Avatar from '@mui/material/Avatar';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Skeleton from '@mui/material/Skeleton';
+import { alpha, useTheme } from '@mui/material/styles';
 import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded';
 import GroupsRounded from '@mui/icons-material/GroupsRounded';
 import TerminalRounded from '@mui/icons-material/TerminalRounded';

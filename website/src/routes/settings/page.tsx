@@ -1,20 +1,18 @@
 import { useEffect, useState } from 'react';
-import {
-    Typography,
-    Box,
-    Paper,
-    Stack,
-    Switch,
-    FormControlLabel,
-    TextField,
-    MenuItem,
-    Button,
-    Alert,
-    CircularProgress,
-    Snackbar,
-    Slide,
-    type SlideProps
-} from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import Snackbar from '@mui/material/Snackbar';
+import Slide from '@mui/material/Slide';
+import type { SlideProps } from '@mui/material/Slide';
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
 import { getPrograms, putAuthMe } from '@lib/api';
