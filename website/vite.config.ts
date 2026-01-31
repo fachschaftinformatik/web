@@ -24,21 +24,11 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            const normalizedId = id.split(path.sep).join('/');
-            switch (true) {
-              case normalizedId.includes('@mui/icons-material'):
-                return 'mui-icons';
-              case normalizedId.includes('@mui'):
-              case normalizedId.includes('@emotion'):
-                return 'mui-vendor';
-              case normalizedId.includes('react'):
-              case normalizedId.includes('scheduler'):
-              case normalizedId.includes('remix-run'):
-                return 'react-vendor';
-              case normalizedId.includes('zod'):
-                return 'utils';
-              default:
-                return 'vendor';
+            if (id.includes('@mui/x-charts') || id.includes('@mui/x-data-grid')) {
+              return 'mui-x';
+            }
+            if (id.includes('@mui') || id.includes('@emotion') || id.includes('react') || id.includes('scheduler') || id.includes('react-router')) {
+              return 'vendor-core';
             }
           }
         },
