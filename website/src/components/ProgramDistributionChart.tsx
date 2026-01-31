@@ -115,7 +115,7 @@ export default function ProgramDistributionChart({ title, data, loading = false 
                 </PieChart>
               </Box>
               
-              <Box sx={{ width: { xs: '100%', md: '350px' }, maxHeight: '100%', overflowY: 'auto', pl: { md: 12 }, pr: 2, py: 1 }}>
+              <Box sx={{ width: { xs: '100%', md: '350px' }, maxHeight: '100%', overflowY: 'auto', pr: 2, py: 1 }}>
                 <Stack spacing={1.5}>
 
                   {data.map((item, index) => (
