@@ -78,6 +78,7 @@ export default function ActivityChart({
               hideLegend
               borderRadius={8}
               height={320}
+              margin={{ left: 40, right: 40, top: 10, bottom: 30 }}
             />
 
           ) : (
