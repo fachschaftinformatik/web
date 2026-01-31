@@ -92,7 +92,6 @@ export default function GrowthChart({
               }}
               hideLegend
               height={320}
-              margin={{ left: 40, right: 40, top: 10, bottom: 30 }}
             >
               <AreaGradient color={theme.palette.primary.main} id="growth-gradient" />
             </LineChart>
