@@ -22,7 +22,7 @@ import {
   TimelineDot,
   TimelineOppositeContent,
 } from '@mui/lab';
-import { useNavigate, Link as RouterLink, Link } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
@@ -469,7 +469,7 @@ const NewsFeedPage: React.FC = () => {
                                   {item.user_name ? item.user_name[0].toUpperCase() : "A"}
                                 </Avatar>
                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                  von <Typography component={Link} to={`/u/${item.user_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{item.user_name || "Anonym"}</Typography> · {formatNewsDate(item.created_at || "")}
+                                  von <Typography component={RouterLink} to={`/u/${item.user_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{item.user_name || "Anonym"}</Typography> · {formatNewsDate(item.created_at || "")}
                                 </Typography>
                               </Stack>
                               <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{item.title}</Typography>
@@ -498,7 +498,7 @@ const NewsFeedPage: React.FC = () => {
                                   {post.author ? post.author[0].toUpperCase() : "A"}
                                 </Avatar>
                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                  von <Typography component={Link} to={`/u/${post.authorId}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author}</Typography> · {formatForumDate(post.createdAt)}
+                                  von <Typography component={RouterLink} to={`/u/${post.authorId}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author}</Typography> · {formatForumDate(post.createdAt)}
                                 </Typography>
                               </Stack>
                               <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{post.title}</Typography>
