@@ -1,5 +1,4 @@
-import { StrictMode, Suspense, lazy } from 'react'
-import { createRoot } from 'react-dom/client'
+import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -24,7 +23,7 @@ import { client } from '@lib/api/client.gen';
 import { getCsrfFromCookie, fetchCsrfToken } from '@lib/csrf';
 
 import { ThemeModeProvider } from '@lib/theme';
-import { AuthProvider, useAuth, ProtectedRoute } from '@lib/auth';
+import { AuthProvider, useAuth, ProtectedRoute, AdminRoute } from '@lib/auth';
 import { PageLoader } from '@components/layout';
 
 const AuthPage = lazy(() => import('@routes/auth/page'));
@@ -40,6 +39,7 @@ const EventsPage = lazy(() => import('@routes/events/page'));
 const NewsFeedPage = lazy(() => import('@routes/home/page'));
 const TeamPage = lazy(() => import('@routes/team/page'));
 const ContactPage = lazy(() => import('@routes/contact/page'));
+const AdminDashboardPage = lazy(() => import('@routes/admin/page'));
 
 client.setConfig({
   baseUrl: '/api/v1',
@@ -111,11 +111,16 @@ function App() {
                 <Route path="/archive/:moduleId" element={<ArchiveDetailsPage />} />
                 <Route path="/archive/:moduleId/:examId" element={<ArchiveDetailsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/d/new" element={<CreateDiscussionPost />} />
-                <Route path="/d/:postId/edit" element={<EditDiscussionPost />} />
-              </Route>
+                 <Route path="/d/new" element={<CreateDiscussionPost />} />
+                 <Route path="/d/:postId/edit" element={<EditDiscussionPost />} />
+               </Route>
 
-              <Route path="/u/:userId" element={<UserProfilePage />} />
+               <Route element={<AdminRoute />}>
+                 <Route path="/admin" element={<AdminDashboardPage />} />
+               </Route>
+
+               <Route path="/u/:userId" element={<UserProfilePage />} />
+
               <Route path="/discussions" element={<DiscussionsPage />} />
               <Route path="/d/:postId" element={<ViewDiscussionPost />} />
 
@@ -147,8 +152,4 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+export default App;
