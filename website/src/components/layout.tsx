@@ -1,29 +1,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  AppBar,
-  Avatar,
-  Badge,
-  Box,
-  Button,
-  Container,
-  Divider,
-  Drawer,
-  IconButton,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-  Stack,
-  Toolbar,
-  Tooltip,
-  Typography,
-  useMediaQuery,
-  Autocomplete,
-  CircularProgress,
-  ListItem,
-} from '@mui/material';
+import AppBar from '@mui/material/AppBar';
+import Avatar from '@mui/material/Avatar';
+import Badge from '@mui/material/Badge';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Container from '@mui/material/Container';
+import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
+import IconButton from '@mui/material/IconButton';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Stack from '@mui/material/Stack';
+import Toolbar from '@mui/material/Toolbar';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import Autocomplete from '@mui/material/Autocomplete';
+import CircularProgress from '@mui/material/CircularProgress';
+import ListItem from '@mui/material/ListItem';
 import { useTheme, alpha, styled } from '@mui/material/styles';
 import InputBase from '@mui/material/InputBase';
 import SearchIcon from '@mui/icons-material/Search';
@@ -31,7 +29,6 @@ import NotificationsNoneRounded from '@mui/icons-material/NotificationsNoneRound
 import MailRounded from '@mui/icons-material/MailRounded';
 import MenuRounded from '@mui/icons-material/MenuRounded';
 import LibraryBooksRounded from '@mui/icons-material/LibraryBooksRounded';
-
 import MenuOpenRounded from '@mui/icons-material/MenuOpenRounded';
 import DashboardRounded from '@mui/icons-material/DashboardRounded';
 import CampaignRounded from '@mui/icons-material/CampaignRounded';
@@ -341,6 +338,8 @@ const Sidebar = ({
 
   const navOpen = isMdUp ? desktopOpen : mobileOpen;
 
+  const displayNavItems = [...navItems];
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notiAnchorEl, setNotiAnchorEl] = useState<null | HTMLElement>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -450,7 +449,7 @@ const Sidebar = ({
       msOverflowStyle: 'none'
     }}>
       <List sx={{ pt: 1, flexGrow: 1 }}>
-        {navItems.map((item) => (
+        {displayNavItems.map((item) => (
           <Tooltip key={item.label} title={navOpen ? '' : item.label} placement="right">
             <ListItemButton
               component={item.isRoute ? RouterLink : 'a'}
@@ -543,26 +542,53 @@ const Sidebar = ({
 
           {user ? (
             <>
-              <Tooltip title="Posteingang">
-                <span>
-                  <IconButton color="inherit" size="large" disabled>
-                    <MailRounded />
-                  </IconButton>
-                </span>
-              </Tooltip>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Tooltip title="Posteingang">
+                  <span>
+                    <IconButton color="inherit" size="large" disabled>
+                      <MailRounded />
+                    </IconButton>
+                  </span>
+                </Tooltip>
 
-              <Tooltip title="Benachrichtigungen">
-                <IconButton
-                  color="inherit"
-                  size="large"
-                  sx={{ mr: 1 }}
-                  onClick={handleNotiClick}
-                >
-                  <Badge badgeContent={unreadCount} color="error">
-                    <NotificationsNoneRounded />
-                  </Badge>
-                </IconButton>
-              </Tooltip>
+                <Tooltip title="Benachrichtigungen">
+                  <IconButton
+                    color="inherit"
+                    size="large"
+                    onClick={handleNotiClick}
+                  >
+                    <Badge badgeContent={unreadCount} color="error">
+                      <NotificationsNoneRounded />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
+
+                {user?.role === 'admin' && (
+                  <Tooltip title="Administration">
+                    <IconButton
+                      component={RouterLink}
+                      to="/admin"
+                      color="inherit"
+                      size="large"
+                    >
+                      <SettingsRounded />
+                    </IconButton>
+                  </Tooltip>
+                )}
+
+                <Tooltip title="Account">
+                  <IconButton
+                    onClick={(e) => setAnchorEl(e.currentTarget)}
+                    size="small"
+                  >
+                    <Avatar
+                      key={String(user?.id) || 'anonymous'}
+                      src={getAvatarUrl(user?.avatar_url)}
+                      sx={{ width: 32, height: 32, fontSize: '0.9rem', fontWeight: 600 }}
+                    />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
 
               <Menu
                 anchorEl={notiAnchorEl}
@@ -680,19 +706,6 @@ const Sidebar = ({
                   </Box>
                 )}
               </Menu>
-
-              <Tooltip title="Account">
-                <IconButton
-                  onClick={(e) => setAnchorEl(e.currentTarget)}
-                  size="small"
-                >
-                  <Avatar
-                    key={String(user?.id) || 'anonymous'}
-                    src={getAvatarUrl(user?.avatar_url)}
-                    sx={{ width: 32, height: 32, fontSize: '0.9rem', fontWeight: 600 }}
-                  />
-                </IconButton>
-              </Tooltip>
 
               <Menu
                 anchorEl={anchorEl}

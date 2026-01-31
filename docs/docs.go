@@ -48,6 +48,23 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/dashboard": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get admin dashboard data",
+                "operationId": "getAdminDashboard",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminDashboardResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/modules": {
             "post": {
                 "consumes": [
@@ -149,6 +166,23 @@ const docTemplate = `{
                             "items": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get admin dashboard stats",
+                "operationId": "getAdminStats",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminStatsResponse"
                         }
                     }
                 }
@@ -1727,6 +1761,97 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.AdminDashboardResponse": {
+            "type": "object",
+            "properties": {
+                "activity_trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DashboardTrendItem"
+                    }
+                },
+                "discussion_growth_trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DashboardTrendItem"
+                    }
+                },
+                "exam_growth_trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DashboardTrendItem"
+                    }
+                },
+                "module_growth_trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DashboardTrendItem"
+                    }
+                },
+                "program_distribution": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ProgramDistributionItem"
+                    }
+                },
+                "program_growth_trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DashboardTrendItem"
+                    }
+                },
+                "recent_activities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ActivityResponse"
+                    }
+                },
+                "session_trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DashboardTrendItem"
+                    }
+                },
+                "stats": {
+                    "$ref": "#/definitions/dto.AdminStatsResponse"
+                },
+                "user_growth_trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DashboardTrendItem"
+                    }
+                }
+            }
+        },
+        "dto.AdminStatsResponse": {
+            "type": "object",
+            "properties": {
+                "activity_count": {
+                    "type": "integer"
+                },
+                "archive_count": {
+                    "type": "integer"
+                },
+                "event_count": {
+                    "type": "integer"
+                },
+                "module_count": {
+                    "type": "integer"
+                },
+                "post_count": {
+                    "type": "integer"
+                },
+                "program_count": {
+                    "type": "integer"
+                },
+                "session_count": {
+                    "type": "integer"
+                },
+                "user_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.ArchiveEntryResponse": {
             "type": "object",
             "properties": {
@@ -1830,6 +1955,17 @@ const docTemplate = `{
                 },
                 "signups_enabled": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dto.DashboardTrendItem": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "date": {
+                    "type": "string"
                 }
             }
         },
@@ -2107,6 +2243,17 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.ProgramDistributionItem": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "integer"
                 }
             }
         },
