@@ -17,6 +17,66 @@ definitions:
       user_name:
         type: string
     type: object
+  dto.AdminDashboardResponse:
+    properties:
+      activity_trend:
+        items:
+          $ref: '#/definitions/dto.DashboardTrendItem'
+        type: array
+      discussion_growth_trend:
+        items:
+          $ref: '#/definitions/dto.DashboardTrendItem'
+        type: array
+      exam_growth_trend:
+        items:
+          $ref: '#/definitions/dto.DashboardTrendItem'
+        type: array
+      module_growth_trend:
+        items:
+          $ref: '#/definitions/dto.DashboardTrendItem'
+        type: array
+      program_distribution:
+        items:
+          $ref: '#/definitions/dto.ProgramDistributionItem'
+        type: array
+      program_growth_trend:
+        items:
+          $ref: '#/definitions/dto.DashboardTrendItem'
+        type: array
+      recent_activities:
+        items:
+          $ref: '#/definitions/dto.ActivityResponse'
+        type: array
+      session_trend:
+        items:
+          $ref: '#/definitions/dto.DashboardTrendItem'
+        type: array
+      stats:
+        $ref: '#/definitions/dto.AdminStatsResponse'
+      user_growth_trend:
+        items:
+          $ref: '#/definitions/dto.DashboardTrendItem'
+        type: array
+    type: object
+  dto.AdminStatsResponse:
+    properties:
+      activity_count:
+        type: integer
+      archive_count:
+        type: integer
+      event_count:
+        type: integer
+      module_count:
+        type: integer
+      post_count:
+        type: integer
+      program_count:
+        type: integer
+      session_count:
+        type: integer
+      user_count:
+        type: integer
+    type: object
   dto.ArchiveEntryResponse:
     properties:
       comment:
@@ -88,6 +148,13 @@ definitions:
         type: string
       signups_enabled:
         type: boolean
+    type: object
+  dto.DashboardTrendItem:
+    properties:
+      count:
+        type: integer
+      date:
+        type: string
     type: object
   dto.DiscussionCommentRequest:
     properties:
@@ -272,6 +339,13 @@ definitions:
       name:
         type: string
     type: object
+  dto.ProgramDistributionItem:
+    properties:
+      name:
+        type: string
+      value:
+        type: integer
+    type: object
   dto.ProgramResponse:
     properties:
       id:
@@ -448,6 +522,17 @@ paths:
       summary: List all activities
       tags:
       - Activities
+  /admin/dashboard:
+    get:
+      operationId: getAdminDashboard
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AdminDashboardResponse'
+      summary: Get admin dashboard data
+      tags:
+      - Admin
   /admin/modules:
     post:
       consumes:
@@ -514,6 +599,17 @@ paths:
               type: string
             type: array
       summary: Get all user roles
+      tags:
+      - Admin
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AdminStatsResponse'
+      summary: Get admin dashboard stats
       tags:
       - Admin
   /archive:

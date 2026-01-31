@@ -12,6 +12,17 @@ export const zDtoActivityResponse = z.object({
     user_name: z.optional(z.string())
 });
 
+export const zDtoAdminStatsResponse = z.object({
+    activity_count: z.optional(z.int()),
+    archive_count: z.optional(z.int()),
+    event_count: z.optional(z.int()),
+    module_count: z.optional(z.int()),
+    post_count: z.optional(z.int()),
+    program_count: z.optional(z.int()),
+    session_count: z.optional(z.int()),
+    user_count: z.optional(z.int())
+});
+
 export const zDtoArchiveEntryResponse = z.object({
     comment: z.optional(z.string()),
     created_at: z.optional(z.string()),
@@ -29,6 +40,11 @@ export const zDtoArchiveEntryResponse = z.object({
 export const zDtoCsrfResponse = z.object({
     csrf: z.optional(z.string()),
     signups_enabled: z.optional(z.boolean())
+});
+
+export const zDtoDashboardTrendItem = z.object({
+    count: z.optional(z.int()),
+    date: z.optional(z.string())
 });
 
 export const zDtoDiscussionCommentRequest = z.object({
@@ -149,6 +165,24 @@ export const zDtoDiscussionPostResponse = z.object({
     votes: z.optional(z.int())
 });
 
+export const zDtoProgramDistributionItem = z.object({
+    name: z.optional(z.string()),
+    value: z.optional(z.int())
+});
+
+export const zDtoAdminDashboardResponse = z.object({
+    activity_trend: z.optional(z.array(zDtoDashboardTrendItem)),
+    discussion_growth_trend: z.optional(z.array(zDtoDashboardTrendItem)),
+    exam_growth_trend: z.optional(z.array(zDtoDashboardTrendItem)),
+    module_growth_trend: z.optional(z.array(zDtoDashboardTrendItem)),
+    program_distribution: z.optional(z.array(zDtoProgramDistributionItem)),
+    program_growth_trend: z.optional(z.array(zDtoDashboardTrendItem)),
+    recent_activities: z.optional(z.array(zDtoActivityResponse)),
+    session_trend: z.optional(z.array(zDtoDashboardTrendItem)),
+    stats: z.optional(zDtoAdminStatsResponse),
+    user_growth_trend: z.optional(z.array(zDtoDashboardTrendItem))
+});
+
 export const zDtoProgramResponse = z.object({
     id: z.optional(z.string()),
     name: z.optional(z.string()),
@@ -241,6 +275,17 @@ export const zGetActivitiesData = z.object({
  */
 export const zGetActivitiesResponse = z.array(zDtoActivityResponse);
 
+export const zGetAdminDashboardData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetAdminDashboardResponse = zDtoAdminDashboardResponse;
+
 export const zPostAdminModulesData = z.object({
     body: zDtoModuleResponse,
     path: z.optional(z.never()),
@@ -284,6 +329,17 @@ export const zGetAdminRefRolesData = z.object({
  * OK
  */
 export const zGetAdminRefRolesResponse = z.array(z.string());
+
+export const zGetAdminStatsData = z.object({
+    body: z.optional(z.never()),
+    path: z.optional(z.never()),
+    query: z.optional(z.never())
+});
+
+/**
+ * OK
+ */
+export const zGetAdminStatsResponse = zDtoAdminStatsResponse;
 
 export const zGetArchiveData = z.object({
     body: z.optional(z.never()),
