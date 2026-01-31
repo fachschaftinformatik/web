@@ -38,10 +38,18 @@ type Querier interface {
 	DeleteMedia(ctx context.Context, id int64) error
 	DeleteSession(ctx context.Context, id string) error
 	DeleteUserSessions(ctx context.Context, userID int64) error
+	GetAdminStats(ctx context.Context) (GetAdminStatsRow, error)
 	GetArchiveEntry(ctx context.Context, id int64) (Archive, error)
 	GetArchiveEntryByMetadata(ctx context.Context, arg GetArchiveEntryByMetadataParams) (Archive, error)
 	GetArchiveEntryDetails(ctx context.Context, id int64) (GetArchiveEntryDetailsRow, error)
 	GetConfig(ctx context.Context) (GlobalConfig, error)
+	GetDailyActivityTrend(ctx context.Context) ([]GetDailyActivityTrendRow, error)
+	GetDailyDiscussionGrowth(ctx context.Context) ([]GetDailyDiscussionGrowthRow, error)
+	GetDailyExamGrowth(ctx context.Context) ([]GetDailyExamGrowthRow, error)
+	GetDailyModuleGrowth(ctx context.Context) ([]GetDailyModuleGrowthRow, error)
+	GetDailyProgramGrowth(ctx context.Context) ([]GetDailyProgramGrowthRow, error)
+	GetDailySessionTrend(ctx context.Context) ([]GetDailySessionTrendRow, error)
+	GetDailyUserGrowth(ctx context.Context) ([]GetDailyUserGrowthRow, error)
 	GetDiscussionComment(ctx context.Context, id int64) (DiscussionComment, error)
 	GetDiscussionPost(ctx context.Context, arg GetDiscussionPostParams) (GetDiscussionPostRow, error)
 	GetEvent(ctx context.Context, id int64) (Event, error)
@@ -56,6 +64,7 @@ type Querier interface {
 	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByVerificationToken(ctx context.Context, verificationToken *string) (User, error)
+	GetUserProgramDistribution(ctx context.Context) ([]GetUserProgramDistributionRow, error)
 	ListAllActivities(ctx context.Context, arg ListAllActivitiesParams) ([]ListAllActivitiesRow, error)
 	ListArchiveEntries(ctx context.Context, arg ListArchiveEntriesParams) ([]ListArchiveEntriesRow, error)
 	ListArchiveVersions(ctx context.Context, groupID int64) ([]ListArchiveVersionsRow, error)
