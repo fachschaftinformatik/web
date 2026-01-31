@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -311,7 +311,7 @@ export default function ViewPost() {
                                             {post.user_name ? post.user_name[0].toUpperCase() : "A"}
                                         </Avatar>
                                         <Typography variant="body2" color="text.secondary">
-                                            von <Typography component={Link} to={`/u/${post.user_id}`} variant="body2" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.user_name || "Anonym"}</Typography> · {isoToShort(post.created_at || "")}
+                                            von <Typography component={RouterLink} to={`/u/${post.user_id}`} variant="body2" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.user_name || "Anonym"}</Typography> · {isoToShort(post.created_at || "")}
                                         </Typography>
                                     </Stack>
                                 </Stack>
