@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/fachschaftinformatik/web/internal/api/dto"
@@ -88,9 +89,6 @@ func (s *Server) PostAdminModules(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {array} string
 // @Router /admin/ref/roles [get]
 func (s *Server) GetAdminRefRoles(w http.ResponseWriter, r *http.Request) {
-	// For now, hardcoded or fetch from DB if I add a ListRefRoles query
-	// Since I squashed them into 0001, I should add queries for them if needed.
-	// But let's just return the known ones for now.
 	roles := []string{"admin", "editor", "user"}
 	s.RespondJSON(w, http.StatusOK, roles)
 }
@@ -105,4 +103,190 @@ func (s *Server) GetAdminRefDiscussionTypes(w http.ResponseWriter, r *http.Reque
 	s.RespondJSON(w, http.StatusOK, types)
 }
 
-// Add more as needed
+// @Summary Get admin dashboard stats
+// @Tags Admin
+// @ID getAdminStats
+// @Success 200 {object} dto.AdminStatsResponse
+// @Router /admin/stats [get]
+func (s *Server) GetAdminStats(w http.ResponseWriter, r *http.Request) {
+	stats, err := s.DB.GetAdminStats(r.Context())
+	if err != nil {
+		s.JsonError(w, "database_error", err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.RespondJSON(w, http.StatusOK, dto.AdminStatsResponse{
+		UserCount:     stats.UserCount,
+		PostCount:     stats.PostCount,
+		ArchiveCount:  stats.ArchiveCount,
+		EventCount:    stats.EventCount,
+		ModuleCount:   stats.ModuleCount,
+		ProgramCount:  stats.ProgramCount,
+		ActivityCount: stats.ActivityCount,
+		SessionCount:  stats.SessionCount,
+	})
+}
+
+// @Summary Get admin dashboard data
+// @Tags Admin
+// @ID getAdminDashboard
+// @Success 200 {object} dto.AdminDashboardResponse
+// @Router /admin/dashboard [get]
+func (s *Server) GetAdminDashboard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	stats, _ := s.DB.GetAdminStats(ctx)
+	growth, _ := s.DB.GetDailyUserGrowth(ctx)
+	trend, _ := s.DB.GetDailyActivityTrend(ctx)
+	examGrowth, _ := s.DB.GetDailyExamGrowth(ctx)
+	discGrowth, _ := s.DB.GetDailyDiscussionGrowth(ctx)
+	moduleGrowth, _ := s.DB.GetDailyModuleGrowth(ctx)
+	programGrowth, _ := s.DB.GetDailyProgramGrowth(ctx)
+	sessionTrend, _ := s.DB.GetDailySessionTrend(ctx)
+	dist, _ := s.DB.GetUserProgramDistribution(ctx)
+	activities, _ := s.DB.ListAllActivities(ctx, database.ListAllActivitiesParams{
+		Limit:  10,
+		Offset: 0,
+	})
+
+	growthDto := make([]dto.DashboardTrendItem, len(growth))
+	for i, g := range growth {
+		dateStr := ""
+		if s, ok := g.Date.(string); ok {
+			dateStr = s
+		} else if g.Date != nil {
+			dateStr = fmt.Sprint(g.Date)
+		}
+		growthDto[i] = dto.DashboardTrendItem{
+			Date:  dateStr,
+			Count: g.Count,
+		}
+	}
+
+	trendDto := make([]dto.DashboardTrendItem, len(trend))
+	for i, t := range trend {
+		dateStr := ""
+		if s, ok := t.Date.(string); ok {
+			dateStr = s
+		} else if t.Date != nil {
+			dateStr = fmt.Sprint(t.Date)
+		}
+		trendDto[i] = dto.DashboardTrendItem{
+			Date:  dateStr,
+			Count: t.Count,
+		}
+	}
+
+	examDto := make([]dto.DashboardTrendItem, len(examGrowth))
+	for i, g := range examGrowth {
+		dateStr := ""
+		if s, ok := g.Date.(string); ok {
+			dateStr = s
+		} else if g.Date != nil {
+			dateStr = fmt.Sprint(g.Date)
+		}
+		examDto[i] = dto.DashboardTrendItem{
+			Date:  dateStr,
+			Count: g.Count,
+		}
+	}
+
+	discDto := make([]dto.DashboardTrendItem, len(discGrowth))
+	for i, g := range discGrowth {
+		dateStr := ""
+		if s, ok := g.Date.(string); ok {
+			dateStr = s
+		} else if g.Date != nil {
+			dateStr = fmt.Sprint(g.Date)
+		}
+		discDto[i] = dto.DashboardTrendItem{
+			Date:  dateStr,
+			Count: g.Count,
+		}
+	}
+
+	moduleGrowthDto := make([]dto.DashboardTrendItem, len(moduleGrowth))
+	for i, g := range moduleGrowth {
+		dateStr := ""
+		if s, ok := g.Date.(string); ok {
+			dateStr = s
+		} else if g.Date != nil {
+			dateStr = fmt.Sprint(g.Date)
+		}
+		moduleGrowthDto[i] = dto.DashboardTrendItem{
+			Date:  dateStr,
+			Count: g.Count,
+		}
+	}
+
+	programGrowthDto := make([]dto.DashboardTrendItem, len(programGrowth))
+	for i, g := range programGrowth {
+		dateStr := ""
+		if s, ok := g.Date.(string); ok {
+			dateStr = s
+		} else if g.Date != nil {
+			dateStr = fmt.Sprint(g.Date)
+		}
+		programGrowthDto[i] = dto.DashboardTrendItem{
+			Date:  dateStr,
+			Count: g.Count,
+		}
+	}
+
+	sessionDto := make([]dto.DashboardTrendItem, len(sessionTrend))
+	for i, s := range sessionTrend {
+		dateStr := ""
+		if str, ok := s.Date.(string); ok {
+			dateStr = str
+		} else if s.Date != nil {
+			dateStr = fmt.Sprint(s.Date)
+		}
+		sessionDto[i] = dto.DashboardTrendItem{
+			Date:  dateStr,
+			Count: s.Count,
+		}
+	}
+
+	distDto := make([]dto.ProgramDistributionItem, len(dist))
+	for i, d := range dist {
+		distDto[i] = dto.ProgramDistributionItem{
+			Name:  d.ProgramName,
+			Value: d.UserCount,
+		}
+	}
+
+	activitiesDto := make([]dto.ActivityResponse, len(activities))
+	for i, a := range activities {
+		activitiesDto[i] = dto.ActivityResponse{
+			ID:         id.ID(a.ID),
+			UserID:     id.ID(a.UserID),
+			UserName:   a.UserName,
+			Type:       a.Type,
+			TargetID:   a.TargetID,
+			TargetName: a.TargetName,
+			CreatedAt:  a.CreatedAt,
+		}
+	}
+
+	s.RespondJSON(w, http.StatusOK, dto.AdminDashboardResponse{
+		Stats: dto.AdminStatsResponse{
+			UserCount:     stats.UserCount,
+			PostCount:     stats.PostCount,
+			ArchiveCount:  stats.ArchiveCount,
+			EventCount:    stats.EventCount,
+			ModuleCount:   stats.ModuleCount,
+			ProgramCount:  stats.ProgramCount,
+			ActivityCount: stats.ActivityCount,
+			SessionCount:  stats.SessionCount,
+		},
+		UserGrowthTrend:       growthDto,
+		ExamGrowthTrend:       examDto,
+		DiscussionGrowthTrend: discDto,
+		ModuleGrowthTrend:     moduleGrowthDto,
+		ProgramGrowthTrend:    programGrowthDto,
+		ActivityTrend:         trendDto,
+		SessionTrend:          sessionDto,
+		ProgramDistribution:   distDto,
+		RecentActivities:      activitiesDto,
+	})
+}
