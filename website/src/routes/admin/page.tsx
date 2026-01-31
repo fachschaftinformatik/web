@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Typography,
-  Box,
-} from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 
 import { getAdminDashboard, type DtoAdminDashboardResponse } from '@lib/api';
 import { Sidebar } from '@components/layout';

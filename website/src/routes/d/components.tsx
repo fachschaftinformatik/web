@@ -1,20 +1,21 @@
 import * as React from "react";
-import {
-    Box, Stack, Paper, Typography, TextField, Button, Avatar, IconButton, Tooltip, Menu, MenuItem
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Avatar from "@mui/material/Avatar";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import SendIcon from "@mui/icons-material/Send";
 import EditIcon from "@mui/icons-material/Edit";
 import ReplyIcon from "@mui/icons-material/Reply";
 import ShareIcon from "@mui/icons-material/Share";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import ReportOutlinedIcon from "@mui/icons-material/ReportOutlined";
-
-import type {
-    DtoDiscussionPostResponse as ApiPost,
-    DtoDiscussionCommentResponse as ApiComment,
-    DtoUserResponse
-} from "@lib/api";
-import { Link } from "react-router-dom";
 import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";

@@ -1,4 +1,7 @@
-import { Typography, Paper, Box, Divider } from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
 

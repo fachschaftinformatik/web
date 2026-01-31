@@ -1,20 +1,17 @@
 import { useState, useEffect } from "react";
-import {
-    Box,
-    Typography,
-    TextField,
-    Button,
-    Paper,
-    Stack,
-    MenuItem,
-    Autocomplete,
-    Chip,
-    Alert,
-    CircularProgress,
-    IconButton
-} from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import MenuItem from "@mui/material/MenuItem";
+import Autocomplete from "@mui/material/Autocomplete";
+import Chip from "@mui/material/Chip";
+import Alert from "@mui/material/Alert";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
@@ -86,7 +83,7 @@ export default function CreatePost() {
             <Box>
                 <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
                     <IconButton onClick={() => navigate("/discussions")} sx={{ bgcolor: 'action.hover' }}>
-                        <ArrowBackRoundedIcon />
+                        <ArrowBackRounded />
                     </IconButton>
                     <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
                         Neue Diskussion erstellen

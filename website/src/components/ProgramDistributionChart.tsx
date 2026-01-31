@@ -2,7 +2,12 @@ import * as React from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useDrawingArea } from '@mui/x-charts/hooks';
 import { styled } from '@mui/material/styles';
-import { Typography, Card, CardContent, Box, Skeleton, Stack } from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Box from '@mui/material/Box';
+import Skeleton from '@mui/material/Skeleton';
+import Stack from '@mui/material/Stack';
 
 interface StyledTextProps {
   variant: 'primary' | 'secondary';
@@ -110,7 +115,7 @@ export default function ProgramDistributionChart({ title, data, loading = false 
                 </PieChart>
               </Box>
               
-              <Box sx={{ width: { xs: '100%', md: '350px' }, maxHeight: '100%', overflowY: 'auto', pr: 2, py: 1 }}>
+              <Box sx={{ width: { xs: '100%', md: '350px' }, maxHeight: '100%', overflowY: 'auto', pl: { md: 12 }, pr: 2, py: 1 }}>
                 <Stack spacing={1.5}>
 
                   {data.map((item, index) => (
