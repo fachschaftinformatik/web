@@ -38,6 +38,7 @@ export default function ResetPage() {
                 setError(data?.message || 'Fehler');
             }
         } catch (err) {
+            console.error(err)
             setError('Netzwerkfehler');
         }
     };
