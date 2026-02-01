@@ -27,6 +27,8 @@ import { AuthProvider, useAuth, ProtectedRoute, AdminRoute } from '@lib/auth';
 import { PageLoader } from '@components/layout';
 
 const AuthPage = lazy(() => import('@routes/auth/page'));
+const ForgotPage = lazy(() => import('@routes/auth/forgot/page'));
+const ResetPage = lazy(() => import('@routes/auth/reset/page'));
 const UserProfilePage = lazy(() => import('@routes/u/[id]/page'));
 const ArchivePage = lazy(() => import('@routes/archive/page'));
 const ArchiveDetailsPage = lazy(() => import('@routes/archive/[id]/page'));
@@ -105,6 +107,8 @@ function App() {
                 <Route path="/auth" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<AuthPage />} />
                 <Route path="/register" element={<AuthPage />} />
+                <Route path="/auth/forgot" element={<ForgotPage />} />
+                <Route path="/auth/reset" element={<ResetPage />} />
               </Route>
               <Route element={<ProtectedRoute />}>
                 <Route path="/archive" element={<ArchivePage />} />

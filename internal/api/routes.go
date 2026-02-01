@@ -41,6 +41,8 @@ func NewRouter(s *handler.Server, logger *httplog.Logger) http.Handler {
 			r.Use(httprate.LimitByIP(20, 1*time.Minute))
 			r.Post("/auth/login", s.PostAuthLogin)
 			r.Post("/auth/register", s.PostAuthRegister)
+			r.Post("/auth/forgot", s.PostAuthForgot)
+			r.Post("/auth/reset", s.PostAuthReset)
 		})
 
 		r.Get("/auth/verify", s.GetAuthVerify)

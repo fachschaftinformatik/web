@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Link as RouterLink } from 'react-router-dom';
 import { z } from 'zod';
 
 import Avatar from '@mui/material/Avatar';
@@ -409,6 +409,11 @@ export default function AuthPage() {
                                     label="Angemeldet bleiben"
                                     sx={{ ml: -0.5 }}
                                 />
+                            )}
+                            {tabValue === 0 && (
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                    <Button type="button" component={RouterLink} to="/auth/forgot" size="small">Passwort vergessen?</Button>
+                                </Box>
                             )}
                         </Stack>
 

@@ -181,20 +181,22 @@ type Session struct {
 }
 
 type User struct {
-	ID                int64   `json:"id"`
-	Email             string  `json:"email"`
-	Name              string  `json:"name"`
-	Password          string  `json:"password"`
-	Role              string  `json:"role"`
-	Active            int64   `json:"active"`
-	Verified          int64   `json:"verified"`
-	VerifiedAt        *string `json:"verified_at"`
-	VerificationToken *string `json:"verification_token"`
-	ProgramID         *int64  `json:"program_id"`
-	Theme             string  `json:"theme"`
-	Private           int64   `json:"private"`
-	AvatarUrl         *string `json:"avatar_url"`
-	CreatedAt         string  `json:"created_at"`
-	UpdatedAt         string  `json:"updated_at"`
-	DeletedAt         *string `json:"deleted_at"`
+	ID                   int64   `json:"id"`
+	Email                string  `json:"email"`
+	Name                 string  `json:"name"`
+	Password             string  `json:"password"`
+	Role                 string  `json:"role"`
+	Active               int64   `json:"active"`
+	Verified             int64   `json:"verified"`
+	VerifiedAt           *string `json:"verified_at"`
+	VerificationToken    *string `json:"verification_token"`
+	ProgramID            *int64  `json:"program_id"`
+	Theme                string  `json:"theme"`
+	Private              int64   `json:"private"`
+	AvatarUrl            *string `json:"avatar_url"`
+	CreatedAt            string  `json:"created_at"`
+	UpdatedAt            string  `json:"updated_at"`
+	DeletedAt            *string `json:"deleted_at"`
+	PasswordResetToken   *string `json:"password_reset_token"`
+	PasswordResetExpires *string `json:"password_reset_expires"`
 }
