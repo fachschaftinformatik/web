@@ -100,3 +100,28 @@ WHERE (
 ) AND active = 1 AND private = 0 AND deleted_at IS NULL
 ORDER BY name ASC
 LIMIT 10;
+-- name: SetPasswordResetToken :exec
+UPDATE users
+SET password_reset_token = sqlc.arg(password_reset_token),
+    password_reset_expires = sqlc.arg(password_reset_expires)
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL;
+
+-- name: GetUserByPasswordResetToken :one
+SELECT *
+FROM users
+WHERE password_reset_token = sqlc.arg(token) AND password_reset_expires > strftime('%Y-%m-%dT%H:%M:%SZ','now') AND deleted_at IS NULL
+LIMIT 1;
+
+-- name: ClearPasswordResetToken :exec
+UPDATE users
+SET password_reset_token = NULL,
+    password_reset_expires = NULL
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL;
+
+-- name: UpdateUserPassword :one
+UPDATE users
+SET password = sqlc.arg(password),
+    password_reset_token = NULL,
+    password_reset_expires = NULL
+WHERE id = sqlc.arg(id) AND deleted_at IS NULL
+RETURNING *;
