@@ -13,6 +13,7 @@ type Querier interface {
 	AddProgramToPost(ctx context.Context, arg AddProgramToPostParams) error
 	AddTagToPost(ctx context.Context, arg AddTagToPostParams) error
 	ClearLatestFlagByGroupId(ctx context.Context, groupID int64) error
+	ClearPasswordResetToken(ctx context.Context, id int64) error
 	ClearPostLinks(ctx context.Context, postID int64) error
 	ClearPostPrograms(ctx context.Context, postID int64) error
 	ClearPostTags(ctx context.Context, postID int64) error
@@ -63,6 +64,7 @@ type Querier interface {
 	GetSession(ctx context.Context, id string) (Session, error)
 	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
+	GetUserByPasswordResetToken(ctx context.Context, token *string) (User, error)
 	GetUserByVerificationToken(ctx context.Context, verificationToken *string) (User, error)
 	GetUserProgramDistribution(ctx context.Context) ([]GetUserProgramDistributionRow, error)
 	ListAllActivities(ctx context.Context, arg ListAllActivitiesParams) ([]ListAllActivitiesRow, error)
@@ -86,6 +88,7 @@ type Querier interface {
 	SearchDiscussionPosts(ctx context.Context, arg SearchDiscussionPostsParams) ([]SearchDiscussionPostsRow, error)
 	SearchModules(ctx context.Context, query *string) ([]Module, error)
 	SearchUsers(ctx context.Context, query string) ([]User, error)
+	SetPasswordResetToken(ctx context.Context, arg SetPasswordResetTokenParams) error
 	SetUserActive(ctx context.Context, arg SetUserActiveParams) (User, error)
 	SetUserRole(ctx context.Context, arg SetUserRoleParams) (User, error)
 	SlideSession(ctx context.Context, arg SlideSessionParams) (Session, error)
@@ -98,6 +101,7 @@ type Querier interface {
 	// Example logic
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarParams) (User, error)
+	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error)
 	UpdateUserToken(ctx context.Context, arg UpdateUserTokenParams) error
 	UpsertDiscussionCommentVote(ctx context.Context, arg UpsertDiscussionCommentVoteParams) (DiscussionCommentVote, error)
 	UpsertDiscussionVote(ctx context.Context, arg UpsertDiscussionVoteParams) (DiscussionVote, error)

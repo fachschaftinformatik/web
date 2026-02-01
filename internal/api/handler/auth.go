@@ -114,6 +114,95 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 	s.RespondJSON(w, http.StatusCreated, s.toUserResponse(dbUser))
 }
 
+// @Summary Request password reset
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body map[string]string true "{email: string}"
+// @Success 204
+// @Failure 400 {object} dto.ErrorResponse
+// @Router /auth/forgot [post]
+func (s *Server) PostAuthForgot(w http.ResponseWriter, r *http.Request) {
+	var payload struct{ Email string `json:"email"` }
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || payload.Email == "" {
+		s.JsonError(w, "invalid_request_body", "Could not decode JSON body", http.StatusBadRequest)
+		return
+	}
+
+	// Do not reveal whether email exists. If user exists, create token and send email.
+	user, err := s.DB.GetUserByEmail(r.Context(), payload.Email)
+	if err == nil {
+		token := uuid.NewString()
+		expires := time.Now().Add(1 * time.Hour).UTC().Format(time.RFC3339)
+		t := token
+		if err := s.DB.SetPasswordResetToken(r.Context(), database.SetPasswordResetTokenParams{
+			PasswordResetToken:   &t,
+			PasswordResetExpires: &expires,
+			ID:                   user.ID,
+		}); err != nil {
+			s.Log.Error("Failed to set password reset token", "email", payload.Email, "err", err)
+			s.JsonError(w, "internal_error", "Failed to process request", http.StatusInternalServerError)
+			return
+		}
+		go func(emailAddr, name, tk string) {
+			if err := s.Email.SendPasswordResetEmail(emailAddr, name, tk); err != nil {
+				s.Log.Error("Failed to send password reset email", "email", emailAddr, "err", err)
+			}
+		}(user.Email, user.Name, token)
+	}
+
+	// Always return 204 (no content) to avoid disclosing account existence
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// @Summary Reset password
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body map[string]string true "{token: string, password: string}"
+// @Success 200 {object} dto.UserResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Router /auth/reset [post]
+func (s *Server) PostAuthReset(w http.ResponseWriter, r *http.Request) {
+	var payload struct{
+		Token    string `json:"token"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || payload.Token == "" || payload.Password == "" {
+		s.JsonError(w, "invalid_request_body", "Could not decode JSON body", http.StatusBadRequest)
+		return
+	}
+
+	tok := payload.Token
+	dbUser, err := s.DB.GetUserByPasswordResetToken(r.Context(), &tok)
+	if err != nil {
+		s.JsonError(w, "invalid_token", "Invalid or expired token", http.StatusBadRequest)
+		return
+	}
+
+	// expiry is enforced by the query in GetUserByPasswordResetToken
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
+	if err != nil {
+		s.JsonError(w, "server_error", "Could not process password", http.StatusInternalServerError)
+		return
+	}
+
+	updatedUser, err := s.DB.UpdateUserPassword(r.Context(), database.UpdateUserPasswordParams{
+		Password: string(hashedPassword),
+		ID:       dbUser.ID,
+	})
+	if err != nil {
+		s.Log.Error("Failed to update password", "err", err)
+		s.JsonError(w, "server_error", "Could not reset password", http.StatusInternalServerError)
+		return
+	}
+
+	// clear token (already cleared by UpdateUserPassword)
+
+	s.RespondJSON(w, http.StatusOK, s.toUserResponse(updatedUser))
+}
+
 // @Summary Log in
 // @Tags Auth
 // @Accept json
