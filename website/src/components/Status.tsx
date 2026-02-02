@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -7,11 +7,11 @@ import MeetingRoomRounded from '@mui/icons-material/MeetingRoomRounded';
 import { getOfficeStatus, putOfficeStatus } from '@lib/api';
 import type { DtoUserResponse as User } from '@lib/api/types.gen';
 
-interface OfficeStatusProps {
+interface StatusProps {
   user?: User | null;
 }
 
-const OfficeStatus = ({ user }: OfficeStatusProps) => {
+export default function Status({ user }: StatusProps) {
   const [occupied, setOccupied] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [updating, setUpdating] = useState<boolean>(false);
@@ -34,7 +34,6 @@ const OfficeStatus = ({ user }: OfficeStatusProps) => {
 
   useEffect(() => {
     fetchStatus();
-    // Refresh status every 2 minutes
     const interval = setInterval(fetchStatus, 120000);
     return () => clearInterval(interval);
   }, []);
@@ -69,46 +68,6 @@ const OfficeStatus = ({ user }: OfficeStatusProps) => {
     ? theme.palette.success.main
     : theme.palette.text.secondary;
 
-  const content = (
-    <Box
-      onClick={isAuthorized ? handleToggle : undefined}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
-        width: '100%',
-        maxWidth: 'lg',
-        px: { xs: 2.5, md: 5 },
-        cursor: isAuthorized ? 'pointer' : 'default',
-        '&:hover': isAuthorized ? {
-          opacity: 0.8,
-        } : {},
-        transition: 'opacity 0.2s ease',
-      }}
-    >
-      <MeetingRoomRounded sx={{ color, fontSize: 22 }} />
-      <Typography
-        variant="body1"
-        sx={{
-          fontWeight: 800,
-          color: color,
-          flexGrow: 1,
-          fontFamily: '"Space Grotesk", sans-serif',
-          letterSpacing: '0.02em',
-          lineHeight: 1.2,
-          textTransform: 'uppercase',
-          fontSize: '0.95rem',
-          userSelect: 'none',
-        }}
-      >
-        {occupied ? 'Büro besetzt' : 'Büro nicht besetzt'}
-      </Typography>
-      {updating && (
-        <CircularProgress size={16} color="inherit" sx={{ opacity: 0.5, ml: 1 }} />
-      )}
-    </Box>
-  );
-
   return (
     <Box
       sx={{
@@ -123,9 +82,43 @@ const OfficeStatus = ({ user }: OfficeStatusProps) => {
         transition: 'all 0.3s ease',
       }}
     >
-      {content}
+      <Box
+        onClick={isAuthorized ? handleToggle : undefined}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          width: '100%',
+          maxWidth: 'lg',
+          px: { xs: 2.5, md: 5 },
+          cursor: isAuthorized ? 'pointer' : 'default',
+          '&:hover': isAuthorized ? {
+            opacity: 0.8,
+          } : {},
+          transition: 'opacity 0.2s ease',
+        }}
+      >
+        <MeetingRoomRounded sx={{ color, fontSize: 22 }} />
+        <Typography
+          variant="body1"
+          sx={{
+            fontWeight: 800,
+            color: color,
+            flexGrow: 1,
+            fontFamily: '"Space Grotesk", sans-serif',
+            letterSpacing: '0.02em',
+            lineHeight: 1.2,
+            textTransform: 'uppercase',
+            fontSize: '0.95rem',
+            userSelect: 'none',
+          }}
+        >
+          {occupied ? 'Büro besetzt' : 'Büro nicht besetzt'}
+        </Typography>
+        {updating && (
+          <CircularProgress size={16} color="inherit" sx={{ opacity: 0.5, ml: 1 }} />
+        )}
+      </Box>
     </Box>
   );
-};
-
-export default OfficeStatus;
+}

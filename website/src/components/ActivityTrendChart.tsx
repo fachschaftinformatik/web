@@ -6,7 +6,6 @@ import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import { BarChart } from '@mui/x-charts/BarChart';
-import React from 'react';
 
 interface ActivityChartProps {
   title: string;
@@ -29,7 +28,6 @@ export default function ActivityChart({
   const theme = useTheme();
 
   return (
-
     <Card variant="outlined" sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2, overflow: 'hidden' }}>
       <CardContent sx={{ p: 2, pb: 0, flexGrow: 1, display: 'flex', flexDirection: 'column', '&:last-child': { pb: 0 } }}>
         <Typography component="h2" variant="caption" gutterBottom fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.85rem' }}>
@@ -65,7 +63,7 @@ export default function ActivityChart({
                   scaleType: 'band',
                   categoryGapRatio: 0.5,
                   data: data.length === 1 ? ['', ''] : labels,
-                  tickInterval: (index, i) => (i + 1) % 5 === 0,
+                  tickInterval: (_, i) => (i + 1) % 5 === 0,
                 },
               ]}
               grid={{ horizontal: true }}
@@ -79,7 +77,6 @@ export default function ActivityChart({
               borderRadius={8}
               height={320}
             />
-
           ) : (
             <Box display="flex" alignItems="center" justifyContent="center" height="100%">
               <Typography color="textSecondary" variant="body2">Keine Daten verfügbar</Typography>
@@ -90,4 +87,3 @@ export default function ActivityChart({
     </Card>
   );
 }
-
