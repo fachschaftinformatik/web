@@ -46,16 +46,9 @@ export const getCsrfFromCookie = (): string | null => {
 
     for (let i = 0; i < ca.length; i++) {
         let c = ca[i];
-        while (c.charAt(0) === ' ') {
-            c = c.substring(1);
-        }
-        // Always prioritize __Host- prefix if it exists
-        if (c.indexOf(name1) === 0) {
-            return c.substring(name1.length, c.length);
-        }
-        if (c.indexOf(name2) === 0) {
-            fallbackToken = c.substring(name2.length, c.length);
-        }
+        while (c.charAt(0) === ' ') c = c.substring(1);
+        if (c.indexOf(name1) === 0) return c.substring(name1.length, c.length);
+        if (c.indexOf(name2) === 0) fallbackToken = c.substring(name2.length, c.length);
     }
     return fallbackToken;
 };
