@@ -1,20 +1,12 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams, Outlet } from 'react-router-dom';
 
-import "@fontsource/manrope/400.css";
-import "@fontsource/manrope/500.css";
-import "@fontsource/manrope/600.css";
-import "@fontsource/manrope/700.css";
-import "@fontsource/space-grotesk/400.css";
-import "@fontsource/space-grotesk/500.css";
-import "@fontsource/space-grotesk/600.css";
-import "@fontsource/space-grotesk/700.css";
-import "@fontsource/roboto/300.css";
-import "@fontsource/roboto/400.css";
-import "@fontsource/roboto/500.css";
-import "@fontsource/roboto/700.css";
-import "@fontsource/material-icons";
-import "@fontsource/material-icons-round";
+import "@fontsource/manrope/latin-400.css";
+import "@fontsource/manrope/latin-500.css";
+import "@fontsource/manrope/latin-600.css";
+import "@fontsource/manrope/latin-700.css";
+import "@fontsource/space-grotesk/latin-400.css";
+import "@fontsource/space-grotesk/latin-700.css";
 
 import { client } from '@lib/api/client.gen';
 import { getCsrfFromCookie, fetchCsrfToken } from '@lib/csrf';
