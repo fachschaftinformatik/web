@@ -135,7 +135,7 @@ export default function Auth() {
         <Avatar sx={{ m: 1, bgcolor: 'primary.main', width: 56, height: 56, boxShadow: 3 }}>
           {tab === 0 ? <LoginIcon fontSize="large" /> : <PersonAddIcon fontSize="large" />}
         </Avatar>
-        <Typography variant="h4" fontWeight={800} sx={{ mt: 2, mb: 3 }}>
+        <Typography variant="h4" fontWeight={700} sx={{ mt: 2, mb: 3 }}>
           {tab === 0 ? 'Willkommen' : 'Registrieren'}
         </Typography>
 

@@ -105,7 +105,7 @@ export default function Home() {
             </Box>
           ))}
           <Box sx={{ position: 'relative', zIndex: 1, height: '100%', px: { xs: 4, md: 8 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Typography variant="overline" color="primary" fontWeight={800}>fsInformatik</Typography>
+            <Typography variant="overline" color="primary" fontWeight={700}>fsInformatik</Typography>
             <Typography variant="h1" sx={{ fontSize: { xs: '2rem', md: '4rem' }, mb: 2 }}>{events[cur]?.title || 'FSV Informatik'}</Typography>
             <Stack direction="row" spacing={2}>
               <Button component={RouterLink} to="/discussions" variant="contained">Beiträge</Button>
@@ -117,9 +117,9 @@ export default function Home() {
         <Box sx={{ display: 'grid', gap: 4, gridTemplateColumns: { xs: '1fr', md: '7fr 5fr' } }}>
           <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 4 }}>
             <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-              <Typography variant="h5" onClick={() => setTab(0)} sx={{ cursor: 'pointer', fontWeight: 800, color: tab === 0 ? 'text.primary' : 'text.secondary' }}>Ankündigungen</Typography>
+              <Typography variant="h5" onClick={() => setTab(0)} sx={{ cursor: 'pointer', fontWeight: 700, color: tab === 0 ? 'text.primary' : 'text.secondary' }}>Ankündigungen</Typography>
               <Typography variant="h5" sx={{ color: 'divider' }}>|</Typography>
-              <Typography variant="h5" onClick={() => setTab(1)} sx={{ cursor: 'pointer', fontWeight: 800, color: tab === 1 ? 'text.primary' : 'text.secondary' }}>Beiträge</Typography>
+              <Typography variant="h5" onClick={() => setTab(1)} sx={{ cursor: 'pointer', fontWeight: 700, color: tab === 1 ? 'text.primary' : 'text.secondary' }}>Beiträge</Typography>
             </Stack>
             <Stack spacing={1.5}>
               {loading ? [1, 2, 3].map(i => <Skeleton key={i} variant="rectangular" height={80} sx={{ borderRadius: 3 }} />) : 
@@ -129,7 +129,7 @@ export default function Home() {
           </Paper>
 
           <Box>
-            <Typography variant="h5" fontWeight={800} textAlign="center" sx={{ mb: 2 }}>Agenda</Typography>
+            <Typography variant="h5" fontWeight={700} textAlign="center" sx={{ mb: 2 }}>Agenda</Typography>
             <Timeline position="alternate">
               {loading ? [1, 2, 3].map(i => <TimelineItem key={i}><TimelineSeparator><TimelineDot /><TimelineConnector /></TimelineSeparator><TimelineContent><Skeleton /></TimelineContent></TimelineItem>) :
                 agenda.map(e => (
@@ -142,7 +142,7 @@ export default function Home() {
                       </TimelineDot>
                       <TimelineConnector />
                     </TimelineSeparator>
-                    <TimelineContent><Typography variant="subtitle2" fontWeight={800}>{e.title}</Typography></TimelineContent>
+                    <TimelineContent><Typography variant="subtitle2" fontWeight={700}>{e.title}</Typography></TimelineContent>
                   </TimelineItem>
                 ))}
             </Timeline>

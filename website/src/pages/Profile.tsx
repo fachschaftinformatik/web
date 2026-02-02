@@ -74,7 +74,7 @@ export default function Profile() {
         <Paper variant="outlined" sx={{ p: 4, borderRadius: 4, display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
           <Avatar src={getAvatarUrl(u.avatar_url)} sx={{ width: 100, height: 100, bgcolor: 'primary.main', fontSize: 40 }}>{u.name?.[0]}</Avatar>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h3" fontWeight={800}>{u.name}</Typography>
+            <Typography variant="h3" fontWeight={700}>{u.name}</Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
               <Chip label={u.role?.toUpperCase()} size="small" color="primary" variant="outlined" />
               {u.active === 1 && <Chip label="Aktiv" size="small" color="success" variant="outlined" />}

@@ -77,7 +77,7 @@ export default function DiscussionDetail() {
           </Stack>
           <Box sx={{ flex: 1 }}>
             <Stack direction="row" justifyContent="space-between">
-              <Typography variant="h4" fontWeight={800}>{post.title}</Typography>
+              <Typography variant="h4" fontWeight={700}>{post.title}</Typography>
               <Stack direction="row" spacing={1}>
                 <IconButton onClick={() => { navigator.clipboard.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 2000); }}><Tooltip title={copied ? "Kopiert!" : "Teilen"}><ShareIcon fontSize="small" /></Tooltip></IconButton>
                 {(user?.role === 'admin' || user?.id === post.user_id) && <IconButton color="error" onClick={async () => { if (confirm("Löschen?")) { await deleteDiscussionsByPostId({ path: { id: postId! } }); navigate("/discussions"); } }}><DelIcon fontSize="small" /></IconButton>}

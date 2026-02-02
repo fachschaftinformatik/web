@@ -102,7 +102,7 @@ export default function Status({ user }: StatusProps) {
         <Typography
           variant="body1"
           sx={{
-            fontWeight: 800,
+            fontWeight: 700,
             color: color,
             flexGrow: 1,
             fontFamily: '"Space Grotesk", sans-serif',

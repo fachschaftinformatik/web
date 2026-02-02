@@ -34,7 +34,7 @@ export default function Navbar({ title, headerActions, navOpen, onDrawerToggle }
           {navOpen ? <MenuOpenRounded /> : <MenuRounded />}
         </IconButton>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ flexGrow: 1 }}>
-          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 800, letterSpacing: '-0.02em', fontFamily: '"Space Grotesk", sans-serif', display: { xs: 'none', sm: 'block' } }}>
+          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, letterSpacing: '-0.02em', fontFamily: '"Space Grotesk", sans-serif', display: { xs: 'none', sm: 'block' } }}>
             fsInformatik
           </Typography>
           <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 400, color: alpha(theme.palette.common.white, 0.6), display: { xs: 'none', md: 'block' } }}>
