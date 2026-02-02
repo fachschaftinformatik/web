@@ -25,7 +25,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('@mui/x-charts') || id.includes('@mui/x-data-grid')) {
+            if (id.includes('@mui/x-charts')) {
               return 'mui-x';
             }
             if (id.includes('@mui') || id.includes('@emotion') || id.includes('react') || id.includes('scheduler') || id.includes('react-router')) {
