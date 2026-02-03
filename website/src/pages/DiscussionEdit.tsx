@@ -66,7 +66,7 @@ export default function DiscussionEdit() {
   if (loading) return <Page title="Laden..."><CircularProgress /></Page>;
 
   return (
-    <Page title="Bearbeiten" maxWidth="md">
+    <Page title="Bearbeiten" maxWidth="md" hideHeader>
       <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 4 }}>
         <Back to="/discussions" icon />
         <Typography variant="h4" fontWeight={700}>Beitrag bearbeiten</Typography>

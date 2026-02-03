@@ -80,15 +80,32 @@ export default function Discussions() {
           <Typography variant="subtitle2">{p.votes}</Typography>
           <IconButton size="small" onClick={e => { e.stopPropagation(); vote(String(p.id), p.user_vote === -1 ? 0 : -1); }} color={p.user_vote === -1 ? "primary" : "default"}><ThumbDownOutlined fontSize="small" /></IconButton>
         </Stack>
-        <Box sx={{ flex: 1 }}>
-          <Stack direction="row" justifyContent="space-between">
-            <Typography variant="h6" fontWeight={700}>{p.title} {p.pinned === 1 && <PinIcon fontSize="small" color="primary" />}</Typography>
-            { (user?.role === 'admin' || user?.id === p.user_id) && <IconButton size="small" onClick={e => { e.stopPropagation(); del(String(p.id!)); }}><DelIcon fontSize="small" /></IconButton> }
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+            <Typography variant="h6" fontWeight={700} sx={{ 
+              display: '-webkit-box',
+              WebkitLineClamp: 1,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              wordBreak: 'break-word'
+            }}>
+              {p.title} {p.pinned === 1 && <PinIcon fontSize="small" color="primary" sx={{ verticalAlign: 'middle', ml: 0.5 }} />}
+            </Typography>
+            { (user?.role === 'admin' || user?.id === p.user_id) && <IconButton size="small" onClick={e => { e.stopPropagation(); del(String(p.id!)); }} sx={{ ml: 1, flexShrink: 0 }}><DelIcon fontSize="small" /></IconButton> }
           </Stack>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }} noWrap>{p.body}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ 
+            mb: 1,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            wordBreak: 'break-word'
+          }}>
+            {p.body}
+          </Typography>
           <Stack direction="row" spacing={1} alignItems="center">
             <Avatar src={getAvatarUrl(p.user_avatar_url)} sx={{ width: 20, height: 20 }} />
-            <Typography variant="caption">von <b>{p.user_name}</b> · {p.comment_count} Kommentare</Typography>
+            <Typography variant="caption">von <b>{p.user_name}</b> · {p.comment_count} {p.comment_count === 1 ? 'Kommentar' : 'Kommentare'}</Typography>
           </Stack>
         </Box>
       </Stack>

@@ -163,7 +163,7 @@ function UploadDialog({ open, onClose, evs, onDone, onAddEv }: { open: boolean, 
             <Button onClick={onAddEv} variant="outlined"><AddIcon /></Button>
           </Stack>
           <input type="file" multiple onChange={e => setFiles(Array.from(e.target.files || []))} />
-          {files.length > 0 && <Typography variant="caption">{files.length} Bilder ausgewählt</Typography>}
+          {files.length > 0 && <Typography variant="caption">{files.length} {files.length === 1 ? 'Bild' : 'Bilder'} ausgewählt</Typography>}
         </Stack>
       </DialogContent>
       <DialogActions>

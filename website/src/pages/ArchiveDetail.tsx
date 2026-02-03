@@ -98,7 +98,7 @@ export default function ArchiveDetail() {
   };
 
   return (
-    <Page title="Archiv">
+    <Page title="Archiv" hideHeader>
       <Back to="/archive" />
       <Typography variant="h4" fontWeight={700} gutterBottom>{name}</Typography>
 

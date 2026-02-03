@@ -122,7 +122,7 @@ export function CommentThread({ node, onReply, onEdit, onVote, depth = 0, appear
                     {replyOpen && <Box sx={{ mt: 2, ml: 2 }}><CommentsSection comments={[]} onAdd={(_, t) => { onReply(String(node.id!), t); setReplyOpen(false); }} appearance={appearance} currentUser={currentUser} flat disableCollapse /></Box>}
                 </Box>
             </Stack>
-            {depth === 0 && node.children.length > 0 && <Box sx={{ mt: 1, ml: 5 }}><Button size="small" onClick={() => setRepliesExpanded(!repliesExpanded)} startIcon={repliesExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />} sx={{ textTransform: 'none' }}>{node.children.length} Antworten</Button></Box>}
+            {depth === 0 && node.children.length > 0 && <Box sx={{ mt: 1, ml: 5 }}><Button size="small" onClick={() => setRepliesExpanded(!repliesExpanded)} startIcon={repliesExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />} sx={{ textTransform: 'none' }}>{node.children.length} {node.children.length === 1 ? 'Antwort' : 'Antworten'}</Button></Box>}
             {(depth > 0 || repliesExpanded) && node.children.map(c => <CommentThread key={c.id} node={c} onReply={onReply} onEdit={onEdit} onVote={onVote} depth={depth + 1} appearance={appearance} currentUser={currentUser} />)}
         </Box>
     );
@@ -147,7 +147,7 @@ export function CommentsSection({ comments, onAdd, onEdit, onVote, appearance, c
                 <Stack direction="row" justifyContent="end"><Button variant="contained" size="small" onClick={() => { onAdd(null, text); setText(""); }} disabled={!text.trim()}>Antworten</Button></Stack>
             </Stack>}
             <Box>
-                {!flat && <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Kommentare ({comments.length})</Typography>}
+                {!flat && <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>{comments.length} {comments.length === 1 ? 'Kommentar' : 'Kommentare'}</Typography>}
                 <Stack spacing={2}>{tree.map(root => <CommentThread key={root.id} node={root} onReply={onAdd} onEdit={onEdit || (() => { })} onVote={onVote || (() => { })} appearance={appearance} currentUser={currentUser} />)}</Stack>
                 {comments.length > visible.length && <Button onClick={() => setExpanded(true)} sx={{ mt: 2, width: '100%' }}>Alle Kommentare anzeigen</Button>}
             </Box>

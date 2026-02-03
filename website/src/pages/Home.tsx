@@ -84,18 +84,24 @@ export default function Home() {
   };
 
   const PostCard = ({ p }: { p: Post }) => (
-    <Box component={RouterLink} to={`/d/${p.id}`} sx={{ ...theme.custom.newsCardLink, bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.08 : 0.04) }}>
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+    <Box component={RouterLink} to={`/d/${p.id}`} sx={{ ...theme.custom.newsCardLink, bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.08 : 0.04), minWidth: 0 }}>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5, minWidth: 0 }}>
         <Avatar src={getAvatarUrl(p.user_avatar_url)} sx={{ width: 18, height: 18, fontSize: "0.6rem" }}>{p.user_name?.[0]}</Avatar>
-        <Typography variant="caption" color="text.secondary">von <b>{p.user_name}</b> · {fmtDate(p.created_at || '')}</Typography>
+        <Typography variant="caption" color="text.secondary" noWrap sx={{ minWidth: 0, textOverflow: 'ellipsis', overflow: 'hidden' }}>von <b>{p.user_name}</b> · {p.comment_count} {p.comment_count === 1 ? 'Kommentar' : 'Kommentare'} · {fmtDate(p.created_at || '')}</Typography>
       </Stack>
-      <Typography variant="subtitle1" fontWeight={700}>{p.title}</Typography>
-      <Typography variant="body2" color="text.secondary" noWrap>{p.body}</Typography>
+      <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ 
+        display: '-webkit-box',
+        WebkitLineClamp: 1,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+        wordBreak: 'break-word'
+      }}>{p.body}</Typography>
     </Box>
   );
 
   return (
-    <Page title="Startseite" maxWidth="xl">
+    <Page title="Startseite" maxWidth="xl" hideHeader>
       <Stack spacing={3}>
         <Box sx={{ position: 'relative', height: { xs: 240, md: 360 }, borderRadius: 6, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
           {loading ? <Skeleton variant="rectangular" sx={{ position: 'absolute', inset: 0 }} /> : events.map((ev, i) => (

@@ -69,7 +69,7 @@ export default function Profile() {
   const priv = u.private === 1 && !isMe;
 
   return (
-    <Page title={u.name || 'Profil'}>
+    <Page title={u.name || 'Profil'} hideHeader>
       <Stack spacing={3}>
         <Paper variant="outlined" sx={{ p: 4, borderRadius: 4, display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
           <Avatar src={getAvatarUrl(u.avatar_url)} sx={{ width: 100, height: 100, bgcolor: 'primary.main', fontSize: 40 }}>{u.name?.[0]}</Avatar>
@@ -89,11 +89,15 @@ export default function Profile() {
           {priv ? <Box sx={{ py: 4, textAlign: 'center' }}><LockIcon sx={{ fontSize: 40, opacity: 0.5 }} /><Typography>Profil ist privat</Typography></Box> : 
             <List>
               {acts.map((a, i) => (
-                <ListItem key={a.id} divider={i < acts.length - 1} component={RouterLink} to={a.type?.includes('POST') || a.type?.includes('COMMENT') ? `/d/${a.target_id}` : (a.type?.includes('EXAM') ? `/archive/${a.target_id}` : `/events/${a.target_id}`)} sx={{ color: 'inherit', textDecoration: 'none' }}>
+                <ListItem key={a.id} divider={i < acts.length - 1} component={RouterLink} to={a.type?.includes('POST') || a.type?.includes('COMMENT') ? `/d/${a.target_id}` : (a.type?.includes('EXAM') ? `/archive/${a.target_id}` : `/events/${a.target_id}`)} sx={{ color: 'inherit', textDecoration: 'none', minWidth: 0 }}>
                   <ListItemIcon>
                     {a.type?.includes('POST') ? <PostIcon /> : a.type?.includes('COMMENT') ? <CommentIcon /> : a.type?.includes('EXAM') ? <ArchiveIcon /> : <MediaIcon />}
                   </ListItemIcon>
-                  <ListItemText primary={a.target_name || a.type} secondary={new Date(a.created_at || '').toLocaleString()} />
+                  <ListItemText 
+                    primary={a.target_name || a.type} 
+                    secondary={new Date(a.created_at || '').toLocaleString()} 
+                    primaryTypographyProps={{ noWrap: true, sx: { overflow: 'hidden', textOverflow: 'ellipsis' } }}
+                  />
                 </ListItem>
               ))}
               {!acts.length && <Typography color="text.secondary" textAlign="center">Keine Aktivitäten</Typography>}

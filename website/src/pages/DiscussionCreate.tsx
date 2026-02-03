@@ -45,7 +45,7 @@ export default function DiscussionCreate() {
   };
 
   return (
-    <Page title="Beitrag erstellen" maxWidth="md">
+    <Page title="Beitrag erstellen" maxWidth="md" hideHeader>
       <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 4 }}>
         <Back to="/discussions" icon />
         <Typography variant="h4" fontWeight={700}>Neuer Beitrag</Typography>

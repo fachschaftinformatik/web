@@ -66,7 +66,7 @@ export default function DiscussionDetail() {
   if (!post) return <Page title="Fehler"><Alert severity="error">Nicht gefunden</Alert></Page>;
 
   return (
-    <Page title={post.title || 'Diskussion'} maxWidth="md">
+    <Page title={post.title || 'Diskussion'} maxWidth="md" hideHeader>
       <Back to="/discussions" />
       <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3 }}>
         <Stack direction="row" spacing={3}>
