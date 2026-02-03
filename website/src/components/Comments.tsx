@@ -20,29 +20,17 @@ import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+
 import { getAvatarUrl } from "@lib/images";
-import type { DtoDiscussionPostResponse as ApiPost, DtoDiscussionCommentResponse as ApiComment, DtoUserResponse } from "@lib/api";
+import type { DtoUserResponse } from "@lib/api";
+import { Comment, Vote, isoToShort } from "@lib/posts";
+import { COMMENT_COLLAPSE_LIMIT } from "@internals/data";
 
-export type Program = string;
-export type Vote = -1 | 0 | 1;
-export type Comment = ApiComment;
-export type Post = ApiPost & { comments: Comment[]; };
-export type CommentAppearance = { surface: string; border: string; accent: string; textSecondary: string; };
-export const COMMENT_COLLAPSE_LIMIT = 6;
-export const POSTS_PER_PAGE = 10;
-export { FORUM_CATEGORIES, FORUM_TAGS } from "@internals/data";
+type CommentAppearance = { surface: string; border: string; accent: string; textSecondary: string; };
 
-export const isoToShort = (iso?: string) => {
-    if (!iso) return "Unbekannt";
-    try {
-        const d = new Date(iso);
-        if (isNaN(d.getTime())) return "Unbekannt";
-        return d.toLocaleString("de-DE", { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-    } catch { return "Unbekannt"; }
-}
+type CommentNode = Comment & { children: CommentNode[] };
 
-export type CommentNode = Comment & { children: CommentNode[] };
-export function buildCommentTree(comments: Comment[]): CommentNode[] {
+function buildCommentTree(comments: Comment[]): CommentNode[] {
     if (!Array.isArray(comments)) return [];
     const map = new Map<string, CommentNode>();
     const roots: CommentNode[] = [];
@@ -61,7 +49,7 @@ export function buildCommentTree(comments: Comment[]): CommentNode[] {
     return roots;
 }
 
-export function renderTextWithMentions(text: string) {
+function renderTextWithMentions(text: string) {
     if (!text) return "";
     const mentionRegex = /@[A-Za-z0-9._-]+/g;
     const nodes: React.ReactNode[] = [];
@@ -78,7 +66,7 @@ export function renderTextWithMentions(text: string) {
     return nodes.length ? nodes : [text as React.ReactNode];
 }
 
-export function CommentThread({ node, onReply, onEdit, onVote, depth = 0, appearance, currentUser }: { node: CommentNode; onReply: (parentId: string | null, text: string) => void; onEdit: (commentId: string, text: string) => void; onVote: (commentId: string, vote: Vote) => void; depth?: number; appearance: CommentAppearance; currentUser: DtoUserResponse | null; }) {
+function CommentThread({ node, onReply, onEdit, onVote, depth = 0, appearance, currentUser }: { node: CommentNode; onReply: (parentId: string | null, text: string) => void; onEdit: (commentId: string, text: string) => void; onVote: (commentId: string, vote: Vote) => void; depth?: number; appearance: CommentAppearance; currentUser: DtoUserResponse | null; }) {
     const [replyOpen, setReplyOpen] = React.useState(false);
     const [editing, setEditing] = React.useState(false);
     const [repliesExpanded, setRepliesExpanded] = React.useState(false);
@@ -128,7 +116,18 @@ export function CommentThread({ node, onReply, onEdit, onVote, depth = 0, appear
     );
 }
 
-export function CommentsSection({ comments, onAdd, onEdit, onVote, appearance, currentUser, flat = false, disableCollapse = false }: { comments: Comment[]; onAdd: (parentId: string | null, text: string) => void; onEdit?: (commentId: string, text: string) => void; onVote?: (commentId: string, vote: Vote) => void; appearance: CommentAppearance; currentUser: DtoUserResponse | null; flat?: boolean; disableCollapse?: boolean; }) {
+export interface CommentsSectionProps {
+  comments: Comment[];
+  onAdd: (parentId: string | null, text: string) => void;
+  onEdit?: (commentId: string, text: string) => void;
+  onVote?: (commentId: string, vote: Vote) => void;
+  appearance: CommentAppearance;
+  currentUser: DtoUserResponse | null;
+  flat?: boolean;
+  disableCollapse?: boolean;
+}
+
+export function CommentsSection({ comments, onAdd, onEdit, onVote, appearance, currentUser, flat = false, disableCollapse = false }: CommentsSectionProps) {
     const [expanded, setExpanded] = React.useState(false);
     const [text, setText] = React.useState("");
     const visible = expanded || disableCollapse || comments.length <= COMMENT_COLLAPSE_LIMIT ? comments : comments.slice(0, COMMENT_COLLAPSE_LIMIT);

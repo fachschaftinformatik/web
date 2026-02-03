@@ -17,7 +17,8 @@ import PinIcon from '@mui/icons-material/PushPinOutlined';
 import DelIcon from '@mui/icons-material/DeleteOutline';
 
 import { getAvatarUrl } from '@lib/images';
-import type { DtoDiscussionPostResponse as Post, DtoUserResponse as User } from '@lib/api';
+import type { Post } from '@lib/posts';
+import type { DtoUserResponse as User } from '@lib/api';
 
 interface PostItemProps {
   p: Post;
@@ -42,7 +43,7 @@ export default function PostItem({ p, user, onVote, onDelete }: PostItemProps) {
 
   return (
     <Paper 
-      onClick={() => navigate(`/d/${p.id}`)} 
+      onClick={() => navigate(`/post/${p.id}`)} 
       variant="outlined" 
       sx={{ 
         p: 2, 
@@ -88,7 +89,7 @@ export default function PostItem({ p, user, onVote, onDelete }: PostItemProps) {
               <>
                 <IconButton size="small" onClick={handleOpen} sx={{ ml: 1, flexShrink: 0 }}><MoreVertIcon fontSize="small" /></IconButton>
                 <Menu anchorEl={anchorEl} open={open} onClose={handleClose} onClick={e => e.stopPropagation()}>
-                  <MenuItem onClick={() => { handleClose(); navigate(`/d/${p.id}/edit`); }} sx={{ gap: 1.5 }}>
+                  <MenuItem onClick={() => { handleClose(); navigate(`/post/${p.id}/edit`); }} sx={{ gap: 1.5 }}>
                     <EditIcon fontSize="small" /> Bearbeiten
                   </MenuItem>
                   <MenuItem onClick={() => { handleClose(); onDelete(String(p.id!)); }} sx={{ gap: 1.5, color: 'error.main' }}>

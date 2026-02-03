@@ -23,7 +23,7 @@ import { useAuth } from '@lib/auth';
 import { getDiscussions, getEvents, postDiscussionsByPostIdVote, deleteDiscussionsByPostId } from '@lib/api';
 import type { DtoDiscussionPostResponse as Post, DtoEventResponse as Event } from '@lib/api';
 import { getSizedImageUrl, getImageSrcSet } from '@lib/images';
-import type { Vote } from './DiscussionComponents';
+import type { Vote } from '@lib/posts';
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
 
@@ -41,8 +41,8 @@ export default function Home() {
 
   useEffect(() => {
     Promise.all([
-      getDiscussions({ query: { type: 'news', limit: 3 } }),
-      getDiscussions({ query: { type: 'discussion', limit: 3 } }),
+      getDiscussions({ query: { type: 'news', limit: 10 } }),
+      getDiscussions({ query: { type: 'discussion', limit: 10 } }),
       getDiscussions({ query: { type: 'event', limit: 20 } }),
       getEvents()
     ]).then(([n, p, e, evs]) => {
@@ -103,8 +103,8 @@ export default function Home() {
 
   return (
     <Page title="Startseite" maxWidth="xl" hideHeader>
-      <Stack spacing={3}>
-        <Box sx={{ position: 'relative', height: { xs: 240, md: 360 }, borderRadius: 6, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+      <Stack spacing={3} sx={{ height: { md: 'calc(100vh - 160px)' }, minHeight: { md: 600 } }}>
+        <Box sx={{ position: 'relative', height: { xs: 240, md: 280 }, flexShrink: 0, borderRadius: 6, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
           {loading ? <Skeleton variant="rectangular" sx={{ position: 'absolute', inset: 0 }} /> : events.map((ev, i) => (
             <Box key={String(ev.id)} sx={{ position: 'absolute', inset: 0, transition: 'opacity 1s', opacity: cur === i ? 1 : 0 }}>
               <Box component="img" src={getSizedImageUrl(`/api/v1/events/${ev.id}/cover`, 1600)} srcSet={getImageSrcSet(`/api/v1/events/${ev.id}/cover`)} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
@@ -112,47 +112,69 @@ export default function Home() {
             </Box>
           ))}
           <Box sx={{ position: 'relative', zIndex: 1, height: '100%', px: { xs: 4, md: 8 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Typography variant="overline" color="primary" fontWeight={700}>fsInformatik</Typography>
-            <Typography variant="h1" sx={{ fontSize: { xs: '2rem', md: '4rem' }, mb: 2 }}>{events[cur]?.title || 'FSV Informatik'}</Typography>
+            <Typography variant="h6" color="primary" fontWeight={700} sx={{ letterSpacing: '0.02em', textTransform: 'uppercase', mb: 0.5 }}>fsInformatik</Typography>
+            <Typography variant="h1" sx={{ fontSize: { xs: '2rem', md: '3rem' }, mb: 2 }}>{events[cur]?.title || 'FSV Informatik'}</Typography>
             <Stack direction="row" spacing={2}>
-              <Button component={RouterLink} to="/discussions" variant="contained">Beiträge</Button>
+              <Button component={RouterLink} to="/posts" variant="contained">Beiträge</Button>
               <Button component={RouterLink} to="/events" variant="outlined">Galerie</Button>
             </Stack>
           </Box>
         </Box>
 
-        <Box sx={{ display: 'grid', gap: 4, gridTemplateColumns: { xs: '1fr', md: '7fr 5fr' } }}>
-          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 4 }}>
-            <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+        <Box sx={{ display: 'grid', gap: 4, gridTemplateColumns: { xs: '1fr', md: '7fr 5fr' }, flexGrow: 1, minHeight: 0 }}>
+          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 4, display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+            <Stack direction="row" spacing={2} sx={{ mb: 2, flexShrink: 0 }}>
               <Typography variant="h5" onClick={() => setTab(0)} sx={{ cursor: 'pointer', fontWeight: 700, color: tab === 0 ? 'text.primary' : 'text.secondary' }}>Ankündigungen</Typography>
               <Typography variant="h5" sx={{ color: 'divider' }}>|</Typography>
               <Typography variant="h5" onClick={() => setTab(1)} sx={{ cursor: 'pointer', fontWeight: 700, color: tab === 1 ? 'text.primary' : 'text.secondary' }}>Beiträge</Typography>
             </Stack>
-            <Stack spacing={1.5}>
+            <Stack spacing={1.5} sx={{ 
+              flexGrow: 1, 
+              overflowY: 'auto', 
+              pr: 1, 
+              '&::-webkit-scrollbar': { display: 'none' }, 
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}>
               {loading ? [1, 2, 3].map(i => <Skeleton key={i} variant="rectangular" height={140} sx={{ borderRadius: 3 }} />) : 
                 (tab === 0 ? news : posts).map(p => <PostItem key={String(p.id)} p={p} user={user} onVote={vote} onDelete={del} />)}
             </Stack>
-            <Button component={RouterLink} to="/discussions" variant="contained" sx={{ mt: 3 }}>Alle anzeigen</Button>
+            <Button 
+              component={RouterLink} 
+              to="/posts" 
+              variant="contained" 
+              sx={{ mt: 2, flexShrink: 0, width: 'fit-content', alignSelf: 'center' }}
+            >
+              Alle anzeigen
+            </Button>
           </Paper>
 
-          <Box>
-            <Typography variant="h5" fontWeight={700} textAlign="center" sx={{ mb: 2 }}>Agenda</Typography>
-            <Timeline position="alternate">
-              {loading ? [1, 2, 3].map(i => <TimelineItem key={i}><TimelineSeparator><TimelineDot /><TimelineConnector /></TimelineSeparator><TimelineContent><Skeleton /></TimelineContent></TimelineItem>) :
-                agenda.map(e => (
-                  <TimelineItem key={e.id} onClick={() => navigate(`/d/${e.id}`)} sx={{ cursor: 'pointer' }}>
-                    <TimelineOppositeContent color="text.secondary" variant="body2">{fmtDate(e.date.toISOString())}</TimelineOppositeContent>
-                    <TimelineSeparator>
-                      <TimelineConnector />
-                      <TimelineDot sx={{ bgcolor: getCatColor(e.cat) }}>
-                        {e.cat === 'Treffen' ? <GroupsRounded sx={{ fontSize: 18 }} /> : <InfoRounded sx={{ fontSize: 18 }} />}
-                      </TimelineDot>
-                      <TimelineConnector />
-                    </TimelineSeparator>
-                    <TimelineContent><Typography variant="subtitle2" fontWeight={700}>{e.title}</Typography></TimelineContent>
-                  </TimelineItem>
-                ))}
-            </Timeline>
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+            <Typography variant="h5" fontWeight={700} textAlign="center" sx={{ mb: 2, flexShrink: 0 }}>Agenda</Typography>
+            <Box sx={{ 
+              flexGrow: 1, 
+              overflowY: 'auto', 
+              '&::-webkit-scrollbar': { display: 'none' }, 
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}>
+              <Timeline position="alternate">
+                {loading ? [1, 2, 3].map(i => <TimelineItem key={i}><TimelineSeparator><TimelineDot /><TimelineConnector /></TimelineSeparator><TimelineContent><Skeleton /></TimelineContent></TimelineItem>) :
+                  agenda.map(e => (
+                    <TimelineItem key={e.id} onClick={() => navigate(`/post/${e.id}`)} sx={{ cursor: 'pointer' }}>
+                      <TimelineOppositeContent color="text.secondary" variant="body2">{fmtDate(e.date.toISOString())}</TimelineOppositeContent>
+                      <TimelineSeparator>
+                        <TimelineConnector />
+                        <TimelineDot sx={{ bgcolor: getCatColor(e.cat) }}>
+                          {e.cat === 'Treffen' ? <GroupsRounded sx={{ fontSize: 18 }} /> : <InfoRounded sx={{ fontSize: 18 }} />}
+                        </TimelineDot>
+                        <TimelineConnector />
+                      </TimelineSeparator>
+                      <TimelineContent><Typography variant="subtitle2" fontWeight={700}>{e.title}</Typography></TimelineContent>
+                    </TimelineItem>
+                  ))}
+              </Timeline>
+            </Box>
           </Box>
         </Box>
       </Stack>

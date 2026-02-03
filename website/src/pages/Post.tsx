@@ -16,6 +16,7 @@ import DelIcon from "@mui/icons-material/DeleteOutline";
 import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import ShareIcon from "@mui/icons-material/Share";
+import { Link as RouterLink } from "react-router-dom";
 
 import Page from "@components/Page";
 import Back from "@components/Back";
@@ -26,15 +27,16 @@ import {
   postDiscussionsCommentsByCommentIdVote, deleteDiscussionsByPostId,
   putDiscussionsCommentsByCommentId
 } from "@lib/api";
-import { Post, Comment, CommentsSection, isoToShort, Vote } from "./DiscussionComponents";
+import { CommentsSection } from "@components/Comments";
+import { Post as PostType, Comment, Vote, isoToShort } from "@lib/posts";
 import { getAvatarUrl } from "@lib/images";
 
-export default function DiscussionDetail() {
+export default function Post() {
   const { postId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const theme = useTheme();
-  const [post, setPost] = useState<Post | null>(null);
+  const [post, setPost] = useState<PostType | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -59,15 +61,24 @@ export default function DiscussionDetail() {
   const addComment = async (pid: string | null, text: string) => {
     if (!postId || !user) return;
     const { data } = await postDiscussionsByPostIdComments({ path: { id: postId }, body: { parent_id: pid || undefined, text } });
-    if (data && post) setPost({ ...post, comments: [...post.comments, { ...data, user_name: user.name || 'Anonym', user_avatar_url: user.avatar_url || '', user_id: user.id } as Comment], comment_count: (post.comment_count || 0) + 1 });
+    if (data && post) setPost({ 
+      ...post, 
+      comments: [...(post.comments || []), { 
+        ...data, 
+        user_name: user.name || 'Anonym', 
+        user_avatar_url: user.avatar_url || '', 
+        user_id: user.id 
+      } as Comment], 
+      comment_count: (post.comment_count || 0) + 1 
+    });
   };
 
   if (loading) return <Page title="Laden..."><CircularProgress /></Page>;
   if (!post) return <Page title="Fehler"><Alert severity="error">Nicht gefunden</Alert></Page>;
 
   return (
-    <Page title={post.title || 'Diskussion'} maxWidth="md" hideHeader>
-      <Back to="/discussions" />
+    <Page title={post.title || 'Beitrag'} maxWidth="md" hideHeader>
+      <Back to="/posts" />
       <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3 }}>
         <Stack direction="row" spacing={3}>
           <Stack alignItems="center" spacing={0.5} sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 0.5 }}>
@@ -80,19 +91,31 @@ export default function DiscussionDetail() {
               <Typography variant="h4" fontWeight={700}>{post.title}</Typography>
               <Stack direction="row" spacing={1}>
                 <IconButton onClick={() => { navigator.clipboard.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 2000); }}><Tooltip title={copied ? "Kopiert!" : "Teilen"}><ShareIcon fontSize="small" /></Tooltip></IconButton>
-                {(user?.role === 'admin' || user?.id === post.user_id) && <IconButton color="error" onClick={async () => { if (confirm("Löschen?")) { await deleteDiscussionsByPostId({ path: { id: postId! } }); navigate("/discussions"); } }}><DelIcon fontSize="small" /></IconButton>}
+                {(user?.role === 'admin' || user?.id === post.user_id) && <IconButton color="error" onClick={async () => { if (confirm("Löschen?")) { await deleteDiscussionsByPostId({ path: { id: postId! } }); navigate("/posts"); } }}><DelIcon fontSize="small" /></IconButton>}
               </Stack>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
               <Avatar src={getAvatarUrl(post.user_avatar_url)} sx={{ width: 24, height: 24 }} />
-              <Typography variant="body2" color="text.secondary">von <b>{post.user_name}</b> · {isoToShort(post.created_at || '')}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                von <Typography component={RouterLink} to={`/u/${post.user_id}`} variant="body2" sx={{ fontWeight: 700, color: 'inherit', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>{post.user_name}</Typography> · {isoToShort(post.created_at || '')}
+              </Typography>
             </Stack>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 3 }}>{post.body}</Typography>
             <Stack direction="row" spacing={1} sx={{ mb: 3 }}>{post.tags?.map(t => <Chip key={t} label={t} size="small" variant="outlined" />)}</Stack>
             <Divider sx={{ mb: 3 }} />
-            <CommentsSection comments={post.comments} onAdd={addComment} currentUser={user} appearance={{ surface: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : '#f5f5f5', border: theme.palette.divider, accent: theme.palette.primary.main, textSecondary: theme.palette.text.secondary }}
-              onEdit={async (id, text) => { await putDiscussionsCommentsByCommentId({ path: { id }, body: { text } }); if (post) setPost({ ...post, comments: post.comments.map(c => String(c.id) === id ? { ...c, text } : c) }); }}
-              onVote={async (id, v) => { await postDiscussionsCommentsByCommentIdVote({ path: { id }, body: { vote: v } }); if (post) setPost({ ...post, comments: post.comments.map(c => String(c.id) === id ? { ...c, user_vote: v, votes: (c.votes || 0) - (c.user_vote || 0) + v } : c) }); }}
+            <CommentsSection 
+              comments={post.comments || []} 
+              onAdd={addComment} 
+              currentUser={user} 
+              appearance={{ surface: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : '#f5f5f5', border: theme.palette.divider, accent: theme.palette.primary.main, textSecondary: theme.palette.text.secondary }}
+              onEdit={async (id, text) => { 
+                await putDiscussionsCommentsByCommentId({ path: { id }, body: { text } }); 
+                if (post) setPost({ ...post, comments: (post.comments || []).map(c => String(c.id) === id ? { ...c, text } : c) }); 
+              }}
+              onVote={async (id, v) => { 
+                await postDiscussionsCommentsByCommentIdVote({ path: { id }, body: { vote: v } }); 
+                if (post) setPost({ ...post, comments: (post.comments || []).map(c => String(c.id) === id ? { ...c, user_vote: v, votes: (c.votes || 0) - (c.user_vote || 0) + v } : c) }); 
+              }}
             />
           </Box>
         </Stack>

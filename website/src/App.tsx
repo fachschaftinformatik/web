@@ -20,10 +20,10 @@ const Profile = lazy(() => import('@pages/Profile'));
 const Archive = lazy(() => import('@pages/Archive'));
 const ArchiveDetail = lazy(() => import('@pages/ArchiveDetail'));
 const Settings = lazy(() => import('@pages/Settings'));
-const Discussions = lazy(() => import('@pages/Discussions'));
-const DiscussionDetail = lazy(() => import('@pages/DiscussionDetail'));
-const DiscussionCreate = lazy(() => import('@pages/DiscussionCreate'));
-const DiscussionEdit = lazy(() => import('@pages/DiscussionEdit'));
+const Posts = lazy(() => import('@pages/Posts'));
+const Post = lazy(() => import('@pages/Post'));
+const PostCreate = lazy(() => import('@pages/PostCreate'));
+const PostEdit = lazy(() => import('@pages/PostEdit'));
 const Events = lazy(() => import('@pages/Events'));
 const Home = lazy(() => import('@pages/Home'));
 const Members = lazy(() => import('@pages/Members'));
@@ -56,9 +56,9 @@ const ScrollToTop = () => {
   return null;
 };
 
-const DiscussionRedirect = () => {
+const PostRedirect = () => {
   const { id } = useParams();
-  return <Navigate to={`/d/${id}`} replace />;
+  return <Navigate to={`/post/${id}`} replace />;
 };
 
 const AuthRedirector: React.FC = () => {
@@ -87,23 +87,27 @@ function App() {
                   <Route path="/archive/:moduleId" element={<ArchiveDetail />} />
                   <Route path="/archive/:moduleId/:examId" element={<ArchiveDetail />} />
                   <Route path="/settings" element={<Settings />} />
-                  <Route path="/d/new" element={<DiscussionCreate />} />
-                  <Route path="/d/:postId/edit" element={<DiscussionEdit />} />
+                  <Route path="/post/new" element={<PostCreate />} />
+                  <Route path="/post/:postId/edit" element={<PostEdit />} />
                 </Route>
                 <Route element={<AdminRoute />}>
                   <Route path="/admin" element={<Admin />} />
                 </Route>
                 <Route path="/u/:userId" element={<Profile />} />
-                <Route path="/discussions" element={<Discussions />} />
-                <Route path="/d/:postId" element={<DiscussionDetail />} />
+                <Route path="/posts" element={<Posts />} />
+                <Route path="/post/:postId" element={<Post />} />
                 <Route path="/events" element={<Events />} />
                 <Route path="/events/:eventId" element={<Events />} />
                 <Route path="/events/:eventId/:mediaId" element={<Events />} />
                 <Route path="/members" element={<Members />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/" element={<Home />} />
-                <Route path="/discussions/:id" element={<DiscussionRedirect />} />
-                <Route path="/forum/:id" element={<DiscussionRedirect />} />
+                
+                <Route path="/discussions" element={<Navigate to="/posts" replace />} />
+                <Route path="/discussions/:id" element={<PostRedirect />} />
+                <Route path="/d" element={<Navigate to="/posts" replace />} />
+                <Route path="/d/:id" element={<PostRedirect />} />
+                <Route path="/forum/:id" element={<PostRedirect />} />
                 <Route path="/exams/:id" element={<Navigate to="/archive/:id" replace />} />
               </Route>
               <Route path="*" element={<Navigate to="/auth" replace />} />

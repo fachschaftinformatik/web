@@ -17,11 +17,13 @@ import PostItem from "@components/PostItem";
 import { useAuth } from "@lib/auth";
 import { getDiscussions, getPrograms, postDiscussionsByPostIdVote, deleteDiscussionsByPostId } from "@lib/api";
 import type { DtoDiscussionPostResponse as Post, DtoProgramResponse as Prog } from "@lib/api";
-import { POSTS_PER_PAGE, Vote } from "./DiscussionComponents";
+import { Vote } from "@lib/posts";
+import { POSTS_PER_PAGE } from "@internals/data";
+
 
 const PAGE_SIZE = POSTS_PER_PAGE;
 
-export default function Discussions() {
+export default function Posts() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -85,7 +87,7 @@ export default function Discussions() {
                 } 
               }} 
             />
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/d/new")} sx={{ whiteSpace: 'nowrap', height: 48 }}>Neu</Button>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate("/post/new")} sx={{ whiteSpace: 'nowrap', height: 48 }}>Neu</Button>
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="stretch">
             <Autocomplete 

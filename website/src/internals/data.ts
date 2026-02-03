@@ -34,9 +34,12 @@ export const MEMBER_SECTIONS: MemberSection[] = [
 
 export const NAV_ITEMS = [
   { label: 'Startseite', href: '/', icon: 'dashboard', isRoute: true },
-  { label: 'Diskussionen', href: '/discussions', icon: 'discussions', isRoute: true },
+  { label: 'Beiträge', href: '/posts', icon: 'discussions', isRoute: true },
   { label: 'Galerie', href: '/events', icon: 'gallery', isRoute: true },
   { label: 'Archiv', href: '/archive', icon: 'archive', isRoute: true },
   { label: 'Mitglieder', href: '/members', icon: 'team', isRoute: true },
   { label: 'Kontakt', href: '/contact', icon: 'contact', isRoute: true },
 ];
+
+export const COMMENT_COLLAPSE_LIMIT = 6;
+export const POSTS_PER_PAGE = 10;
