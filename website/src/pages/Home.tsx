@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
@@ -19,15 +18,19 @@ import TimelineDot from '@mui/lab/TimelineDot';
 import TimelineOppositeContent from '@mui/lab/TimelineOppositeContent';
 
 import Page from '@components/Page';
-import { getDiscussions, getEvents } from '@lib/api';
+import PostItem from '@components/PostItem';
+import { useAuth } from '@lib/auth';
+import { getDiscussions, getEvents, postDiscussionsByPostIdVote, deleteDiscussionsByPostId } from '@lib/api';
 import type { DtoDiscussionPostResponse as Post, DtoEventResponse as Event } from '@lib/api';
-import { getSizedImageUrl, getImageSrcSet, getAvatarUrl } from '@lib/images';
+import { getSizedImageUrl, getImageSrcSet } from '@lib/images';
+import type { Vote } from './DiscussionComponents';
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
 
 export default function Home() {
   const navigate = useNavigate();
   const theme = useTheme();
+  const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(0);
@@ -83,22 +86,20 @@ export default function Home() {
     }
   };
 
-  const PostCard = ({ p }: { p: Post }) => (
-    <Box component={RouterLink} to={`/d/${p.id}`} sx={{ ...theme.custom.newsCardLink, bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.08 : 0.04), minWidth: 0 }}>
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5, minWidth: 0 }}>
-        <Avatar src={getAvatarUrl(p.user_avatar_url)} sx={{ width: 18, height: 18, fontSize: "0.6rem" }}>{p.user_name?.[0]}</Avatar>
-        <Typography variant="caption" color="text.secondary" noWrap sx={{ minWidth: 0, textOverflow: 'ellipsis', overflow: 'hidden' }}>von <b>{p.user_name}</b> · {p.comment_count} {p.comment_count === 1 ? 'Kommentar' : 'Kommentare'} · {fmtDate(p.created_at || '')}</Typography>
-      </Stack>
-      <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ 
-        display: '-webkit-box',
-        WebkitLineClamp: 1,
-        WebkitBoxOrient: 'vertical',
-        overflow: 'hidden',
-        wordBreak: 'break-word'
-      }}>{p.body}</Typography>
-    </Box>
-  );
+  const vote = async (id: string, v: number) => {
+    if (!user) return;
+    await postDiscussionsByPostIdVote({ path: { id }, body: { vote: v as Vote } });
+    const update = (prev: Post[]) => prev.map(p => String(p.id) === id ? { ...p, user_vote: v, votes: (Number(p.votes)) - (p.user_vote || 0) + v } : p);
+    if (tab === 0) setNews(update); else setPosts(update);
+  };
+
+  const del = async (id: string) => {
+    if (confirm("Löschen?")) {
+      await deleteDiscussionsByPostId({ path: { id } });
+      const filter = (prev: Post[]) => prev.filter(p => String(p.id) !== id);
+      if (tab === 0) setNews(filter); else setPosts(filter);
+    }
+  };
 
   return (
     <Page title="Startseite" maxWidth="xl" hideHeader>
@@ -128,8 +129,8 @@ export default function Home() {
               <Typography variant="h5" onClick={() => setTab(1)} sx={{ cursor: 'pointer', fontWeight: 700, color: tab === 1 ? 'text.primary' : 'text.secondary' }}>Beiträge</Typography>
             </Stack>
             <Stack spacing={1.5}>
-              {loading ? [1, 2, 3].map(i => <Skeleton key={i} variant="rectangular" height={80} sx={{ borderRadius: 3 }} />) : 
-                (tab === 0 ? news : posts).map(p => <PostCard key={String(p.id)} p={p} />)}
+              {loading ? [1, 2, 3].map(i => <Skeleton key={i} variant="rectangular" height={140} sx={{ borderRadius: 3 }} />) : 
+                (tab === 0 ? news : posts).map(p => <PostItem key={String(p.id)} p={p} user={user} onVote={vote} onDelete={del} />)}
             </Stack>
             <Button component={RouterLink} to="/discussions" variant="contained" sx={{ mt: 3 }}>Alle anzeigen</Button>
           </Paper>
