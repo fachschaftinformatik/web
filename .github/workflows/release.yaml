@@ -58,7 +58,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           build-args: |
             VERSION=${{ github.ref_name }}
           tags: |
@@ -73,7 +73,7 @@ jobs:
           context: .
           file: website/Dockerfile
           push: true
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: |
             ghcr.io/${{ github.repository }}/website:${{ github.ref_name }}
             ghcr.io/${{ github.repository }}/website:latest

@@ -1,4 +1,4 @@
-FROM node:24-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:24-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache git
 COPY website/package.json website/package-lock.json ./website/
