@@ -1,14 +1,15 @@
-FROM golang:1.25-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache git
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 COPY . .
+ARG TARGETOS TARGETARCH
 ARG VERSION=dev
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
     go generate ./... && \
-    CGO_ENABLED=0 go build -ldflags="-s -w -X 'github.com/fachschaftinformatik/web/internal/api.Version=${VERSION}'" -o /app/server .
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w -X 'github.com/fachschaftinformatik/web/internal/api.Version=${VERSION}'" -o /app/server .
 
 FROM alpine:latest
 WORKDIR /app
