@@ -52,6 +52,9 @@ services:
     image: minio/minio
     restart: on-failure
     command: server /data --console-address ":9001"
+    #ports:
+    #  - 9000:9000
+    #  - 9001:9001
     volumes:
       - buckets:/data
     networks:

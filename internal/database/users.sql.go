@@ -9,6 +9,18 @@ import (
 	"context"
 )
 
+const clearPasswordResetToken = `-- name: ClearPasswordResetToken :exec
+UPDATE users
+SET password_reset_token = NULL,
+    password_reset_expires = NULL
+WHERE id = ?1 AND deleted_at IS NULL
+`
+
+func (q *Queries) ClearPasswordResetToken(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, clearPasswordResetToken, id)
+	return err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
   id, email, name, password, role, active, verified, program_id, verification_token, avatar_url
@@ -21,7 +33,7 @@ INSERT INTO users (
   ?8,
   ?9
 )
-RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 `
 
 type CreateUserParams struct {
@@ -66,12 +78,14 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 FROM users
 WHERE id = ?1 AND deleted_at IS NULL
 LIMIT 1
@@ -97,12 +111,14 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 FROM users
 WHERE lower(email) = lower(?1) AND deleted_at IS NULL
 LIMIT 1
@@ -128,12 +144,47 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
+	)
+	return i, err
+}
+
+const getUserByPasswordResetToken = `-- name: GetUserByPasswordResetToken :one
+SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
+FROM users
+WHERE password_reset_token = ?1 AND password_reset_expires > strftime('%Y-%m-%dT%H:%M:%SZ','now') AND deleted_at IS NULL
+LIMIT 1
+`
+
+func (q *Queries) GetUserByPasswordResetToken(ctx context.Context, token *string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByPasswordResetToken, token)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Password,
+		&i.Role,
+		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerificationToken,
+		&i.ProgramID,
+		&i.Theme,
+		&i.Private,
+		&i.AvatarUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
 	)
 	return i, err
 }
 
 const getUserByVerificationToken = `-- name: GetUserByVerificationToken :one
-SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 FROM users
 WHERE verification_token = ?1 AND deleted_at IS NULL
 LIMIT 1
@@ -159,12 +210,14 @@ func (q *Queries) GetUserByVerificationToken(ctx context.Context, verificationTo
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 FROM users
 WHERE deleted_at IS NULL
 ORDER BY created_at DESC
@@ -202,6 +255,8 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.PasswordResetToken,
+			&i.PasswordResetExpires,
 		); err != nil {
 			return nil, err
 		}
@@ -217,7 +272,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 }
 
 const searchUsers = `-- name: SearchUsers :many
-SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+SELECT id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 FROM users
 WHERE (
   lower(id) LIKE '%' || lower(?1) || '%' OR
@@ -254,6 +309,8 @@ func (q *Queries) SearchUsers(ctx context.Context, query string) ([]User, error)
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.PasswordResetToken,
+			&i.PasswordResetExpires,
 		); err != nil {
 			return nil, err
 		}
@@ -268,11 +325,29 @@ func (q *Queries) SearchUsers(ctx context.Context, query string) ([]User, error)
 	return items, nil
 }
 
+const setPasswordResetToken = `-- name: SetPasswordResetToken :exec
+UPDATE users
+SET password_reset_token = ?1,
+    password_reset_expires = ?2
+WHERE id = ?3 AND deleted_at IS NULL
+`
+
+type SetPasswordResetTokenParams struct {
+	PasswordResetToken   *string `json:"password_reset_token"`
+	PasswordResetExpires *string `json:"password_reset_expires"`
+	ID                   int64   `json:"id"`
+}
+
+func (q *Queries) SetPasswordResetToken(ctx context.Context, arg SetPasswordResetTokenParams) error {
+	_, err := q.db.ExecContext(ctx, setPasswordResetToken, arg.PasswordResetToken, arg.PasswordResetExpires, arg.ID)
+	return err
+}
+
 const setUserActive = `-- name: SetUserActive :one
 UPDATE users
 SET active = ?1
 WHERE id = ?2 AND deleted_at IS NULL
-RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 `
 
 type SetUserActiveParams struct {
@@ -300,6 +375,8 @@ func (q *Queries) SetUserActive(ctx context.Context, arg SetUserActiveParams) (U
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
 	)
 	return i, err
 }
@@ -308,7 +385,7 @@ const setUserRole = `-- name: SetUserRole :one
 UPDATE users
 SET role = ?1
 WHERE id = ?2 AND deleted_at IS NULL
-RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 `
 
 type SetUserRoleParams struct {
@@ -336,6 +413,8 @@ func (q *Queries) SetUserRole(ctx context.Context, arg SetUserRoleParams) (User,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
 	)
 	return i, err
 }
@@ -356,7 +435,7 @@ const unverifyUser = `-- name: UnverifyUser :one
 UPDATE users
 SET verified = 0
 WHERE id = ?1 AND deleted_at IS NULL
-RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 `
 
 func (q *Queries) UnverifyUser(ctx context.Context, id int64) (User, error) {
@@ -379,6 +458,8 @@ func (q *Queries) UnverifyUser(ctx context.Context, id int64) (User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
 	)
 	return i, err
 }
@@ -392,7 +473,7 @@ SET name = ?1,
     private = ?4,
     avatar_url = ?5
 WHERE id = ?6 AND deleted_at IS NULL
-RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 `
 
 type UpdateUserParams struct {
@@ -432,6 +513,8 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
 	)
 	return i, err
 }
@@ -440,7 +523,7 @@ const updateUserAvatar = `-- name: UpdateUserAvatar :one
 UPDATE users
 SET avatar_url = ?1
 WHERE id = ?2 AND deleted_at IS NULL
-RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 `
 
 type UpdateUserAvatarParams struct {
@@ -468,6 +551,48 @@ func (q *Queries) UpdateUserAvatar(ctx context.Context, arg UpdateUserAvatarPara
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
+	)
+	return i, err
+}
+
+const updateUserPassword = `-- name: UpdateUserPassword :one
+UPDATE users
+SET password = ?1,
+    password_reset_token = NULL,
+    password_reset_expires = NULL
+WHERE id = ?2 AND deleted_at IS NULL
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
+`
+
+type UpdateUserPasswordParams struct {
+	Password string `json:"password"`
+	ID       int64  `json:"id"`
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUserPassword, arg.Password, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Password,
+		&i.Role,
+		&i.Active,
+		&i.Verified,
+		&i.VerifiedAt,
+		&i.VerificationToken,
+		&i.ProgramID,
+		&i.Theme,
+		&i.Private,
+		&i.AvatarUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
 	)
 	return i, err
 }
@@ -494,7 +619,7 @@ SET verified = 1,
     verified_at = strftime('%Y-%m-%dT%H:%M:%SZ','now'),
     verification_token = NULL
 WHERE id = ?1 AND deleted_at IS NULL
-RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at
+RETURNING id, email, name, password, role, active, verified, verified_at, verification_token, program_id, theme, private, avatar_url, created_at, updated_at, deleted_at, password_reset_token, password_reset_expires
 `
 
 func (q *Queries) VerifyUser(ctx context.Context, id int64) (User, error) {
@@ -517,6 +642,8 @@ func (q *Queries) VerifyUser(ctx context.Context, id int64) (User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.PasswordResetToken,
+		&i.PasswordResetExpires,
 	)
 	return i, err
 }

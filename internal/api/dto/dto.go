@@ -44,6 +44,15 @@ type RegisterRequest struct {
 	ProgramID *id.ID `json:"program_id" validate:"omitempty" swaggertype:"string"`
 }
 
+type ForgotPasswordRequest struct {
+	Email string `json:"email" validate:"required,email" example:"user@fsv-wh.de"`
+}
+
+type ResetPasswordRequest struct {
+	Token    string `json:"token" validate:"required"`
+	Password string `json:"password" validate:"required,min=8,max=72" example:"secret123"`
+}
+
 type UpdateProfileRequest struct {
 	Name      string `json:"name" validate:"required,min=2,max=64" example:"Max Mustermann"`
 	ProgramID *id.ID `json:"program_id" validate:"omitempty" swaggertype:"string"`
