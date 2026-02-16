@@ -840,6 +840,31 @@ paths:
       summary: Issue CSRF token
       tags:
       - Auth
+  /auth/forgot:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: '{email: string}'
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Request password reset
+      tags:
+      - Auth
   /auth/login:
     post:
       consumes:
@@ -1005,6 +1030,33 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Register a user
+      tags:
+      - Auth
+  /auth/reset:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: '{token: string, password: string}'
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Reset password
       tags:
       - Auth
   /auth/verify:
