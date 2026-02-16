@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Link as RouterLink } from 'react-router-dom';
 import { z } from 'zod';
 
 import Avatar from '@mui/material/Avatar';
@@ -248,7 +248,7 @@ export default function AuthPage() {
     };
 
     return (
-        <Container component="main" maxWidth="xs">
+        <Container component="main" maxWidth={false} sx={{ maxWidth: 480 }}>
             <CssBaseline />
             <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Zoom in={true} style={{ transitionDelay: '100ms' }}>
@@ -338,7 +338,7 @@ export default function AuthPage() {
                                 <TextField
                                     select required name="emailDomain" id="emailDomain"
                                     defaultValue={ALLOWED_DOMAINS[0]} disabled={loading || (tabValue === 1 && !!success)}
-                                    sx={{ minWidth: 160 }}
+                                    sx={{ minWidth: 200 }}
                                 >
                                     {ALLOWED_DOMAINS.map((domain) => (
                                         <MenuItem key={domain} value={domain}>{domain}</MenuItem>
@@ -398,17 +398,33 @@ export default function AuthPage() {
                             )}
 
                             {tabValue === 0 && (
-                                <FormControlLabel
-                                    control={
-                                        <Checkbox
-                                            checked={rememberMe}
-                                            onChange={(e) => setRememberMe(e.target.checked)}
-                                            color="primary"
-                                        />
-                                    }
-                                    label="Angemeldet bleiben"
-                                    sx={{ ml: -0.5 }}
-                                />
+                                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: -1 }}>
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={rememberMe}
+                                                onChange={(e) => setRememberMe(e.target.checked)}
+                                                color="primary"
+                                            />
+                                        }
+                                        label="Angemeldet bleiben"
+                                        sx={{ ml: -0.5 }}
+                                    />
+                                    <Button
+                                        type="button"
+                                        component={RouterLink}
+                                        to="/auth/forgot"
+                                        size="small"
+                                        sx={{
+                                            color: 'text.secondary',
+                                            textTransform: 'none',
+                                            fontWeight: 500,
+                                            '&:hover': { color: 'primary.main', bgcolor: 'transparent', textDecoration: 'underline' }
+                                        }}
+                                    >
+                                        Passwort vergessen?
+                                    </Button>
+                                </Stack>
                             )}
                         </Stack>
 
