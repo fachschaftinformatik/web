@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteArchiveFileData, DeleteArchiveFileResponses, DeleteArchiveIdData, DeleteArchiveIdResponses, DeleteDiscussionsByPostIdData, DeleteDiscussionsByPostIdResponses, GetActivitiesData, GetActivitiesResponses, GetAdminDashboardData, GetAdminDashboardResponses, GetAdminRefDiscussionTypesData, GetAdminRefDiscussionTypesResponses, GetAdminRefRolesData, GetAdminRefRolesResponses, GetAdminStatsData, GetAdminStatsResponses, GetArchiveData, GetArchiveFileData, GetArchiveFileResponses, GetArchiveIdData, GetArchiveIdErrors, GetArchiveIdResponses, GetArchiveResponses, GetArchiveVersionsData, GetArchiveVersionsErrors, GetArchiveVersionsResponses, GetAuthAvatarsByUserIdByFilenameData, GetAuthAvatarsByUserIdByFilenameResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthNotificationsData, GetAuthNotificationsErrors, GetAuthNotificationsResponses, GetAuthVerifyData, GetDiscussionsByPostIdCommentsData, GetDiscussionsByPostIdCommentsResponses, GetDiscussionsByPostIdData, GetDiscussionsByPostIdResponses, GetDiscussionsData, GetDiscussionsResponses, GetEventsByEventIdCoverData, GetEventsByEventIdCoverResponses, GetEventsByEventIdData, GetEventsByEventIdMediaData, GetEventsByEventIdMediaResponses, GetEventsByEventIdResponses, GetEventsData, GetEventsResponses, GetMediaByMediaIdData, GetMediaByMediaIdFileData, GetMediaByMediaIdFileResponses, GetMediaByMediaIdPreviewData, GetMediaByMediaIdPreviewResponses, GetMediaByMediaIdResponses, GetOfficeStatusData, GetOfficeStatusResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetSearchData, GetSearchResponses, GetUsersByUserIdActivitiesData, GetUsersByUserIdActivitiesResponses, GetUsersByUserIdData, GetUsersByUserIdResponses, GetUsersData, GetUsersResponses, PostAdminModulesData, PostAdminModulesResponses, PostAdminProgramsData, PostAdminProgramsResponses, PostArchiveData, PostArchiveResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthMeAvatarData, PostAuthMeAvatarResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostDiscussionsByPostIdCommentsData, PostDiscussionsByPostIdCommentsResponses, PostDiscussionsByPostIdVoteData, PostDiscussionsByPostIdVoteResponses, PostDiscussionsCommentsByCommentIdVoteData, PostDiscussionsCommentsByCommentIdVoteResponses, PostDiscussionsData, PostDiscussionsResponses, PostEventsByEventIdMediaData, PostEventsByEventIdMediaResponses, PostEventsData, PostEventsResponses, PutArchiveIdData, PutArchiveIdResponses, PutAuthMeData, PutAuthMeErrors, PutAuthMeResponses, PutAuthNotificationsIdReadData, PutAuthNotificationsIdReadErrors, PutAuthNotificationsIdReadResponses, PutAuthNotificationsReadAllData, PutAuthNotificationsReadAllErrors, PutAuthNotificationsReadAllResponses, PutDiscussionsByPostIdData, PutDiscussionsByPostIdResponses, PutDiscussionsCommentsByCommentIdData, PutDiscussionsCommentsByCommentIdResponses, PutOfficeStatusData, PutOfficeStatusResponses } from './types.gen';
+import type { DeleteArchiveFileData, DeleteArchiveFileResponses, DeleteArchiveIdData, DeleteArchiveIdResponses, DeleteDiscussionsByPostIdData, DeleteDiscussionsByPostIdResponses, GetActivitiesData, GetActivitiesResponses, GetAdminDashboardData, GetAdminDashboardResponses, GetAdminRefDiscussionTypesData, GetAdminRefDiscussionTypesResponses, GetAdminRefRolesData, GetAdminRefRolesResponses, GetAdminStatsData, GetAdminStatsResponses, GetArchiveData, GetArchiveFileData, GetArchiveFileResponses, GetArchiveIdData, GetArchiveIdErrors, GetArchiveIdResponses, GetArchiveResponses, GetArchiveVersionsData, GetArchiveVersionsErrors, GetArchiveVersionsResponses, GetAuthAvatarsByUserIdByFilenameData, GetAuthAvatarsByUserIdByFilenameResponses, GetAuthCsrfData, GetAuthCsrfResponses, GetAuthMeData, GetAuthMeResponses, GetAuthNotificationsData, GetAuthNotificationsErrors, GetAuthNotificationsResponses, GetAuthVerifyData, GetDiscussionsByPostIdCommentsData, GetDiscussionsByPostIdCommentsResponses, GetDiscussionsByPostIdData, GetDiscussionsByPostIdResponses, GetDiscussionsData, GetDiscussionsResponses, GetEventsByEventIdCoverData, GetEventsByEventIdCoverResponses, GetEventsByEventIdData, GetEventsByEventIdMediaData, GetEventsByEventIdMediaResponses, GetEventsByEventIdResponses, GetEventsData, GetEventsResponses, GetMediaByMediaIdData, GetMediaByMediaIdFileData, GetMediaByMediaIdFileResponses, GetMediaByMediaIdPreviewData, GetMediaByMediaIdPreviewResponses, GetMediaByMediaIdResponses, GetOfficeStatusData, GetOfficeStatusResponses, GetProgramModulesData, GetProgramModulesErrors, GetProgramModulesResponses, GetProgramsData, GetProgramsErrors, GetProgramsIdData, GetProgramsIdErrors, GetProgramsIdResponses, GetProgramsResponses, GetSearchData, GetSearchResponses, GetUsersByUserIdActivitiesData, GetUsersByUserIdActivitiesResponses, GetUsersByUserIdData, GetUsersByUserIdResponses, GetUsersData, GetUsersResponses, PostAdminModulesData, PostAdminModulesResponses, PostAdminProgramsData, PostAdminProgramsResponses, PostArchiveData, PostArchiveResponses, PostAuthForgotData, PostAuthForgotErrors, PostAuthForgotResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthLogoutData, PostAuthLogoutResponses, PostAuthMeAvatarData, PostAuthMeAvatarResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetData, PostAuthResetErrors, PostAuthResetResponses, PostDiscussionsByPostIdCommentsData, PostDiscussionsByPostIdCommentsResponses, PostDiscussionsByPostIdVoteData, PostDiscussionsByPostIdVoteResponses, PostDiscussionsCommentsByCommentIdVoteData, PostDiscussionsCommentsByCommentIdVoteResponses, PostDiscussionsData, PostDiscussionsResponses, PostEventsByEventIdMediaData, PostEventsByEventIdMediaResponses, PostEventsData, PostEventsResponses, PutArchiveIdData, PutArchiveIdResponses, PutAuthMeData, PutAuthMeErrors, PutAuthMeResponses, PutAuthNotificationsIdReadData, PutAuthNotificationsIdReadErrors, PutAuthNotificationsIdReadResponses, PutAuthNotificationsReadAllData, PutAuthNotificationsReadAllErrors, PutAuthNotificationsReadAllResponses, PutDiscussionsByPostIdData, PutDiscussionsByPostIdResponses, PutDiscussionsCommentsByCommentIdData, PutDiscussionsCommentsByCommentIdResponses, PutOfficeStatusData, PutOfficeStatusResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -133,6 +133,18 @@ export const getAuthAvatarsByUserIdByFilename = <ThrowOnError extends boolean = 
 export const getAuthCsrf = <ThrowOnError extends boolean = false>(options?: Options<GetAuthCsrfData, ThrowOnError>) => (options?.client ?? client).get<GetAuthCsrfResponses, unknown, ThrowOnError>({ url: '/auth/csrf', ...options });
 
 /**
+ * Request password reset
+ */
+export const postAuthForgot = <ThrowOnError extends boolean = false>(options: Options<PostAuthForgotData, ThrowOnError>) => (options.client ?? client).post<PostAuthForgotResponses, PostAuthForgotErrors, ThrowOnError>({
+    url: '/auth/forgot',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Log in
  */
 export const postAuthLogin = <ThrowOnError extends boolean = false>(options: Options<PostAuthLoginData, ThrowOnError>) => (options.client ?? client).post<PostAuthLoginResponses, PostAuthLoginErrors, ThrowOnError>({
@@ -199,6 +211,18 @@ export const putAuthNotificationsReadAll = <ThrowOnError extends boolean = false
  */
 export const postAuthRegister = <ThrowOnError extends boolean = false>(options: Options<PostAuthRegisterData, ThrowOnError>) => (options.client ?? client).post<PostAuthRegisterResponses, PostAuthRegisterErrors, ThrowOnError>({
     url: '/auth/register',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reset password
+ */
+export const postAuthReset = <ThrowOnError extends boolean = false>(options: Options<PostAuthResetData, ThrowOnError>) => (options.client ?? client).post<PostAuthResetResponses, PostAuthResetErrors, ThrowOnError>({
+    url: '/auth/reset',
     ...options,
     headers: {
         'Content-Type': 'application/json',
