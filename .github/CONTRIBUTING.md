@@ -2,7 +2,7 @@
 
 If you believe you have found a security issue, please contact us at security@fsv-whs.de first before opening any issues or pull requests (re: Responsible Disclosure).
 
-When you want to work on an issue, comment on it first and tell us the approach you want to take.  
+When you want to work on an issue, comment on it first and tell us the approach you want to take.
 Please always adhere to these guidelines when contributing.
 
 That said, thank you for your interest in helping improve the project.
@@ -18,25 +18,30 @@ There are several ways to contribute to the project:
 If in doubt, reach out to us. You can [open an issue](https://github.com/fachschaftinformatik/web/issues/new) anytime to share ideas or invite feedback.
 
 ## Building
-To build the project you will need to have both `make` and [Go](https://go.dev/) installed.
-If you are on either Linux or macOS, chances are `make` is already installed, in which case you will only need to install [Go](https://go.dev/).
 
-The project uses several features that are only in Go version 1.24 and newer (most notably `go tool` and the [new net/http router](https://go.dev/blog/routing-enhancements)),
-so make sure you have the correct version by running:
+To build the project you will need to have [Go](https://go.dev/) (version 1.24 or newer) and [Node.js](https://nodejs.org/) installed.
+
+The project uses several features that are only in Go version 1.24 and newer (most notably the new `tool` directive), so make sure you have the correct version by running:
 ```
 go version
 ```
 
-If everything is setup correctly, you can build the server by running:
-```
-make build
+Get started with the frontend by running:
+```bash
+npm i
+npm run dev
 ```
 
-To run the test suite:
+To build the backend, make sure to `go generate` the required code first:
+```bash
+go generate ./...
+go build -o web .
 ```
-make test
+
+If you have made any changes to the API or DTOs, make sure to re-generate the client too:
 ```
-Always run tests before committing any changes.
+npm run gen:api
+```
 
 ## Making changes
 If you plan to make any changes, the workflow is typically like this:
@@ -48,7 +53,7 @@ If you plan to make any changes, the workflow is typically like this:
 5. Add, commit and push the changes
 6. Open a PR to merge the changes into `main`
 
-Example workflow: 
+Example workflow:
 ```
 (1) git branch
  * main
@@ -56,7 +61,7 @@ Example workflow:
  Already up to date.
 (2) git switch -c api/registration
 (3) [...]
-(3) make test
+(3) go test ./...
 (4) git status -s
  M cmd/web/main.go
 (4) git diff api/api.go
@@ -92,7 +97,7 @@ Use the [Conventional Commits][2] spec when writing commit messages and titles:
 
 [optional footer(s)]
 ```
-Common types are `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`, `chore`, and `style`.  
+Common types are `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`, `chore`, and `style`.
 Please keep the description short and meaningful.
 
 Breaking changes must include a footer:
