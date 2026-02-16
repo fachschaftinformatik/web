@@ -35,6 +35,7 @@ import LoginIcon from '@mui/icons-material/LoginRounded';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 import ErrorOutlineRounded from '@mui/icons-material/ErrorOutlineRounded';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
+import HelpOutlineRounded from '@mui/icons-material/HelpOutlineRounded';
 
 import { useThemeMode } from '@lib/theme';
 import { postAuthLogin, postAuthRegister, getPrograms } from '@lib/api';
@@ -319,6 +320,44 @@ export default function AuthPage() {
                             </Zoom>
                         )}
 
+                        {tabValue === 0 && (
+                            <Alert
+                                severity="info"
+                                sx={{
+                                    mb: 3,
+                                    borderRadius: 3,
+                                    bgcolor: alpha(theme.palette.info.main, 0.1),
+                                    backdropFilter: 'blur(10px)',
+                                    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                                    color: theme.palette.info.dark,
+                                    fontWeight: 500,
+                                    alignItems: 'center',
+                                    '& .MuiAlert-icon': { color: theme.palette.info.main }
+                                }}
+                            >
+                                Die ZA Kennung kann nicht verwendet werden. Um dich anzumelden, musst du dich zuerst registrieren.
+                            </Alert>
+                        )}
+
+                        {tabValue === 1 && (
+                            <Alert
+                                severity="info"
+                                sx={{
+                                    mb: 3,
+                                    borderRadius: 3,
+                                    bgcolor: alpha(theme.palette.info.main, 0.1),
+                                    backdropFilter: 'blur(10px)',
+                                    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                                    color: theme.palette.info.dark,
+                                    fontWeight: 500,
+                                    alignItems: 'center',
+                                    '& .MuiAlert-icon': { color: theme.palette.info.main }
+                                }}
+                            >
+                                Zur Registrierung ist die @studmail.w-hs.de E-Mail erforderlich.
+                            </Alert>
+                        )}
+
                         <Stack spacing={2.5}>
                             {tabValue === 1 && (
                                 <TextField
@@ -328,23 +367,65 @@ export default function AuthPage() {
                                 />
                             )}
 
-                            <Stack direction="row" spacing={1}>
-                                <TextField
-                                    required fullWidth id="emailPrefix" label="E-Mail" name="emailPrefix"
-                                    autoComplete="email" autoFocus={tabValue === 0} disabled={loading || (tabValue === 1 && !!success)}
-                                    error={!!errors.emailPrefix} helperText={errors.emailPrefix}
-                                    sx={{ flexGrow: 1 }}
-                                />
-                                <TextField
-                                    select required name="emailDomain" id="emailDomain"
-                                    defaultValue={ALLOWED_DOMAINS[0]} disabled={loading || (tabValue === 1 && !!success)}
-                                    sx={{ minWidth: 200 }}
-                                >
-                                    {ALLOWED_DOMAINS.map((domain) => (
-                                        <MenuItem key={domain} value={domain}>{domain}</MenuItem>
-                                    ))}
-                                </TextField>
-                            </Stack>
+                                <Stack direction="row" spacing={1} sx={{ width: '100%', position: 'relative', alignItems: 'flex-start' }}>
+                                    <TextField
+                                        required fullWidth id="emailPrefix" label="E-Mail" name="emailPrefix"
+                                        autoComplete="email" autoFocus={tabValue === 0} disabled={loading || (tabValue === 1 && !!success)}
+                                        error={!!errors.emailPrefix} helperText={errors.emailPrefix}
+                                        sx={{ flexGrow: 1 }}
+                                    />
+                                    <TextField
+                                        select required name="emailDomain" id="emailDomain"
+                                        defaultValue={ALLOWED_DOMAINS[0]} disabled={loading || (tabValue === 1 && !!success)}
+                                        sx={{ minWidth: 200 }}
+                                    >
+                                        {ALLOWED_DOMAINS.map((domain) => (
+                                            <MenuItem key={domain} value={domain}>{domain}</MenuItem>
+                                        ))}
+                                    </TextField>
+                                    <Box sx={{ 
+                                        position: 'absolute', 
+                                        left: '100%', 
+                                        ml: 1, 
+                                        height: 56, // Height of the input field
+                                        display: 'flex', 
+                                        alignItems: 'center' 
+                                    }}>
+                                        <Tooltip 
+                                            title="Wir benötigen deine studentische E-Mail-Adresse, um deinen Immatrikulationsstatus zu verifizieren. Dies ist notwendig für den Zugriff auf Klausurprotokolle." 
+                                            arrow 
+                                            placement="right"
+                                            slotProps={{
+                                                tooltip: {
+                                                    sx: {
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: 500,
+                                                        p: 1.5,
+                                                        lineHeight: 1.4,
+                                                        maxWidth: 300,
+                                                        bgcolor: mode === 'dark' ? alpha(theme.palette.background.paper, 0.95) : alpha(theme.palette.text.primary, 0.9),
+                                                        color: mode === 'dark' ? theme.palette.text.primary : theme.palette.background.paper,
+                                                        border: mode === 'dark' ? `1px solid ${alpha(theme.palette.divider, 0.1)}` : 'none',
+                                                        boxShadow: theme.shadows[4],
+                                                        backdropFilter: 'blur(10px)'
+                                                    }
+                                                },
+                                                arrow: {
+                                                    sx: {
+                                                        color: mode === 'dark' ? alpha(theme.palette.background.paper, 0.95) : alpha(theme.palette.text.primary, 0.9),
+                                                        '&::before': {
+                                                            border: mode === 'dark' ? `1px solid ${alpha(theme.palette.divider, 0.1)}` : 'none',
+                                                        }
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                                <HelpOutlineRounded fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                </Stack>
 
                             {tabValue === 1 && (
                                 <TextField
