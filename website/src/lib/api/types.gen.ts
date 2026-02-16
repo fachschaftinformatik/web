@@ -647,6 +647,34 @@ export type GetAuthCsrfResponses = {
 
 export type GetAuthCsrfResponse = GetAuthCsrfResponses[keyof GetAuthCsrfResponses];
 
+export type PostAuthForgotData = {
+    /**
+     * {email: string}
+     */
+    body: {
+        [key: string]: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/forgot';
+};
+
+export type PostAuthForgotErrors = {
+    /**
+     * Bad Request
+     */
+    400: DtoErrorResponse;
+};
+
+export type PostAuthForgotError = PostAuthForgotErrors[keyof PostAuthForgotErrors];
+
+export type PostAuthForgotResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
 export type PostAuthLoginData = {
     /**
      * Login Credentials
@@ -863,6 +891,36 @@ export type PostAuthRegisterResponses = {
 };
 
 export type PostAuthRegisterResponse = PostAuthRegisterResponses[keyof PostAuthRegisterResponses];
+
+export type PostAuthResetData = {
+    /**
+     * {token: string, password: string}
+     */
+    body: {
+        [key: string]: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/reset';
+};
+
+export type PostAuthResetErrors = {
+    /**
+     * Bad Request
+     */
+    400: DtoErrorResponse;
+};
+
+export type PostAuthResetError = PostAuthResetErrors[keyof PostAuthResetErrors];
+
+export type PostAuthResetResponses = {
+    /**
+     * OK
+     */
+    200: DtoUserResponse;
+};
+
+export type PostAuthResetResponse = PostAuthResetResponses[keyof PostAuthResetResponses];
 
 export type GetAuthVerifyData = {
     body?: never;
