@@ -118,14 +118,19 @@ func (s *Server) PostAuthRegister(w http.ResponseWriter, r *http.Request) {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param request body map[string]string true "{email: string}"
+// @Param request body dto.ForgotPasswordRequest true "Forgot Password Info"
 // @Success 204
 // @Failure 400 {object} dto.ErrorResponse
 // @Router /auth/forgot [post]
 func (s *Server) PostAuthForgot(w http.ResponseWriter, r *http.Request) {
-	var payload struct{ Email string `json:"email"` }
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || payload.Email == "" {
+	var payload dto.ForgotPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		s.JsonError(w, "invalid_request_body", "Could not decode JSON body", http.StatusBadRequest)
+		return
+	}
+
+	if err := s.Validate(payload); err != nil {
+		s.JsonError(w, "invalid_input", err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -134,9 +139,8 @@ func (s *Server) PostAuthForgot(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		token := uuid.NewString()
 		expires := time.Now().Add(1 * time.Hour).UTC().Format(time.RFC3339)
-		t := token
 		if err := s.DB.SetPasswordResetToken(r.Context(), database.SetPasswordResetTokenParams{
-			PasswordResetToken:   &t,
+			PasswordResetToken:   &token,
 			PasswordResetExpires: &expires,
 			ID:                   user.ID,
 		}); err != nil {
@@ -159,22 +163,23 @@ func (s *Server) PostAuthForgot(w http.ResponseWriter, r *http.Request) {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param request body map[string]string true "{token: string, password: string}"
+// @Param request body dto.ResetPasswordRequest true "Reset Password Info"
 // @Success 200 {object} dto.UserResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Router /auth/reset [post]
 func (s *Server) PostAuthReset(w http.ResponseWriter, r *http.Request) {
-	var payload struct{
-		Token    string `json:"token"`
-		Password string `json:"password"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || payload.Token == "" || payload.Password == "" {
+	var payload dto.ResetPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		s.JsonError(w, "invalid_request_body", "Could not decode JSON body", http.StatusBadRequest)
 		return
 	}
 
-	tok := payload.Token
-	dbUser, err := s.DB.GetUserByPasswordResetToken(r.Context(), &tok)
+	if err := s.Validate(payload); err != nil {
+		s.JsonError(w, "invalid_input", err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	dbUser, err := s.DB.GetUserByPasswordResetToken(r.Context(), &payload.Token)
 	if err != nil {
 		s.JsonError(w, "invalid_token", "Invalid or expired token", http.StatusBadRequest)
 		return
@@ -197,8 +202,6 @@ func (s *Server) PostAuthReset(w http.ResponseWriter, r *http.Request) {
 		s.JsonError(w, "server_error", "Could not reset password", http.StatusInternalServerError)
 		return
 	}
-
-	// clear token (already cleared by UpdateUserPassword)
 
 	s.RespondJSON(w, http.StatusOK, s.toUserResponse(updatedUser))
 }
