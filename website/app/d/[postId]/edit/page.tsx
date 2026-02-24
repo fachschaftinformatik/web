@@ -51,7 +51,7 @@ export default function EditPost({ params }: { params: Promise<{ postId: string 
     useEffect(() => {
         if (!postId) return;
         setLoading(true);
-        getDiscussionsByPostId({ path: { id: postId } })
+        getDiscussionsByPostId({ path: { postId } as any })
             .then(({ data, error }) => {
                 if (data) {
                     setTitle(data.title || "");
@@ -82,7 +82,7 @@ export default function EditPost({ params }: { params: Promise<{ postId: string 
     useEffect(() => {
         if (!postId || programs.length === 0) return;
 
-        getDiscussionsByPostId({ path: { id: postId } }).then(({ data }) => {
+        getDiscussionsByPostId({ path: { postId } as any }).then(({ data }) => {
             if (data && data.programs) {
                 const ids = data.programs.map(p => String(p.id));
                 const matched = programs.filter(p => p.id && ids.includes(String(p.id)));
@@ -102,7 +102,7 @@ export default function EditPost({ params }: { params: Promise<{ postId: string 
             const finalTags = [category, ...tags];
 
             const { error: apiError } = await putDiscussionsByPostId({
-                path: { id: postId },
+                path: { postId } as any,
                 body: {
                     title,
                     body,
