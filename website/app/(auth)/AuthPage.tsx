@@ -41,12 +41,12 @@ import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRou
 import HelpOutlineRounded from '@mui/icons-material/HelpOutlineRounded';
 
 import { useThemeMode } from '@lib/theme';
-import { postAuthLogin, postAuthRegister, getPrograms } from '@lib/api';
+import { postAuthRegister, getPrograms } from '@lib/api';
 import type { DtoProgramResponse as Program } from '@lib/api';
-import { useAuth, REMEMBERED_FLAG_KEY } from '@lib/auth';
+import { useAuth } from '@lib/auth';
 import { translateError } from '@lib/errors';
 import { zDtoLoginRequest, zDtoRegisterRequest } from '@lib/api/zod.gen';
-import { fetchCsrfToken } from '@lib/csrf';
+import { signIn } from 'next-auth/react';
 
 const ALLOWED_DOMAINS = ['@studmail.w-hs.de', '@fsv-wh.de'];
 
@@ -106,28 +106,11 @@ export default function AuthPage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [programs, setPrograms] = useState<Program[]>([]);
     const [signupsEnabled, setSignupsEnabled] = useState(true);
-    const [rememberMe, setRememberMe] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return window.localStorage.getItem(REMEMBERED_FLAG_KEY) === 'true';
-    });
+    const [rememberMe, setRememberMe] = useState(false);
 
 
-    const { login } = useAuth();
     const { mode, setPreference } = useThemeMode();
     const theme = useTheme();
-
-    useEffect(() => {
-        fetchCsrfToken().then(data => {
-            if (data) {
-                const enabled = data.signups_enabled ?? true;
-                setSignupsEnabled(enabled);
-                if (!enabled && tabValue === 1) {
-                    setTabValue(0);
-                    router.push('/login');
-                }
-            }
-        });
-    }, [router, tabValue]);
 
     useEffect(() => {
         if (tabValue === 1 && programs.length === 0) {
@@ -182,25 +165,21 @@ export default function AuthPage() {
 
             const { emailPrefix, emailDomain, password } = validationResult.data;
             try {
-                const { data: user, error: apiError } = await postAuthLogin({
-                    body: { 
-                        email: `${emailPrefix}${emailDomain}`, 
-                        password,
-                        remember: rememberMe
-                    }
+                const result = await signIn('credentials', {
+                    email: `${emailPrefix}${emailDomain}`,
+                    password,
+                    redirect: false,
                 });
 
-                if (apiError) {
-                    setErrors({ global: translateError(apiError) });
+                if (result?.error) {
+                    setErrors({ global: "Ungültige E-Mail oder Passwort." });
                     setLoading(false);
                     return;
                 }
-                if (user) {
-                    login(user, rememberMe);
-                    router.push(`/u/${user.id}`);
-                }
+                
+                router.push('/');
             } catch (err) {
-                setErrors({ global: translateError(err) });
+                setErrors({ global: "Anmeldung fehlgeschlagen." });
             } finally {
                 setLoading(false);
             }
@@ -497,7 +476,7 @@ export default function AuthPage() {
                                     <Button
                                         type="button"
                                         component={Link}
-                                        href="/auth/forgot"
+                                        href="/forgot"
                                         size="small"
                                         sx={{
                                             color: 'text.secondary',

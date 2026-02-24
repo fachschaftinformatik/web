@@ -1,29 +1,61 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import { auth } from "./auth";
+import * as jose from "jose";
 
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+const INTERNAL_JWT_SECRET = process.env.INTERNAL_JWT_SECRET || "change-me-internal-secret";
+const secret = new TextEncoder().encode(INTERNAL_JWT_SECRET);
 
-  // We can't easily check auth state in middleware without a session cookie
-  // that we can verify. Since the current app uses an API call to check auth,
-  // we might want to keep the client-side checks for now or implement a more robust
-  // session management if we want to use middleware effectively.
-  
-  // For now, let's just let the client-side components handle it as they did before.
-  // The Sidebar and components already handle missing users.
-  
+export const proxy = auth(async (req) => {
+  const { pathname } = req.nextUrl;
+
+  // 1. API Proxying with Internal JWT
+  if (pathname.startsWith("/api/v1")) {
+    const backendUrl = process.env.BACKEND_URL || "http://api";
+    const targetUrl = new URL(req.url);
+    targetUrl.protocol = new URL(backendUrl).protocol;
+    targetUrl.host = new URL(backendUrl).host;
+    targetUrl.port = new URL(backendUrl).port;
+
+    const requestHeaders = new Headers(req.headers);
+    
+    // If authenticated, sign an internal JWT for Go
+    if (req.auth?.user) {
+      const token = await new jose.SignJWT({ sub: req.auth.user.id })
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("1m") // Short lived
+        .sign(secret);
+      
+      requestHeaders.set("Authorization", `Bearer ${token}`);
+    }
+
+    return NextResponse.rewrite(targetUrl, {
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
+  // 2. Global Route Guards
+  const protectedRoutes = ["/admin", "/settings", "/archive", "/d/new"];
+  const isProtected = protectedRoutes.some(route => pathname.startsWith(route)) || pathname.endsWith("/edit");
+
+  if (isProtected && !req.auth) {
+    const url = new URL("/login", req.url);
+    url.searchParams.set("from", pathname);
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    "/api/v1/:path*",
+    "/admin/:path*",
+    "/settings/:path*",
+    "/archive/:path*",
+    "/d/new",
+    "/d/:postId/edit",
   ],
 };

@@ -17,7 +17,6 @@ import LockResetRoundedIcon from '@mui/icons-material/LockResetRounded';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
 import ErrorOutlineRounded from '@mui/icons-material/ErrorOutlineRounded';
-import { getCsrfFromCookie } from '@lib/csrf';
 import MenuItem from '@mui/material/MenuItem';
 import Link from 'next/link';
 
@@ -39,8 +38,7 @@ export default function ForgotPage() {
             const res = await fetch('/api/v1/auth/forgot', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': getCsrfFromCookie() || ''
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ email: `${emailPrefix}${emailDomain}` })
             });
