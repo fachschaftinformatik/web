@@ -58,8 +58,8 @@ docker compose up --build api minio
 To build and run the frontend:
 ```
 cd website
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 For more information on how to build the project, read [CONTRIBUTING.md](https://github.com/fachschaftinformatik/web/blob/main/.github/CONTRIBUTING.md#building).

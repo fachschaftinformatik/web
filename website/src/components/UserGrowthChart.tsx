@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import { LineChart } from '@mui/x-charts/LineChart';
-import React from 'react';
+
 
 interface GrowthChartProps {
   title: string;

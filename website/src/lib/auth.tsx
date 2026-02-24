@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
-import { Navigate, useLocation, Outlet } from 'react-router-dom';
 
 import { getAuthMe, postAuthLogout } from '@lib/api';
 import type { DtoUserResponse as User } from '@lib/api';
@@ -138,28 +137,3 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-export const ProtectedRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const { user, isLoading } = useAuth();
-  const location = useLocation();
-
-  if (isLoading) return null;
-
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  return <>{children || <Outlet />}</>;
-};
-
-export const AdminRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const { user, isLoading } = useAuth();
-  const location = useLocation();
-
-  if (isLoading) return null;
-
-  if (!user || user.role !== 'admin') {
-    return <Navigate to="/" state={{ from: location }} replace />;
-  }
-
-  return <>{children || <Outlet />}</>;
-};
