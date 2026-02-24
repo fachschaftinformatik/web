@@ -24,7 +24,7 @@ func NewRouter(s *handler.Server, logger *httplog.Logger) http.Handler {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{s.Config.Domain},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		ExposedHeaders:   []string{"Link", "X-Total-Count"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -35,8 +35,6 @@ func NewRouter(s *handler.Server, logger *httplog.Logger) http.Handler {
 	r.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/auth/csrf", s.GetAuthCsrf)
-
 		r.Group(func(r chi.Router) {
 			r.Use(httprate.LimitByIP(20, 1*time.Minute))
 			r.Post("/auth/login", s.PostAuthLogin)
@@ -63,7 +61,6 @@ func NewRouter(s *handler.Server, logger *httplog.Logger) http.Handler {
 		r.Get("/media/{mediaId}/preview", s.GetMediaPreview)
 
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequireCSRF(s))
 			r.Use(middleware.OptionalAuth(s))
 			r.Get("/discussions", s.GetDiscussions)
 			r.Get("/discussions/{postId}", s.GetDiscussionsId)
@@ -74,10 +71,8 @@ func NewRouter(s *handler.Server, logger *httplog.Logger) http.Handler {
 		})
 
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.RequireCSRF(s))
 			r.Use(middleware.RequireAuth(s))
 
-			r.Post("/auth/logout", s.PostAuthLogout)
 			r.Get("/auth/me", s.GetAuthMe)
 			r.Put("/auth/me", s.PutAuthMe)
 			r.Post("/auth/me/avatar", s.PostAuthAvatar)
