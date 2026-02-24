@@ -514,25 +514,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/csrf": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Issue CSRF token",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.CsrfResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/auth/forgot": {
             "post": {
                 "consumes": [
@@ -547,15 +528,12 @@ const docTemplate = `{
                 "summary": "Request password reset",
                 "parameters": [
                     {
-                        "description": "{email: string}",
+                        "description": "Forgot Password Info",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/dto.ForgotPasswordRequest"
                         }
                     }
                 ],
@@ -607,19 +585,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
-                    }
-                }
-            }
-        },
-        "/auth/logout": {
-            "post": {
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Log out",
-                "responses": {
-                    "204": {
-                        "description": "No Content"
                     }
                 }
             }
@@ -845,15 +810,12 @@ const docTemplate = `{
                 "summary": "Reset password",
                 "parameters": [
                     {
-                        "description": "{token: string, password: string}",
+                        "description": "Reset Password Info",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/dto.ResetPasswordRequest"
                         }
                     }
                 ],
@@ -2028,17 +1990,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CsrfResponse": {
-            "type": "object",
-            "properties": {
-                "csrf": {
-                    "type": "string"
-                },
-                "signups_enabled": {
-                    "type": "boolean"
-                }
-            }
-        },
         "dto.DashboardTrendItem": {
             "type": "object",
             "properties": {
@@ -2200,6 +2151,18 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.ForgotPasswordRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@fsv-wh.de"
                 }
             }
         },
@@ -2415,6 +2378,24 @@ const docTemplate = `{
                     "example": "secret123"
                 },
                 "program_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ResetPasswordRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "token"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "maxLength": 72,
+                    "minLength": 8,
+                    "example": "secret123"
+                },
+                "token": {
                     "type": "string"
                 }
             }
