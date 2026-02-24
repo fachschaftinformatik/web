@@ -131,9 +131,6 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                         module_id: String(a.module.id),
                         version: a.version,
                         comment: comment || undefined
-                    },
-                    headers: {
-                        'X-CSRF-Token': ''
                     }
                 });
 

@@ -37,11 +37,6 @@ export const zDtoArchiveEntryResponse = z.object({
     version: z.optional(z.string())
 });
 
-export const zDtoCsrfResponse = z.object({
-    csrf: z.optional(z.string()),
-    signups_enabled: z.optional(z.boolean())
-});
-
 export const zDtoDashboardTrendItem = z.object({
     count: z.optional(z.int()),
     date: z.optional(z.string())
@@ -76,6 +71,10 @@ export const zDtoEventResponse = z.object({
     created_at: z.optional(z.string()),
     id: z.optional(z.string()),
     title: z.optional(z.string())
+});
+
+export const zDtoForgotPasswordRequest = z.object({
+    email: z.string()
 });
 
 export const zDtoLink = z.object({
@@ -207,6 +206,11 @@ export const zDtoRegisterRequest = z.object({
     name: z.string().min(2).max(64),
     password: z.string().min(8).max(72),
     program_id: z.optional(z.string())
+});
+
+export const zDtoResetPasswordRequest = z.object({
+    password: z.string().min(8).max(72),
+    token: z.string()
 });
 
 export const zDtoSearchResult = z.object({
@@ -453,19 +457,8 @@ export const zGetAuthAvatarsByUserIdByFilenameData = z.object({
     }))
 });
 
-export const zGetAuthCsrfData = z.object({
-    body: z.optional(z.never()),
-    path: z.optional(z.never()),
-    query: z.optional(z.never())
-});
-
-/**
- * OK
- */
-export const zGetAuthCsrfResponse = zDtoCsrfResponse;
-
 export const zPostAuthForgotData = z.object({
-    body: z.record(z.string(), z.string()),
+    body: zDtoForgotPasswordRequest,
     path: z.optional(z.never()),
     query: z.optional(z.never())
 });
@@ -480,12 +473,6 @@ export const zPostAuthLoginData = z.object({
  * OK
  */
 export const zPostAuthLoginResponse = zDtoUserResponse;
-
-export const zPostAuthLogoutData = z.object({
-    body: z.optional(z.never()),
-    path: z.optional(z.never()),
-    query: z.optional(z.never())
-});
 
 export const zGetAuthMeData = z.object({
     body: z.optional(z.never()),
@@ -564,7 +551,7 @@ export const zPostAuthRegisterData = z.object({
 export const zPostAuthRegisterResponse = zDtoUserResponse;
 
 export const zPostAuthResetData = z.object({
-    body: z.record(z.string(), z.string()),
+    body: zDtoResetPasswordRequest,
     path: z.optional(z.never()),
     query: z.optional(z.never())
 });

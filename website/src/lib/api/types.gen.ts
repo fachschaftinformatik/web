@@ -65,11 +65,6 @@ export type DtoCreateDiscussionPostRequest = {
     type?: 'discussion' | 'news' | 'event';
 };
 
-export type DtoCsrfResponse = {
-    csrf?: string;
-    signups_enabled?: boolean;
-};
-
 export type DtoDashboardTrendItem = {
     count?: number;
     date?: string;
@@ -126,6 +121,10 @@ export type DtoEventResponse = {
     created_at?: string;
     id?: string;
     title?: string;
+};
+
+export type DtoForgotPasswordRequest = {
+    email: string;
 };
 
 export type DtoLink = {
@@ -205,6 +204,11 @@ export type DtoRegisterRequest = {
     name: string;
     password: string;
     program_id?: string;
+};
+
+export type DtoResetPasswordRequest = {
+    password: string;
+    token: string;
 };
 
 export type DtoSearchResult = {
@@ -631,29 +635,11 @@ export type GetAuthAvatarsByUserIdByFilenameResponses = {
     200: unknown;
 };
 
-export type GetAuthCsrfData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/csrf';
-};
-
-export type GetAuthCsrfResponses = {
-    /**
-     * OK
-     */
-    200: DtoCsrfResponse;
-};
-
-export type GetAuthCsrfResponse = GetAuthCsrfResponses[keyof GetAuthCsrfResponses];
-
 export type PostAuthForgotData = {
     /**
-     * {email: string}
+     * Forgot Password Info
      */
-    body: {
-        [key: string]: string;
-    };
+    body: DtoForgotPasswordRequest;
     path?: never;
     query?: never;
     url: '/auth/forgot';
@@ -702,20 +688,6 @@ export type PostAuthLoginResponses = {
 };
 
 export type PostAuthLoginResponse = PostAuthLoginResponses[keyof PostAuthLoginResponses];
-
-export type PostAuthLogoutData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/logout';
-};
-
-export type PostAuthLogoutResponses = {
-    /**
-     * No Content
-     */
-    204: unknown;
-};
 
 export type GetAuthMeData = {
     body?: never;
@@ -894,11 +866,9 @@ export type PostAuthRegisterResponse = PostAuthRegisterResponses[keyof PostAuthR
 
 export type PostAuthResetData = {
     /**
-     * {token: string, password: string}
+     * Reset Password Info
      */
-    body: {
-        [key: string]: string;
-    };
+    body: DtoResetPasswordRequest;
     path?: never;
     query?: never;
     url: '/auth/reset';
