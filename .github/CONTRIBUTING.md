@@ -19,7 +19,7 @@ If in doubt, reach out to us. You can [open an issue](https://github.com/fachsch
 
 ## Building
 
-To build the project you will need to have [Go](https://go.dev/) (version 1.24 or newer) and [Node.js](https://nodejs.org/) installed.
+To build the project you will need to have [Go](https://go.dev/) (version 1.24 or newer) and [Bun](https://bun.sh/) installed.
 
 The project uses several features that are only in Go version 1.24 and newer (most notably the new `tool` directive), so make sure you have the correct version by running:
 ```
@@ -28,8 +28,8 @@ go version
 
 Get started with the frontend by running:
 ```bash
-npm i
-npm run dev
+bun i
+bun run dev
 ```
 
 To build the backend, make sure to `go generate` the required code first:
@@ -40,7 +40,7 @@ go build -o web .
 
 If you have made any changes to the API or DTOs, make sure to re-generate the client too:
 ```
-npm run gen:api
+bun run gen:api
 ```
 
 ## Making changes
