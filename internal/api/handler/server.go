@@ -3,9 +3,9 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/fachschaftinformatik/web/internal/api/dto"
 	"github.com/fachschaftinformatik/web/internal/api/middleware"
@@ -17,15 +17,12 @@ import (
 	"github.com/fachschaftinformatik/web/internal/storage"
 	"github.com/go-chi/httplog/v2"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/microcosm-cc/bluemonday"
 )
 
 const (
-	SessionCookieName = "__Host-session"
-	CsrfCookieName    = "__Host-csrf"
-	SessionDuration   = 24 * time.Hour
-	CsrfDuration      = 24 * time.Hour
-	maxUploadSize     = 256 << 20 // 256 MB
+	maxUploadSize = 256 << 20 // 256 MB
 )
 
 type Server struct {
@@ -129,92 +126,50 @@ func (s *Server) ToPublicUserResponse(user database.User) dto.PublicUserResponse
 	}
 }
 
-func (s *Server) SetCookie(w http.ResponseWriter, name string, value string, maxAge time.Duration, httpOnly bool) {
-	actualName := name
-	if !s.SecureCookies {
-		actualName = strings.TrimPrefix(name, "__Host-")
+func (s *Server) Authenticate(w http.ResponseWriter, r *http.Request) (database.User, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return database.User{}, errors.New("authorization header missing")
 	}
 
-	cookie := &http.Cookie{
-		Name:     actualName,
-		Value:    value,
-		Path:     "/",
-		MaxAge:   int(maxAge.Seconds()),
-		HttpOnly: httpOnly,
-		Secure:   s.SecureCookies,
-		SameSite: http.SameSiteLaxMode,
-	}
-	http.SetCookie(w, cookie)
-}
-
-func (s *Server) Authenticate(w http.ResponseWriter, r *http.Request) (database.Session, database.User, error) {
-	name := SessionCookieName
-	if !s.SecureCookies {
-		name = strings.TrimPrefix(name, "__Host-")
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+		return database.User{}, errors.New("invalid authorization header format")
 	}
 
-	cookie, err := r.Cookie(name)
-	if err != nil {
-		return database.Session{}, database.User{}, errors.New("session cookie not found")
-	}
-
-	sessionID := cookie.Value
-	ctx := r.Context()
-
-	session, err := s.DB.GetSession(ctx, sessionID)
-	if err != nil {
-		return database.Session{}, database.User{}, errors.New("invalid session")
-	}
-
-	if session.UserAgent != nil && *session.UserAgent != r.UserAgent() {
-		s.Log.Warn("Session user agent mismatch (potential hijack or browser update)", "sessionID", session.ID, "expectedUA", *session.UserAgent, "gotUA", r.UserAgent())
-	}
-
-	expiresAt, err := time.Parse(time.RFC3339, session.ExpiresAt)
-	if err != nil || expiresAt.Before(time.Now()) {
-		return database.Session{}, database.User{}, errors.New("session expired or invalid")
-	}
-
-	lastSeen, err := time.Parse(time.RFC3339, session.LastSeen)
-	if err == nil && time.Since(lastSeen) > 5*time.Minute {
-		createdAt, err := time.Parse(time.RFC3339, session.CreatedAt)
-		if err != nil {
-			createdAt = time.Now()
+	tokenString := parts[1]
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
+		return []byte(s.Config.InternalJWTSecret), nil
+	})
 
-		extension := SessionDuration
-		if expiresAt.Sub(createdAt) > 25*time.Hour {
-			extension = 30 * 24 * time.Hour
-		}
-
-		newExpires := time.Now().UTC().Add(extension).Format(time.RFC3339)
-		s.DB.SlideSession(ctx, database.SlideSessionParams{
-			ID:        session.ID,
-			ExpiresAt: newExpires,
-		})
+	if err != nil || !token.Valid {
+		return database.User{}, errors.New("invalid or expired token")
 	}
 
-	user, err := s.DB.GetUser(ctx, session.UserID)
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return database.User{}, errors.New("invalid token claims")
+	}
+
+	sub, ok := claims["sub"].(string)
+	if !ok {
+		return database.User{}, errors.New("subject claim missing in token")
+	}
+
+	uid, err := id.Parse(sub)
 	if err != nil {
-		return database.Session{}, database.User{}, errors.New("user not found")
+		return database.User{}, errors.New("invalid user id in token")
 	}
 
-	return session, user, nil
-}
-
-func (s *Server) CheckCSRF(r *http.Request) error {
-	headerToken := r.Header.Get("X-CSRF-Token")
-
-	name := CsrfCookieName
-	if !s.SecureCookies {
-		name = strings.TrimPrefix(name, "__Host-")
+	user, err := s.DB.GetUser(r.Context(), int64(uid))
+	if err != nil {
+		return database.User{}, errors.New("user not found")
 	}
 
-	cookie, err := r.Cookie(name)
-	if headerToken == "" || err != nil || headerToken != cookie.Value {
-		return errors.New("invalid CSRF token")
-	}
-	return nil
+	return user, nil
 }
 
 func (s *Server) BoolToInt(b bool) int64 {

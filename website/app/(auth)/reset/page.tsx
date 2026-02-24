@@ -24,7 +24,6 @@ import LockOpenRoundedIcon from '@mui/icons-material/LockOpenRounded';
 import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
 import ErrorOutlineRounded from '@mui/icons-material/ErrorOutlineRounded';
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
-import { getCsrfFromCookie } from '@lib/csrf';
 import Link from 'next/link';
 import { PageLoader } from '@components/layout';
 
@@ -53,8 +52,7 @@ function ResetForm() {
             const res = await fetch('/api/v1/auth/reset', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': getCsrfFromCookie() || ''
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ token, password })
             });

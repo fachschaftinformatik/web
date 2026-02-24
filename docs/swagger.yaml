@@ -142,13 +142,6 @@ definitions:
     - body
     - title
     type: object
-  dto.CsrfResponse:
-    properties:
-      csrf:
-        type: string
-      signups_enabled:
-        type: boolean
-    type: object
   dto.DashboardTrendItem:
     properties:
       count:
@@ -256,6 +249,14 @@ definitions:
         type: string
       title:
         type: string
+    type: object
+  dto.ForgotPasswordRequest:
+    properties:
+      email:
+        example: user@fsv-wh.de
+        type: string
+    required:
+    - email
     type: object
   dto.Link:
     properties:
@@ -401,6 +402,19 @@ definitions:
     - email
     - name
     - password
+    type: object
+  dto.ResetPasswordRequest:
+    properties:
+      password:
+        example: secret123
+        maxLength: 72
+        minLength: 8
+        type: string
+      token:
+        type: string
+    required:
+    - password
+    - token
     type: object
   dto.SearchResult:
     properties:
@@ -828,31 +842,17 @@ paths:
       summary: Get user avatar
       tags:
       - Auth
-  /auth/csrf:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.CsrfResponse'
-      summary: Issue CSRF token
-      tags:
-      - Auth
   /auth/forgot:
     post:
       consumes:
       - application/json
       parameters:
-      - description: '{email: string}'
+      - description: Forgot Password Info
         in: body
         name: request
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/dto.ForgotPasswordRequest'
       produces:
       - application/json
       responses:
@@ -888,14 +888,6 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Log in
-      tags:
-      - Auth
-  /auth/logout:
-    post:
-      responses:
-        "204":
-          description: No Content
-      summary: Log out
       tags:
       - Auth
   /auth/me:
@@ -1037,14 +1029,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: '{token: string, password: string}'
+      - description: Reset Password Info
         in: body
         name: request
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/dto.ResetPasswordRequest'
       produces:
       - application/json
       responses:
