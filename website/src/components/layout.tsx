@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
@@ -43,7 +45,8 @@ import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
 import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
 import DoneAllRounded from '@mui/icons-material/DoneAllRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import type { DtoUserResponse as User, DtoNotificationResponse as Notification } from '@lib/api/types.gen';
 import { useThemeMode } from '@lib/theme';
@@ -117,7 +120,7 @@ const GlobalSearch = () => {
   const [options, setOptions] = useState<readonly SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const navigate = useNavigate();
+  const router = useRouter();
   const isSearchOpen = open && inputValue.length >= 2;
 
   useEffect(() => {
@@ -205,7 +208,7 @@ const GlobalSearch = () => {
         onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
         onChange={(_, value) => {
           if (value) {
-            navigate(value.url);
+            router.push(value.url);
             setInputValue('');
             setOptions([]);
             if (!isSmUp) setMobileOpen(false);
@@ -313,7 +316,7 @@ const Sidebar = ({
   const { mode, setPreference } = useThemeMode();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
-  const navigate = useNavigate();
+  const router = useRouter();
   const { logout, login } = useAuth();
 
   useEffect(() => {
@@ -321,6 +324,7 @@ const Sidebar = ({
   }, [title]);
 
   const [desktopOpen, setDesktopOpen] = useState(() => {
+    if (typeof window === 'undefined') return true;
     const stored = localStorage.getItem('sidebar_desktop_open');
     return stored !== null ? stored === 'true' : true;
   });
@@ -404,7 +408,7 @@ const Sidebar = ({
         const res = await putAuthMe({
           body: {
             name: user.name || "",
-            program_id: Number(user.program_id),
+            program_id: user.program_id ? String(user.program_id) : undefined,
             theme: nextMode
           }
         });
@@ -452,9 +456,8 @@ const Sidebar = ({
         {displayNavItems.map((item) => (
           <Tooltip key={item.label} title={navOpen ? '' : item.label} placement="right">
             <ListItemButton
-              component={item.isRoute ? RouterLink : 'a'}
-              to={item.isRoute ? item.href : undefined}
-              href={!item.isRoute ? item.href : undefined}
+              component={item.isRoute ? Link : 'a'}
+              href={item.href}
               sx={{
                 minHeight: 48,
                 justifyContent: navOpen ? 'initial' : 'center',
@@ -505,7 +508,7 @@ const Sidebar = ({
               sx={{
                 fontWeight: 800,
                 letterSpacing: '-0.02em',
-                fontFamily: '"Space Grotesk", sans-serif',
+                fontFamily: 'var(--font-space-grotesk), sans-serif',
                 display: { xs: 'none', sm: 'block' }
               }}
             >
@@ -566,8 +569,8 @@ const Sidebar = ({
                 {user?.role === 'admin' && (
                   <Tooltip title="Administration">
                     <IconButton
-                      component={RouterLink}
-                      to="/admin"
+                      component={Link}
+                      href="/admin"
                       color="inherit"
                       size="large"
                     >
@@ -644,7 +647,7 @@ const Sidebar = ({
                       key={String(noti.id)}
                       onClick={() => {
                         if (noti.id) handleMarkRead(String(noti.id));
-                        if (noti.link) navigate(noti.link);
+                        if (noti.link) router.push(noti.link);
                         handleNotiClose();
                       }}
                       sx={{
@@ -730,13 +733,13 @@ const Sidebar = ({
                   },
                 }}
               >
-                <MenuItem component={RouterLink} to={user ? `/u/${user.id}` : "/login"} sx={{ py: 1.2 }}>
+                <MenuItem component={Link} href={user ? `/u/${user.id}` : "/login"} sx={{ py: 1.2 }}>
                   <ListItemIcon>
                     <PersonRounded fontSize="small" />
                   </ListItemIcon>
                   Mein Profil
                 </MenuItem>
-                <MenuItem component={RouterLink} to="/settings" sx={{ py: 1.2 }}>
+                <MenuItem component={Link} href="/settings" sx={{ py: 1.2 }}>
                   <ListItemIcon>
                     <SettingsRounded fontSize="small" />
                   </ListItemIcon>
@@ -754,8 +757,8 @@ const Sidebar = ({
           ) : (
             <Button
               variant="contained"
-              component={RouterLink}
-              to="/login"
+              component={Link}
+              href="/login"
               sx={{
                 borderRadius: 2,
                 textTransform: 'none',
@@ -821,3 +824,4 @@ const PageLoader = () => (
 );
 
 export { Sidebar, PageLoader };
+
