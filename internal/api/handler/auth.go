@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/api/dto"
-	"github.com/fachschaftinformatik/web/internal/api/middleware"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/id"
 	"github.com/fachschaftinformatik/web/internal/storage"
@@ -243,32 +242,6 @@ func (s *Server) PostAuthLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.SetCookie(w, SessionCookieName, "", -time.Hour, true)
-
-	sessionID := id.New().String()
-	duration := SessionDuration
-	if payload.Remember {
-		duration = 30 * 24 * time.Hour
-	}
-	expiresAt := time.Now().Add(duration)
-
-	ua := r.UserAgent()
-	ip := r.RemoteAddr
-
-	_, err = s.DB.CreateSession(r.Context(), database.CreateSessionParams{
-		ID:        sessionID,
-		UserID:    dbUser.ID,
-		ExpiresAt: expiresAt.UTC().Format(time.RFC3339),
-		UserAgent: &ua,
-		IpAddress: &ip,
-	})
-	if err != nil {
-		s.Log.Error("Failed to create session", "err", err)
-		s.JsonError(w, "server_error", "Could not create session", http.StatusInternalServerError)
-		return
-	}
-
-	s.SetCookie(w, SessionCookieName, sessionID, duration, true)
 	s.RespondJSON(w, http.StatusOK, s.toUserResponse(dbUser))
 }
 
@@ -349,41 +322,6 @@ func (s *Server) PutAuthMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.RespondJSON(w, http.StatusOK, s.toUserResponse(updatedUser))
-}
-
-// @Summary Log out
-// @Tags Auth
-// @Success 204
-// @Router /auth/logout [post]
-func (s *Server) PostAuthLogout(w http.ResponseWriter, r *http.Request) {
-	session, ok := r.Context().Value(middleware.SessionKey).(database.Session)
-	if !ok {
-		s.JsonError(w, "unauthorized", "Not logged in", http.StatusUnauthorized)
-		return
-	}
-
-	_ = s.DB.DeleteSession(r.Context(), session.ID)
-
-	s.SetCookie(w, SessionCookieName, "", -time.Hour, true)
-	s.SetCookie(w, CsrfCookieName, "", -time.Hour, false)
-
-	// Thoroughly flush browser state
-	w.Header().Set("Clear-Site-Data", "\"cookies\", \"cache\"")
-	w.WriteHeader(http.StatusNoContent)
-}
-
-// @Summary Issue CSRF token
-// @Tags Auth
-// @Produce json
-// @Success 200 {object} dto.CsrfResponse
-// @Router /auth/csrf [get]
-func (s *Server) GetAuthCsrf(w http.ResponseWriter, r *http.Request) {
-	csrfToken := uuid.NewString()
-	s.SetCookie(w, CsrfCookieName, csrfToken, CsrfDuration, false)
-	s.RespondJSON(w, http.StatusOK, dto.CsrfResponse{
-		Csrf:           csrfToken,
-		SignupsEnabled: s.Config.SignupsEnabled,
-	})
 }
 
 // @Summary List users

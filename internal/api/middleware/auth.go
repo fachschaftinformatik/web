@@ -8,19 +8,18 @@ import (
 )
 
 type AuthProvider interface {
-	Authenticate(w http.ResponseWriter, r *http.Request) (database.Session, database.User, error)
+	Authenticate(w http.ResponseWriter, r *http.Request) (database.User, error)
 	JsonError(w http.ResponseWriter, err, msg string, status int)
 }
 
 const (
-	UserKey    = "user"
-	SessionKey = "session"
+	UserKey = "user"
 )
 
 func RequireAuth(provider AuthProvider) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			session, user, err := provider.Authenticate(w, r)
+			user, err := provider.Authenticate(w, r)
 			if err != nil {
 				provider.JsonError(w, "unauthorized", "Authentication required", http.StatusUnauthorized)
 				return
@@ -34,7 +33,6 @@ func RequireAuth(provider AuthProvider) func(http.Handler) http.Handler {
 				return
 			}
 			ctx := context.WithValue(r.Context(), UserKey, user)
-			ctx = context.WithValue(ctx, SessionKey, session)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -43,10 +41,9 @@ func RequireAuth(provider AuthProvider) func(http.Handler) http.Handler {
 func OptionalAuth(provider AuthProvider) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			session, user, err := provider.Authenticate(w, r)
+			user, err := provider.Authenticate(w, r)
 			if err == nil && user.Active == 1 && user.Verified == 1 {
 				ctx := context.WithValue(r.Context(), UserKey, user)
-				ctx = context.WithValue(ctx, SessionKey, session)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
