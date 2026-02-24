@@ -1,15 +1,29 @@
-FROM --platform=$BUILDPLATFORM node:24-alpine AS builder
+FROM --platform=$BUILDPLATFORM oven/bun:alpine AS base
+FROM base AS deps
+RUN apk add --no-cache libc6-compat git
 WORKDIR /app
-RUN apk add --no-cache git
-COPY website/package.json website/package-lock.json ./website/
-RUN --mount=type=cache,target=/root/.npm cd website && npm ci
-COPY website/ ./website
-COPY docs/ ./docs
-RUN --mount=type=cache,target=/app/website/node_modules/.vite cd website && npm run build
+COPY website/package.json website/bun.lock ./
+RUN bun install --frozen-lockfile
 
-FROM nginx:alpine AS production
-RUN rm /etc/nginx/conf.d/default.conf
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/website/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY website/ .
+COPY docs/ ../docs
+
+RUN bun run build
+FROM node:24-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV production
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+COPY --from=builder /app/public ./public
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+EXPOSE 3000
+ENV PORT 80
+CMD ["node", "server.js"]
