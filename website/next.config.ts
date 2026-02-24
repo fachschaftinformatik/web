@@ -25,13 +25,7 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL || 'http://api';
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
-      },
-    ];
+    return [];
   },
   async redirects() {
     return [
@@ -71,6 +65,7 @@ const nextConfig: NextConfig = {
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
+      '@': '.',
       '@lib': './src/lib',
       '@components': './src/components',
       '@routes': './src/routes',

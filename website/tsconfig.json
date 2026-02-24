@@ -20,15 +20,10 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@lib/*": [
-        "./src/lib/*"
-      ],
-      "@components/*": [
-        "./src/components/*"
-      ],
-      "@routes/*": [
-        "./src/routes/*"
-      ]
+      "@/*": ["./*"],
+      "@lib/*": ["./src/lib/*"],
+      "@components/*": ["./src/components/*"],
+      "@routes/*": ["./src/routes/*"]
     },
     "allowJs": true,
     "incremental": true,
