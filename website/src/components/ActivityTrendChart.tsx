@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import { BarChart } from '@mui/x-charts/BarChart';
-import React from 'react';
+
 
 interface ActivityChartProps {
   title: string;

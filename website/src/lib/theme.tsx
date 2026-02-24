@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import Fab from '@mui/material/Fab';
 import Tooltip from '@mui/material/Tooltip';
@@ -70,9 +72,9 @@ const getPalette = (mode: PaletteMode): PaletteOptions => {
 };
 
 const typography: ThemeOptions['typography'] = {
-  fontFamily: '"Manrope", "Space Grotesk", sans-serif',
-  h1: { fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, lineHeight: 1.05 },
-  h4: { fontFamily: '"Space Grotesk", sans-serif', fontWeight: 700, letterSpacing: '-0.01em' },
+  fontFamily: 'var(--font-manrope), var(--font-space-grotesk), sans-serif',
+  h1: { fontFamily: 'var(--font-space-grotesk), sans-serif', fontWeight: 700, lineHeight: 1.05 },
+  h4: { fontFamily: 'var(--font-space-grotesk), sans-serif', fontWeight: 700, letterSpacing: '-0.01em' },
   h5: { fontWeight: 700 },
   h6: { fontWeight: 700 },
   subtitle1: { fontWeight: 700, lineHeight: 1.2 },

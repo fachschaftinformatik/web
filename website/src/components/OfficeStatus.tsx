@@ -93,7 +93,7 @@ const OfficeStatus = ({ user }: OfficeStatusProps) => {
           fontWeight: 800,
           color: color,
           flexGrow: 1,
-          fontFamily: '"Space Grotesk", sans-serif',
+          fontFamily: 'var(--font-space-grotesk), sans-serif',
           letterSpacing: '0.02em',
           lineHeight: 1.2,
           textTransform: 'uppercase',
