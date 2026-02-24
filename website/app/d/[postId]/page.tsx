@@ -55,8 +55,8 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
     useEffect(() => {
         if (!postId) return;
         Promise.all([
-            getDiscussionsByPostId({ path: { id: postId } }),
-            getDiscussionsByPostIdComments({ path: { id: postId } })
+            getDiscussionsByPostId({ path: { postId } as any }),
+            getDiscussionsByPostIdComments({ path: { postId } as any })
         ]).then(([{ data: postData, error: postError }, { data: commentsData }]) => {
             if (postError || !postData) {
                 setError("Beitrag nicht gefunden oder Fehler beim Laden.");
@@ -134,7 +134,7 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
 
         try {
             await postDiscussionsByPostIdVote({
-                path: { id: postId },
+                path: { postId } as any,
                 body: { vote: targetVote }
             });
         } catch (err) {
@@ -146,7 +146,7 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
         if (!postId || !user) return;
 
         const { data } = await postDiscussionsByPostIdComments({
-            path: { id: postId },
+            path: { postId } as any,
             body: { parent_id: parentId ? String(parentId) : undefined, text }
         });
         if (data) {
@@ -168,7 +168,7 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
         if (!postId || !user) return;
 
         const { data } = await putDiscussionsCommentsByCommentId({
-            path: { id: commentId },
+            path: { commentId } as any,
             body: { text }
         });
 
@@ -188,7 +188,7 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
 
         try {
             await postDiscussionsCommentsByCommentIdVote({
-                path: { id: commentId },
+                path: { commentId } as any,
                 body: { vote }
             });
 
@@ -215,7 +215,7 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
         if (!confirm("Beitrag wirklich löschen?")) return;
 
         await deleteDiscussionsByPostId({
-            path: { id: postId }
+            path: { postId } as any
         });
         router.push("/discussions");
     };

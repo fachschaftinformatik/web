@@ -385,7 +385,7 @@ export default function DiscussionsPage() {
     if (!user) return;
     try {
       await postDiscussionsByPostIdVote({
-        path: { id: id },
+        path: { postId: id } as any,
         body: { vote: newVote },
       });
       setPosts(prev => prev.map(p => String(p.id) === id ? { ...p, user_vote: newVote, votes: (Number(p.votes)) - (p.user_vote || 0) + newVote } : p));
@@ -400,7 +400,7 @@ export default function DiscussionsPage() {
     if (!post) return;
     try {
       await putDiscussionsByPostId({
-        path: { id: id },
+        path: { postId: id } as any,
         body: { pinned: !post.pinned } as any,
       });
       setPosts(prev => prev.map(p => String(p.id) === id ? { ...p, pinned: post.pinned ? 0 : 1 } : p));
@@ -412,7 +412,7 @@ export default function DiscussionsPage() {
     if (!confirm("Wirklich löschen?")) return;
     try {
       await deleteDiscussionsByPostId({
-        path: { id: id },
+        path: { postId: id } as any,
       });
       setPosts(prev => prev.filter(p => String(p.id) !== id));
     } catch (e) { console.error(e); }
