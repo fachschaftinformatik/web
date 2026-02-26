@@ -1,7 +1,15 @@
+import { isRecord } from '@lib/types/guards';
+
 export const translateError = (err: unknown): string => {
-    const errorObj = err as { error?: string, statusText?: string, message?: string };
-    const code = errorObj?.error || errorObj?.statusText?.toLowerCase() || '';
-    const message = errorObj?.message || '';
+    const errorObj = isRecord(err) ? err : {};
+    const codeValue = errorObj.error;
+    const statusTextValue = errorObj.statusText;
+    const messageValue = errorObj.message;
+
+    const code = typeof codeValue === 'string'
+        ? codeValue
+        : (typeof statusTextValue === 'string' ? statusTextValue.toLowerCase() : '');
+    const message = typeof messageValue === 'string' ? messageValue : '';
 
     const translations: Record<string, string> = {
         'invalid_credentials': 'Ungültige Anmeldedaten.',

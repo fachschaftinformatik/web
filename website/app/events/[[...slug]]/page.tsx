@@ -46,6 +46,7 @@ import { Sidebar } from "@components/layout";
 import { getEvents, getEventsByEventIdMedia, postEvents, postEventsByEventIdMedia } from "@lib/api";
 import type { DtoEventResponse as EventItem, DtoMediaResponse as MediaItem } from "@lib/api";
 import { getSizedImageUrl, getImageSrcSet } from "@lib/images";
+import { toErrorMessage } from "@lib/types/guards";
 
 
 const IMAGES_PER_PAGE = 10;
@@ -135,8 +136,8 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
     }
   }, [urlMediaId, media, selectedEventId, urlEventId]);
 
-  const getPreviewUrl = (id: string, size: number | string = 400) => getSizedImageUrl(`/api/v1/media/${id}/preview`, size as any);
-  const getEventCoverUrl = (ev: EventItem, size: number | string = 400) => ev.cover_path ? getSizedImageUrl(`/api/v1/events/${ev.id}/cover`, size as any) : undefined;
+  const getPreviewUrl = (id: string, size: number | string = 400) => getSizedImageUrl(`/api/v1/media/${id}/preview`, size);
+  const getEventCoverUrl = (ev: EventItem, size: number | string = 400) => ev.cover_path ? getSizedImageUrl(`/api/v1/events/${ev.id}/cover`, size) : undefined;
   const getEventCoverSrcSet = (ev: EventItem) => ev.cover_path ? getImageSrcSet(`/api/v1/events/${ev.id}/cover`) : undefined;
   const getMediaSrcSet = (id: string) => getImageSrcSet(`/api/v1/media/${id}/preview`);
 
@@ -559,7 +560,7 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
 }
 
 function getFriendlyErrorMessage(error: { message?: string; error?: string } | string | unknown): string {
-  const msg = typeof error === 'string' ? error : (error as Record<string, string>)?.message || (error as Record<string, string>)?.error || "";
+  const msg = toErrorMessage(error) || "";
   const errorMap: Record<string, string> = {
     "File too large": "Die Datei ist zu groß (maximal 256MB erlaubt).",
     "File upload failed": "Der Upload ist fehlgeschlagen. Bitte versuche es erneut.",

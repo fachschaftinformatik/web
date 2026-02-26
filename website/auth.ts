@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import type { DtoUserResponse as User } from "@lib/api";
+import { toSessionUser, isSessionUser } from "@lib/types/guards";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -28,19 +28,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (!res.ok) return null;
 
-          const user = await res.json() as User;
-          return {
-            id: String(user.id),
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            avatar_url: user.avatar_url,
-            program_id: user.program_id,
-            verified: user.verified,
-            active: user.active,
-            theme: user.theme,
-            private: user.private,
-          };
+          const rawUser = await res.json();
+          const user = toSessionUser(rawUser);
+          if (!user) return null;
+
+          return user;
         } catch (error) {
           console.error("Auth authorize error:", error);
           return null;
@@ -50,14 +42,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     jwt({ token, user }) {
-      if (user) {
+      if (user && isSessionUser(user)) {
         token.user = user;
       }
       return token;
     },
     session({ session, token }) {
-      if (token.user) {
-        session.user = token.user as any;
+      if (token.user && isSessionUser(token.user)) {
+        session.user = token.user;
       }
       return session;
     },

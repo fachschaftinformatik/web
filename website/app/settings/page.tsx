@@ -18,18 +18,19 @@ import type { SlideProps } from '@mui/material/Slide';
 import { Sidebar } from '@components/layout';
 import { useAuth } from '@lib/auth';
 import { getPrograms, putAuthMe } from '@lib/api';
-import type { DtoProgramResponse as Program, DtoUserResponse as User } from '@lib/api';
+import type { DtoProgramResponse as Program } from '@lib/api';
 import { zDtoUpdateProfileRequest } from '@lib/api/zod.gen';
 import { useThemeMode, type ThemePreference } from '@lib/theme';
 import { translateError } from '@lib/errors';
 import { alpha } from '@mui/material/styles';
+import { isThemePreference, toSessionUser, toThemePreference } from '@lib/types/guards';
 
 export default function SettingsPage() {
     const { user, login } = useAuth();
     const [programs, setPrograms] = useState<Program[]>([]);
     const [name, setName] = useState(user?.name || "");
     const [programId, setProgramId] = useState<string>(user?.program_id || "");
-    const [themePreference, setThemePreference] = useState<ThemePreference>(user?.theme as ThemePreference || 'system');
+    const [themePreference, setThemePreference] = useState<ThemePreference>(toThemePreference(user?.theme));
     const [loading, setLoading] = useState(false);
     const [isPrivate, setIsPrivate] = useState(user?.private === 1);
     const [success, setSuccess] = useState("");
@@ -55,7 +56,7 @@ export default function SettingsPage() {
         if (user) {
             setName(user.name || "");
             setProgramId(user.program_id || "");
-            setThemePreference(user.theme as ThemePreference || 'system');
+            setThemePreference(toThemePreference(user.theme));
             setIsPrivate(user.private === 1);
         }
     }, [user]);
@@ -87,7 +88,10 @@ export default function SettingsPage() {
             } else {
                 setSuccess("Einstellungen erfolgreich gespeichert.");
                 if (res.data) {
-                    login(res.data as User, window.localStorage.getItem('fs_remember_flag') === 'true');
+                    const updatedUser = toSessionUser(res.data);
+                    if (updatedUser) {
+                        login(updatedUser, window.localStorage.getItem('fs_remember_flag') === 'true');
+                    }
                     setPreference(themePreference);
                 }
             }
@@ -231,8 +235,10 @@ export default function SettingsPage() {
                                 label="Erscheinungsbild"
                                 value={themePreference}
                                 onChange={(e) => {
-                                    const val = e.target.value as ThemePreference;
-                                    setThemePreference(val);
+                                    const value = e.target.value;
+                                    if (isThemePreference(value)) {
+                                        setThemePreference(value);
+                                    }
                                 }}
                                 fullWidth
                                 size="small"
