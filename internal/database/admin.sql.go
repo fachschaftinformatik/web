@@ -17,8 +17,7 @@ SELECT
     CAST((SELECT COUNT(*) FROM events WHERE deleted_at IS NULL) AS INTEGER) as event_count,
     CAST((SELECT COUNT(DISTINCT name) FROM modules WHERE deleted_at IS NULL) AS INTEGER) as module_count,
     CAST((SELECT COUNT(*) FROM programs WHERE deleted_at IS NULL) AS INTEGER) as program_count,
-    CAST((SELECT COUNT(*) FROM activities WHERE deleted_at IS NULL) AS INTEGER) as activity_count,
-    CAST((SELECT COUNT(*) FROM sessions) AS INTEGER) as session_count
+    CAST((SELECT COUNT(*) FROM activities WHERE deleted_at IS NULL) AS INTEGER) as activity_count
 `
 
 type GetAdminStatsRow struct {
@@ -29,7 +28,6 @@ type GetAdminStatsRow struct {
 	ModuleCount   int64 `json:"module_count"`
 	ProgramCount  int64 `json:"program_count"`
 	ActivityCount int64 `json:"activity_count"`
-	SessionCount  int64 `json:"session_count"`
 }
 
 func (q *Queries) GetAdminStats(ctx context.Context) (GetAdminStatsRow, error) {
@@ -43,7 +41,6 @@ func (q *Queries) GetAdminStats(ctx context.Context) (GetAdminStatsRow, error) {
 		&i.ModuleCount,
 		&i.ProgramCount,
 		&i.ActivityCount,
-		&i.SessionCount,
 	)
 	return i, err
 }
@@ -238,44 +235,6 @@ func (q *Queries) GetDailyProgramGrowth(ctx context.Context) ([]GetDailyProgramG
 	var items []GetDailyProgramGrowthRow
 	for rows.Next() {
 		var i GetDailyProgramGrowthRow
-		if err := rows.Scan(&i.Date, &i.Count); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getDailySessionTrend = `-- name: GetDailySessionTrend :many
-SELECT 
-    date(created_at) as date,
-    COUNT(*) as count
-FROM sessions
-WHERE created_at >= date('now', '-90 days')
-GROUP BY date
-ORDER BY date ASC
-`
-
-type GetDailySessionTrendRow struct {
-	Date  interface{} `json:"date"`
-	Count int64       `json:"count"`
-}
-
-func (q *Queries) GetDailySessionTrend(ctx context.Context) ([]GetDailySessionTrendRow, error) {
-	rows, err := q.db.QueryContext(ctx, getDailySessionTrend)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetDailySessionTrendRow
-	for rows.Next() {
-		var i GetDailySessionTrendRow
 		if err := rows.Scan(&i.Date, &i.Count); err != nil {
 			return nil, err
 		}
