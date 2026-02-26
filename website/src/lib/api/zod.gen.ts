@@ -19,7 +19,6 @@ export const zDtoAdminStatsResponse = z.object({
     module_count: z.int().optional(),
     post_count: z.int().optional(),
     program_count: z.int().optional(),
-    session_count: z.int().optional(),
     user_count: z.int().optional()
 });
 
@@ -177,7 +176,6 @@ export const zDtoAdminDashboardResponse = z.object({
     program_distribution: z.array(zDtoProgramDistributionItem).optional(),
     program_growth_trend: z.array(zDtoDashboardTrendItem).optional(),
     recent_activities: z.array(zDtoActivityResponse).optional(),
-    session_trend: z.array(zDtoDashboardTrendItem).optional(),
     stats: zDtoAdminStatsResponse.optional(),
     user_growth_trend: z.array(zDtoDashboardTrendItem).optional()
 });

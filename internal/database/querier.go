@@ -49,7 +49,6 @@ type Querier interface {
 	GetDailyExamGrowth(ctx context.Context) ([]GetDailyExamGrowthRow, error)
 	GetDailyModuleGrowth(ctx context.Context) ([]GetDailyModuleGrowthRow, error)
 	GetDailyProgramGrowth(ctx context.Context) ([]GetDailyProgramGrowthRow, error)
-	GetDailySessionTrend(ctx context.Context) ([]GetDailySessionTrendRow, error)
 	GetDailyUserGrowth(ctx context.Context) ([]GetDailyUserGrowthRow, error)
 	GetDiscussionComment(ctx context.Context, id int64) (DiscussionComment, error)
 	GetDiscussionPost(ctx context.Context, arg GetDiscussionPostParams) (GetDiscussionPostRow, error)
