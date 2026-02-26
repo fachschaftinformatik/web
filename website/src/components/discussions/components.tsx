@@ -65,6 +65,15 @@ export const isoToShort = (iso?: string) => {
 }
 
 export type CommentNode = Comment & { children: CommentNode[] };
+
+const toVote = (value: number | undefined | null): Vote => {
+    if (value === 1 || value === -1) {
+        return value;
+    }
+
+    return 0;
+};
+
 export function buildCommentTree(comments: Comment[]): CommentNode[] {
     if (!Array.isArray(comments)) return [];
     const map = new Map<string, CommentNode>();
@@ -95,7 +104,7 @@ export function renderTextWithMentions(text: string) {
     while ((match = mentionRegex.exec(text)) !== null) {
         const mIndex = match.index;
         if (mIndex > lastIndex) {
-            nodes.push(text.slice(lastIndex, mIndex) as React.ReactNode);
+            nodes.push(text.slice(lastIndex, mIndex));
         }
         const mention = match[0];
         nodes.push(
@@ -116,9 +125,9 @@ export function renderTextWithMentions(text: string) {
         lastIndex = mIndex + mention.length;
     }
     if (lastIndex < text.length) {
-        nodes.push(text.slice(lastIndex) as React.ReactNode);
+        nodes.push(text.slice(lastIndex));
     }
-    return nodes.length ? nodes : [text as React.ReactNode];
+    return nodes.length ? nodes : [text];
 }
 
 export function CommentThread({
@@ -155,7 +164,7 @@ export function CommentThread({
     const isEdited = node.updated_at && node.created_at && node.updated_at !== node.created_at;
 
     const netVotes = node.votes || 0;
-    const userVote = (node.user_vote || 0) as Vote;
+    const userVote = toVote(node.user_vote);
 
     const totalDescendants = React.useMemo(() => {
         const count = (n: CommentNode): number =>
@@ -693,7 +702,12 @@ export function CommentsSection({
                             select
                             size="small"
                             value={sortOrder}
-                            onChange={(e) => setSortOrder(e.target.value as "top" | "desc")}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === "top" || value === "desc") {
+                                    setSortOrder(value);
+                                }
+                            }}
                             InputProps={{
                                 sx: { borderRadius: 2, fontSize: '0.875rem' }
                             }}

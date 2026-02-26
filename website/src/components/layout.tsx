@@ -59,6 +59,7 @@ import {
 } from '@lib/api';
 import { client } from '@lib/api/client.gen';
 import { getAvatarUrl } from '@lib/images';
+import { toSearchResults, toSessionUser } from '@lib/types/guards';
 import OfficeStatus from './OfficeStatus';
 
 const drawerWidthOpen = 240;
@@ -112,6 +113,29 @@ interface SearchResult {
   url: string;
 }
 
+const isSearchResultType = (value: unknown): value is SearchResult['type'] =>
+  value === 'archive' || value === 'module' || value === 'user' || value === 'discussion';
+
+const toSearchResultItems = (value: unknown): SearchResult[] => {
+  return toSearchResults(value).flatMap((item) => {
+    if (!item.id || !item.title || !item.subtitle || !item.url) {
+      return [];
+    }
+
+    if (!isSearchResultType(item.type)) {
+      return [];
+    }
+
+    return [{
+      id: item.id,
+      title: item.title,
+      subtitle: item.subtitle,
+      url: item.url,
+      type: item.type,
+    }];
+  });
+};
+
 const GlobalSearch = () => {
   const theme = useTheme();
   const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
@@ -156,7 +180,7 @@ const GlobalSearch = () => {
         query: { q: inputValue }
       }).then(({ data }) => {
         if (active && data) {
-          setOptions(data as SearchResult[]);
+          setOptions(toSearchResultItems(data));
         }
       }).finally(() => {
         if (active) setLoading(false);
@@ -359,7 +383,7 @@ const Sidebar = ({
     }
     try {
       const { data } = await getAuthNotifications();
-      if (data) setNotifications(data as Notification[]);
+      if (data) setNotifications(data);
     } catch (err) {
       console.error("Failed to fetch notifications", err);
     }
@@ -413,7 +437,10 @@ const Sidebar = ({
           }
         });
         if (res.data) {
-          login(res.data as User, window.localStorage.getItem('fs_remember_flag') === 'true');
+          const updatedUser = toSessionUser(res.data);
+          if (updatedUser) {
+            login(updatedUser, window.localStorage.getItem('fs_remember_flag') === 'true');
+          }
         }
       } catch (err) {
         console.error("Failed to sync theme preference", err);
@@ -824,4 +851,3 @@ const PageLoader = () => (
 );
 
 export { Sidebar, PageLoader };
-

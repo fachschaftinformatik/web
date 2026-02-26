@@ -8,17 +8,11 @@ import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Chip from "@mui/material/Chip";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
 import InputAdornment from "@mui/material/InputAdornment";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
 import Tooltip from "@mui/material/Tooltip";
 import Pagination from "@mui/material/Pagination";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -32,29 +26,18 @@ import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import ShareIcon from "@mui/icons-material/Share";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
-import ReportOutlinedIcon from "@mui/icons-material/ReportOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import { Sidebar } from "@components/layout";
-import { useAuth } from "@lib/auth";
-import {
-  getDiscussions,
-  getPrograms,
-  postDiscussionsByPostIdVote,
-  deleteDiscussionsByPostId,
-  putDiscussionsByPostId,
-} from "@lib/api";
-import type {
-  DtoDiscussionPostResponse as ApiPost,
-  DtoUserResponse as User,
-  DtoProgramResponse
-} from "@lib/api";
 import { getAvatarUrl } from "@lib/images";
 
 import {
   isoToShort,
-  Post, Vote, Program, POSTS_PER_PAGE
+  Post, Vote
 } from "@components/discussions/components";
+import type { SessionUser } from "@lib/types/session";
+import { useSessionUser } from "@lib/hooks/useSessionUser";
+import { useDiscussionList } from "@lib/hooks/useDiscussionList";
 
 function PostItem({
   post,
@@ -63,8 +46,7 @@ function PostItem({
   onDelete,
   onTogglePin,
   user,
-  isAdmin,
-  onReport,
+  canModerate,
   onShare,
 }: {
   post: Post;
@@ -72,16 +54,16 @@ function PostItem({
   vote: Vote;
   onDelete: (id: string) => void;
   onTogglePin: (id: string) => void;
-  user: User | null;
-  isAdmin: boolean;
-  onReport: (id: string) => void;
+  user: SessionUser | null;
+  canModerate: boolean;
   onShare: (id: string) => void;
 }) {
   const router = useRouter();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
+  const postId = String(post.id ?? "");
   const netVotes = (Number(post.votes) || 0);
-  const canDelete = isAdmin || (String(user?.id) === String(post.user_id));
+  const canDelete = canModerate || (String(user?.id) === String(post.user_id));
   const [menuEl, setMenuEl] = React.useState<null | HTMLElement>(null);
   const openMenu = Boolean(menuEl);
 
@@ -94,12 +76,18 @@ function PostItem({
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
     handleCloseMenu();
-    onShare(String(post.id!));
+    onShare(postId);
+  };
+
+  const runMenuAction = (e: React.MouseEvent, action: () => void) => {
+    e.stopPropagation();
+    handleCloseMenu();
+    action();
   };
 
   return (
     <Paper
-      onClick={() => router.push(`/d/${post.id}`)}
+      onClick={() => router.push(`/d/${postId}`)}
       elevation={0}
       sx={{
         p: 2,
@@ -127,7 +115,7 @@ function PostItem({
             size="small"
             onClick={(e) => {
               e.stopPropagation();
-              onVote(String(post.id!), vote === 1 ? 0 : 1);
+              onVote(postId, 1);
             }}
             color={vote === 1 ? "primary" : "default"}
           >
@@ -140,7 +128,7 @@ function PostItem({
             size="small"
             onClick={(e) => {
               e.stopPropagation();
-              onVote(String(post.id!), vote === -1 ? 0 : -1);
+              onVote(postId, -1);
             }}
             color={vote === -1 ? "primary" : "default"}
           >
@@ -186,23 +174,15 @@ function PostItem({
 
               {String(user?.id) === String(post.user_id) && (
                 <MenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCloseMenu();
-                    router.push(`/d/${post.id}/edit`);
-                  }}
+                  onClick={(e) => runMenuAction(e, () => router.push(`/d/${postId}/edit`))}
                 >
                   <EditIcon sx={{ fontSize: 18 }} />
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>Bearbeiten</Typography>
                 </MenuItem>
               )}
-              {(isAdmin || user?.role === "editor") && (
+              {canModerate && (
                 <MenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCloseMenu();
-                    onTogglePin(String(post.id!));
-                  }}
+                  onClick={(e) => runMenuAction(e, () => onTogglePin(postId))}
                 >
                   <PushPinOutlinedIcon sx={{ fontSize: 18 }} />
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>{post.pinned === 1 ? "Entpinnen" : "Anpinnen"}</Typography>
@@ -214,24 +194,9 @@ function PostItem({
                 <ShareIcon sx={{ fontSize: 18 }} />
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>Teilen</Typography>
               </MenuItem>
-              <MenuItem
-                disabled
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCloseMenu();
-                  onReport(String(post.id!));
-                }}
-              >
-                <ReportOutlinedIcon sx={{ fontSize: 18 }} />
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>Melden</Typography>
-              </MenuItem>
               {canDelete && (
                 <MenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCloseMenu();
-                    onDelete(String(post.id!));
-                  }}
+                  onClick={(e) => runMenuAction(e, () => onDelete(postId))}
                   sx={{ color: "error.main" }}
                 >
                   <DeleteOutlineIcon sx={{ fontSize: 18, color: "inherit" }} />
@@ -302,69 +267,28 @@ function PostItem({
 
 
 export default function DiscussionsPage() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const { user } = useSessionUser();
   const router = useRouter();
 
-  const [posts, setPosts] = React.useState<Post[]>([]);
-  const [totalCount, setTotalCount] = React.useState(0);
-  const [loading, setLoading] = React.useState(true);
-
-  const [q, setQ] = React.useState("");
-  const [sort, setSort] = React.useState<"new" | "votes" | "relevant">("new");
-  const [activeProgramFilters, setActiveProgramFilters] = React.useState<Program[]>([]);
-  const [page, setPage] = React.useState(1);
-
-  const [apiPrograms, setApiPrograms] = React.useState<DtoProgramResponse[]>([]);
-
-  const fetchPosts = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const offset = (page - 1) * POSTS_PER_PAGE;
-      const { data, response } = await getDiscussions({
-        query: {
-          limit: POSTS_PER_PAGE,
-          offset,
-          query: q.trim() || undefined,
-          sort: sort === "votes" ? "votes" : undefined,
-          program_id: activeProgramFilters.length > 0 ? apiPrograms.find(p => p.name === activeProgramFilters[0])?.id : undefined
-        }
-      });
-
-      if (data) {
-        const parsed: Post[] = (data as ApiPost[]).map((p: ApiPost) => {
-          return {
-            ...p,
-            comments: []
-          } as Post;
-        });
-        setPosts(parsed);
-
-        const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
-        setTotalCount(total);
-      }
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, q, sort, apiPrograms, activeProgramFilters]);
-
-  React.useEffect(() => {
-    const fetchPrograms = async () => {
-      try {
-        const { data } = await getPrograms();
-        if (data) setApiPrograms(data);
-      } catch (err) {
-        console.error("Failed to fetch programs:", err);
-      }
-    };
-    fetchPrograms();
-  }, []);
-
-  React.useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+  const {
+    posts,
+    pageCount,
+    loading,
+    q,
+    sort,
+    activeProgramFilters,
+    page,
+    apiPrograms,
+    canModerate,
+    setQ,
+    setSortOrder,
+    setActiveProgramFilters,
+    setPage,
+    votePost,
+    togglePin,
+    deletePost,
+    normalizeVote,
+  } = useDiscussionList({ user });
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -375,47 +299,9 @@ export default function DiscussionsPage() {
     }
   }, [router]);
 
-  React.useEffect(() => {
-    setPage(1);
-  }, [q, sort, activeProgramFilters]);
-
-  const pageCount = Math.ceil(totalCount / POSTS_PER_PAGE);
-
-  const handleVote = async (id: string, newVote: Vote) => {
-    if (!user) return;
-    try {
-      await postDiscussionsByPostIdVote({
-        path: { postId: id } as any,
-        body: { vote: newVote },
-      });
-      setPosts(prev => prev.map(p => String(p.id) === id ? { ...p, user_vote: newVote, votes: (Number(p.votes)) - (p.user_vote || 0) + newVote } : p));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const togglePin = async (id: string) => {
-    if (!isAdmin && user?.role !== "editor") return;
-    const post = posts.find(p => String(p.id) === id);
-    if (!post) return;
-    try {
-      await putDiscussionsByPostId({
-        path: { postId: id } as any,
-        body: { pinned: !post.pinned } as any,
-      });
-      setPosts(prev => prev.map(p => String(p.id) === id ? { ...p, pinned: post.pinned ? 0 : 1 } : p));
-    } catch (e) { console.error(e); }
-  };
-
   const handleDelete = async (id: string) => {
-    if (!isAdmin && user?.role !== "editor" && String(user?.id) !== String(posts.find(p => String(p.id) === id)?.user_id)) return;
     if (!confirm("Wirklich löschen?")) return;
-    try {
-      await deleteDiscussionsByPostId({
-        path: { postId: id } as any,
-      });
-      setPosts(prev => prev.filter(p => String(p.id) !== id));
-    } catch (e) { console.error(e); }
+    await deletePost(id);
   };
 
   const handleOpenCreate = () => router.push("/d/new");
@@ -423,15 +309,6 @@ export default function DiscussionsPage() {
   const handleShare = (id: string) => {
     const url = `${window.location.origin}/d/${id}`;
     navigator.clipboard.writeText(url);
-  };
-
-  const [reportFor, setReportFor] = React.useState<string | null>(null);
-  const [reportReason, setReportReason] = React.useState("Spam / Werbung");
-  const [reportNote, setReportNote] = React.useState("");
-  const openReport = (id: string) => setReportFor(id);
-  const closeReport = () => { setReportFor(null); setReportNote(""); };
-  const sendReport = () => {
-    closeReport();
   };
 
   return (
@@ -524,7 +401,9 @@ export default function DiscussionsPage() {
                     select
                     label="Filter"
                     value={sort}
-                    onChange={e => setSort(e.target.value as "new" | "votes" | "relevant")}
+                    onChange={(e) => {
+                      setSortOrder(e.target.value);
+                    }}
                     size="small"
                     sx={{ flex: 1, minWidth: 150 }}
                   >
@@ -541,13 +420,12 @@ export default function DiscussionsPage() {
                 <PostItem
                   key={String(p.id)}
                   post={p}
-                  vote={(p.user_vote ?? 0) as Vote}
-                  onVote={handleVote}
+                  vote={normalizeVote(p.user_vote)}
+                  onVote={votePost}
                   onDelete={handleDelete}
-                  onReport={openReport}
                    onTogglePin={togglePin}
                   user={user}
-                  isAdmin={isAdmin}
+                  canModerate={canModerate}
                   onShare={handleShare}
                 />
               ))}
@@ -574,39 +452,6 @@ export default function DiscussionsPage() {
           </>
         )}
 
-        <Dialog open={!!reportFor} onClose={closeReport} maxWidth="xs" fullWidth>
-          <DialogTitle>Beitrag melden</DialogTitle>
-          <DialogContent dividers>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              Wähle einen Grund:
-            </Typography>
-            <Select
-              fullWidth
-              size="small"
-              value={reportReason}
-              onChange={(e) => setReportReason(e.target.value as string)}
-            >
-              <MenuItem value="Spam / Werbung">Spam / Werbung</MenuItem>
-              <MenuItem value="Beleidigung / Hate">Beleidigung / Hate</MenuItem>
-              <MenuItem value="Falsche Kategorie">Falsche Kategorie</MenuItem>
-              <MenuItem value="Urheberrechtsverletzung">Urheberrechtsverletzung</MenuItem>
-              <MenuItem value="Sonstiges">Sonstiges</MenuItem>
-            </Select>
-            <TextField
-              label="Zusätzliche Hinweise (optional)"
-              multiline
-              minRows={2}
-              value={reportNote}
-              onChange={(e) => setReportNote(e.target.value)}
-              fullWidth
-              sx={{ mt: 2 }}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={closeReport}>Abbrechen</Button>
-            <Button variant="contained" onClick={sendReport}>Melden</Button>
-          </DialogActions>
-        </Dialog>
       </Box>
     </Sidebar>
   );

@@ -116,10 +116,10 @@ const NewsFeedPage: React.FC = () => {
           getEvents()
         ]);
 
-        if (news.data) setNewsItems(news.data as ApiPost[]);
-        if (forum.data) setForumPosts(loadForumPosts(forum.data as ApiPost[]));
-        if (apiEvs.data) setApiEvents(apiEvs.data as ApiPost[]);
-        if (events.data) setEventsData(events.data as EventItem[]);
+        if (news.data) setNewsItems(news.data);
+        if (forum.data) setForumPosts(loadForumPosts(forum.data));
+        if (apiEvs.data) setApiEvents(apiEvs.data);
+        if (events.data) setEventsData(events.data);
       } finally {
         setIsLoading(false);
       }
@@ -237,7 +237,7 @@ const NewsFeedPage: React.FC = () => {
               >
                 <Box
                   component="img"
-                  src={ev.cover_path ? getSizedImageUrl(`/api/v1/events/${ev.id}/cover`, 1600 as any) : undefined}
+                  src={ev.cover_path ? getSizedImageUrl(`/api/v1/events/${ev.id}/cover`, 1600) : undefined}
                   srcSet={ev.cover_path ? getImageSrcSet(`/api/v1/events/${ev.id}/cover`) : undefined}
                   sizes="100vw"
                   onLoad={() => handleImageLoad(String(ev.id))}

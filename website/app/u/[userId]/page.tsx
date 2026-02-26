@@ -60,7 +60,7 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
       try {
         const { data } = await getUsersByUserId({ path: { userId } });
         if (data) {
-          setProfileUser(data as User);
+          setProfileUser(data);
         }
       } catch (err) {
         console.error("Failed to fetch profile", err);
@@ -99,7 +99,7 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
         }
 
         if (data && Array.isArray(data)) {
-          setActivities(data as Activity[]);
+          setActivities(data);
         }
       } catch (err) {
         console.error("Failed to fetch activities", err);
