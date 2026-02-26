@@ -36,9 +36,7 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   const growthData = data?.user_growth_trend?.map(item => Number(item.count) || 0) || [];
-
-  const sessionData = data?.session_trend?.map(item => Number(item.count) || 0) || [];
-  const sessionLabels = data?.session_trend?.map(item => item.date ? new Date(item.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '') || [];
+  const growthLabels = data?.user_growth_trend?.map(item => item.date ? new Date(item.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '') || [];
 
   const examData = data?.exam_growth_trend?.map(item => Number(item.count) || 0) || [];
   const discData = data?.discussion_growth_trend?.map(item => Number(item.count) || 0) || [];
@@ -117,12 +115,12 @@ const AdminDashboard: React.FC = () => {
             minWidth: 0 
           }}>
             <UserGrowthChart 
-              title="Sitzungen" 
-              value={data?.stats?.session_count || 0}
+              title="Benutzerwachstum" 
+              value={data?.stats?.user_count || 0}
               trend="up"
-              caption="Sitzungen pro Tag in den letzten 90 Tagen"
-              data={sessionData} 
-              labels={sessionLabels} 
+              caption="Neue Benutzer pro Tag in den letzten 90 Tagen"
+              data={growthData} 
+              labels={growthLabels} 
               loading={loading} 
             />
           </Box>
