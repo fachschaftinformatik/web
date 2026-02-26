@@ -269,7 +269,6 @@ type AdminStatsResponse struct {
 	ModuleCount   int64 `json:"module_count"`
 	ProgramCount  int64 `json:"program_count"`
 	ActivityCount int64 `json:"activity_count"`
-	SessionCount  int64 `json:"session_count"`
 }
 
 type DashboardTrendItem struct {
@@ -290,7 +289,6 @@ type AdminDashboardResponse struct {
 	ModuleGrowthTrend     []DashboardTrendItem      `json:"module_growth_trend"`
 	ProgramGrowthTrend    []DashboardTrendItem      `json:"program_growth_trend"`
 	ActivityTrend         []DashboardTrendItem      `json:"activity_trend"`
-	SessionTrend          []DashboardTrendItem      `json:"session_trend"`
 	ProgramDistribution   []ProgramDistributionItem `json:"program_distribution"`
 	RecentActivities      []ActivityResponse        `json:"recent_activities"`
 }
