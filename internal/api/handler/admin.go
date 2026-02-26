@@ -123,7 +123,6 @@ func (s *Server) GetAdminStats(w http.ResponseWriter, r *http.Request) {
 		ModuleCount:   stats.ModuleCount,
 		ProgramCount:  stats.ProgramCount,
 		ActivityCount: stats.ActivityCount,
-		SessionCount:  stats.SessionCount,
 	})
 }
 
@@ -142,7 +141,6 @@ func (s *Server) GetAdminDashboard(w http.ResponseWriter, r *http.Request) {
 	discGrowth, _ := s.DB.GetDailyDiscussionGrowth(ctx)
 	moduleGrowth, _ := s.DB.GetDailyModuleGrowth(ctx)
 	programGrowth, _ := s.DB.GetDailyProgramGrowth(ctx)
-	sessionTrend, _ := s.DB.GetDailySessionTrend(ctx)
 	dist, _ := s.DB.GetUserProgramDistribution(ctx)
 	activities, _ := s.DB.ListAllActivities(ctx, database.ListAllActivitiesParams{
 		Limit:  10,
@@ -233,20 +231,6 @@ func (s *Server) GetAdminDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sessionDto := make([]dto.DashboardTrendItem, len(sessionTrend))
-	for i, s := range sessionTrend {
-		dateStr := ""
-		if str, ok := s.Date.(string); ok {
-			dateStr = str
-		} else if s.Date != nil {
-			dateStr = fmt.Sprint(s.Date)
-		}
-		sessionDto[i] = dto.DashboardTrendItem{
-			Date:  dateStr,
-			Count: s.Count,
-		}
-	}
-
 	distDto := make([]dto.ProgramDistributionItem, len(dist))
 	for i, d := range dist {
 		distDto[i] = dto.ProgramDistributionItem{
@@ -277,7 +261,6 @@ func (s *Server) GetAdminDashboard(w http.ResponseWriter, r *http.Request) {
 			ModuleCount:   stats.ModuleCount,
 			ProgramCount:  stats.ProgramCount,
 			ActivityCount: stats.ActivityCount,
-			SessionCount:  stats.SessionCount,
 		},
 		UserGrowthTrend:       growthDto,
 		ExamGrowthTrend:       examDto,
@@ -285,7 +268,6 @@ func (s *Server) GetAdminDashboard(w http.ResponseWriter, r *http.Request) {
 		ModuleGrowthTrend:     moduleGrowthDto,
 		ProgramGrowthTrend:    programGrowthDto,
 		ActivityTrend:         trendDto,
-		SessionTrend:          sessionDto,
 		ProgramDistribution:   distDto,
 		RecentActivities:      activitiesDto,
 	})

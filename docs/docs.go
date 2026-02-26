@@ -1849,12 +1849,6 @@ const docTemplate = `{
                         "$ref": "#/definitions/dto.ActivityResponse"
                     }
                 },
-                "session_trend": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.DashboardTrendItem"
-                    }
-                },
                 "stats": {
                     "$ref": "#/definitions/dto.AdminStatsResponse"
                 },
@@ -1885,9 +1879,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "program_count": {
-                    "type": "integer"
-                },
-                "session_count": {
                     "type": "integer"
                 },
                 "user_count": {

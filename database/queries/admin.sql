@@ -6,8 +6,7 @@ SELECT
     CAST((SELECT COUNT(*) FROM events WHERE deleted_at IS NULL) AS INTEGER) as event_count,
     CAST((SELECT COUNT(DISTINCT name) FROM modules WHERE deleted_at IS NULL) AS INTEGER) as module_count,
     CAST((SELECT COUNT(*) FROM programs WHERE deleted_at IS NULL) AS INTEGER) as program_count,
-    CAST((SELECT COUNT(*) FROM activities WHERE deleted_at IS NULL) AS INTEGER) as activity_count,
-    CAST((SELECT COUNT(*) FROM sessions) AS INTEGER) as session_count;
+    CAST((SELECT COUNT(*) FROM activities WHERE deleted_at IS NULL) AS INTEGER) as activity_count;
 
 -- name: GetDailyUserGrowth :many
 SELECT 
@@ -24,15 +23,6 @@ SELECT
     COUNT(*) as count
 FROM activities
 WHERE created_at >= date('now', '-90 days') AND deleted_at IS NULL
-GROUP BY date
-ORDER BY date ASC;
-
--- name: GetDailySessionTrend :many
-SELECT 
-    date(created_at) as date,
-    COUNT(*) as count
-FROM sessions
-WHERE created_at >= date('now', '-90 days')
 GROUP BY date
 ORDER BY date ASC;
 

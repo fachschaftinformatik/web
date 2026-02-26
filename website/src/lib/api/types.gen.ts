@@ -22,7 +22,6 @@ export type DtoAdminDashboardResponse = {
     program_distribution?: Array<DtoProgramDistributionItem>;
     program_growth_trend?: Array<DtoDashboardTrendItem>;
     recent_activities?: Array<DtoActivityResponse>;
-    session_trend?: Array<DtoDashboardTrendItem>;
     stats?: DtoAdminStatsResponse;
     user_growth_trend?: Array<DtoDashboardTrendItem>;
 };
@@ -34,7 +33,6 @@ export type DtoAdminStatsResponse = {
     module_count?: number;
     post_count?: number;
     program_count?: number;
-    session_count?: number;
     user_count?: number;
 };
 
