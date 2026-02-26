@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Avatar from "@mui/material/Avatar";
@@ -23,82 +23,38 @@ import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import ShareIcon from "@mui/icons-material/Share";
 import { Sidebar } from "@components/layout";
-import { useAuth } from "@lib/auth";
 import {
-    getDiscussionsByPostId,
-    getDiscussionsByPostIdComments,
-    postDiscussionsByPostIdComments,
-    postDiscussionsByPostIdVote,
-    postDiscussionsCommentsByCommentIdVote,
-    deleteDiscussionsByPostId,
-    putDiscussionsCommentsByCommentId
-} from "@lib/api";
-import {
-    Post, Comment, Vote, CommentsSection, isoToShort
+    CommentsSection, isoToShort
 } from "@components/discussions/components";
 import { getAvatarUrl } from "@lib/images";
+import { useSessionUser } from "@lib/hooks/useSessionUser";
+import { useDiscussionPost } from "@lib/hooks/useDiscussionPost";
 
 export default function ViewPost({ params }: { params: Promise<{ postId: string }> }) {
     const { postId } = React.use(params);
     const router = useRouter();
-    const { user } = useAuth();
+    const { user } = useSessionUser();
     const theme = useTheme();
     const isDark = theme.palette.mode === "dark";
-
-    const [post, setPost] = useState<Post | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
-    const isAdmin = user?.role === "admin" || user?.role === "editor";
-
-    useEffect(() => {
-        if (!postId) return;
-        Promise.all([
-            getDiscussionsByPostId({ path: { postId } as any }),
-            getDiscussionsByPostIdComments({ path: { postId } as any })
-        ]).then(([{ data: postData, error: postError }, { data: commentsData }]) => {
-            if (postError || !postData) {
-                setError("Beitrag nicht gefunden oder Fehler beim Laden.");
-            } else {
-                const parsedPost: Post = {
-                    ...postData,
-                    comments: []
-                };
-
-                const comments = (commentsData || []) as Comment[];
-                setPost({ ...parsedPost, comments });
-
-                const hash = window.location.hash.replace("#", "");
-                if (hash) {
-                    setTimeout(() => {
-                        const element = document.getElementById(hash);
-                        if (element) {
-                            element.scrollIntoView({ behavior: "smooth", block: "center" });
-                            
-                            const textBox = element.querySelector(".MuiPaper-root") as HTMLElement;
-                            if (textBox) {
-                                textBox.style.transition = "all 0.5s ease";
-                                const originalBorder = textBox.style.borderColor;
-                                const originalShadow = textBox.style.boxShadow;
-                                
-                                textBox.style.borderColor = theme.palette.primary.main;
-                                textBox.style.boxShadow = `0 0 0 2px ${theme.palette.primary.main}33`;
-                                
-                                setTimeout(() => {
-                                    textBox.style.borderColor = originalBorder;
-                                    textBox.style.boxShadow = originalShadow;
-                                }, 3000);
-                            }
-                        }
-                    }, 800);
-                }
-            }
-        }).catch(err => {
-            console.error(err);
-            setError("Ein unerwarteter Fehler ist aufgetreten.");
-        }).finally(() => setLoading(false));
-    }, [postId, theme.palette.action.selected, theme.palette.primary.main]);
+    const {
+        post,
+        loading,
+        error,
+        isAdmin,
+        netVotes,
+        userVote,
+        votePost,
+        addComment,
+        editComment,
+        voteComment,
+        deletePost,
+    } = useDiscussionPost({
+        postIdParam: postId,
+        user,
+        accentColor: theme.palette.primary.main,
+    });
 
     const handleShare = () => {
         const url = window.location.origin + window.location.pathname;
@@ -108,116 +64,13 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
         });
     };
 
-    const handleVote = async (vote: Vote) => {
-        if (!post || !user || !postId) return;
-
-        const oldVote = (post.user_vote as Vote) || 0;
-        const oldVotes = Number(post.votes) || 0;
-        const targetVote = vote === oldVote ? 0 : vote;
-
-        let diff = 0;
-        if (targetVote === 1) {
-            if (oldVote === 1) diff = 0;
-            else if (oldVote === -1) diff = 2;
-            else diff = 1;
-        } else if (targetVote === -1) {
-            if (oldVote === 1) diff = -2;
-            else if (oldVote === -1) diff = 0;
-            else diff = -1;
-        } else {
-            if (oldVote === 1) diff = -1;
-            else if (oldVote === -1) diff = 1;
-        }
-
-        const newVotes = oldVotes + diff;
-        setPost(prev => prev ? ({ ...prev, user_vote: targetVote, votes: newVotes }) : null);
-
-        try {
-            await postDiscussionsByPostIdVote({
-                path: { postId } as any,
-                body: { vote: targetVote }
-            });
-        } catch (err) {
-            console.error("Vote failed", err);
-        }
-    };
-
-    const handleAddComment = async (parentId: string | null, text: string) => {
-        if (!postId || !user) return;
-
-        const { data } = await postDiscussionsByPostIdComments({
-            path: { postId } as any,
-            body: { parent_id: parentId ? String(parentId) : undefined, text }
-        });
-        if (data) {
-            const newComment: Comment = {
-                ...data,
-                user_name: user.name || user.email || "Anonym",
-                user_avatar_url: user.avatar_url || "",
-                user_id: user.id
-            };
-            setPost(prev => prev ? ({
-                ...prev,
-                comments: [...prev.comments, newComment],
-                comment_count: (prev.comment_count || 0) + 1
-            }) : null);
-        }
-    };
-
-    const handleEditComment = async (commentId: string, text: string) => {
-        if (!postId || !user) return;
-
-        const { data } = await putDiscussionsCommentsByCommentId({
-            path: { commentId } as any,
-            body: { text }
-        });
-
-        if (data) {
-            setPost(prev => {
-                if (!prev) return null;
-                const newComments = prev.comments.map(c =>
-                    String(c.id) === commentId ? { ...c, text: data.text || "", updated_at: data.updated_at || "" } : c
-                );
-                return { ...prev, comments: newComments };
-            });
-        }
-    };
-
-    const handleVoteComment = async (commentId: string, vote: Vote) => {
-        if (!post || !user) return;
-
-        try {
-            await postDiscussionsCommentsByCommentIdVote({
-                path: { commentId } as any,
-                body: { vote }
-            });
-
-            setPost(prev => {
-                if (!prev) return null;
-                const newComments = prev.comments.map(c => {
-                    if (String(c.id) === commentId) {
-                        const oldUserVote = (c.user_vote || 0) as Vote;
-                        const oldVotes = c.votes || 0;
-                        const newVotes = oldVotes - oldUserVote + vote;
-                        return { ...c, user_vote: vote, votes: newVotes };
-                    }
-                    return c;
-                });
-                return { ...prev, comments: newComments };
-            });
-        } catch (err) {
-            console.error("Comment vote failed", err);
-        }
-    };
-
     const handleDelete = async () => {
-        if (!postId || (!isAdmin && String(post?.user_id) !== String(user?.id))) return;
         if (!confirm("Beitrag wirklich löschen?")) return;
 
-        await deleteDiscussionsByPostId({
-            path: { postId } as any
-        });
-        router.push("/discussions");
+        const didDelete = await deletePost();
+        if (didDelete) {
+            router.push("/discussions");
+        }
     };
 
     if (loading) {
@@ -247,9 +100,6 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
             </Sidebar>
         );
     }
-
-    const netVotes = (Number(post.votes) || 0);
-    const userVote = (post.user_vote as Vote) || 0;
 
     return (
         <Sidebar user={user} title="Diskussion" maxWidth="md">
@@ -282,11 +132,11 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
                                 alignSelf: { xs: "center", sm: "flex-start" }
                             }}
                         >
-                            <IconButton size="small" onClick={() => handleVote(1)} color={userVote === 1 ? "primary" : "default"}>
+                            <IconButton size="small" onClick={() => votePost(1)} color={userVote === 1 ? "primary" : "default"}>
                                 <ThumbUpOutlined fontSize="small" />
                             </IconButton>
                             <Typography variant="subtitle2" fontWeight={700} sx={{ px: { xs: 1, sm: 0 } }}>{netVotes}</Typography>
-                            <IconButton size="small" onClick={() => handleVote(-1)} color={userVote === -1 ? "primary" : "default"}>
+                            <IconButton size="small" onClick={() => votePost(-1)} color={userVote === -1 ? "primary" : "default"}>
                                 <ThumbDownOutlined fontSize="small" />
                             </IconButton>
                         </Stack>
@@ -361,15 +211,15 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
                             <Box>
                                 <CommentsSection
                                     comments={post.comments}
-                                    onAdd={handleAddComment}
-                                    onEdit={handleEditComment}
+                                    onAdd={addComment}
+                                    onEdit={editComment}
                                     appearance={{
                                         surface: isDark ? "rgba(255,255,255,0.05)" : "#f5f5f5",
                                         border: isDark ? "rgba(255,255,255,0.1)" : "#e0e0e0",
                                         accent: theme.palette.primary.main,
                                         textSecondary: theme.palette.text.secondary
                                     }}
-                                    onVote={handleVoteComment}
+                                    onVote={voteComment}
                                     currentUser={user}
                                 />
                             </Box>

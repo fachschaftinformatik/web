@@ -147,7 +147,13 @@ function ArchiveViewContent({ moduleId, examId }: { moduleId: string; examId?: s
         })
             .then(({ data }) => {
                 if (active && data) {
-                    const blob = data instanceof Blob ? data : new Blob([data as BlobPart], { type: 'application/pdf' });
+                    const blob = data instanceof Blob
+                        ? data
+                        : data instanceof ArrayBuffer
+                            ? new Blob([data], { type: 'application/pdf' })
+                            : typeof data === 'string'
+                                ? new Blob([data], { type: 'application/pdf' })
+                                : new Blob([JSON.stringify(data)], { type: 'application/pdf' });
                     const url = URL.createObjectURL(blob);
                     setPreviewUrl(prev => {
                         if (prev) URL.revokeObjectURL(prev);
@@ -620,4 +626,3 @@ export default function ArchiveView({ moduleId, examId }: { moduleId: string; ex
     </Suspense>
   );
 }
-
