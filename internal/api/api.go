@@ -71,11 +71,6 @@ func Run() error {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go handler.StartSessionSweeper(ctx, querier, logger)
-
 	go func() {
 		logger.Info("Server starting", "port", cfg.HTTPPort, "version", Version)
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
