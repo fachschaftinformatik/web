@@ -37,6 +37,7 @@ import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
 import { getPrograms, getProgramModules, postArchive, getArchive } from "@lib/api";
 import type { DtoProgramResponse as Program, DtoModuleResponse as Module } from "@lib/api";
+import { toErrorMessage } from "@lib/types/guards";
 
 function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; onClose: () => void; programs: Program[]; onSuccess: () => void }) {
     const [file, setFile] = useState<File | null>(null);
@@ -138,7 +139,7 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                 });
 
                 if (apiError) {
-                    const msg = (apiError as { message?: string }).message || "Fehler beim Hochladen.";
+                    const msg = toErrorMessage(apiError) || "Fehler beim Hochladen.";
                     setError(msg);
                     setLoading(false);
                     return;
