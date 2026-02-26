@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useEffect, ReactNode, useMemo } from 'react';
-import { useSession, signIn, signOut } from 'next-auth/react';
-import type { DtoUserResponse as User } from '@lib/api';
-import { useThemeMode, type ThemePreference } from '@lib/theme';
+import { useSession, signOut } from 'next-auth/react';
+import type { SessionUser } from '@lib/types/session';
+import { toThemePreference, toSessionUser } from '@lib/types/guards';
+import { useThemeMode } from '@lib/theme';
 
 interface AuthContextType {
-  user: User | null;
+  user: SessionUser | null;
   isLoading: boolean;
-  login: (user: User, rememberMe?: boolean) => void;
+  login: (user: SessionUser, rememberMe?: boolean) => void;
   logout: () => void;
 }
 
@@ -16,12 +17,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { data: session, status } = useSession();
   const { setPreference } = useThemeMode();
 
-  const user = (session?.user as unknown as User) || null;
+  const user = useMemo(() => toSessionUser(session?.user), [session?.user]);
   const isLoading = status === 'loading';
 
   useEffect(() => {
     if (user && user.theme) {
-      setPreference(user.theme as ThemePreference);
+      setPreference(toThemePreference(user.theme));
     }
   }, [user, setPreference]);
 
@@ -51,5 +52,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
 

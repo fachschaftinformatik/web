@@ -43,7 +43,6 @@ import HelpOutlineRounded from '@mui/icons-material/HelpOutlineRounded';
 import { useThemeMode } from '@lib/theme';
 import { postAuthRegister, getPrograms } from '@lib/api';
 import type { DtoProgramResponse as Program } from '@lib/api';
-import { useAuth } from '@lib/auth';
 import { translateError } from '@lib/errors';
 import { zDtoLoginRequest, zDtoRegisterRequest } from '@lib/api/zod.gen';
 import { signIn } from 'next-auth/react';
@@ -150,14 +149,22 @@ export default function AuthPage() {
         setSuccess('');
 
         const formData = new FormData(event.currentTarget);
-        const rawData = Object.fromEntries(formData.entries()) as Record<string, string>;
+        const rawData: Record<string, string> = {};
+        formData.forEach((value, key) => {
+            rawData[key] = String(value);
+        });
 
         if (tabValue === 0) {
             // Login Flow
             const validationResult = loginSchema.safeParse(rawData);
             if (!validationResult.success) {
                 const fieldErrors: Record<string, string> = {};
-                validationResult.error.issues.forEach((issue) => { fieldErrors[issue.path[0] as string] = issue.message; });
+                validationResult.error.issues.forEach((issue) => {
+                    const field = issue.path[0];
+                    if (typeof field === 'string') {
+                        fieldErrors[field] = issue.message;
+                    }
+                });
                 setErrors(fieldErrors);
                 setLoading(false);
                 return;
@@ -188,7 +195,12 @@ export default function AuthPage() {
             const validationResult = registrationSchema.safeParse(rawData);
             if (!validationResult.success) {
                 const fieldErrors: Record<string, string> = {};
-                validationResult.error.issues.forEach((issue) => { fieldErrors[issue.path[0] as string] = issue.message; });
+                validationResult.error.issues.forEach((issue) => {
+                    const field = issue.path[0];
+                    if (typeof field === 'string') {
+                        fieldErrors[field] = issue.message;
+                    }
+                });
                 setErrors(fieldErrors);
                 setLoading(false);
                 return;
