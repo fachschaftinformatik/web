@@ -41,6 +41,6 @@
     "eslint-config-next": "^16.1.6",
     "eslint-plugin-react-hooks": "7.0.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "8.56.1"
+    "typescript-eslint": "8.57.0"
   }
 }
