@@ -263,13 +263,9 @@ export const zDtoVoteRequest = z.object({
     ]).optional()
 });
 
-export const zGetActivitiesData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.object({
-        limit: z.int().optional(),
-        offset: z.int().optional()
-    }).optional()
+export const zGetActivitiesQuery = z.object({
+    limit: z.int().optional(),
+    offset: z.int().optional()
 });
 
 /**
@@ -277,80 +273,50 @@ export const zGetActivitiesData = z.object({
  */
 export const zGetActivitiesResponse = z.array(zDtoActivityResponse);
 
-export const zGetAdminDashboardData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.never().optional()
-});
-
 /**
  * OK
  */
 export const zGetAdminDashboardResponse = zDtoAdminDashboardResponse;
 
-export const zPostAdminModulesData = z.object({
-    body: zDtoModuleResponse,
-    path: z.never().optional(),
-    query: z.never().optional()
-});
+/**
+ * Module Data
+ */
+export const zPostAdminModulesBody = zDtoModuleResponse;
 
 /**
  * Created
  */
 export const zPostAdminModulesResponse = zDtoModuleResponse;
 
-export const zPostAdminProgramsData = z.object({
-    body: zDtoProgramResponse,
-    path: z.never().optional(),
-    query: z.never().optional()
-});
+/**
+ * Program Data
+ */
+export const zPostAdminProgramsBody = zDtoProgramResponse;
 
 /**
  * Created
  */
 export const zPostAdminProgramsResponse = zDtoProgramResponse;
 
-export const zGetAdminRefDiscussionTypesData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.never().optional()
-});
-
 /**
  * OK
  */
 export const zGetAdminRefDiscussionTypesResponse = z.array(z.string());
-
-export const zGetAdminRefRolesData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.never().optional()
-});
 
 /**
  * OK
  */
 export const zGetAdminRefRolesResponse = z.array(z.string());
 
-export const zGetAdminStatsData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.never().optional()
-});
-
 /**
  * OK
  */
 export const zGetAdminStatsResponse = zDtoAdminStatsResponse;
 
-export const zGetArchiveData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.object({
-        program_id: z.string().optional(),
-        version: z.string().optional(),
-        module_id: z.string().optional()
-    }).optional()
+export const zGetArchiveQuery = z.object({
+    program_id: z.string().optional(),
+    version: z.string().optional(),
+    module_id: z.string().optional()
 });
 
 /**
@@ -358,20 +324,17 @@ export const zGetArchiveData = z.object({
  */
 export const zGetArchiveResponse = z.array(zDtoArchiveEntryResponse);
 
-export const zPostArchiveData = z.object({
-    body: z.object({
-        file: z.string(),
-        date: z.string().optional(),
-        module_id: z.string().optional(),
-        version: z.string().optional(),
-        group_id: z.string().optional(),
-        comment: z.string().optional()
-    }),
-    path: z.never().optional(),
-    query: z.never().optional(),
-    headers: z.object({
-        'X-CSRF-Token': z.string()
-    })
+export const zPostArchiveBody = z.object({
+    file: z.string(),
+    date: z.string().optional(),
+    module_id: z.string().optional(),
+    version: z.string().optional(),
+    group_id: z.string().optional(),
+    comment: z.string().optional()
+});
+
+export const zPostArchiveHeaders = z.object({
+    'X-CSRF-Token': z.string()
 });
 
 /**
@@ -379,20 +342,12 @@ export const zPostArchiveData = z.object({
  */
 export const zPostArchiveResponse = zDtoArchiveEntryResponse;
 
-export const zDeleteArchiveIdData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        entryId: z.string()
-    }),
-    query: z.never().optional()
+export const zDeleteArchiveIdPath = z.object({
+    entryId: z.string()
 });
 
-export const zGetArchiveIdData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        entryId: z.string()
-    }),
-    query: z.never().optional()
+export const zGetArchiveIdPath = z.object({
+    entryId: z.string()
 });
 
 /**
@@ -400,12 +355,13 @@ export const zGetArchiveIdData = z.object({
  */
 export const zGetArchiveIdResponse = zDtoArchiveEntryResponse;
 
-export const zPutArchiveIdData = z.object({
-    body: zDtoUpdateArchiveEntryRequest,
-    path: z.object({
-        entryId: z.string()
-    }),
-    query: z.never().optional()
+/**
+ * Update Data
+ */
+export const zPutArchiveIdBody = zDtoUpdateArchiveEntryRequest;
+
+export const zPutArchiveIdPath = z.object({
+    entryId: z.string()
 });
 
 /**
@@ -413,22 +369,16 @@ export const zPutArchiveIdData = z.object({
  */
 export const zPutArchiveIdResponse = zDtoArchiveEntryResponse;
 
-export const zGetArchiveFileData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        entryId: z.string()
-    }),
-    query: z.object({
-        file_id: z.string().optional()
-    }).optional()
+export const zGetArchiveFilePath = z.object({
+    entryId: z.string()
 });
 
-export const zGetArchiveVersionsData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        entryId: z.string()
-    }),
-    query: z.never().optional()
+export const zGetArchiveFileQuery = z.object({
+    file_id: z.string().optional()
+});
+
+export const zGetArchiveVersionsPath = z.object({
+    entryId: z.string()
 });
 
 /**
@@ -436,70 +386,51 @@ export const zGetArchiveVersionsData = z.object({
  */
 export const zGetArchiveVersionsResponse = z.array(zDtoArchiveEntryResponse);
 
-export const zDeleteArchiveFileData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        fileId: z.string()
-    }),
-    query: z.never().optional()
+export const zDeleteArchiveFilePath = z.object({
+    fileId: z.string()
 });
 
-export const zGetAuthAvatarsByUserIdByFilenameData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        userId: z.string(),
-        filename: z.string()
-    }),
-    query: z.object({
-        size: z.int().optional()
-    }).optional()
+export const zGetAuthAvatarsByUserIdByFilenamePath = z.object({
+    userId: z.string(),
+    filename: z.string()
 });
 
-export const zPostAuthForgotData = z.object({
-    body: zDtoForgotPasswordRequest,
-    path: z.never().optional(),
-    query: z.never().optional()
+export const zGetAuthAvatarsByUserIdByFilenameQuery = z.object({
+    size: z.int().optional()
 });
 
-export const zPostAuthLoginData = z.object({
-    body: zDtoLoginRequest,
-    path: z.never().optional(),
-    query: z.never().optional()
-});
+/**
+ * Forgot Password Info
+ */
+export const zPostAuthForgotBody = zDtoForgotPasswordRequest;
+
+/**
+ * Login Credentials
+ */
+export const zPostAuthLoginBody = zDtoLoginRequest;
 
 /**
  * OK
  */
 export const zPostAuthLoginResponse = zDtoUserResponse;
 
-export const zGetAuthMeData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.never().optional()
-});
-
 /**
  * OK
  */
 export const zGetAuthMeResponse = zDtoUserResponse;
 
-export const zPutAuthMeData = z.object({
-    body: zDtoUpdateProfileRequest,
-    path: z.never().optional(),
-    query: z.never().optional()
-});
+/**
+ * Update Profile Info
+ */
+export const zPutAuthMeBody = zDtoUpdateProfileRequest;
 
 /**
  * OK
  */
 export const zPutAuthMeResponse = zDtoUserResponse;
 
-export const zPostAuthMeAvatarData = z.object({
-    body: z.object({
-        file: z.string()
-    }),
-    path: z.never().optional(),
-    query: z.never().optional()
+export const zPostAuthMeAvatarBody = z.object({
+    file: z.string()
 });
 
 /**
@@ -507,23 +438,13 @@ export const zPostAuthMeAvatarData = z.object({
  */
 export const zPostAuthMeAvatarResponse = zDtoUserResponse;
 
-export const zGetAuthNotificationsData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.never().optional()
-});
-
 /**
  * OK
  */
 export const zGetAuthNotificationsResponse = z.array(zDtoNotificationResponse);
 
-export const zPutAuthNotificationsIdReadData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        notificationId: z.string()
-    }),
-    query: z.never().optional()
+export const zPutAuthNotificationsIdReadPath = z.object({
+    notificationId: z.string()
 });
 
 /**
@@ -531,53 +452,37 @@ export const zPutAuthNotificationsIdReadData = z.object({
  */
 export const zPutAuthNotificationsIdReadResponse = zDtoNotificationResponse;
 
-export const zPutAuthNotificationsReadAllData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.never().optional()
-});
-
-export const zPostAuthRegisterData = z.object({
-    body: zDtoRegisterRequest,
-    path: z.never().optional(),
-    query: z.never().optional()
-});
+/**
+ * Registration Info
+ */
+export const zPostAuthRegisterBody = zDtoRegisterRequest;
 
 /**
  * Created
  */
 export const zPostAuthRegisterResponse = zDtoUserResponse;
 
-export const zPostAuthResetData = z.object({
-    body: zDtoResetPasswordRequest,
-    path: z.never().optional(),
-    query: z.never().optional()
-});
+/**
+ * Reset Password Info
+ */
+export const zPostAuthResetBody = zDtoResetPasswordRequest;
 
 /**
  * OK
  */
 export const zPostAuthResetResponse = zDtoUserResponse;
 
-export const zGetAuthVerifyData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.object({
-        token: z.string()
-    })
+export const zGetAuthVerifyQuery = z.object({
+    token: z.string()
 });
 
-export const zGetDiscussionsData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.object({
-        type: z.string().optional(),
-        program_id: z.string().optional(),
-        query: z.string().optional(),
-        sort: z.string().optional(),
-        limit: z.int().optional(),
-        offset: z.int().optional()
-    }).optional()
+export const zGetDiscussionsQuery = z.object({
+    type: z.string().optional(),
+    program_id: z.string().optional(),
+    query: z.string().optional(),
+    sort: z.string().optional(),
+    limit: z.int().optional(),
+    offset: z.int().optional()
 });
 
 /**
@@ -585,31 +490,22 @@ export const zGetDiscussionsData = z.object({
  */
 export const zGetDiscussionsResponse = z.array(zDtoDiscussionPostResponse);
 
-export const zPostDiscussionsData = z.object({
-    body: zDtoCreateDiscussionPostRequest,
-    path: z.never().optional(),
-    query: z.never().optional()
-});
+/**
+ * Post Content
+ */
+export const zPostDiscussionsBody = zDtoCreateDiscussionPostRequest;
 
 /**
  * Created
  */
 export const zPostDiscussionsResponse = zDtoDiscussionPostResponse;
 
-export const zDeleteDiscussionsByPostIdData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        id: z.string()
-    }),
-    query: z.never().optional()
+export const zDeleteDiscussionsByPostIdPath = z.object({
+    id: z.string()
 });
 
-export const zGetDiscussionsByPostIdData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        id: z.string()
-    }),
-    query: z.never().optional()
+export const zGetDiscussionsByPostIdPath = z.object({
+    id: z.string()
 });
 
 /**
@@ -617,12 +513,13 @@ export const zGetDiscussionsByPostIdData = z.object({
  */
 export const zGetDiscussionsByPostIdResponse = zDtoDiscussionPostResponse;
 
-export const zPutDiscussionsByPostIdData = z.object({
-    body: zDtoCreateDiscussionPostRequest,
-    path: z.object({
-        id: z.string()
-    }),
-    query: z.never().optional()
+/**
+ * Post Content
+ */
+export const zPutDiscussionsByPostIdBody = zDtoCreateDiscussionPostRequest;
+
+export const zPutDiscussionsByPostIdPath = z.object({
+    id: z.string()
 });
 
 /**
@@ -630,12 +527,8 @@ export const zPutDiscussionsByPostIdData = z.object({
  */
 export const zPutDiscussionsByPostIdResponse = zDtoDiscussionPostResponse;
 
-export const zGetDiscussionsByPostIdCommentsData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        id: z.string()
-    }),
-    query: z.never().optional()
+export const zGetDiscussionsByPostIdCommentsPath = z.object({
+    id: z.string()
 });
 
 /**
@@ -643,12 +536,13 @@ export const zGetDiscussionsByPostIdCommentsData = z.object({
  */
 export const zGetDiscussionsByPostIdCommentsResponse = z.array(zDtoDiscussionCommentResponse);
 
-export const zPostDiscussionsByPostIdCommentsData = z.object({
-    body: zDtoDiscussionCommentRequest,
-    path: z.object({
-        id: z.string()
-    }),
-    query: z.never().optional()
+/**
+ * Comment Content
+ */
+export const zPostDiscussionsByPostIdCommentsBody = zDtoDiscussionCommentRequest;
+
+export const zPostDiscussionsByPostIdCommentsPath = z.object({
+    id: z.string()
 });
 
 /**
@@ -656,20 +550,22 @@ export const zPostDiscussionsByPostIdCommentsData = z.object({
  */
 export const zPostDiscussionsByPostIdCommentsResponse = zDtoDiscussionCommentResponse;
 
-export const zPostDiscussionsByPostIdVoteData = z.object({
-    body: zDtoVoteRequest,
-    path: z.object({
-        id: z.string()
-    }),
-    query: z.never().optional()
+/**
+ * Vote Value
+ */
+export const zPostDiscussionsByPostIdVoteBody = zDtoVoteRequest;
+
+export const zPostDiscussionsByPostIdVotePath = z.object({
+    id: z.string()
 });
 
-export const zPutDiscussionsCommentsByCommentIdData = z.object({
-    body: zDtoDiscussionCommentRequest,
-    path: z.object({
-        id: z.string()
-    }),
-    query: z.never().optional()
+/**
+ * Comment Content
+ */
+export const zPutDiscussionsCommentsByCommentIdBody = zDtoDiscussionCommentRequest;
+
+export const zPutDiscussionsCommentsByCommentIdPath = z.object({
+    id: z.string()
 });
 
 /**
@@ -677,18 +573,13 @@ export const zPutDiscussionsCommentsByCommentIdData = z.object({
  */
 export const zPutDiscussionsCommentsByCommentIdResponse = zDtoDiscussionCommentResponse;
 
-export const zPostDiscussionsCommentsByCommentIdVoteData = z.object({
-    body: zDtoVoteRequest,
-    path: z.object({
-        id: z.string()
-    }),
-    query: z.never().optional()
-});
+/**
+ * Vote Value
+ */
+export const zPostDiscussionsCommentsByCommentIdVoteBody = zDtoVoteRequest;
 
-export const zGetEventsData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.never().optional()
+export const zPostDiscussionsCommentsByCommentIdVotePath = z.object({
+    id: z.string()
 });
 
 /**
@@ -696,13 +587,9 @@ export const zGetEventsData = z.object({
  */
 export const zGetEventsResponse = z.array(zDtoEventResponse);
 
-export const zPostEventsData = z.object({
-    body: z.object({
-        title: z.string(),
-        file: z.string().optional()
-    }),
-    path: z.never().optional(),
-    query: z.never().optional()
+export const zPostEventsBody = z.object({
+    title: z.string(),
+    file: z.string().optional()
 });
 
 /**
@@ -710,12 +597,8 @@ export const zPostEventsData = z.object({
  */
 export const zPostEventsResponse = zDtoEventResponse;
 
-export const zGetEventsByEventIdData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        eventId: z.string()
-    }),
-    query: z.never().optional()
+export const zGetEventsByEventIdPath = z.object({
+    eventId: z.string()
 });
 
 /**
@@ -723,22 +606,16 @@ export const zGetEventsByEventIdData = z.object({
  */
 export const zGetEventsByEventIdResponse = zDtoEventResponse;
 
-export const zGetEventsByEventIdCoverData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        eventId: z.string()
-    }),
-    query: z.object({
-        size: z.int().optional()
-    }).optional()
+export const zGetEventsByEventIdCoverPath = z.object({
+    eventId: z.string()
 });
 
-export const zGetEventsByEventIdMediaData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        eventId: z.string()
-    }),
-    query: z.never().optional()
+export const zGetEventsByEventIdCoverQuery = z.object({
+    size: z.int().optional()
+});
+
+export const zGetEventsByEventIdMediaPath = z.object({
+    eventId: z.string()
 });
 
 /**
@@ -746,16 +623,14 @@ export const zGetEventsByEventIdMediaData = z.object({
  */
 export const zGetEventsByEventIdMediaResponse = z.array(zDtoMediaResponse);
 
-export const zPostEventsByEventIdMediaData = z.object({
-    body: z.object({
-        title: z.string().optional(),
-        description: z.string().optional(),
-        file: z.string()
-    }),
-    path: z.object({
-        eventId: z.string()
-    }),
-    query: z.never().optional()
+export const zPostEventsByEventIdMediaBody = z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    file: z.string()
+});
+
+export const zPostEventsByEventIdMediaPath = z.object({
+    eventId: z.string()
 });
 
 /**
@@ -763,12 +638,8 @@ export const zPostEventsByEventIdMediaData = z.object({
  */
 export const zPostEventsByEventIdMediaResponse = zDtoMediaResponse;
 
-export const zGetMediaByMediaIdData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        mediaId: z.string()
-    }),
-    query: z.never().optional()
+export const zGetMediaByMediaIdPath = z.object({
+    mediaId: z.string()
 });
 
 /**
@@ -776,28 +647,16 @@ export const zGetMediaByMediaIdData = z.object({
  */
 export const zGetMediaByMediaIdResponse = zDtoMediaResponse;
 
-export const zGetMediaByMediaIdFileData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        mediaId: z.string()
-    }),
-    query: z.never().optional()
+export const zGetMediaByMediaIdFilePath = z.object({
+    mediaId: z.string()
 });
 
-export const zGetMediaByMediaIdPreviewData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        mediaId: z.string()
-    }),
-    query: z.object({
-        size: z.int().optional()
-    }).optional()
+export const zGetMediaByMediaIdPreviewPath = z.object({
+    mediaId: z.string()
 });
 
-export const zGetOfficeStatusData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.never().optional()
+export const zGetMediaByMediaIdPreviewQuery = z.object({
+    size: z.int().optional()
 });
 
 /**
@@ -805,34 +664,23 @@ export const zGetOfficeStatusData = z.object({
  */
 export const zGetOfficeStatusResponse = zDtoOfficeStatusResponse;
 
-export const zPutOfficeStatusData = z.object({
-    body: zDtoUpdateOfficeStatusRequest,
-    path: z.never().optional(),
-    query: z.never().optional()
-});
+/**
+ * Office Status
+ */
+export const zPutOfficeStatusBody = zDtoUpdateOfficeStatusRequest;
 
 /**
  * OK
  */
 export const zPutOfficeStatusResponse = zDtoOfficeStatusResponse;
 
-export const zGetProgramsData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.never().optional()
-});
-
 /**
  * OK
  */
 export const zGetProgramsResponse = z.array(zDtoProgramResponse);
 
-export const zGetProgramsIdData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        programId: z.string()
-    }),
-    query: z.never().optional()
+export const zGetProgramsIdPath = z.object({
+    programId: z.string()
 });
 
 /**
@@ -840,12 +688,8 @@ export const zGetProgramsIdData = z.object({
  */
 export const zGetProgramsIdResponse = zDtoProgramResponse;
 
-export const zGetProgramModulesData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        programId: z.string()
-    }),
-    query: z.never().optional()
+export const zGetProgramModulesPath = z.object({
+    programId: z.string()
 });
 
 /**
@@ -853,12 +697,8 @@ export const zGetProgramModulesData = z.object({
  */
 export const zGetProgramModulesResponse = z.array(zDtoModuleResponse);
 
-export const zGetSearchData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.object({
-        q: z.string()
-    })
+export const zGetSearchQuery = z.object({
+    q: z.string()
 });
 
 /**
@@ -866,13 +706,9 @@ export const zGetSearchData = z.object({
  */
 export const zGetSearchResponse = z.array(zDtoSearchResult);
 
-export const zGetUsersData = z.object({
-    body: z.never().optional(),
-    path: z.never().optional(),
-    query: z.object({
-        limit: z.int().optional(),
-        offset: z.int().optional()
-    }).optional()
+export const zGetUsersQuery = z.object({
+    limit: z.int().optional(),
+    offset: z.int().optional()
 });
 
 /**
@@ -880,12 +716,8 @@ export const zGetUsersData = z.object({
  */
 export const zGetUsersResponse = z.array(zDtoUserResponse);
 
-export const zGetUsersByUserIdData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        userId: z.string()
-    }),
-    query: z.never().optional()
+export const zGetUsersByUserIdPath = z.object({
+    userId: z.string()
 });
 
 /**
@@ -893,15 +725,13 @@ export const zGetUsersByUserIdData = z.object({
  */
 export const zGetUsersByUserIdResponse = zDtoPublicUserResponse;
 
-export const zGetUsersByUserIdActivitiesData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        userId: z.string()
-    }),
-    query: z.object({
-        limit: z.int().optional(),
-        offset: z.int().optional()
-    }).optional()
+export const zGetUsersByUserIdActivitiesPath = z.object({
+    userId: z.string()
+});
+
+export const zGetUsersByUserIdActivitiesQuery = z.object({
+    limit: z.int().optional(),
+    offset: z.int().optional()
 });
 
 /**
