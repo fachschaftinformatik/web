@@ -24,7 +24,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	golang.org/x/crypto v0.50.0
 	golang.org/x/image v0.39.0
-	modernc.org/sqlite v1.48.2
+	modernc.org/sqlite v1.49.1
 )
 
 require (
