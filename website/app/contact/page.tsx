@@ -43,7 +43,7 @@ export default function ContactPage() {
                         Vertreten durch:
                     </Typography>
                     <Typography variant="body2" paragraph>
-                        Lennart Möller
+                        Eric König
                     </Typography>
 
                     <Typography variant="body2" fontWeight={600} gutterBottom>
@@ -58,9 +58,9 @@ export default function ContactPage() {
                         Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:
                     </Typography>
                     <Typography variant="body2" paragraph>
-                        Eric König, Stellv. Vorsitz<br />
-                        Julia Rabenhorst, Öffentlichkeit<br />
-                        Toni Gudaqi, Öffentlichkeit
+                        Eric König, Vorsitz<br />
+                        Toni Gudaqi, Stellv. Vorsitz & Öffentlichkeit<br />
+                        Hong Nguyen, Öffentlichkeit
                     </Typography>
 
                     <Typography variant="body2" fontWeight={600} gutterBottom sx={{ mt: 3 }}>
