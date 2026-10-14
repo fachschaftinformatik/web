@@ -206,7 +206,7 @@ const NewsFeedPage: React.FC = () => {
           component="section"
           sx={{
             position: 'relative',
-            height: { xs: 240, md: 360 },
+            height: { xs: 320, md: 360 },
             borderRadius: 6,
             overflow: 'hidden',
             border: '1px solid',
@@ -287,29 +287,22 @@ const NewsFeedPage: React.FC = () => {
                 <Typography variant="overline" sx={{ ...custom.heroOverline, color: 'primary.main', fontWeight: 800, fontSize: { xs: '0.8rem', md: '1.1rem' }, letterSpacing: '0.15em' }}>
                   fsInformatik
                 </Typography>
-                {isLoading ? (
-                  <Skeleton variant="text" width="60%" sx={{ fontSize: { xs: '2rem', sm: '3rem', md: '4rem' }, mb: 1 }} />
-                ) : (
-                    <Typography variant="h1" sx={{
-                    fontFamily: 'var(--font-space-grotesk), sans-serif',
-                    fontWeight: 800,
-                    fontSize: { xs: '2rem', sm: '3rem', md: '4rem' },
-                    lineHeight: 1.1,
-                    mb: { xs: 0.5, md: 2 },
-                    textShadow: isDark ? '0 0 40px rgba(0,0,0,0.5)' : 'none',
-                  }}>
-                    {eventsData[carouselIndex]?.title || 'Dein Hub für das Studium'}
-                  </Typography>
-                )}
+                <Typography variant="h1" sx={{
+                  fontFamily: 'var(--font-space-grotesk), sans-serif',
+                  fontWeight: 800,
+                  fontSize: { xs: '2rem', sm: '3rem', md: '4rem' },
+                  lineHeight: 1.1,
+                  minHeight: '2.2em',
+                  mb: { xs: 0.5, md: 2 },
+                  textShadow: isDark ? '0 0 40px rgba(0,0,0,0.5)' : 'none',
+                }}>
+                  {isLoading ? <Skeleton animation={false} width="60%" /> : eventsData[carouselIndex]?.title || 'Dein Hub für das Studium'}
+                </Typography>
               </Box>
 
-              {isLoading ? (
-                <Skeleton variant="text" width="80%" sx={{ fontSize: '1.25rem', mb: 2 }} />
-              ) : (
-                <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400, fontSize: { xs: '0.9rem', md: '1.25rem' }, maxWidth: 600, mb: { xs: 0.5, md: 2 } }}>
-                  Bleib informiert über Events, Klausuren und alles Wichtige rund um dein Studium an der Westfälischen Hochschule.
-                </Typography>
-              )}
+              <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400, fontSize: { xs: '0.9rem', md: '1.25rem' }, maxWidth: 600, mb: { xs: 0.5, md: 2 } }}>
+                Bleib informiert über Events, Klausuren und alles Wichtige rund um dein Studium an der Westfälischen Hochschule.
+              </Typography>
 
               <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{ mt: 1 }}>
                 <Button
