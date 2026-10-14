@@ -475,7 +475,7 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
             id="bild-dialog-title"
             sx={{ pr: 2, pl: 3, py: 1.5, position: "relative", zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
           >
-            <Typography variant="h6" noWrap sx={{ flex: 1 }}>
+            <Typography variant="h6" component="span" noWrap sx={{ flex: 1 }}>
               {currentImage?.title || (currentImage && `Bild ${lightboxIndex + 1}`) || ""}
             </Typography>
 
@@ -665,7 +665,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" fontWeight={700}>Bilder hochladen</Typography>
+        <Typography variant="h6" component="span" fontWeight={700}>Bilder hochladen</Typography>
         <IconButton onClick={onClose} disabled={uploading}><CloseIcon /></IconButton>
       </DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
@@ -845,7 +845,7 @@ function CreateEventDialog({ open, onClose, onSuccess }: {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" fontWeight={700}>Neues Event</Typography>
+        <Typography variant="h6" component="span" fontWeight={700}>Neues Event</Typography>
         <IconButton onClick={onClose}><CloseIcon /></IconButton>
       </DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
