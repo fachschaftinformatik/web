@@ -23,7 +23,7 @@ require (
 	github.com/swaggo/http-swagger/v2 v2.0.2
 	github.com/swaggo/swag v1.16.6
 	golang.org/x/crypto v0.58.0
-	golang.org/x/image v0.39.0
+	golang.org/x/image v0.47.0
 	modernc.org/sqlite v1.60.1
 )
 
