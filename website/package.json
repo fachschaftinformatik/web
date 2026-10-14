@@ -20,7 +20,7 @@
     "@mui/lab": "^7.0.1-beta.25",
     "@mui/material": "^7.3.11",
     "@mui/material-nextjs": "^7.3.10",
-    "@mui/x-charts": "^8.27.0",
+    "@mui/x-charts": "^8.29.3",
     "@mui/x-data-grid": "^8.27.3",
     "jose": "^6.2.12",
     "next": "^16.4.1",
