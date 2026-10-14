@@ -414,9 +414,9 @@ export default function Galerie() {
             onClose={() => { setUploadOpen(false); setPreselectedEventId(null); }}
             events={events}
             preselectedId={preselectedEventId}
-            onSuccess={() => {
+            onSuccess={(eventId) => {
               fetchEvents();
-              if (selectedEventId) void galleryMedia.refresh(selectedEventId);
+              void galleryMedia.refresh(eventId);
               setSuccessMessage("Bilder erfolgreich hochgeladen.");
             }}
             onCreateEvent={() => setCreateEventOpen(true)}
@@ -576,7 +576,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
   open: boolean;
   onClose: () => void;
   events: EventItem[];
-  onSuccess: () => void;
+  onSuccess: (eventId: string) => void;
   onCreateEvent: () => void;
   preselectedId?: string | null;
 }) {
@@ -647,7 +647,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
     }
 
     if (successCount > 0) {
-      onSuccess();
+      onSuccess(String(eventId));
     }
 
     if (failedFiles.length === 0 && successCount > 0) {
