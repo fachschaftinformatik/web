@@ -84,7 +84,15 @@ function ResetForm() {
                         <LockOpenRoundedIcon fontSize="large" />
                     </Avatar>
                 </Zoom>
-                <Typography component="h1" variant="h4" fontWeight={800} sx={{ mt: 2, mb: 3, textAlign: 'center' }}>
+                <Typography
+                    component="h1"
+                    variant="h4"
+                    sx={{
+                        fontWeight: 800,
+                        mt: 2,
+                        mb: 3,
+                        textAlign: 'center'
+                    }}>
                     Passwort zurücksetzen
                 </Typography>
 

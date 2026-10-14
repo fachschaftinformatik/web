@@ -53,7 +53,12 @@ export default function CreatePost() {
                     <IconButton onClick={() => router.push("/discussions")} sx={{ bgcolor: 'action.hover' }}>
                         <ArrowBackRounded />
                     </IconButton>
-                    <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
+                    <Typography
+                        variant="h4"
+                        sx={{
+                            fontWeight: 700,
+                            fontSize: { xs: '1.5rem', md: '2.125rem' }
+                        }}>
                         Neue Diskussion erstellen
                     </Typography>
                 </Box>

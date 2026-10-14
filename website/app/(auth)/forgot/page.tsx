@@ -71,7 +71,15 @@ export default function ForgotPage() {
                         <LockResetRoundedIcon fontSize="large" />
                     </Avatar>
                 </Zoom>
-                <Typography component="h1" variant="h4" fontWeight={800} sx={{ mt: 2, mb: 3, textAlign: 'center' }}>
+                <Typography
+                    component="h1"
+                    variant="h4"
+                    sx={{
+                        fontWeight: 800,
+                        mt: 2,
+                        mb: 3,
+                        textAlign: 'center'
+                    }}>
                     Passwort vergessen
                 </Typography>
 
@@ -121,7 +129,12 @@ export default function ForgotPage() {
 
                         {status !== 'sent' && (
                             <Stack spacing={2.5}>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: "text.secondary",
+                                        mb: 1
+                                    }}>
                                     Gib deine E-Mail-Adresse ein, um einen Link zum Zurücksetzen deines Passworts zu erhalten.
                                 </Typography>
                                 <Stack direction="row" spacing={1}>

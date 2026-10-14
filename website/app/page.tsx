@@ -366,7 +366,14 @@ const NewsFeedPage: React.FC = () => {
 
         <Box component="section">
           <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2, px: 1 }}>
+            <Stack
+              direction="row"
+              sx={{
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 2,
+                px: 1
+              }}>
             </Stack>
             <Box sx={{
               display: 'grid',
@@ -389,8 +396,15 @@ const NewsFeedPage: React.FC = () => {
               >
                 <Box sx={{ p: { xs: 2, md: 2.5 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <Stack spacing={2} sx={{ flex: 1 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                      <Stack direction="row" spacing={2} alignItems="center">
+                    <Stack
+                      direction="row"
+                      sx={{
+                        justifyContent: "space-between",
+                        alignItems: "center"
+                      }}>
+                      <Stack direction="row" spacing={2} sx={{
+                        alignItems: "center"
+                      }}>
                         <Typography
                           variant="h5"
                           onClick={() => setSidebarIndex(0)}
@@ -426,7 +440,13 @@ const NewsFeedPage: React.FC = () => {
                         <Stack spacing={1.5}>
                           {[1, 2, 3].map((i) => (
                             <Box key={i} sx={{ ...custom.newsCardLink, cursor: 'default' }}>
-                              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                sx={{
+                                  alignItems: "center",
+                                  mb: 0.5
+                                }}>
                                 <Skeleton variant="circular" width={18} height={18} />
                                 <Skeleton variant="text" width="40%" height={14} />
                               </Stack>
@@ -450,7 +470,13 @@ const NewsFeedPage: React.FC = () => {
                                 }
                               }}
                             >
-                              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                sx={{
+                                  alignItems: "center",
+                                  mb: 0.5
+                                }}>
                                 <Avatar
                                   src={getAvatarUrl(item.user_avatar_url)}
                                   sx={{
@@ -488,7 +514,13 @@ const NewsFeedPage: React.FC = () => {
                         <Stack spacing={1.5}>
                           {forumPosts.slice(0, 3).map((post) => (
                             <Box key={post.id} sx={{ ...custom.newsCardLink, position: 'relative' }}>
-                              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                sx={{
+                                  alignItems: "center",
+                                  mb: 0.5
+                                }}>
                                 <Avatar
                                   src={getAvatarUrl(post.authorAvatarUrl)}
                                   sx={{
@@ -546,7 +578,13 @@ const NewsFeedPage: React.FC = () => {
               </Paper>
               <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' }, display: 'flex', justifyContent: 'center' }}>
                 <Stack spacing={1.5} sx={{ width: '100%', maxWidth: 400, pt: { xs: 2, md: 2.5 } }}>
-                  <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mb: 1 }}>
+                  <Stack
+                    direction="row"
+                    sx={{
+                      justifyContent: "center",
+                      alignItems: "center",
+                      mb: 1
+                    }}>
                     <Typography variant="h5" sx={{ fontWeight: 800 }}>Agenda</Typography>
                   </Stack>
 
@@ -597,11 +635,12 @@ const NewsFeedPage: React.FC = () => {
                           onClick={() => router.push(`/d/${event.id}`)}
                         >
                           <TimelineOppositeContent
-                            sx={{ m: 'auto 0' }}
                             variant="body2"
-                            color="text.secondary"
-                            fontWeight={600}
-                          >
+                            sx={{
+                              color: "text.secondary",
+                              fontWeight: 600,
+                              m: 'auto 0'
+                            }}>
                             {formatShortDate(eventDate)}
                             {event.time && (
                               <Typography variant="caption" sx={{ display: 'block', opacity: 0.7, fontWeight: 400 }}>
@@ -635,13 +674,16 @@ const NewsFeedPage: React.FC = () => {
                               {event.title}
                             </Typography>
                             {event.location && (
-                              <Typography variant="caption" color="text.secondary" sx={{
-                                fontSize: '0.75rem',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 1,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden'
-                              }}>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: "text.secondary",
+                                  fontSize: '0.75rem',
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 1,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden'
+                                }}>
                                 {event.location}
                               </Typography>
                             )}

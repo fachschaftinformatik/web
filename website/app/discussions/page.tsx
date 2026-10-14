@@ -26,7 +26,7 @@ import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import ShareIcon from "@mui/icons-material/Share";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 import { Sidebar } from "@components/layout";
 import { getAvatarUrl } from "@lib/images";
@@ -109,8 +109,15 @@ function PostItem({
         },
       }}
     >
-      <Stack direction="row" spacing={2} alignItems="flex-start">
-        <Stack alignItems="center" spacing={0.5} sx={{ mt: 0.5 }}>
+      <Stack direction="row" spacing={2} sx={{
+        alignItems: "flex-start"
+      }}>
+        <Stack
+          spacing={0.5}
+          sx={{
+            alignItems: "center",
+            mt: 0.5
+          }}>
           <IconButton
             size="small"
             onClick={(e) => {
@@ -137,8 +144,15 @@ function PostItem({
         </Stack>
 
         <Stack spacing={1} sx={{ flex: 1 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-            <Stack direction="row" spacing={1} alignItems="center">
+          <Stack
+            direction="row"
+            sx={{
+              justifyContent: "space-between",
+              alignItems: "flex-start"
+            }}>
+            <Stack direction="row" spacing={1} sx={{
+              alignItems: "center"
+            }}>
               <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
                 {post.title}
               </Typography>
@@ -155,7 +169,7 @@ function PostItem({
               onClose={handleCloseMenu}
               onClick={(e) => e.stopPropagation()}
               disableScrollLock
-              PaperProps={{
+              slotProps={{ paper: {
                 elevation: 3,
                 sx: {
                   borderRadius: 2,
@@ -169,7 +183,7 @@ function PostItem({
                     gap: 1.5
                   }
                 }
-              }}
+              } }}
             >
 
               {String(user?.id) === String(post.user_id) && (
@@ -219,7 +233,13 @@ function PostItem({
             {post.body}
           </Typography>
 
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              alignItems: "center",
+              flexWrap: "wrap"
+            }}>
             <Avatar
               src={getAvatarUrl(post.user_avatar_url)}
               sx={{
@@ -240,7 +260,9 @@ function PostItem({
             </Typography>
           </Stack>
 
-          <Stack direction="row" spacing={0.5} flexWrap="wrap">
+          <Stack direction="row" spacing={0.5} sx={{
+            flexWrap: "wrap"
+          }}>
             {(post.programs || []).map((program) => (
               <Chip
                 key={String(program.id)}
@@ -316,8 +338,12 @@ export default function DiscussionsPage() {
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
           <Box>
-            <Typography variant="h4" fontWeight={700} gutterBottom>Diskussionen</Typography>
-            <Typography variant="body1" color="text.secondary">Diskutiere mit deinen Kommilitonen über Studium, Campus und Events.</Typography>
+            <Typography variant="h4" gutterBottom sx={{
+              fontWeight: 700
+            }}>Diskussionen</Typography>
+            <Typography variant="body1" sx={{
+              color: "text.secondary"
+            }}>Diskutiere mit deinen Kommilitonen über Studium, Campus und Events.</Typography>
           </Box>
         </Box>
 
@@ -335,7 +361,9 @@ export default function DiscussionsPage() {
             {[1, 2, 3, 4, 5].map(i => (
               <Paper key={i} elevation={0} sx={{ p: 2, borderRadius: 3, border: "1px solid", borderColor: "divider" }}>
                 <Stack direction="row" spacing={2}>
-                  <Stack alignItems="center" spacing={1}>
+                  <Stack spacing={1} sx={{
+                    alignItems: "center"
+                  }}>
                     <Skeleton variant="circular" width={32} height={32} />
                     <Skeleton variant="text" width={20} />
                     <Skeleton variant="circular" width={32} height={32} />
@@ -364,9 +392,11 @@ export default function DiscussionsPage() {
                     value={q}
                     onChange={e => setQ(e.target.value)}
                     size="small"
-                    InputProps={{
-                      startAdornment: <InputAdornment position="start"><SearchIcon color="primary" /></InputAdornment>,
-                      sx: { borderRadius: 2 }
+                    slotProps={{
+                      input: {
+                        startAdornment: <InputAdornment position="start"><SearchIcon color="primary" /></InputAdornment>,
+                        sx: { borderRadius: 2 }
+                      }
                     }}
                   />
                   <Tooltip title="Beitrag erstellen">
@@ -431,13 +461,20 @@ export default function DiscussionsPage() {
               ))}
               {posts.length === 0 && !loading && (
                 <Stack spacing={1.5}>
-                  <Typography color="text.secondary">Keine Treffer. Suchbegriff oder Filter anpassen.</Typography>
+                  <Typography sx={{
+                    color: "text.secondary"
+                  }}>Keine Treffer. Suchbegriff oder Filter anpassen.</Typography>
                 </Stack>
               )}
             </Stack>
 
             {pageCount > 1 && (
-              <Box display="flex" justifyContent="center" mt={4}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  mt: 4
+                }}>
                 <Pagination
                   count={pageCount}
                   page={page}

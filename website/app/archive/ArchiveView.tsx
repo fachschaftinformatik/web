@@ -286,7 +286,9 @@ function ArchiveViewContent({ moduleId, examId }: { moduleId: string; examId?: s
                     >
                         Zurück
                     </Button>
-                    <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+                    <Typography variant="h4" component="h1" gutterBottom sx={{
+                        fontWeight: 700
+                    }}>
                         {modulName}
                     </Typography>
                 </Box>
@@ -311,7 +313,9 @@ function ArchiveViewContent({ moduleId, examId }: { moduleId: string; examId?: s
                     </Paper>
                 ) : exams.length === 0 ? (
                     <Paper sx={{ p: 4, textAlign: "center", borderRadius: 2, bgcolor: "background.default", border: "1px dashed", borderColor: "divider" }}>
-                        <Typography color="text.secondary">Keine Rekonstruktionen für dieses Modul gefunden.</Typography>
+                        <Typography sx={{
+                            color: "text.secondary"
+                        }}>Keine Rekonstruktionen für dieses Modul gefunden.</Typography>
                     </Paper>
                 ) : (
                     <Paper elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3, overflow: 'hidden' }}>
@@ -332,18 +336,39 @@ function ArchiveViewContent({ moduleId, examId }: { moduleId: string; examId?: s
                                                     primary={poLabel}
                                                     slotProps={{ secondary: { component: 'div' } }}
                                                     secondary={
-                                                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 0.5 }}>
-                                                            <Typography variant="caption" color="text.secondary">
+                                                        <Stack
+                                                            direction="row"
+                                                            spacing={1.5}
+                                                            sx={{
+                                                                alignItems: "center",
+                                                                mt: 0.5
+                                                            }}>
+                                                            <Typography variant="caption" sx={{
+                                                                color: "text.secondary"
+                                                            }}>
                                                                 {exam.exam_date ? new Date(exam.exam_date).toLocaleDateString('de-DE') : "Datum unbekannt"}
                                                             </Typography>
-                                                            <Typography variant="caption" color="text.secondary">•</Typography>
-                                                            <Typography variant="caption" color="text.secondary">
+                                                            <Typography variant="caption" sx={{
+                                                                color: "text.secondary"
+                                                            }}>•</Typography>
+                                                            <Typography variant="caption" sx={{
+                                                                color: "text.secondary"
+                                                            }}>
                                                                 von {exam.uploader_name || "Anonym"}
                                                             </Typography>
                                                             {exam.comment && (
                                                                 <>
-                                                                    <Typography variant="caption" color="text.secondary">•</Typography>
-                                                                    <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 200, fontStyle: 'italic' }}>
+                                                                    <Typography variant="caption" sx={{
+                                                                        color: "text.secondary"
+                                                                    }}>•</Typography>
+                                                                    <Typography
+                                                                        variant="caption"
+                                                                        noWrap
+                                                                        sx={{
+                                                                            color: "text.secondary",
+                                                                            maxWidth: 200,
+                                                                            fontStyle: 'italic'
+                                                                        }}>
                                                                         "{exam.comment}"
                                                                     </Typography>
                                                                 </>
@@ -365,12 +390,16 @@ function ArchiveViewContent({ moduleId, examId }: { moduleId: string; examId?: s
                     onClose={handleCloseDialog}
                     fullWidth
                     maxWidth="sm"
-                    PaperProps={{ sx: { borderRadius: 3, height: isMobile ? 'auto' : '90vh' } }}
+                    slotProps={{
+                        paper: { sx: { borderRadius: 3, height: isMobile ? 'auto' : '90vh' } }
+                    }}
                 >
                     {selectedExam && (
                         <>
                             <DialogTitle sx={{ m: 0, p: 3, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="h6" component="span" fontWeight={700}>
+                                <Typography variant="h6" component="span" sx={{
+                                    fontWeight: 700
+                                }}>
                                     {isEditing ? "Details bearbeiten" : "Details zur Reko"}
                                 </Typography>
                                 <Box>
@@ -441,9 +470,11 @@ function ArchiveViewContent({ moduleId, examId }: { moduleId: string; examId?: s
                                     value={formDate}
                                     onChange={(e) => setFormDate(e.target.value)}
                                     disabled={!isEditing}
-                                    InputLabelProps={{ shrink: true }}
                                     sx={{ mt: 1 }}
                                     size="small"
+                                    slotProps={{
+                                        inputLabel: { shrink: true }
+                                    }}
                                 />
 
                                 <Stack spacing={2}>
@@ -569,10 +600,26 @@ function ArchiveViewContent({ moduleId, examId }: { moduleId: string; examId?: s
                                                 title="Vorschau"
                                             />
                                         ) : (
-                                            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" sx={{ p: 4 }}>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    height: "100%",
+                                                    p: 4
+                                                }}>
                                                 <Skeleton variant="rectangular" width="100%" height="100%" sx={{ position: 'absolute', inset: 0, borderRadius: 0 }} />
                                                 <CircularProgress size={30} sx={{ zIndex: 1 }} />
-                                                <Typography variant="body2" color="text.secondary" sx={{ ml: 2, mt: 1, zIndex: 1, fontWeight: 500 }}>Lade Vorschau...</Typography>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        color: "text.secondary",
+                                                        ml: 2,
+                                                        mt: 1,
+                                                        zIndex: 1,
+                                                        fontWeight: 500
+                                                    }}>Lade Vorschau...</Typography>
                                             </Box>
                                         )}
                                     </Box>
