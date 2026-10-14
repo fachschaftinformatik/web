@@ -45,6 +45,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: '/discussions/:postId',
+        destination: '/d/:postId',
+        permanent: true,
+      },
+      {
         source: '/exams/:path*',
         destination: '/archive/:path*',
         permanent: true,
