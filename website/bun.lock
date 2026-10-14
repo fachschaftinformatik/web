@@ -10,7 +10,7 @@
         "@emotion/server": "^11.11.0",
         "@emotion/styled": "^11.14.1",
         "@mui/icons-material": "7.3.11",
-        "@mui/lab": "^7.0.1-beta.22",
+        "@mui/lab": "^7.0.1-beta.25",
         "@mui/material": "^7.3.11",
         "@mui/material-nextjs": "^7.3.10",
         "@mui/x-charts": "^8.27.0",
@@ -225,7 +225,7 @@
 
     "@mui/icons-material": ["@mui/icons-material@7.3.11", "", { "dependencies": { "@babel/runtime": "^7.28.6" }, "peerDependencies": { "@mui/material": "^7.3.11", "@types/react": "^17.0.0 || ^18.0.0 || ^19.0.0", "react": "^17.0.0 || ^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react"] }, "sha512-+hz5ilwHZ3djd5es3sCErLioqe/NhZcYTsV/TNXZAMdJdb23F4xzJjqnnZdnurc3S1+ietcssRNqieOhPQLZ7Q=="],
 
-    "@mui/lab": ["@mui/lab@7.0.1-beta.24", "", { "dependencies": { "@babel/runtime": "^7.28.6", "@mui/system": "^7.3.10", "@mui/types": "^7.4.12", "@mui/utils": "^7.3.10", "clsx": "^2.1.1", "prop-types": "^15.8.1" }, "peerDependencies": { "@emotion/react": "^11.5.0", "@emotion/styled": "^11.3.0", "@mui/material": "^7.3.10", "@mui/material-pigment-css": "^7.3.10", "@types/react": "^17.0.0 || ^18.0.0 || ^19.0.0", "react": "^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0" }, "optionalPeers": ["@emotion/react", "@emotion/styled", "@mui/material-pigment-css", "@types/react"] }, "sha512-ihgrrxeJfB3owIggdca4vtgWIFBgG4RGQV548DAbtClJqwEMmc4JXWW8Imt+b5RbDyQ1FRAAXhE/wuieAXlgRQ=="],
+    "@mui/lab": ["@mui/lab@7.0.1-beta.25", "", { "dependencies": { "@babel/runtime": "^7.28.6", "@mui/system": "^7.3.11", "@mui/types": "^7.4.12", "@mui/utils": "^7.3.11", "clsx": "^2.1.1", "prop-types": "^15.8.1" }, "peerDependencies": { "@emotion/react": "^11.5.0", "@emotion/styled": "^11.3.0", "@mui/material": "^7.3.11", "@mui/material-pigment-css": "^7.3.11", "@types/react": "^17.0.0 || ^18.0.0 || ^19.0.0", "react": "^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0" }, "optionalPeers": ["@emotion/react", "@emotion/styled", "@mui/material-pigment-css", "@types/react"] }, "sha512-itd2o0dKv8/1ZhAWTOkP+ZxiztC2dJ6rY0ECZFt3l3ylinShOfhgjbuqgS98M4UFIVzVLM5ynn+WhkEIp/5CMg=="],
 
     "@mui/material": ["@mui/material@7.3.11", "", { "dependencies": { "@babel/runtime": "^7.28.6", "@mui/core-downloads-tracker": "^7.3.11", "@mui/system": "^7.3.11", "@mui/types": "^7.4.12", "@mui/utils": "^7.3.11", "@popperjs/core": "^2.11.8", "@types/react-transition-group": "^4.4.12", "clsx": "^2.1.1", "csstype": "^3.2.3", "prop-types": "^15.8.1", "react-is": "^19.2.3", "react-transition-group": "^4.4.5" }, "peerDependencies": { "@emotion/react": "^11.5.0", "@emotion/styled": "^11.3.0", "@mui/material-pigment-css": "^7.3.11", "@types/react": "^17.0.0 || ^18.0.0 || ^19.0.0", "react": "^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0" }, "optionalPeers": ["@emotion/react", "@emotion/styled", "@mui/material-pigment-css", "@types/react"] }, "sha512-yq8bPc3LxOwKRWpcjRgDkYFmpM6aKlARfESTmOQcvLYFeJwtHte2tw6hJDrb8sk8wcvpDprHEHVaoUU0MslIkw=="],
 
