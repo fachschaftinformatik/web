@@ -37,6 +37,7 @@ export default function RootLayout({
   return (
     <html lang="de" suppressHydrationWarning className={`${manrope.variable} ${spaceGrotesk.variable} ${roboto.variable}`}>
       <body>
+        <script dangerouslySetInnerHTML={{ __html: `try { document.documentElement.dataset.sidebarOpen = localStorage.getItem('sidebar_desktop_open') !== 'false' ? 'true' : 'false'; } catch {}` }} />
         <Providers>
           {children}
         </Providers>
