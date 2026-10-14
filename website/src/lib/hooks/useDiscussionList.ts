@@ -26,15 +26,16 @@ export const useDiscussionList = ({ user }: UseDiscussionListOptions) => {
   const isAdmin = user?.role === 'admin';
   const canModerate = isAdmin || user?.role === 'editor';
 
-  const fetchPosts = useCallback(async () => {
+  const selectedProgramId = activeProgramFilters.length > 0
+    ? apiPrograms.find((program) => program.name === activeProgramFilters[0])?.id
+    : undefined;
+
+  const fetchPosts = useCallback(async (signal: AbortSignal) => {
     setLoading(true);
     try {
       const offset = (page - 1) * POSTS_PER_PAGE;
-      const selectedProgramId = activeProgramFilters.length > 0
-        ? apiPrograms.find((program) => program.name === activeProgramFilters[0])?.id
-        : undefined;
-
       const { data, response } = await getDiscussions({
+        signal,
         query: {
           limit: POSTS_PER_PAGE,
           offset,
@@ -44,7 +45,7 @@ export const useDiscussionList = ({ user }: UseDiscussionListOptions) => {
         },
       });
 
-      if (data) {
+      if (data && !signal.aborted) {
         const parsed: Post[] = data.map((post) => ({
           ...post,
           comments: [],
@@ -55,11 +56,11 @@ export const useDiscussionList = ({ user }: UseDiscussionListOptions) => {
         setTotalCount(total);
       }
     } catch (error) {
-      console.error('Fetch error:', error);
+      if (!signal.aborted) console.error('Fetch error:', error);
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
-  }, [activeProgramFilters, apiPrograms, page, q, sort]);
+  }, [selectedProgramId, page, q, sort]);
 
   useEffect(() => {
     const fetchPrograms = async () => {
@@ -77,7 +78,9 @@ export const useDiscussionList = ({ user }: UseDiscussionListOptions) => {
   }, []);
 
   useEffect(() => {
-    void fetchPosts();
+    const controller = new AbortController();
+    void fetchPosts(controller.signal);
+    return () => controller.abort();
   }, [fetchPosts]);
 
   useEffect(() => {
