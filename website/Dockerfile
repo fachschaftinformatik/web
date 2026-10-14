@@ -12,7 +12,7 @@ COPY website/ .
 COPY docs/ ../docs
 
 RUN bun run build
-FROM node:24-alpine AS runner
+FROM node:26.12.0-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV production
 RUN addgroup --system --gid 1001 nodejs
