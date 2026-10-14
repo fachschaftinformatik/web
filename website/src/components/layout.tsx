@@ -45,7 +45,7 @@ import Brightness4Rounded from '@mui/icons-material/Brightness4Rounded';
 import Brightness7Rounded from '@mui/icons-material/Brightness7Rounded';
 import DoneAllRounded from '@mui/icons-material/DoneAllRounded';
 import CloseRounded from '@mui/icons-material/CloseRounded';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import type { DtoUserResponse as User, DtoNotificationResponse as Notification } from '@lib/api/types.gen';
@@ -342,6 +342,7 @@ const Sidebar = ({
   const { mode, setPreference } = useThemeMode();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
+  const pathname = usePathname();
   const router = useRouter();
   const { logout, login } = useAuth();
 
@@ -473,7 +474,7 @@ const Sidebar = ({
   };
 
   const drawerContent = (
-    <Box sx={{
+    <Box component="nav" aria-label="Hauptnavigation" sx={{
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
@@ -483,24 +484,39 @@ const Sidebar = ({
       msOverflowStyle: 'none'
     }}>
       <List sx={{ pt: 1, flexGrow: 1 }}>
-        {displayNavItems.map((item) => (
+        {displayNavItems.map((item) => {
+          const selected = pathname === item.href ||
+            (item.href !== '/' && pathname.startsWith(`${item.href}/`)) ||
+            (item.href === '/discussions' && pathname.startsWith('/d/'));
+          return (
           <Tooltip key={item.label} title={navOpen ? '' : item.label} placement="right">
             <ListItemButton
               component={item.isRoute ? Link : 'a'}
               href={item.href}
+              selected={selected}
+              aria-current={selected ? 'page' : undefined}
               sx={{
                 minHeight: 48,
                 justifyContent: navOpen ? 'initial' : 'center',
                 px: 2.5,
+                '&.Mui-selected': {
+                  color: 'primary.main',
+                  bgcolor: alpha(theme.palette.primary.main, mode === 'dark' ? 0.16 : 0.08),
+                  boxShadow: `inset 3px 0 0 ${theme.palette.primary.main}`,
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.primary.main, mode === 'dark' ? 0.24 : 0.12),
+                  },
+                },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 0, mr: navOpen ? 3 : 'auto', justifyContent: 'center' }}>
+              <ListItemIcon sx={{ minWidth: 0, mr: navOpen ? 3 : 'auto', justifyContent: 'center', color: selected ? 'inherit' : undefined }}>
                 {item.icon}
               </ListItemIcon>
-              <ListItemText primary={item.label} sx={{ opacity: navOpen ? 1 : 0 }} />
+              <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontWeight: selected ? 700 : 400 } } }} sx={{ opacity: navOpen ? 1 : 0 }} />
             </ListItemButton>
           </Tooltip>
-        ))}
+          );
+        })}
       </List>
 
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 1, mb: 1 }}>
