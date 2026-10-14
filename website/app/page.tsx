@@ -206,7 +206,8 @@ const NewsFeedPage: React.FC = () => {
           component="section"
           sx={{
             position: 'relative',
-            height: { xs: 320, md: 360 },
+            minHeight: { xs: 320, md: 360 },
+            display: 'flex',
             borderRadius: 6,
             overflow: 'hidden',
             border: '1px solid',
@@ -274,15 +275,17 @@ const NewsFeedPage: React.FC = () => {
             sx={{
               position: 'relative',
               zIndex: 1,
-              height: '100%',
+              flex: 1,
+              minWidth: 0,
               px: { xs: 4, md: 8 },
+              py: { xs: 3, md: 4 },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               pointerEvents: 'none',
             }}
           >
-            <Stack spacing={1.2} sx={{ maxWidth: 800, pointerEvents: 'auto', pb: { xs: 4.5, md: 0 } }}>
+            <Stack spacing={1.2} sx={{ maxWidth: 800, pointerEvents: 'auto' }}>
               <Box>
                 <Typography variant="overline" sx={{ ...custom.heroOverline, color: 'primary.main', fontWeight: 800, fontSize: { xs: '0.8rem', md: '1.1rem' }, letterSpacing: '0.15em' }}>
                   fsInformatik
@@ -343,19 +346,34 @@ const NewsFeedPage: React.FC = () => {
               </Stack>
             </Stack>
             {eventsData.length > 1 && (
-              <Box sx={{ position: 'absolute', bottom: { xs: 16, md: 32 }, left: { xs: 32, md: 64 }, display: 'flex', gap: 1, pointerEvents: 'auto' }}>
-                {eventsData.map((_, i) => (
+              <Box component="nav" aria-label="Veranstaltungen" sx={{ mt: 2, width: '100%', maxWidth: 600, display: 'flex', flexWrap: 'wrap', gap: 1, pointerEvents: 'auto' }}>
+                {eventsData.map((event, i) => (
                   <Box
-                    key={i}
+                    component="button"
+                    type="button"
+                    key={String(event.id)}
+                    aria-label={`Veranstaltung anzeigen: ${event.title}`}
+                    aria-current={carouselIndex === i ? 'true' : undefined}
                     onClick={() => setCarouselIndex(i)}
                     sx={{
+                      flexShrink: 0,
                       width: { xs: 32, md: 40 },
-                      height: 4,
+                      height: 24,
+                      border: 0,
+                      p: 0,
                       borderRadius: 2,
-                      bgcolor: carouselIndex === i ? 'primary.main' : alpha(theme.palette.text.primary, 0.2),
+                      bgcolor: 'transparent',
                       cursor: 'pointer',
-                      transition: 'all 0.3s',
-                      '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.6) }
+                      '&::after': {
+                        content: '""',
+                        display: 'block',
+                        height: 4,
+                        borderRadius: 2,
+                        bgcolor: carouselIndex === i ? 'primary.main' : alpha(theme.palette.text.primary, 0.2),
+                        transition: 'background-color 0.3s',
+                      },
+                      '&:hover::after': { bgcolor: alpha(theme.palette.primary.main, 0.6) },
+                      '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
                     }}
                   />
                 ))}
