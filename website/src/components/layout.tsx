@@ -280,9 +280,10 @@ const GlobalSearch = () => {
             />
           </Search>
         )}
-        renderOption={(props, option) => (
-          <ListItem {...props} key={String(option.id) + option.type}>
-            <ListItemIcon sx={{ minWidth: 40 }}>
+        getOptionKey={(option) => `${option.type}:${option.id}`}
+        renderOption={({ key, ...props }, option) => (
+          <ListItem {...props} key={key}>
+            <ListItemIcon key="icon" sx={{ minWidth: 40 }}>
               {option.type === 'module' ? <DashboardRounded fontSize="small" /> :
                 option.type === 'user' ? (
                   <Avatar 
@@ -294,6 +295,7 @@ const GlobalSearch = () => {
                     <SchoolRounded fontSize="small" />}
             </ListItemIcon>
             <ListItemText
+              key="text"
               primary={option.title}
               secondary={option.subtitle}
               primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
