@@ -120,5 +120,3 @@ require (
 	modernc.org/memory v1.12.1 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
-
-replace github.com/go-ini/ini => gopkg.in/ini.v1 v1.67.1
