@@ -1,0 +1,75 @@
+name: Website CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - website/**
+      - docs/**
+      - .node-version
+      - .dockerignore
+      - compose.yaml
+      - garage.toml
+      - .github/workflows/website.yaml
+      - .github/workflows/release.yaml
+  pull_request:
+    branches: [main]
+    paths:
+      - website/**
+      - docs/**
+      - .node-version
+      - .dockerignore
+      - compose.yaml
+      - garage.toml
+      - .github/workflows/website.yaml
+      - .github/workflows/release.yaml
+  workflow_dispatch:
+
+concurrency:
+  group: website-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  website:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - name: Cache Bun downloads
+        uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('website/bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-${{ runner.arch }}-
+      - name: Cache Next.js compiler
+        uses: actions/cache@v5
+        with:
+          path: website/.next/cache
+          key: next-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('website/bun.lock', '.node-version') }}-${{ github.sha }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('website/bun.lock', '.node-version') }}-
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Check generated API client
+        run: |
+          bun run gen:api
+          git diff --exit-code -- src/lib/api
+      - name: Type check
+        run: bun run check
+      - name: Lint
+        run: bun run lint
+      - name: Build
+        run: bun run build
