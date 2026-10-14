@@ -27,7 +27,7 @@
     "next-auth": "^5.0.0-beta.30",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "zod": "^4.3.6"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "0.96.0",
