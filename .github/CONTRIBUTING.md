@@ -19,9 +19,9 @@ If in doubt, reach out to us. You can [open an issue](https://github.com/fachsch
 
 ## Building
 
-To build the project you will need to have [Go](https://go.dev/) (version 1.24 or newer) and [Bun](https://bun.sh/) installed.
+To build the project you will need to have [Go](https://go.dev/) (version 1.27.2 or newer), [Node.js](https://nodejs.org/) (version 26.12.0, pinned in `.node-version`), and [Bun](https://bun.sh/) installed.
 
-The project uses several features that are only in Go version 1.24 and newer (most notably the new `tool` directive), so make sure you have the correct version by running:
+Make sure you have the required Go version by running:
 ```
 go version
 ```
