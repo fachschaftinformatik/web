@@ -18,7 +18,7 @@ For the API spec please refer to [/docs](/docs). The live API documentation can 
 flowchart TB
   subgraph Client[Client]
     Browser[Browser]
-    Frontend[React SPA]
+    Frontend[Next.js frontend]
   end
 
   subgraph Server[Server]
@@ -26,13 +26,13 @@ flowchart TB
     subgraph Backend[Backend]
       API[RESTful API]
       DB[(database)]
-      S3[(object storage)]
+      S3[(Garage object storage)]
       DB -. "references" .-> S3
     end
   end
 
-  Browser -->|loads SPA| Proxy
-  Proxy -->|serves SPA| Frontend
+  Browser -->|loads website| Proxy
+  Proxy -->|serves website| Frontend
   Frontend -->|calls RESTful API| Proxy
   Proxy -->|forwards API calls| API
   API --> DB
@@ -48,35 +48,66 @@ The `database` holds all relevant meta data and references to the blobs. All blo
 
 ## Getting started
 
-For local development, run the Go API and MinIO via Docker Compose and the Vite frontend separately.  
-The API serves data under `/api`, and the frontend consumes it in the browser.
+For local development, run the Go API and Garage via Docker Compose and the Next.js frontend separately.
+The API listens on `http://localhost:8080`; the frontend proxies requests under `/api/v1` to it.
 
 ```sh
-docker compose up --build api minio
+docker compose up --build api garage
 ```
 
 To build and run the frontend:
-```
+```sh
 cd website
 bun install
 bun run dev
+```
+
+Configure the frontend in `website/.env.local`:
+
+```dotenv
+BACKEND_URL=http://localhost:8080
+AUTH_URL=http://localhost:3000
+AUTH_SECRET=replace-with-a-random-secret
+INTERNAL_JWT_SECRET=replace-with-a-shared-random-secret
+```
+
+Set the same `INTERNAL_JWT_SECRET` in the repository-root `.env` file for Compose.
+Generate secrets with `openssl rand -hex 32`.
+
+### Object storage
+
+Garage v2.4.1 provides S3-compatible object storage. Compose initializes a single-node instance,
+an application key, and the `development` bucket automatically. Data and metadata persist in
+the `garage` volume; the SQLite application database persists separately in `database`.
+The storage API is only exposed on the internal Compose network.
+
+`garage.toml` and the default Compose credentials are for local development. For production,
+generate a unique RPC secret, create a dedicated application key with read/write access to its
+bucket, and configure the API with that key. Garage's S3 region is `us-east-1`.
+The Go storage adapter uses the S3-compatible `minio-go` client library; no MinIO server is required.
+
+Inspect local storage with:
+
+```sh
+docker compose exec garage /garage status
+docker compose exec garage /garage bucket info development
 ```
 
 For more information on how to build the project, read [CONTRIBUTING.md](https://github.com/fachschaftinformatik/web/blob/main/.github/CONTRIBUTING.md#building).
 
 The following environment variables are being used and should be set accordingly:
 
-| Variable | Default | Notes |
+| Variable | Local Compose value | Notes |
 | --- | --- | --- |
 | `DOMAIN` | `http://localhost:3000` | The domain the frontend will be reachable at. Used for CORS, redirects and URL generation. |
-| `SIGNUPS_ENABLED` | `true` | Wether or not new signups are allowed. |
-| `SIGNUPS_VERIFY` | `true` | Wether or not to require signups to verify their email address. Requires the SMTP config from below to be set. |
-| `SIGNUPS_DOMAINS_WHITELIST` | `studmail.w-hs.de,fsv-wh.de` | Whitelist of domains allowed to sign up. |
-| `S3_ENDPOINT` | `minio:9000` | MinIO service endpoint. |
+| `SIGNUPS_ENABLED` | `true` | Whether new signups are allowed. |
+| `SIGNUPS_VERIFY` | `true` | Whether signups must verify their email address. Requires SMTP configuration. |
+| `INTERNAL_JWT_SECRET` |  | Shared secret used by the frontend to authenticate API requests. Set the same value on both services. |
+| `S3_ENDPOINT` | `garage:3900` | S3 service host and port, without a URL scheme. |
 | `S3_BUCKET` | `development` | Name of the bucket. |
-| `S3_USE_SSL` | `false` | Wether or not to use TLS for the S3 connection. |
-| `S3_ACCESS_KEY` | `minio` | The S3 access key. |
-| `S3_SECRET_KEY` | `password` | The S3 secret key. |
+| `S3_USE_SSL` | `false` | Whether to use TLS for the S3 connection. |
+| `S3_ACCESS_KEY` | `GK0123456789abcdef01234567` | Development key; override via Compose environment variables. |
+| `S3_SECRET_KEY` | `0123456789abcdef` repeated four times | Development secret; override via Compose environment variables. |
 | `SMTP_HOST` |  | SMTP host. |
 | `SMTP_PORT` |  | SMTP port. |
 | `SMTP_USERNAME` |  | SMTP username. |
