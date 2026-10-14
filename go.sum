@@ -149,8 +149,8 @@ github.com/pingcap/failpoint v0.0.0-20260811232634-55ac33a48e3b h1:5qoDlNwsxDoWU
 github.com/pingcap/failpoint v0.0.0-20260811232634-55ac33a48e3b/go.mod h1:jimwlLpI/XtwQdlZML15HS+j4rirvwZM0GLY07wwgOo=
 github.com/pingcap/log v1.1.0 h1:ELiPxACz7vdo1qAvvaWJg1NrYFoY6gqAh/+Uo6aXdD8=
 github.com/pingcap/log v1.1.0/go.mod h1:DWQW5jICDR7UJh4HtxXSM20Churx4CQL0fwL/SoOSA4=
-github.com/pingcap/tidb/pkg/parser v0.0.0-20260418072757-ce92298d1124 h1:zYmP5fBH+i2yhhU6f5uOol6zxHtR2/sD47BsJLfy0oU=
-github.com/pingcap/tidb/pkg/parser v0.0.0-20260418072757-ce92298d1124/go.mod h1:zDLDsfNBU5+L6T4J9/OgWAHc/WZvMUjbpgHqQ/t3yKo=
+github.com/pingcap/tidb/pkg/parser v0.0.0-20261014154017-6e7213df1bbf h1:ZJ2Rip9jEN02HZjKh4PRzemAJNJwMJSIXfM+K8bqNEI=
+github.com/pingcap/tidb/pkg/parser v0.0.0-20261014154017-6e7213df1bbf/go.mod h1:EAX+oCkoKe+Cl0pPWUkFrQp5XgIfzjGw61TWH+rRYW0=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pressly/goose/v3 v3.29.0 h1:dtEnBCT7CqkHIUCdgrXsrmeisaN8gFkRU4Y5OEwif4o=
