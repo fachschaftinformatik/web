@@ -184,7 +184,22 @@ export default function AuthPage() {
                     return;
                 }
                 
-                router.push('/');
+                let destination = '/';
+                const from = searchParams.get('from');
+                if (from) {
+                    try {
+                        const url = new URL(from, window.location.origin);
+                        if (url.origin === window.location.origin) {
+                            destination = url.href;
+                        }
+                    } catch {
+                        // Ignore malformed return URLs and use the home page.
+                    }
+                }
+
+                // Start a fresh document so protected links cannot reuse login
+                // redirects prefetched before the session cookie was set.
+                window.location.replace(destination);
             } catch (err) {
                 setErrors({ global: "Anmeldung fehlgeschlagen." });
             } finally {
