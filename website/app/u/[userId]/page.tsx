@@ -93,7 +93,7 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
           query: { limit: LIMIT, offset }
         });
 
-        if (response.headers.has('X-Total-Count')) {
+        if (response?.headers.has('X-Total-Count')) {
           const total = parseInt(response.headers.get('X-Total-Count') || '0', 10);
           setPageCount(Math.ceil(total / LIMIT));
         }
