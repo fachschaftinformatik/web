@@ -55,8 +55,6 @@ const OfficeStatus = ({ user }: OfficeStatusProps) => {
     }
   };
 
-  if (loading && !isAuthorized) return null;
-
   const bg = occupied
     ? alpha(theme.palette.success.main, 0.1)
     : alpha(theme.palette.text.secondary, 0.05);
@@ -84,6 +82,7 @@ const OfficeStatus = ({ user }: OfficeStatusProps) => {
           opacity: 0.8,
         } : {},
         transition: 'opacity 0.2s ease',
+        visibility: loading ? 'hidden' : 'visible',
       }}
     >
       <MeetingRoomRounded sx={{ color, fontSize: 22 }} />
@@ -111,6 +110,7 @@ const OfficeStatus = ({ user }: OfficeStatusProps) => {
 
   return (
     <Box
+      aria-busy={loading}
       sx={{
         display: 'flex',
         alignItems: 'center',
