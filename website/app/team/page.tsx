@@ -28,10 +28,12 @@ export default function Team() {
           <Link
             href={`mailto:${sharedEmail}`}
             variant="body2"
-            color="text.secondary"
             underline="hover"
-            sx={{ display: "inline-block", mb: 2 }}
-          >
+            sx={{
+              color: "text.secondary",
+              display: "inline-block",
+              mb: 2
+            }}>
             {sharedEmail}
           </Link>
         )}
@@ -78,8 +80,10 @@ export default function Team() {
                   <Link
                     href={`mailto:${m.email}`}
                     variant="body2"
-                    color="text.secondary"
                     underline="hover"
+                    sx={{
+                      color: "text.secondary"
+                    }}
                   >
                     {m.email}
                   </Link>
@@ -97,10 +101,14 @@ export default function Team() {
       <Box>
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
-            <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+            <Typography variant="h4" component="h1" gutterBottom sx={{
+              fontWeight: 700
+            }}>
               FSV-Team
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" sx={{
+              color: "text.secondary"
+            }}>
               Die aktuellen Mitglieder der Fachschaftsvertretung Informatik.
             </Typography>
           </Box>

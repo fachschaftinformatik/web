@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -10,16 +11,20 @@ import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/go-chi/httplog/v2"
+	"github.com/go-chi/httplog/v3"
 	"github.com/go-chi/httprate"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
-func NewRouter(s *handler.Server, logger *httplog.Logger) http.Handler {
+func NewRouter(s *handler.Server, logger *slog.Logger) http.Handler {
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.RealIP)
 	r.Use(chiMiddleware.RequestID)
-	r.Use(httplog.Handler(logger))
+	r.Use(httplog.RequestLogger(logger, &httplog.Options{
+		Level:             slog.LevelInfo,
+		RecoverPanics:     true,
+		LogRequestHeaders: []string{"Accept", "Content-Type", "Origin", "User-Agent", "X-Request-ID"},
+	}))
 	r.Use(middleware.SecurityHeaders)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{s.Config.Domain},
@@ -29,7 +34,6 @@ func NewRouter(s *handler.Server, logger *httplog.Logger) http.Handler {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
-	r.Use(chiMiddleware.Recoverer)
 	r.Use(httprate.LimitByIP(1000, 1*time.Minute))
 
 	r.Get("/swagger/*", httpSwagger.WrapHandler)

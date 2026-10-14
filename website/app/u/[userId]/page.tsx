@@ -142,11 +142,23 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
         <Box sx={{ background: theme.palette.mode === 'light' ? 'linear-gradient(180deg, rgba(76, 175, 80, 0.04), transparent)' : 'transparent', borderRadius: 4 }}>
           <Stack spacing={4}>
             <Paper elevation={0} sx={{ p: { xs: 4, md: 5 }, borderRadius: 4, border: '1px solid', borderColor: alpha(theme.palette.divider, 0.1), backdropFilter: 'blur(20px)' }}>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="center">
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} sx={{
+                alignItems: "center"
+              }}>
                 <Skeleton variant="circular" width={120} height={120} />
-                <Box flex={1} textAlign={{ xs: 'center', md: 'left' }}>
+                <Box
+                  sx={{
+                    flex: 1,
+                    textAlign: { xs: 'center', md: 'left' }
+                  }}>
                   <Skeleton variant="text" width="40%" height={60} />
-                  <Stack direction="row" spacing={1} justifyContent={{ xs: 'center', md: 'flex-start' }} sx={{ mt: 1 }}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                      justifyContent: { xs: 'center', md: 'flex-start' },
+                      mt: 1
+                    }}>
                     <Skeleton variant="rounded" width={60} height={24} />
                     <Skeleton variant="rounded" width={80} height={24} />
                   </Stack>
@@ -155,7 +167,13 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
               </Stack>
             </Paper>
             <Paper variant="outlined" sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{
+                  alignItems: "center",
+                  mb: 3
+                }}>
                 <Skeleton variant="circular" width={24} height={24} />
                 <Skeleton variant="text" width="200px" height={32} />
               </Stack>
@@ -225,7 +243,9 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
               overflow: 'hidden',
             })}
           >
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="center">
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} sx={{
+              alignItems: "center"
+            }}>
               <Avatar
                 key={profileUser.avatar_url || String(profileUser.id)}
                 src={getAvatarUrl(profileUser.avatar_url)}
@@ -238,11 +258,27 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
                   boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.25)}`
                 }}
               />
-              <Box flex={1} textAlign={{ xs: 'center', md: 'left' }}>
-                <Typography variant="h3" fontWeight={800} letterSpacing="-0.02em" gutterBottom>
+              <Box
+                sx={{
+                  flex: 1,
+                  textAlign: { xs: 'center', md: 'left' }
+                }}>
+                <Typography
+                  variant="h3"
+                  gutterBottom
+                  sx={{
+                    fontWeight: 800,
+                    letterSpacing: "-0.02em"
+                  }}>
                   {profileUser.name}
                 </Typography>
-                <Stack direction="row" spacing={1} justifyContent={{ xs: 'center', md: 'flex-start' }} alignItems="center">
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{
+                    justifyContent: { xs: 'center', md: 'flex-start' },
+                    alignItems: "center"
+                  }}>
                   <Chip
                     label={(profileUser.role ?? 'USER').toUpperCase()}
                     size="small"
@@ -264,7 +300,13 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
                     />
                   )}
                 </Stack>
-                <Typography variant="body1" color="text.secondary" sx={{ mt: 2, maxWidth: 600 }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: "text.secondary",
+                    mt: 2,
+                    maxWidth: 600
+                  }}>
                   {!(profileUser.private === 1 && !isOwnProfile) && `Studierende/r im Bereich ${programLabel}. `}
                   Seit {profileUser.created_at ? new Date(profileUser.created_at).toLocaleDateString() : 'Anfang an'} dabei.
                 </Typography>
@@ -283,9 +325,17 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
           </Paper>
 
           <Paper variant="outlined" sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-            <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{
+                alignItems: "center",
+                mb: 3
+              }}>
               <HistoryIcon color="primary" />
-              <Typography variant="h6" fontWeight={700}>
+              <Typography variant="h6" sx={{
+                fontWeight: 700
+              }}>
                 Kürzliche Aktivitäten
               </Typography>
             </Stack>
@@ -293,15 +343,30 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
             {profileUser.private === 1 && !isOwnProfile ? (
               <Box sx={{ py: 8, textAlign: 'center' }}>
                 <LockRoundedIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2, opacity: 0.5 }} />
-                <Typography variant="h6" fontWeight={700} color="text.secondary">
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    color: "text.secondary"
+                  }}>
                   Dieses Profil ist privat
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.7 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                    opacity: 0.7
+                  }}>
                   Die Aktivitäten dieses Nutzers sind nur für ihn selbst sichtbar.
                 </Typography>
               </Box>
             ) : activitiesLoading ? (
-              <Box display="flex" justifyContent="center" p={4}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  p: 4
+                }}>
                 <CircularProgress size={24} />
               </Box>
             ) : activities.length > 0 ? (
@@ -381,12 +446,16 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
                         </ListItemIcon>
                         <ListItemText
                           primary={
-                            <Typography variant="body1" fontWeight={600}>
+                            <Typography variant="body1" sx={{
+                              fontWeight: 600
+                            }}>
                               {primaryText}
                             </Typography>
                           }
                           secondary={
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{
+                              color: "text.secondary"
+                            }}>
                               {secondaryText}
                             </Typography>
                           }
@@ -398,13 +467,23 @@ export default function ProfilePage({ params }: { params: Promise<{ userId: stri
                 })}
               </List>
             ) : (
-              <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  textAlign: "center",
+                  py: 4
+                }}>
                 Keine Aktivitäten gefunden.
               </Typography>
             )}
 
             {pageCount > 1 && (
-              <Stack alignItems="center" mt={3}>
+              <Stack
+                sx={{
+                  alignItems: "center",
+                  mt: 3
+                }}>
                 <Pagination
                   count={pageCount}
                   page={page}

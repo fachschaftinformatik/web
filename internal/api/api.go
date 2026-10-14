@@ -17,7 +17,6 @@ import (
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/email"
 	"github.com/fachschaftinformatik/web/internal/storage/s3"
-	"github.com/go-chi/httplog/v2"
 )
 
 var Version = "dev"
@@ -26,14 +25,20 @@ func Run() error {
 	cfg := config.New()
 
 	// Initialize structured logger
-	logger := httplog.NewLogger("fachschaft-api", httplog.Options{
-		JSON:             true,
-		LogLevel:         slog.LevelInfo,
-		Concise:          false,
-		RequestHeaders:   true,
-		MessageFieldName: "message",
-		TimeFieldFormat:  time.RFC3339,
-	})
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
+			if len(groups) == 0 {
+				switch attr.Key {
+				case slog.MessageKey:
+					attr.Key = "message"
+				case slog.TimeKey:
+					attr.Value = slog.StringValue(attr.Value.Time().Format(time.RFC3339))
+				}
+			}
+			return attr
+		},
+	})).With("service", "fachschaft-api")
 
 	if err := database.Migrate(cfg.DatabaseUrl, log.New(os.Stdout, "[MIGRATION] ", log.LstdFlags)); err != nil {
 		return err

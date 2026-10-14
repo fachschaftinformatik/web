@@ -29,20 +29,41 @@ export default function ActivityChart({
   const theme = useTheme();
 
   return (
-
     <Card variant="outlined" sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2, overflow: 'hidden' }}>
       <CardContent sx={{ p: 2, pb: 0, flexGrow: 1, display: 'flex', flexDirection: 'column', '&:last-child': { pb: 0 } }}>
-        <Typography component="h2" variant="caption" gutterBottom fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.85rem' }}>
+        <Typography
+          component="h2"
+          variant="caption"
+          gutterBottom
+          sx={{
+            fontWeight: 700,
+            color: "text.secondary",
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            fontSize: '0.85rem'
+          }}>
           {title}
         </Typography>
         
         <Stack sx={{ mb: 1 }}>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="h4" fontWeight={700} sx={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <Stack direction="row" spacing={1} sx={{
+            alignItems: "center"
+          }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                fontFamily: 'Space Grotesk, sans-serif'
+              }}>
               {loading ? <Skeleton width={100} /> : (typeof value === 'number' ? value.toLocaleString('de-DE') : value)}
             </Typography>
           </Stack>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+              fontSize: '0.75rem'
+            }}>
             {caption}
           </Typography>
         </Stack>
@@ -81,7 +102,13 @@ export default function ActivityChart({
             />
 
           ) : (
-            <Box display="flex" alignItems="center" justifyContent="center" height="100%">
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%"
+              }}>
               <Typography color="textSecondary" variant="body2">Keine Daten verfügbar</Typography>
             </Box>
           )}

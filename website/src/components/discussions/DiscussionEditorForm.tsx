@@ -122,9 +122,9 @@ export function DiscussionEditorForm({
             options={FORUM_TAGS}
             value={tags}
             onChange={(_, newValue) => onTagsChange(newValue)}
-            renderTags={(value: readonly string[], getTagProps) =>
+            renderValue={(value: readonly string[], getItemProps) =>
               value.map((option: string, index: number) => {
-                const { key, ...rest } = getTagProps({ index });
+                const { key, ...rest } = getItemProps({ index });
                 return <Chip key={key} variant="outlined" label={option} {...rest} />;
               })
             }
@@ -143,7 +143,9 @@ export function DiscussionEditorForm({
               fullWidth
               value={eventDate}
               onChange={(event) => onEventDateChange(event.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{
+                inputLabel: { shrink: true }
+              }}
             />
             <TextField
               label="Ort"
