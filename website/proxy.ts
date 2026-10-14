@@ -42,7 +42,7 @@ export const proxy = auth(async (req) => {
 
   if (isProtected && !req.auth) {
     const url = new URL("/login", req.url);
-    url.searchParams.set("from", pathname);
+    url.searchParams.set("from", pathname + req.nextUrl.search);
     return NextResponse.redirect(url);
   }
 
