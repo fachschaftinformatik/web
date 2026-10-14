@@ -12,7 +12,7 @@
         "@mui/icons-material": "7.3.11",
         "@mui/lab": "^7.0.1-beta.22",
         "@mui/material": "^7.3.11",
-        "@mui/material-nextjs": "^7.3.8",
+        "@mui/material-nextjs": "^7.3.10",
         "@mui/x-charts": "^8.27.0",
         "@mui/x-data-grid": "^8.27.3",
         "jose": "^6.2.12",
