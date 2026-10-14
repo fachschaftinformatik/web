@@ -171,7 +171,9 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
             onClose={onClose}
             fullWidth
             maxWidth="sm"
-            PaperProps={{ sx: { borderRadius: 3 } }}
+            slotProps={{
+                paper: { sx: { borderRadius: 3 } }
+            }}
         >
             <DialogTitle sx={{ m: 0, p: 3, pb: 1, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 Klausur hochladen
@@ -205,11 +207,13 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                         name="examDate"
                         type="date"
                         label="Prüfungsdatum"
-                        InputLabelProps={{ shrink: true }}
                         fullWidth
                         size="small"
                         value={examDate}
                         onChange={(e) => setExamDate(e.target.value)}
+                        slotProps={{
+                            inputLabel: { shrink: true }
+                        }}
                     />
 
                     <Stack spacing={2}>
@@ -233,7 +237,9 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                             )}
                         </TextField>
 
-                        <Stack direction="row" spacing={2} alignItems="stretch">
+                        <Stack direction="row" spacing={2} sx={{
+                            alignItems: "stretch"
+                        }}>
                             <TextField
                                 id="upload-po-select"
                                 name="po"
@@ -315,7 +321,9 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                                             <ListItemText
                                                 primary={a.module.name}
                                                 secondary={a.program.name + " • " + a.version}
-                                                primaryTypographyProps={{ fontWeight: 500 }}
+                                                slotProps={{
+                                                    primary: { sx: { fontWeight: 500 } }
+                                                }}
                                             />
                                             <ListItemSecondaryAction>
                                                 <IconButton edge="end" size="small" onClick={() => handleRemoveAssignment(idx)}>
@@ -351,17 +359,36 @@ function UploadDialog({ open, onClose, programs, onSuccess }: { open: boolean; o
                         {!file ? (
                             <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'block', width: '100%', height: '100%' }}>
                                 <CloudUploadRoundedIcon sx={{ fontSize: 32, color: dragging ? "primary.main" : "text.disabled", mb: 0.5 }} />
-                                <Typography variant="body2" fontWeight={500} color="text.primary">
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontWeight: 500,
+                                        color: "text.primary"
+                                    }}>
                                     Klausur-PDF hier ablegen
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography variant="caption" sx={{
+                                    color: "text.secondary"
+                                }}>
                                     oder klicken zum Auswählen
                                 </Typography>
                             </label>
                         ) : (
-                            <Stack alignItems="center" spacing={1} direction="row" justifyContent="center">
+                            <Stack
+                                spacing={1}
+                                direction="row"
+                                sx={{
+                                    alignItems: "center",
+                                    justifyContent: "center"
+                                }}>
                                 <InsertDriveFileRoundedIcon color="primary" />
-                                <Typography variant="body2" fontWeight={600} noWrap sx={{ maxWidth: 200 }}>{file.name}</Typography>
+                                <Typography
+                                    variant="body2"
+                                    noWrap
+                                    sx={{
+                                        fontWeight: 600,
+                                        maxWidth: 200
+                                    }}>{file.name}</Typography>
                                 <IconButton size="small" color="error" onClick={(e) => { e.preventDefault(); setFile(null); }}>
                                     <DeleteOutlineRoundedIcon fontSize="small" />
                                 </IconButton>
@@ -509,10 +536,14 @@ export default function Archive() {
 
                 <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box>
-                        <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+                        <Typography variant="h4" component="h1" gutterBottom sx={{
+                            fontWeight: 700
+                        }}>
                             Klausurrekonstruktionen
                         </Typography>
-                        <Typography variant="body1" color="text.secondary">
+                        <Typography variant="body1" sx={{
+                            color: "text.secondary"
+                        }}>
                             Zur Vorbereitung auf Eure Prüfungen stellen wir Euch eine Ansammlung von Klausurrekonstruktionen zur Verfügung.
                         </Typography>
                     </Box>
@@ -527,9 +558,11 @@ export default function Archive() {
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 size="small"
-                                InputProps={{
-                                    startAdornment: <InputAdornment position="start"><SearchRoundedIcon color="primary" /></InputAdornment>,
-                                    sx: { borderRadius: 2 }
+                                slotProps={{
+                                    input: {
+                                        startAdornment: <InputAdornment position="start"><SearchRoundedIcon color="primary" /></InputAdornment>,
+                                        sx: { borderRadius: 2 }
+                                    }
                                 }}
                             />
                             {canUpload && (
@@ -607,7 +640,14 @@ export default function Archive() {
                         </Box>
                     ) : filteredModules.length > 0 ? (
                         <Box>
-                            <Typography variant="h6" color="primary.main" fontWeight={600} sx={{ mb: 1, px: 2 }}>Module</Typography>
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    color: "primary.main",
+                                    fontWeight: 600,
+                                    mb: 1,
+                                    px: 2
+                                }}>Module</Typography>
                             <List sx={{ p: 0 }}>
                                 {filteredModules.map((mod, index) => (
                                     <ListItem key={String(mod.id)} disablePadding divider={index < filteredModules.length - 1}>
@@ -618,7 +658,9 @@ export default function Archive() {
                                         >
                                             <ListItemText
                                                 primary={mod.name}
-                                                primaryTypographyProps={{ fontWeight: 500 }}
+                                                slotProps={{
+                                                    primary: { sx: { fontWeight: 500 } }
+                                                }}
                                             />
                                         </ListItemButton>
                                     </ListItem>
@@ -626,7 +668,12 @@ export default function Archive() {
                             </List>
                         </Box>
                     ) : (
-                        <Box textAlign="center" py={4} sx={{ opacity: 0.6 }}><Typography variant="h6">Keine Module gefunden.</Typography></Box>
+                        <Box
+                            sx={{
+                                textAlign: "center",
+                                py: 4,
+                                opacity: 0.6
+                            }}><Typography variant="h6">Keine Module gefunden.</Typography></Box>
                     )}
                 </Stack>
 

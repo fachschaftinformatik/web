@@ -39,12 +39,13 @@ import InsertPhotoRoundedIcon from '@mui/icons-material/InsertPhotoRounded';
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import { alpha } from "@mui/material/styles";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
-import { getEvents, getEventsByEventIdMedia, postEvents, postEventsByEventIdMedia } from "@lib/api";
-import type { DtoEventResponse as EventItem, DtoMediaResponse as MediaItem } from "@lib/api";
+import { postEvents, postEventsByEventIdMedia } from "@lib/api";
+import { galleryEvents, galleryMedia } from '@lib/gallery-data';
+import type { DtoEventResponse as EventItem } from "@lib/api";
 import { getSizedImageUrl, getImageSrcSet } from "@lib/images";
 import { toErrorMessage } from "@lib/types/guards";
 
@@ -56,16 +57,19 @@ export default function Galerie() {
 
   const { user } = useAuth();
 
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [loadingEvents, setLoadingEvents] = useState(true);
-  const selectedEventId = urlEventId ?? null;
-  const [media, setMedia] = useState<MediaItem[]>([]);
-  const [loadedEventId, setLoadedEventId] = useState<string | null>(null);
-  const [mediaRevision, setMediaRevision] = useState(0);
-  const [page, setPage] = useState(1);
-  const [fetchingMedia, setFetchingMedia] = useState(false);
-  const loadingMedia = fetchingMedia || loadedEventId !== selectedEventId || (!selectedEventId && (loadingEvents || events.length > 0));
-  const router = useRouter();
+  const eventsData = galleryEvents.useResource('events');
+  const events = eventsData?.data ?? [];
+  const loadingEvents = eventsData === undefined;
+  const selectedEventId = urlEventId ?? (events[0]?.id ? String(events[0].id) : null);
+  const mediaData = galleryMedia.useResource(selectedEventId);
+  const media = mediaData?.data ?? [];
+  const loadedEventId = mediaData === undefined ? null : selectedEventId;
+  const [pagination, setPagination] = useState<{ eventId: string | null; page: number }>({ eventId: null, page: 1 });
+  const page = pagination.eventId === selectedEventId ? pagination.page : 1;
+  const setPage = useCallback((nextPage: number) => {
+    setPagination({ eventId: selectedEventId, page: nextPage });
+  }, [selectedEventId]);
+  const loadingMedia = selectedEventId ? mediaData === undefined : loadingEvents;
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -79,61 +83,13 @@ export default function Galerie() {
 
   const canUpload = user?.role === "admin" || user?.role === "editor";
 
-  const fetchEvents = useCallback(async () => {
-    try {
-      const { data } = await getEvents();
-      if (data) {
-        setEvents(data);
-      }
-    } catch (e) {
-      console.error("Fehler beim Laden der Events", e);
-    } finally {
-      setLoadingEvents(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchEvents();
-  }, [fetchEvents]);
+  const fetchEvents = () => galleryEvents.refresh('events');
 
   useEffect(() => {
     if (!urlEventId && events.length > 0) {
-      router.replace(`/events/${events[0].id}`, { scroll: false });
+      window.history.replaceState(null, '', `/events/${events[0].id}`);
     }
-  }, [urlEventId, events, router]);
-
-  useEffect(() => {
-    let active = true;
-    setPage(1);
-    if (!selectedEventId) {
-      setMedia([]);
-      setLoadedEventId(null);
-      setFetchingMedia(false);
-      return;
-    }
-
-    const fetchMediaData = async () => {
-      setFetchingMedia(true);
-      try {
-        const { data } = await getEventsByEventIdMedia({
-          path: { eventId: selectedEventId }
-        });
-        if (active) setMedia(data || []);
-      } catch (e: unknown) {
-        if (active) {
-          setMedia([]);
-          console.error("Fehler beim Laden der Medien", e);
-        }
-      } finally {
-        if (active) {
-          setLoadedEventId(selectedEventId);
-          setFetchingMedia(false);
-        }
-      }
-    };
-    void fetchMediaData();
-    return () => { active = false; };
-  }, [selectedEventId, mediaRevision]);
+  }, [urlEventId, events]);
 
   useEffect(() => {
     if (urlMediaId && media.length > 0 && loadedEventId === urlEventId) {
@@ -146,7 +102,7 @@ export default function Galerie() {
     } else if (!urlMediaId) {
       setLightboxOpen(false);
     }
-  }, [urlMediaId, media, loadedEventId, urlEventId]);
+  }, [urlMediaId, media, loadedEventId, urlEventId, setPage]);
 
   const getPreviewUrl = (id: string, size: number | string = 400) => getSizedImageUrl(`/api/v1/media/${id}/preview`, size);
   const getEventCoverUrl = (ev: EventItem, size: number | string = 400) => ev.cover_path ? getSizedImageUrl(`/api/v1/events/${ev.id}/cover`, size) : undefined;
@@ -177,7 +133,7 @@ export default function Galerie() {
     setPage(Math.floor(nextIdx / IMAGES_PER_PAGE) + 1);
     const img = media[nextIdx];
     if (img) window.history.replaceState(null, '', `/events/${selectedEventId}/${img.id}`);
-  }, [lightboxIndex, selectedEventId, media]);
+  }, [lightboxIndex, selectedEventId, media, setPage]);
 
   const prevImage = useCallback(() => {
     if (media.length === 0) return;
@@ -186,7 +142,7 @@ export default function Galerie() {
     setPage(Math.floor(prevIdx / IMAGES_PER_PAGE) + 1);
     const img = media[prevIdx];
     if (img) window.history.replaceState(null, '', `/events/${selectedEventId}/${img.id}`);
-  }, [lightboxIndex, selectedEventId, media]);
+  }, [lightboxIndex, selectedEventId, media, setPage]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -215,10 +171,14 @@ export default function Galerie() {
 
         <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
-            <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+            <Typography variant="h4" component="h1" gutterBottom sx={{
+              fontWeight: 700
+            }}>
               Events & Galerie
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" sx={{
+              color: "text.secondary"
+            }}>
               Fotos von Veranstaltungen, Partys und Events der Fachschaft.
             </Typography>
           </Box>
@@ -283,7 +243,7 @@ export default function Galerie() {
                       <ImageListItem
                         key={String(ev.id)}
                         onClick={() => {
-                          if (!selected) router.push(`/events/${ev.id}`, { scroll: false });
+                          if (!selected) window.history.pushState(null, '', `/events/${ev.id}`);
                         }}
                         sx={(theme) => ({
                         cursor: "pointer",
@@ -336,12 +296,25 @@ export default function Galerie() {
                 })}
               </ImageList>
             ) : (
-              <Typography color="text.secondary" sx={{ py: 2, px: 2 }}>Keine Events vorhanden.</Typography>
+              <Typography
+                sx={{
+                  color: "text.secondary",
+                  py: 2,
+                  px: 2
+                }}>Keine Events vorhanden.</Typography>
             )}
           </Box>
         </Paper>
 
 
+        {!!(eventsData?.error || mediaData?.error) && (
+          <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" onClick={() => {
+            void fetchEvents();
+            if (selectedEventId) void galleryMedia.refresh(selectedEventId);
+          }}>Erneut versuchen</Button>}>
+            Die Galerie konnte nicht vollständig geladen werden.
+          </Alert>
+        )}
         {loadingMedia ? (
           <Box
             sx={{
@@ -366,16 +339,18 @@ export default function Galerie() {
           </Box>
         ) : media.length === 0 ? (
           <Box
-            py={8}
-            textAlign="center"
-            sx={(theme) => ({
+            sx={[{
+              py: 8,
+              textAlign: "center"
+            }, (theme) => ({
               border: '1px dashed',
               borderColor: 'divider',
               borderRadius: 3,
               bgcolor: alpha(theme.palette.text.primary, 0.04)
-            })}
-          >
-            <Typography color="text.secondary">
+            })]}>
+            <Typography sx={{
+              color: "text.secondary"
+            }}>
               {selectedEventId ? "Keine Bilder in diesem Album." : "Bitte ein Event oben auswählen."}
             </Typography>
           </Box>
@@ -439,9 +414,9 @@ export default function Galerie() {
             onClose={() => { setUploadOpen(false); setPreselectedEventId(null); }}
             events={events}
             preselectedId={preselectedEventId}
-            onSuccess={() => {
+            onSuccess={(eventId) => {
               fetchEvents();
-              setMediaRevision(revision => revision + 1);
+              void galleryMedia.refresh(eventId);
               setSuccessMessage("Bilder erfolgreich hochgeladen.");
             }}
             onCreateEvent={() => setCreateEventOpen(true)}
@@ -486,7 +461,9 @@ export default function Galerie() {
               {currentImage?.title || (currentImage && `Bild ${lightboxIndex + 1}`) || ""}
             </Typography>
 
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{
+              alignItems: "center"
+            }}>
               {canUpload && (
                 <Tooltip title="Bearbeiten">
                   <IconButton onClick={handleEditImage} size="small">
@@ -599,7 +576,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
   open: boolean;
   onClose: () => void;
   events: EventItem[];
-  onSuccess: () => void;
+  onSuccess: (eventId: string) => void;
   onCreateEvent: () => void;
   preselectedId?: string | null;
 }) {
@@ -670,7 +647,7 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
     }
 
     if (successCount > 0) {
-      onSuccess();
+      onSuccess(String(eventId));
     }
 
     if (failedFiles.length === 0 && successCount > 0) {
@@ -685,13 +662,19 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" slotProps={{
+      paper: { sx: { borderRadius: 3 } }
+    }}>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" component="span" fontWeight={700}>Bilder hochladen</Typography>
+        <Typography variant="h6" component="span" sx={{
+          fontWeight: 700
+        }}>Bilder hochladen</Typography>
         <IconButton onClick={onClose} disabled={uploading}><CloseIcon /></IconButton>
       </DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
-        <Stack spacing={3} mt={1}>
+        <Stack spacing={3} sx={{
+          mt: 1
+        }}>
           {error && <Alert severity="error">{error}</Alert>}
 
           {uploading && (
@@ -703,7 +686,9 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
             </Box>
           )}
 
-          <Stack direction="row" spacing={1} alignItems="stretch">
+          <Stack direction="row" spacing={1} sx={{
+            alignItems: "stretch"
+          }}>
             <TextField
               id="media-event-select"
               name="event_id"
@@ -757,8 +742,12 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
             <input type="file" accept="image/*" multiple hidden id="img-upload" onChange={handleFileChange} disabled={uploading} />
             <label htmlFor="img-upload" style={{ width: '100%', display: 'block', cursor: uploading ? 'default' : 'pointer' }}>
               <UploadRoundedIcon sx={{ fontSize: 40, color: dragging ? "primary.main" : "text.secondary", mb: 1 }} />
-              <Typography variant="body2" fontWeight={500}>Bilder hier ablegen</Typography>
-              <Typography variant="caption" color="text.secondary">oder klicken zum Auswählen</Typography>
+              <Typography variant="body2" sx={{
+                fontWeight: 500
+              }}>Bilder hier ablegen</Typography>
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>oder klicken zum Auswählen</Typography>
             </label>
           </Box>
 
@@ -775,7 +764,9 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
                     <ListItemText
                       primary={f.name}
                       secondary={`${(f.size / (1024 * 1024)).toFixed(2)} MB`}
-                      primaryTypographyProps={{ variant: 'body2', noWrap: true, sx: { maxWidth: 250 } }}
+                      slotProps={{
+                        primary: { variant: 'body2', noWrap: true, sx: { maxWidth: 250 } }
+                      }}
                     />
                   </ListItem>
                 ))}
@@ -809,7 +800,9 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
         <Button onClick={onClose} color="inherit" disabled={uploading}>Abbrechen</Button>
         <Button variant="contained" onClick={handleSubmit} disabled={files.length === 0 || !eventId || uploading}>
           {uploading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{
+              alignItems: "center"
+            }}>
               <CircularProgress size={20} color="inherit" />
               <span>{Math.round(progress)}%</span>
             </Stack>
@@ -865,13 +858,19 @@ function CreateEventDialog({ open, onClose, onSuccess }: {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth slotProps={{
+      paper: { sx: { borderRadius: 3 } }
+    }}>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" component="span" fontWeight={700}>Neues Event</Typography>
+        <Typography variant="h6" component="span" sx={{
+          fontWeight: 700
+        }}>Neues Event</Typography>
         <IconButton onClick={onClose}><CloseIcon /></IconButton>
       </DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
-        <Stack spacing={3} mt={1}>
+        <Stack spacing={3} sx={{
+          mt: 1
+        }}>
           {error && <Alert severity="error">{error}</Alert>}
           <TextField
             id="create-event-title"
@@ -905,11 +904,21 @@ function CreateEventDialog({ open, onClose, onSuccess }: {
             {!file ? (
               <label htmlFor="event-cover-upload" style={{ width: '100%', display: 'block', cursor: 'pointer' }}>
                 <CloudUploadIcon sx={{ fontSize: 40, color: dragging ? "primary.main" : "text.secondary", mb: 1 }} />
-                <Typography variant="body2" fontWeight={500}>Vorschaubild hier ablegen</Typography>
-                <Typography variant="caption" color="text.secondary">oder klicken (Optional)</Typography>
+                <Typography variant="body2" sx={{
+                  fontWeight: 500
+                }}>Vorschaubild hier ablegen</Typography>
+                <Typography variant="caption" sx={{
+                  color: "text.secondary"
+                }}>oder klicken (Optional)</Typography>
               </label>
             ) : (
-              <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
                 <InsertPhotoRoundedIcon color="primary" />
                 <Typography noWrap sx={{ maxWidth: 200, fontWeight: 500 }}>{file.name}</Typography>
                 <IconButton size="small" color="error" onClick={(e) => { e.preventDefault(); setFile(null); }}>

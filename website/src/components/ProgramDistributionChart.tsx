@@ -82,7 +82,17 @@ export default function ProgramDistributionChart({ title, data, loading = false 
   return (
     <Card variant="outlined" sx={{ height: '100%', width: '100%', borderRadius: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <CardContent sx={{ p: 2, pb: 0, flexGrow: 1, display: 'flex', flexDirection: 'column', '&:last-child': { pb: 0 } }}>
-        <Typography component="h2" variant="caption" gutterBottom fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.85rem' }}>
+        <Typography
+          component="h2"
+          variant="caption"
+          gutterBottom
+          sx={{
+            fontWeight: 700,
+            color: "text.secondary",
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            fontSize: '0.85rem'
+          }}>
           {title}
         </Typography>
         
@@ -120,7 +130,13 @@ export default function ProgramDistributionChart({ title, data, loading = false 
 
                   {data.map((item, index) => (
                     <Box key={index} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1.5}
+                        sx={{
+                          alignItems: "center",
+                          minWidth: 0
+                        }}>
                         <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: colors[index % colors.length], flexShrink: 0 }} />
                         <Typography variant="body2" sx={{ 
                           fontSize: '0.9rem', 
@@ -133,7 +149,15 @@ export default function ProgramDistributionChart({ title, data, loading = false 
                           {item.label}
                         </Typography>
                       </Stack>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', fontWeight: 700, ml: 2, flexShrink: 0 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "text.secondary",
+                          fontSize: '0.9rem',
+                          fontWeight: 700,
+                          ml: 2,
+                          flexShrink: 0
+                        }}>
                         {item.value.toLocaleString('de-DE')}
                       </Typography>
                     </Box>
