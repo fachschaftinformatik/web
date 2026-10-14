@@ -361,6 +361,7 @@ const Sidebar = ({
       const newState = !desktopOpen;
       setDesktopOpen(newState);
       localStorage.setItem('sidebar_desktop_open', String(newState));
+      document.documentElement.dataset.sidebarOpen = String(newState);
     } else {
       setMobileOpen(!mobileOpen);
     }
@@ -810,30 +811,38 @@ const Sidebar = ({
         </Toolbar>
       </AppBar>
 
-      <Drawer
-        variant={isMdUp ? "permanent" : "temporary"}
-        open={navOpen}
-        onClose={() => setMobileOpen(false)}
+      <Box
         sx={{
-          width: navOpen ? drawerWidthOpen : drawerWidthClosed,
+          width: { xs: 0, md: drawerWidthOpen },
           flexShrink: 0,
-          whiteSpace: 'nowrap',
-          boxSizing: 'border-box',
-          '& .MuiDrawer-paper': {
-            width: navOpen ? drawerWidthOpen : drawerWidthClosed,
-            transition: theme.transitions.create('width', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-            overflowX: 'hidden',
-            backgroundColor: theme.palette.background.paper,
-            backgroundImage: 'none',
-          },
+          'html[data-sidebar-open="false"] &': { width: { xs: 0, md: drawerWidthClosed } },
         }}
       >
-        <Toolbar />
-        {drawerContent}
-      </Drawer>
+        <Drawer
+          variant={isMdUp ? "permanent" : "temporary"}
+          open={navOpen}
+          onClose={() => setMobileOpen(false)}
+          sx={{
+            width: navOpen ? drawerWidthOpen : drawerWidthClosed,
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+            boxSizing: 'border-box',
+            '& .MuiDrawer-paper': {
+              width: navOpen ? drawerWidthOpen : drawerWidthClosed,
+              transition: theme.transitions.create('width', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+              overflowX: 'hidden',
+              backgroundColor: theme.palette.background.paper,
+              backgroundImage: 'none',
+            },
+          }}
+        >
+          <Toolbar />
+          {drawerContent}
+        </Drawer>
+      </Box>
 
       <Box component="main" sx={{ flexGrow: 1, p: 0, width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <Toolbar />
