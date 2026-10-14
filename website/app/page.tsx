@@ -447,10 +447,9 @@ const NewsFeedPage: React.FC = () => {
                           {newsItems.slice(0, 3).map((item) => (
                             <Box
                               key={String(item.id)}
-                              component={Link}
-                              href={`/d/${item.id}`}
                               sx={{
                                 ...custom.newsCardLink,
+                                position: 'relative',
                                 bgcolor: isDark ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.04),
                                 '&:hover': {
                                   ...(custom.newsCardLink['&:hover'] || {}),
@@ -472,10 +471,19 @@ const NewsFeedPage: React.FC = () => {
                                   {item.user_name ? item.user_name[0].toUpperCase() : "A"}
                                 </Avatar>
                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                  von <Typography component={Link} href={`/u/${item.user_id}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{item.user_name || "Anonym"}</Typography> · {formatNewsDate(item.created_at || "")}
+                                  von <Typography component={Link} href={`/u/${item.user_id}`} variant="caption" sx={{ position: 'relative', zIndex: 1, color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{item.user_name || "Anonym"}</Typography> · {formatNewsDate(item.created_at || "")}
                                 </Typography>
                               </Stack>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{item.title}</Typography>
+                              <Typography
+                                component={Link}
+                                href={`/d/${item.id}`}
+                                variant="subtitle1"
+                                sx={{
+                                  color: 'inherit', textDecoration: 'none', fontWeight: 700, lineHeight: 1.2,
+                                  '&::after': { content: '""', position: 'absolute', inset: 0, borderRadius: 3 },
+                                  '&:focus-visible::after': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
+                                }}
+                              >{item.title}</Typography>
                               <Typography variant="body2" sx={{ color: 'text.secondary', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                 {(item.body || '').substring(0, 100)}
                               </Typography>
@@ -486,7 +494,7 @@ const NewsFeedPage: React.FC = () => {
                       ) : (
                         <Stack spacing={1.5}>
                           {forumPosts.slice(0, 3).map((post) => (
-                            <Box key={post.id} component={Link} href={`/d/${post.id}`} sx={custom.newsCardLink}>
+                            <Box key={post.id} sx={{ ...custom.newsCardLink, position: 'relative' }}>
                               <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
                                 <Avatar
                                   src={getAvatarUrl(post.authorAvatarUrl)}
@@ -501,10 +509,19 @@ const NewsFeedPage: React.FC = () => {
                                   {post.author ? post.author[0].toUpperCase() : "A"}
                                 </Avatar>
                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                  von <Typography component={Link} href={`/u/${post.authorId}`} onClick={(e) => e.stopPropagation()} variant="caption" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author}</Typography> · {formatForumDate(post.createdAt)}
+                                  von <Typography component={Link} href={`/u/${post.authorId}`} variant="caption" sx={{ position: 'relative', zIndex: 1, color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.author}</Typography> · {formatForumDate(post.createdAt)}
                                 </Typography>
                               </Stack>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{post.title}</Typography>
+                              <Typography
+                                component={Link}
+                                href={`/d/${post.id}`}
+                                variant="subtitle1"
+                                sx={{
+                                  color: 'inherit', textDecoration: 'none', fontWeight: 700, lineHeight: 1.2,
+                                  '&::after': { content: '""', position: 'absolute', inset: 0, borderRadius: 3 },
+                                  '&:focus-visible::after': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
+                                }}
+                              >{post.title}</Typography>
                               <Typography variant="body2" sx={{ color: 'text.secondary', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                 {post.body}
                               </Typography>

@@ -330,6 +330,7 @@ function ArchiveViewContent({ moduleId, examId }: { moduleId: string; examId?: s
                                             >
                                                 <ListItemText
                                                     primary={poLabel}
+                                                    slotProps={{ secondary: { component: 'div' } }}
                                                     secondary={
                                                         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 0.5 }}>
                                                             <Typography variant="caption" color="text.secondary">
