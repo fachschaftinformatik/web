@@ -18,7 +18,7 @@ import Paper from "@mui/material/Paper";
 import { useTheme } from "@mui/material/styles";
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import EditIcon from "@mui/icons-material/Edit";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import ShareIcon from "@mui/icons-material/Share";
@@ -76,7 +76,12 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
     if (loading) {
         return (
             <Sidebar user={user} title="Diskussion" maxWidth="md">
-                <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        py: 8
+                    }}><CircularProgress /></Box>
             </Sidebar>
         );
     }
@@ -103,7 +108,9 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
 
     return (
         <Sidebar user={user} title="Diskussion" maxWidth="md">
-            <Box pb={6}>
+            <Box sx={{
+                pb: 6
+            }}>
                 <Button
                     startIcon={<ArrowBackRounded />}
                     onClick={() => router.push("/discussions")}
@@ -118,36 +125,59 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
                 </Button>
 
                 <Paper sx={{ p: { xs: 2, sm: 2.5, md: 4 }, borderRadius: 3 }}>
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 2, sm: 3 }} alignItems="flex-start">
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 2, sm: 3 }} sx={{
+                        alignItems: "flex-start"
+                    }}>
                         {/* Voting Section */}
                         <Stack
                             direction={{ xs: "row", sm: "column" }}
-                            alignItems="center"
                             spacing={0.5}
                             sx={{
+                                alignItems: "center",
                                 bgcolor: "action.hover",
                                 borderRadius: 2,
                                 p: 0.5,
                                 width: { xs: "fit-content", sm: "auto" },
                                 alignSelf: { xs: "center", sm: "flex-start" }
-                            }}
-                        >
+                            }}>
                             <IconButton size="small" onClick={() => votePost(1)} color={userVote === 1 ? "primary" : "default"}>
                                 <ThumbUpOutlined fontSize="small" />
                             </IconButton>
-                            <Typography variant="subtitle2" fontWeight={700} sx={{ px: { xs: 1, sm: 0 } }}>{netVotes}</Typography>
+                            <Typography
+                                variant="subtitle2"
+                                sx={{
+                                    fontWeight: 700,
+                                    px: { xs: 1, sm: 0 }
+                                }}>{netVotes}</Typography>
                             <IconButton size="small" onClick={() => votePost(-1)} color={userVote === -1 ? "primary" : "default"}>
                                 <ThumbDownOutlined fontSize="small" />
                             </IconButton>
                         </Stack>
 
                         <Stack spacing={3} sx={{ flex: 1, width: "100%" }}>
-                            <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems="flex-start" spacing={2}>
+                            <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={2}
+                                sx={{
+                                    justifyContent: "space-between",
+                                    alignItems: "flex-start"
+                                }}>
                                 <Stack spacing={1}>
-                                    <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
+                                    <Typography
+                                        variant="h4"
+                                        sx={{
+                                            fontWeight: 700,
+                                            fontSize: { xs: '1.75rem', md: '2.125rem' }
+                                        }}>
                                         {post.title}
                                     </Typography>
-                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        sx={{
+                                            alignItems: "center",
+                                            flexWrap: "wrap"
+                                        }}>
                                         <Avatar
                                             key={post.user_avatar_url || String(post.user_id)}
                                             src={getAvatarUrl(post.user_avatar_url)}
@@ -161,7 +191,9 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
                                         >
                                             {post.user_name ? post.user_name[0].toUpperCase() : "A"}
                                         </Avatar>
-                                        <Typography variant="body2" color="text.secondary">
+                                        <Typography variant="body2" sx={{
+                                            color: "text.secondary"
+                                        }}>
                                             von <Typography component={Link} href={`/u/${post.user_id}`} variant="body2" sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}>{post.user_name || "Anonym"}</Typography> · {isoToShort(post.created_at || "")}
                                         </Typography>
                                     </Stack>
@@ -197,7 +229,9 @@ export default function ViewPost({ params }: { params: Promise<{ postId: string 
                             </Typography>
 
 
-                            <Stack direction="row" spacing={1} flexWrap="wrap">
+                            <Stack direction="row" spacing={1} sx={{
+                                flexWrap: "wrap"
+                            }}>
                                 {(post.programs || []).map((p) => (
                                     <Chip key={String(p.id)} label={p.name} variant="outlined" size="small" />
                                 ))}

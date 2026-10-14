@@ -6,7 +6,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
 import { SparkLineChart } from '@mui/x-charts/SparkLineChart';
-import { areaElementClasses } from '@mui/x-charts/LineChart';
+import { lineClasses } from '@mui/x-charts/LineChart';
 
 
 export type StatCardProps = {
@@ -52,7 +52,18 @@ export default function StatCard({
   return (
     <Card variant="outlined" sx={{ height: '100%', width: '100%', borderRadius: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <CardContent sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column', '&:last-child': { pb: 2 } }}>
-        <Typography component="h2" variant="caption" gutterBottom fontWeight={700} sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5, fontSize: '0.85rem' }}>
+        <Typography
+          component="h2"
+          variant="caption"
+          gutterBottom
+          sx={{
+            fontWeight: 700,
+            color: 'text.secondary',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            mb: 0.5,
+            fontSize: '0.85rem'
+          }}>
           {title}
         </Typography>
         <Stack
@@ -64,7 +75,13 @@ export default function StatCard({
               direction="row"
               sx={{ justifyContent: 'space-between', alignItems: 'center' }}
             >
-              <Typography variant="h5" component="p" fontWeight={700} sx={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              <Typography
+                variant="h5"
+                component="p"
+                sx={{
+                  fontWeight: 700,
+                  fontFamily: 'Space Grotesk, sans-serif'
+                }}>
                 {loading ? <Skeleton width={60} /> : typeof value === 'number' ? value.toLocaleString('de-DE') : value}
               </Typography>
             </Stack>
@@ -83,7 +100,7 @@ export default function StatCard({
                 showHighlight
                 showTooltip
                 sx={{
-                  [`& .${areaElementClasses.root}`]: {
+                  [`& .${lineClasses.area}`]: {
                     fill: `url(#${id})`,
                   },
                 }}
