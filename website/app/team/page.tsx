@@ -23,7 +23,7 @@ export default function Team() {
 
     return (
       <Box sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>{title}</Typography>
+        <Typography variant="h5" component="h3" gutterBottom>{title}</Typography>
         {sharedEmail && (
           <Link
             href={`mailto:${sharedEmail}`}
@@ -97,24 +97,32 @@ export default function Team() {
   };
 
   return (
-    <Sidebar user={user} title="Team" maxWidth="lg">
+    <Sidebar user={user} title="Unser Team" maxWidth="lg">
       <Box>
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
             <Typography variant="h4" component="h1" gutterBottom sx={{
               fontWeight: 700
             }}>
-              FSV-Team
+              Unser Team
             </Typography>
             <Typography variant="body1" sx={{
               color: "text.secondary"
             }}>
-              Die aktuellen Mitglieder der Fachschaftsvertretung Informatik.
+              Mitglieder und ihre Zuständigkeiten
             </Typography>
           </Box>
         </Box>
-        {TEAM_SECTIONS.map((section) => (
-          <Section key={section.id} title={section.title} members={section.members} />
+        {([
+          { id: 'elected', title: 'Gewählte Mitglieder' },
+          { id: 'project', title: 'Projektstellen (nicht gewählte Mitglieder)' },
+        ] as const).map((group) => (
+          <Box component="section" key={group.id} aria-labelledby={`team-${group.id}`} sx={{ mt: 5 }}>
+            <Typography id={`team-${group.id}`} variant="h4" component="h2">{group.title}</Typography>
+            {TEAM_SECTIONS.filter(section => section.group === group.id).map((section) => (
+              <Section key={section.id} title={section.title} members={section.members} />
+            ))}
+          </Box>
         ))}
       </Box>
     </Sidebar>
