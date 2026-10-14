@@ -239,7 +239,7 @@ func (s *Server) PostDiscussions(w http.ResponseWriter, r *http.Request) {
 		TargetName: &activityTargetName,
 	})
 
-	link := "/discussions/" + id.ID(post.ID).String()
+	link := "/d/" + id.ID(post.ID).String()
 	s.broadcastNotification(r, "Neuer Beitrag", post.Title, "discussion", link)
 
 	postPrograms, _ := s.DB.GetPostPrograms(r.Context(), post.ID)
@@ -563,7 +563,7 @@ func (s *Server) PostDiscussionsComments(w http.ResponseWriter, r *http.Request)
 		TargetName: &activityTargetName,
 	})
 
-	link := "/discussions/" + id.ID(pid).String()
+	link := "/d/" + id.ID(pid).String()
 	s.broadcastNotification(r, "Neuer Kommentar", activityTargetName, "discussion", link)
 
 	s.RespondJSON(w, http.StatusCreated, s.toDiscussionCommentResponse(comment, user))
