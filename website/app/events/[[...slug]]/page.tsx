@@ -215,10 +215,14 @@ export default function Galerie() {
 
         <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
-            <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
+            <Typography variant="h4" component="h1" gutterBottom sx={{
+              fontWeight: 700
+            }}>
               Events & Galerie
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" sx={{
+              color: "text.secondary"
+            }}>
               Fotos von Veranstaltungen, Partys und Events der Fachschaft.
             </Typography>
           </Box>
@@ -336,7 +340,12 @@ export default function Galerie() {
                 })}
               </ImageList>
             ) : (
-              <Typography color="text.secondary" sx={{ py: 2, px: 2 }}>Keine Events vorhanden.</Typography>
+              <Typography
+                sx={{
+                  color: "text.secondary",
+                  py: 2,
+                  px: 2
+                }}>Keine Events vorhanden.</Typography>
             )}
           </Box>
         </Paper>
@@ -366,16 +375,18 @@ export default function Galerie() {
           </Box>
         ) : media.length === 0 ? (
           <Box
-            py={8}
-            textAlign="center"
-            sx={(theme) => ({
+            sx={[{
+              py: 8,
+              textAlign: "center"
+            }, (theme) => ({
               border: '1px dashed',
               borderColor: 'divider',
               borderRadius: 3,
               bgcolor: alpha(theme.palette.text.primary, 0.04)
-            })}
-          >
-            <Typography color="text.secondary">
+            })]}>
+            <Typography sx={{
+              color: "text.secondary"
+            }}>
               {selectedEventId ? "Keine Bilder in diesem Album." : "Bitte ein Event oben auswählen."}
             </Typography>
           </Box>
@@ -486,7 +497,9 @@ export default function Galerie() {
               {currentImage?.title || (currentImage && `Bild ${lightboxIndex + 1}`) || ""}
             </Typography>
 
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{
+              alignItems: "center"
+            }}>
               {canUpload && (
                 <Tooltip title="Bearbeiten">
                   <IconButton onClick={handleEditImage} size="small">
@@ -685,13 +698,19 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" slotProps={{
+      paper: { sx: { borderRadius: 3 } }
+    }}>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" component="span" fontWeight={700}>Bilder hochladen</Typography>
+        <Typography variant="h6" component="span" sx={{
+          fontWeight: 700
+        }}>Bilder hochladen</Typography>
         <IconButton onClick={onClose} disabled={uploading}><CloseIcon /></IconButton>
       </DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
-        <Stack spacing={3} mt={1}>
+        <Stack spacing={3} sx={{
+          mt: 1
+        }}>
           {error && <Alert severity="error">{error}</Alert>}
 
           {uploading && (
@@ -703,7 +722,9 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
             </Box>
           )}
 
-          <Stack direction="row" spacing={1} alignItems="stretch">
+          <Stack direction="row" spacing={1} sx={{
+            alignItems: "stretch"
+          }}>
             <TextField
               id="media-event-select"
               name="event_id"
@@ -757,8 +778,12 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
             <input type="file" accept="image/*" multiple hidden id="img-upload" onChange={handleFileChange} disabled={uploading} />
             <label htmlFor="img-upload" style={{ width: '100%', display: 'block', cursor: uploading ? 'default' : 'pointer' }}>
               <UploadRoundedIcon sx={{ fontSize: 40, color: dragging ? "primary.main" : "text.secondary", mb: 1 }} />
-              <Typography variant="body2" fontWeight={500}>Bilder hier ablegen</Typography>
-              <Typography variant="caption" color="text.secondary">oder klicken zum Auswählen</Typography>
+              <Typography variant="body2" sx={{
+                fontWeight: 500
+              }}>Bilder hier ablegen</Typography>
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>oder klicken zum Auswählen</Typography>
             </label>
           </Box>
 
@@ -775,7 +800,9 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
                     <ListItemText
                       primary={f.name}
                       secondary={`${(f.size / (1024 * 1024)).toFixed(2)} MB`}
-                      primaryTypographyProps={{ variant: 'body2', noWrap: true, sx: { maxWidth: 250 } }}
+                      slotProps={{
+                        primary: { variant: 'body2', noWrap: true, sx: { maxWidth: 250 } }
+                      }}
                     />
                   </ListItem>
                 ))}
@@ -809,7 +836,9 @@ function UploadDialog({ open, onClose, events, onSuccess, onCreateEvent, presele
         <Button onClick={onClose} color="inherit" disabled={uploading}>Abbrechen</Button>
         <Button variant="contained" onClick={handleSubmit} disabled={files.length === 0 || !eventId || uploading}>
           {uploading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{
+              alignItems: "center"
+            }}>
               <CircularProgress size={20} color="inherit" />
               <span>{Math.round(progress)}%</span>
             </Stack>
@@ -865,13 +894,19 @@ function CreateEventDialog({ open, onClose, onSuccess }: {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth slotProps={{
+      paper: { sx: { borderRadius: 3 } }
+    }}>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" component="span" fontWeight={700}>Neues Event</Typography>
+        <Typography variant="h6" component="span" sx={{
+          fontWeight: 700
+        }}>Neues Event</Typography>
         <IconButton onClick={onClose}><CloseIcon /></IconButton>
       </DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
-        <Stack spacing={3} mt={1}>
+        <Stack spacing={3} sx={{
+          mt: 1
+        }}>
           {error && <Alert severity="error">{error}</Alert>}
           <TextField
             id="create-event-title"
@@ -905,11 +940,21 @@ function CreateEventDialog({ open, onClose, onSuccess }: {
             {!file ? (
               <label htmlFor="event-cover-upload" style={{ width: '100%', display: 'block', cursor: 'pointer' }}>
                 <CloudUploadIcon sx={{ fontSize: 40, color: dragging ? "primary.main" : "text.secondary", mb: 1 }} />
-                <Typography variant="body2" fontWeight={500}>Vorschaubild hier ablegen</Typography>
-                <Typography variant="caption" color="text.secondary">oder klicken (Optional)</Typography>
+                <Typography variant="body2" sx={{
+                  fontWeight: 500
+                }}>Vorschaubild hier ablegen</Typography>
+                <Typography variant="caption" sx={{
+                  color: "text.secondary"
+                }}>oder klicken (Optional)</Typography>
               </label>
             ) : (
-              <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
                 <InsertPhotoRoundedIcon color="primary" />
                 <Typography noWrap sx={{ maxWidth: 200, fontWeight: 500 }}>{file.name}</Typography>
                 <IconButton size="small" color="error" onClick={(e) => { e.preventDefault(); setFile(null); }}>

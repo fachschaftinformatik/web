@@ -266,7 +266,14 @@ export default function AuthPage() {
                         {tabValue === 0 ? <LoginIcon fontSize="large" /> : <PersonAddIcon fontSize="large" />}
                     </Avatar>
                 </Zoom>
-                <Typography component="h1" variant="h4" fontWeight={800} sx={{ mt: 2, mb: 3 }}>
+                <Typography
+                    component="h1"
+                    variant="h4"
+                    sx={{
+                        fontWeight: 800,
+                        mt: 2,
+                        mb: 3
+                    }}>
                     {tabValue === 0 ? 'Willkommen zurück' : 'Account erstellen'}
                 </Typography>
 
@@ -488,7 +495,13 @@ export default function AuthPage() {
                             )}
 
                             {tabValue === 0 && (
-                                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: -1 }}>
+                                <Stack
+                                    direction="row"
+                                    sx={{
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        mt: -1
+                                    }}>
                                     <FormControlLabel
                                         control={
                                             <Checkbox

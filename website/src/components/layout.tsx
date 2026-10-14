@@ -249,7 +249,7 @@ const GlobalSearch = () => {
         }}
         renderInput={(params) => (
           <Search
-            ref={params.InputProps.ref}
+            ref={params.slotProps.input.ref}
             sx={!isSmUp ? {
               mx: 0,
               flex: 1,
@@ -274,7 +274,7 @@ const GlobalSearch = () => {
               {loading ? <CircularProgress color="inherit" size={20} /> : <SearchIcon />}
             </SearchIconWrapper>
             <StyledInputBase
-              inputProps={params.inputProps}
+              slotProps={{ input: params.slotProps.htmlInput }}
               placeholder="Suchen…"
               autoFocus={!isSmUp}
             />
@@ -298,9 +298,10 @@ const GlobalSearch = () => {
               key="text"
               primary={option.title}
               secondary={option.subtitle}
-              primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
-              secondaryTypographyProps={{ variant: 'caption' }}
-            />
+              slotProps={{
+                primary: { variant: 'body2', sx: { fontWeight: 600 } },
+                secondary: { variant: 'caption' }
+              }} />
           </ListItem>
         )}
       />
@@ -530,7 +531,13 @@ const Sidebar = ({
             {navOpen ? <MenuOpenRounded /> : <MenuRounded />}
           </IconButton>
 
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexGrow: 1 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              alignItems: "center",
+              flexGrow: 1
+            }}>
             <Typography
               variant="h6"
               noWrap
@@ -575,7 +582,9 @@ const Sidebar = ({
 
           {user ? (
             <>
-              <Stack direction="row" spacing={0.5} alignItems="center">
+              <Stack direction="row" spacing={0.5} sx={{
+                alignItems: "center"
+              }}>
                 <Tooltip title="Posteingang">
                   <span>
                     <IconButton color="inherit" size="large" disabled>
@@ -630,7 +639,7 @@ const Sidebar = ({
                 onClose={handleNotiClose}
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                PaperProps={{
+                slotProps={{ paper: {
                   elevation: 0,
                   sx: {
                     mt: 1.5,
@@ -645,7 +654,7 @@ const Sidebar = ({
                     backdropFilter: 'blur(10px)',
                     overflowY: 'auto'
                   },
-                }}
+                } }}
               >
                 <Box sx={{
                   position: 'sticky',
@@ -659,7 +668,9 @@ const Sidebar = ({
                   alignItems: 'center'
                 }}>
                   <Box sx={{ px: 2, py: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography variant="subtitle1" fontWeight={700}>Benachrichtigungen</Typography>
+                    <Typography variant="subtitle1" sx={{
+                      fontWeight: 700
+                    }}>Benachrichtigungen</Typography>
                     <Button
                       size="small"
                       startIcon={<DoneAllRounded fontSize="small" />}
@@ -715,7 +726,14 @@ const Sidebar = ({
                         <Typography variant="body2" sx={{ fontWeight: noti.read ? 600 : 700, mb: 0.2 }}>
                           {noti.title}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, lineHeight: 1.3 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "text.secondary",
+                            display: 'block',
+                            mb: 0.5,
+                            lineHeight: 1.3
+                          }}>
                           {noti.message}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>
@@ -735,7 +753,9 @@ const Sidebar = ({
                 </List>
                 {notifications.length === 0 && (
                   <Box sx={{ p: 4, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">Keine neuen Benachrichtigungen</Typography>
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}>Keine neuen Benachrichtigungen</Typography>
                   </Box>
                 )}
               </Menu>
@@ -748,7 +768,7 @@ const Sidebar = ({
                 onClick={handleMenuClose}
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                PaperProps={{
+                slotProps={{ paper: {
                   elevation: 0,
                   sx: {
                     overflow: 'visible',
@@ -761,7 +781,7 @@ const Sidebar = ({
                     bgcolor: (theme) => alpha(theme.palette.background.paper, 0.98),
                     backdropFilter: 'blur(10px)',
                   },
-                }}
+                } }}
               >
                 <MenuItem component={Link} href={user ? `/u/${user.id}` : "/login"} sx={{ py: 1.2 }}>
                   <ListItemIcon>
@@ -780,7 +800,9 @@ const Sidebar = ({
                   <ListItemIcon>
                     <LogoutRounded fontSize="small" color="error" />
                   </ListItemIcon>
-                  <Typography color="error" fontWeight={600}>Abmelden</Typography>
+                  <Typography color="error" sx={{
+                    fontWeight: 600
+                  }}>Abmelden</Typography>
                 </MenuItem>
               </Menu>
             </>

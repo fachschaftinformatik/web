@@ -55,7 +55,12 @@ export default function EditPost({ params }: { params: Promise<{ postId: string 
     if (loading) {
         return (
             <Sidebar user={user} title="Beitrag bearbeiten">
-                <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        p: 4
+                    }}><CircularProgress /></Box>
             </Sidebar>
         );
     }
@@ -67,7 +72,12 @@ export default function EditPost({ params }: { params: Promise<{ postId: string 
                     <IconButton onClick={() => router.push("/discussions")} sx={{ bgcolor: 'action.hover' }}>
                         <ArrowBackRounded />
                     </IconButton>
-                    <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
+                    <Typography
+                        variant="h4"
+                        sx={{
+                            fontWeight: 700,
+                            fontSize: { xs: '1.5rem', md: '2.125rem' }
+                        }}>
                         Beitrag bearbeiten
                     </Typography>
                 </Box>

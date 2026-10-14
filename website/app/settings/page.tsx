@@ -106,10 +106,17 @@ export default function SettingsPage() {
         <Sidebar user={user} title="Einstellungen" maxWidth="md">
             <Box>
                 <Box sx={{ mb: 4 }}>
-                    <Typography variant="h4" fontWeight={700} gutterBottom>
+                    <Typography variant="h4" gutterBottom sx={{
+                        fontWeight: 700
+                    }}>
                         Einstellungen
                     </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.8 }}>
+                    <Typography
+                        variant="body1"
+                        sx={{
+                            color: "text.secondary",
+                            opacity: 0.8
+                        }}>
                         Verwalte dein Profil und deine Präferenzen für ein personalisiertes Erlebnis.
                     </Typography>
                 </Box>
@@ -120,7 +127,9 @@ export default function SettingsPage() {
                         autoHideDuration={4000}
                         onClose={() => setSuccess("")}
                         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-                        TransitionComponent={TransitionUp}
+                        slots={{
+                            transition: TransitionUp
+                        }}
                     >
                         <Alert
                             severity="success"
@@ -146,7 +155,9 @@ export default function SettingsPage() {
                         autoHideDuration={6000}
                         onClose={() => setError("")}
                         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-                        TransitionComponent={TransitionUp}
+                        slots={{
+                            transition: TransitionUp
+                        }}
                     >
                         <Alert
                             severity="error"
@@ -168,7 +179,13 @@ export default function SettingsPage() {
                     </Snackbar>
 
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
-                        <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 3 }}>
+                        <Typography
+                            variant="h6"
+                            gutterBottom
+                            sx={{
+                                fontWeight: 600,
+                                mb: 3
+                            }}>
                             Profil
                         </Typography>
                         <Stack spacing={2}>
@@ -207,7 +224,13 @@ export default function SettingsPage() {
                     </Paper>
 
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-                        <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 2 }}>
+                        <Typography
+                            variant="h6"
+                            gutterBottom
+                            sx={{
+                                fontWeight: 600,
+                                mb: 2
+                            }}>
                             Privatsphäre
                         </Typography>
                         <Stack spacing={1}>
@@ -215,8 +238,12 @@ export default function SettingsPage() {
                                 control={<Switch checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} color="primary" />}
                                 label={
                                     <Box>
-                                        <Typography variant="body2" fontWeight={600}>Privates Profil</Typography>
-                                        <Typography variant="caption" color="text.secondary">
+                                        <Typography variant="body2" sx={{
+                                            fontWeight: 600
+                                        }}>Privates Profil</Typography>
+                                        <Typography variant="caption" sx={{
+                                            color: "text.secondary"
+                                        }}>
                                             Wenn aktiviert, sind deine Aktivitäten und Details für andere Nutzer verborgen.
                                         </Typography>
                                     </Box>
@@ -226,7 +253,13 @@ export default function SettingsPage() {
                     </Paper>
 
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-                        <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 2 }}>
+                        <Typography
+                            variant="h6"
+                            gutterBottom
+                            sx={{
+                                fontWeight: 600,
+                                mb: 2
+                            }}>
                             Anzeige
                         </Typography>
                         <Stack spacing={3}>

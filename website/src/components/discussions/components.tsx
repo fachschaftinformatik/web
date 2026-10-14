@@ -206,7 +206,9 @@ export function CommentThread({
                 boxSizing: "border-box"
             }}
         >
-            <Stack direction="row" spacing={{ xs: 1, sm: 2 }} alignItems="flex-start">
+            <Stack direction="row" spacing={{ xs: 1, sm: 2 }} sx={{
+                alignItems: "flex-start"
+            }}>
                 <Avatar
                     src={getAvatarUrl(node.user_avatar_url)}
                     sx={{
@@ -236,21 +238,31 @@ export function CommentThread({
                         }}
                     >
                         <Stack spacing={1}>
-                            <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                            <Stack
+                                direction="row"
+                                sx={{
+                                    justifyContent: "space-between",
+                                    alignItems: "center"
+                                }}>
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    sx={{
+                                        alignItems: "center",
+                                        minWidth: 0
+                                    }}>
                                     <Typography
                                         component={Link}
                                         href={`/u/${node.user_id}`}
                                         variant="subtitle2"
-                                        fontWeight={700}
                                         noWrap
                                         sx={{
+                                            fontWeight: 700,
                                             color: "inherit",
                                             textDecoration: "none",
                                             fontSize: { xs: '0.75rem', sm: '0.875rem' },
                                             "&:hover": { color: appearance.accent, cursor: "pointer" }
-                                        }}
-                                    >
+                                        }}>
                                         {node.user_name || "Anonym"}
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: appearance.textSecondary, whiteSpace: 'nowrap', fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
@@ -276,7 +288,13 @@ export function CommentThread({
                                             }
                                         }}
                                     />
-                                    <Stack direction="row" spacing={1} sx={{ mt: 1 }} justifyContent="flex-end">
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        sx={{
+                                            justifyContent: "flex-end",
+                                            mt: 1
+                                        }}>
                                         <Button
                                             size="small"
                                             onClick={() => {
@@ -318,8 +336,17 @@ export function CommentThread({
                     </Paper>
 
                     {/* Main Content Actions */}
-                    <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" sx={{ px: { xs: 1.5, sm: 2 } }}>
-                        <Stack direction="row" alignItems="center" spacing={0}>
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                            px: { xs: 1.5, sm: 2 }
+                        }}>
+                        <Stack direction="row" spacing={0} sx={{
+                            alignItems: "center"
+                        }}>
                             <IconButton
                                 size="small"
                                 onClick={() => onVote(String(node.id!), userVote === 1 ? 0 : 1)}
@@ -391,7 +418,7 @@ export function CommentThread({
                                     open={openMenu}
                                     onClose={handleCloseMenu}
                                     disableScrollLock
-                                    PaperProps={{
+                                    slotProps={{ paper: {
                                         elevation: 2,
                                         sx: {
                                             borderRadius: 2,
@@ -405,7 +432,7 @@ export function CommentThread({
                                                 gap: 1.5
                                             }
                                         }
-                                    }}
+                                    } }}
                                 >
                                     {canEdit && (
                                         <MenuItem
@@ -574,7 +601,9 @@ export function CommentsSection({
                         border: `1px solid ${appearance.border}`,
                     }}
                 >
-                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                    <Stack direction="row" spacing={2} sx={{
+                        alignItems: "flex-start"
+                    }}>
                         {currentUser && (
                             <Avatar
                                 src={getAvatarUrl(currentUser.avatar_url)}
@@ -608,7 +637,12 @@ export function CommentsSection({
                                     },
                                 }}
                             />
-                            <Stack direction="row" justifyContent="end" alignItems="center">
+                            <Stack
+                                direction="row"
+                                sx={{
+                                    justifyContent: "end",
+                                    alignItems: "center"
+                                }}>
                                 <Button
                                     variant="contained"
                                     onClick={() => {
@@ -664,7 +698,9 @@ export function CommentsSection({
                             },
                         }}
                     />
-                    <Stack direction="row" justifyContent="flex-end">
+                    <Stack direction="row" sx={{
+                        justifyContent: "flex-end"
+                    }}>
                         <Button
                             variant="contained"
                             size="small"
@@ -690,12 +726,15 @@ export function CommentsSection({
                 {!flat && (
                     <Stack
                         direction={{ xs: "column", sm: "row" }}
-                        justifyContent="space-between"
-                        alignItems={{ xs: "flex-start", sm: "center" }}
                         spacing={2}
-                        mb={3}
-                    >
-                        <Typography variant="h6" fontWeight={700}>
+                        sx={{
+                            justifyContent: "space-between",
+                            alignItems: { xs: "flex-start", sm: "center" },
+                            mb: 3
+                        }}>
+                        <Typography variant="h6" sx={{
+                            fontWeight: 700
+                        }}>
                             Kommentare ({totalComments})
                         </Typography>
                         <TextField
@@ -708,10 +747,12 @@ export function CommentsSection({
                                     setSortOrder(value);
                                 }
                             }}
-                            InputProps={{
-                                sx: { borderRadius: 2, fontSize: '0.875rem' }
-                            }}
                             sx={{ minWidth: 120, alignSelf: { xs: "flex-end", sm: "center" } }}
+                            slotProps={{
+                                input: {
+                                    sx: { borderRadius: 2, fontSize: '0.875rem' }
+                                }
+                            }}
                         >
                             <MenuItem value="desc">Neueste</MenuItem>
                             <MenuItem value="top">Am besten bewertet</MenuItem>

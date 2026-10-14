@@ -57,10 +57,18 @@ const AdminDashboard: React.FC = () => {
     <Sidebar user={user} title="Übersicht" maxWidth="lg">
       <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h4" component="h1" fontWeight={700} sx={{ fontFamily: 'var(--font-space-grotesk), sans-serif' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              fontWeight: 700,
+              fontFamily: 'var(--font-space-grotesk), sans-serif'
+            }}>
             Übersicht
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" sx={{
+            color: "text.secondary"
+          }}>
             Metriken und Statistiken der letzten 90 Tage.
           </Typography>
         </Box>
