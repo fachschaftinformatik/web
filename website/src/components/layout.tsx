@@ -60,7 +60,6 @@ import {
 import { client } from '@lib/api/client.gen';
 import { getAvatarUrl } from '@lib/images';
 import { toSearchResults, toSessionUser } from '@lib/types/guards';
-import OfficeStatus from './OfficeStatus';
 
 const drawerWidthOpen = 240;
 const drawerWidthClosed = 72;
@@ -868,7 +867,6 @@ const Sidebar = ({
 
       <Box component="main" sx={{ flexGrow: 1, p: 0, width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <Toolbar />
-        <OfficeStatus user={user} />
         <Container maxWidth={fullBleed ? false : maxWidth} disableGutters sx={{ flexGrow: 1, p: fullBleed ? 0 : { xs: 2.5, md: 3 } }}>
           {children}
         </Container>
