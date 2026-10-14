@@ -22,7 +22,7 @@
     "@mui/material-nextjs": "^7.3.8",
     "@mui/x-charts": "^8.27.0",
     "@mui/x-data-grid": "^8.27.3",
-    "jose": "^6.2.2",
+    "jose": "^6.2.12",
     "next": "^16.2.3",
     "next-auth": "^5.0.0-beta.30",
     "react": "^19.2.5",
