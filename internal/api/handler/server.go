@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/fachschaftinformatik/web/internal/email"
 	"github.com/fachschaftinformatik/web/internal/id"
 	"github.com/fachschaftinformatik/web/internal/storage"
-	"github.com/go-chi/httplog/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/microcosm-cc/bluemonday"
@@ -27,7 +27,7 @@ const (
 
 type Server struct {
 	DB            database.Querier
-	Log           *httplog.Logger
+	Log           *slog.Logger
 	Config        *config.Config
 	Email         *email.Sender
 	Avatars       *avatars.Service
@@ -37,7 +37,7 @@ type Server struct {
 	validator     *validator.Validate
 }
 
-func NewServer(db database.Querier, logger *httplog.Logger, cfg *config.Config, emailSender *email.Sender, store storage.Provider, avatarService *avatars.Service) *Server {
+func NewServer(db database.Querier, logger *slog.Logger, cfg *config.Config, emailSender *email.Sender, store storage.Provider, avatarService *avatars.Service) *Server {
 	return &Server{
 		DB:            db,
 		Log:           logger,
