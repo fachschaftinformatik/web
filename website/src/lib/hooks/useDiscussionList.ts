@@ -51,7 +51,7 @@ export const useDiscussionList = ({ user }: UseDiscussionListOptions) => {
         }));
         setPosts(parsed);
 
-        const total = Number.parseInt(response.headers.get('X-Total-Count') || '0', 10);
+        const total = Number.parseInt(response?.headers.get('X-Total-Count') || '0', 10);
         setTotalCount(total);
       }
     } catch (error) {
