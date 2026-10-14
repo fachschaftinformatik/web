@@ -26,8 +26,14 @@ Make sure you have the required Go version by running:
 go version
 ```
 
-Get started with the frontend by running:
+Start the local API and Garage object storage from the repository root:
 ```bash
+docker compose up --build api garage
+```
+
+Configure `website/.env.local` as described in the [README](../README.md#getting-started), then start the frontend:
+```bash
+cd website
 bun i
 bun run dev
 ```
@@ -40,6 +46,7 @@ go build -o web .
 
 If you have made any changes to the API or DTOs, make sure to re-generate the client too:
 ```
+cd website
 bun run gen:api
 ```
 

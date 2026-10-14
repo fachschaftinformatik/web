@@ -3,7 +3,7 @@ networks:
 
 
 volumes:
-  buckets:
+  garage:
   database:
 
 
@@ -22,21 +22,15 @@ services:
     environment:
       - DOMAIN=http://localhost:3000
       - SIGNUPS_VERIFY=true
-      - SIGNUPS_DOMAINS_WHITELIST=studmail.w-hs.de
-      - S3_ENDPOINT=minio:9000
+      - INTERNAL_JWT_SECRET=${INTERNAL_JWT_SECRET:-change-me-internal-secret}
+      - S3_ENDPOINT=garage:3900
       - S3_BUCKET=development
       - S3_USE_SSL=false
-      - S3_ACCESS_KEY=minio
-      - S3_SECRET_KEY=password
-      # - S3_REGION=eu-central
-      # - SMTP_HOST=smtp.example
-      # - SMTP_PORT=587
-      # - SMTP_USERNAME=user@mail.example
-      # - SMTP_PASSWORD=supersecretpassword
-      # - SMTP_FROM=user@mail.example
-      # depends_on:
-      #   minio:
-      #     condition: service_healthy
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-GK0123456789abcdef01234567}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    depends_on:
+      garage:
+        condition: service_healthy
 
   website:
     build:
@@ -48,22 +42,22 @@ services:
     networks:
       - api
 
-  minio:
-    image: minio/minio
+  garage:
+    image: dxflrs/garage:v2.4.1@sha256:9c96caa2612d3411acc5b0e6701fb238dbfba33e533a6d7d3d811a4b12d0d020
     restart: on-failure
-    command: server /data --console-address ":9001"
-    #ports:
-    #  - 9000:9000
-    #  - 9001:9001
+    command: /garage server --single-node --default-bucket
     volumes:
-      - buckets:/data
+      - ./garage.toml:/etc/garage.toml:ro
+      - garage:/var/lib/garage
     networks:
       - api
     environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: password
-    # healthcheck:
-    #   test: [ "CMD", "mc", "ready", "local" ]
-    #   interval: 5s
-    #   timeout: 5s
-    #   retries: 5
+      GARAGE_DEFAULT_ACCESS_KEY: ${S3_ACCESS_KEY:-GK0123456789abcdef01234567}
+      GARAGE_DEFAULT_SECRET_KEY: ${S3_SECRET_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      GARAGE_DEFAULT_BUCKET: development
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
