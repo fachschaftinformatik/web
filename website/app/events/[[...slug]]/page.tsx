@@ -39,7 +39,7 @@ import InsertPhotoRoundedIcon from '@mui/icons-material/InsertPhotoRounded';
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import { alpha } from "@mui/material/styles";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@lib/auth";
 import { Sidebar } from "@components/layout";
@@ -51,18 +51,20 @@ import { toErrorMessage } from "@lib/types/guards";
 
 const IMAGES_PER_PAGE = 10;
 
-export default function Galerie({ params }: { params: Promise<{ slug?: string[] }> }) {
-  const { slug } = React.use(params);
-  const urlEventId = slug?.[0];
-  const urlMediaId = slug?.[1];
+export default function Galerie() {
+  const [, , urlEventId, urlMediaId] = usePathname().split('/');
 
   const { user } = useAuth();
 
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const selectedEventId = urlEventId ?? null;
   const [media, setMedia] = useState<MediaItem[]>([]);
+  const [loadedEventId, setLoadedEventId] = useState<string | null>(null);
+  const [mediaRevision, setMediaRevision] = useState(0);
   const [page, setPage] = useState(1);
-  const [loadingMedia, setLoadingMedia] = useState(false);
+  const [fetchingMedia, setFetchingMedia] = useState(false);
+  const loadingMedia = fetchingMedia || loadedEventId !== selectedEventId || (!selectedEventId && (loadingEvents || events.length > 0));
   const router = useRouter();
 
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -71,60 +73,70 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [loadedImageId, setLoadedImageId] = useState<string | null>(null);
 
   const [preselectedEventId, setPreselectedEventId] = useState<string | null>(null);
 
   const canUpload = user?.role === "admin" || user?.role === "editor";
-
-  useEffect(() => {
-    if (urlEventId) {
-      setSelectedEventId(urlEventId);
-    }
-  }, [urlEventId]);
 
   const fetchEvents = useCallback(async () => {
     try {
       const { data } = await getEvents();
       if (data) {
         setEvents(data);
-
-        if (!urlEventId && data.length > 0) {
-          router.replace(`/events/${data[0].id}`);
-        }
       }
     } catch (e) {
       console.error("Fehler beim Laden der Events", e);
+    } finally {
+      setLoadingEvents(false);
     }
-  }, [urlEventId, router]);
+  }, []);
 
   useEffect(() => {
     void fetchEvents();
   }, [fetchEvents]);
 
   useEffect(() => {
+    if (!urlEventId && events.length > 0) {
+      router.replace(`/events/${events[0].id}`, { scroll: false });
+    }
+  }, [urlEventId, events, router]);
+
+  useEffect(() => {
+    let active = true;
+    setPage(1);
     if (!selectedEventId) {
       setMedia([]);
+      setLoadedEventId(null);
+      setFetchingMedia(false);
       return;
     }
 
     const fetchMediaData = async () => {
-      setLoadingMedia(true);
+      setFetchingMedia(true);
       try {
         const { data } = await getEventsByEventIdMedia({
           path: { eventId: selectedEventId }
         });
-        setMedia(data || []);
+        if (active) setMedia(data || []);
       } catch (e: unknown) {
-        console.error("Fehler beim Laden der Medien", e);
+        if (active) {
+          setMedia([]);
+          console.error("Fehler beim Laden der Medien", e);
+        }
       } finally {
-        setLoadingMedia(false);
+        if (active) {
+          setLoadedEventId(selectedEventId);
+          setFetchingMedia(false);
+        }
       }
     };
     void fetchMediaData();
-  }, [selectedEventId]);
+    return () => { active = false; };
+  }, [selectedEventId, mediaRevision]);
 
   useEffect(() => {
-    if (urlMediaId && media.length > 0 && selectedEventId === urlEventId) {
+    if (urlMediaId && media.length > 0 && loadedEventId === urlEventId) {
       const index = media.findIndex(m => String(m.id) === urlMediaId);
       if (index !== -1) {
         setPage(Math.floor(index / IMAGES_PER_PAGE) + 1);
@@ -134,7 +146,7 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
     } else if (!urlMediaId) {
       setLightboxOpen(false);
     }
-  }, [urlMediaId, media, selectedEventId, urlEventId]);
+  }, [urlMediaId, media, loadedEventId, urlEventId]);
 
   const getPreviewUrl = (id: string, size: number | string = 400) => getSizedImageUrl(`/api/v1/media/${id}/preview`, size);
   const getEventCoverUrl = (ev: EventItem, size: number | string = 400) => ev.cover_path ? getSizedImageUrl(`/api/v1/events/${ev.id}/cover`, size) : undefined;
@@ -150,13 +162,13 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
     setLightboxIndex(absoluteIdx);
     setLightboxOpen(true);
     const img = media[absoluteIdx];
-    if (img) router.replace(`/events/${selectedEventId}/${img.id}`);
+    if (img) window.history.replaceState(null, '', `/events/${selectedEventId}/${img.id}`);
   };
 
   const closeLightbox = useCallback(() => {
     setLightboxOpen(false);
-    router.replace(`/events/${selectedEventId}`);
-  }, [selectedEventId, router]);
+    window.history.replaceState(null, '', `/events/${selectedEventId}`);
+  }, [selectedEventId]);
 
   const nextImage = useCallback(() => {
     if (media.length === 0) return;
@@ -164,8 +176,8 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
     setLightboxIndex(nextIdx);
     setPage(Math.floor(nextIdx / IMAGES_PER_PAGE) + 1);
     const img = media[nextIdx];
-    if (img) router.replace(`/events/${selectedEventId}/${img.id}`);
-  }, [lightboxIndex, selectedEventId, router, media]);
+    if (img) window.history.replaceState(null, '', `/events/${selectedEventId}/${img.id}`);
+  }, [lightboxIndex, selectedEventId, media]);
 
   const prevImage = useCallback(() => {
     if (media.length === 0) return;
@@ -173,19 +185,18 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
     setLightboxIndex(prevIdx);
     setPage(Math.floor(prevIdx / IMAGES_PER_PAGE) + 1);
     const img = media[prevIdx];
-    if (img) router.replace(`/events/${selectedEventId}/${img.id}`);
-  }, [lightboxIndex, selectedEventId, router, media]);
+    if (img) window.history.replaceState(null, '', `/events/${selectedEventId}/${img.id}`);
+  }, [lightboxIndex, selectedEventId, media]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") prevImage();
       if (e.key === "ArrowRight") nextImage();
-      if (e.key === "Escape") closeLightbox();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [lightboxOpen, prevImage, nextImage, closeLightbox]);
+  }, [lightboxOpen, prevImage, nextImage]);
 
   const handleCopyLink = () => {
     if (!currentImage) return;
@@ -202,7 +213,7 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
     <Sidebar user={user} title="Galerie" maxWidth="lg">
       <Box>
 
-        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
             <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
               Events & Galerie
@@ -211,16 +222,15 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
               Fotos von Veranstaltungen, Partys und Events der Fachschaft.
             </Typography>
           </Box>
-          {canUpload && (
-            <Button
-              variant="contained"
-              startIcon={<UploadRoundedIcon />}
-              onClick={() => setUploadOpen(true)}
-              sx={{ boxShadow: 2 }}
-            >
-              Bilder hochladen
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            startIcon={<UploadRoundedIcon />}
+            onClick={() => setUploadOpen(true)}
+            disabled={!canUpload}
+            sx={{ boxShadow: 2, flexShrink: 0, visibility: canUpload ? 'visible' : 'hidden' }}
+          >
+            Bilder hochladen
+          </Button>
         </Box>
 
         <Paper
@@ -236,7 +246,7 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
         >
 
           <Box sx={{ display: "flex", justifyContent: "flex-start", minWidth: 0 }}>
-            {events.length > 0 ? (
+            {loadingEvents || events.length > 0 ? (
               <ImageList
                 sx={(theme) => ({
                   display: "flex",
@@ -255,16 +265,25 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
                   "& > li:not(:last-of-type)": { marginRight: theme.spacing(3) },
                 })}
               >
-                {events.map((ev) => {
+                {loadingEvents ? Array.from({ length: 5 }, (_, index) => (
+                  <ImageListItem key={index} sx={{ width: 160, flexShrink: 0 }}>
+                    <Box sx={{ overflow: 'hidden', borderRadius: 2, bgcolor: 'background.default' }}>
+                      <Skeleton animation={false} variant="rectangular" height={100} />
+                      <ImageListItemBar
+                        title={<Skeleton animation={false} width="80%" height={24} sx={{ transform: 'none' }} />}
+                        position="below"
+                        sx={{ px: 1, py: 0.8 }}
+                      />
+                    </Box>
+                  </ImageListItem>
+                )) : events.map((ev) => {
                   const selected = String(ev.id) === selectedEventId;
 
                     return (
                       <ImageListItem
                         key={String(ev.id)}
                         onClick={() => {
-                          setMedia([]); 
-                          setPage(1);
-                          router.push(`/events/${ev.id}`);
+                          if (!selected) router.push(`/events/${ev.id}`, { scroll: false });
                         }}
                         sx={(theme) => ({
                         cursor: "pointer",
@@ -316,15 +335,6 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
                   );
                 })}
               </ImageList>
-            ) : events.length === 0 && selectedEventId === null ? (
-              <Stack direction="row" spacing={3} sx={{ p: 3, pt: 1, overflow: 'hidden' }}>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Box key={i} sx={{ width: 160, flexShrink: 0 }}>
-                    <Skeleton variant="rectangular" height={100} sx={{ borderRadius: 2, mb: 1 }} />
-                    <Skeleton variant="text" width="80%" />
-                  </Box>
-                ))}
-              </Stack>
             ) : (
               <Typography color="text.secondary" sx={{ py: 2, px: 2 }}>Keine Events vorhanden.</Typography>
             )}
@@ -340,9 +350,10 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
               gap: 2
             }}
           >
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            {Array.from({ length: IMAGES_PER_PAGE }, (_, i) => (
               <Skeleton
                 key={i}
+                animation={false}
                 variant="rectangular"
                 sx={{
                   borderRadius: 2,
@@ -430,11 +441,7 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
             preselectedId={preselectedEventId}
             onSuccess={() => {
               fetchEvents();
-              if (selectedEventId) {
-                const current = selectedEventId;
-                setSelectedEventId(null);
-                setTimeout(() => setSelectedEventId(current), 50);
-              }
+              setMediaRevision(revision => revision + 1);
               setSuccessMessage("Bilder erfolgreich hochgeladen.");
             }}
             onCreateEvent={() => setCreateEventOpen(true)}
@@ -500,21 +507,36 @@ export default function Galerie({ params }: { params: Promise<{ slug?: string[] 
             </Stack>
           </DialogTitle>
 
-          <DialogContent dividers sx={{ position: "relative", p: 0, bgcolor: "background.default", display: "flex", justifyContent: "center", alignItems: "center", minHeight: 500 }}>
+          <DialogContent dividers sx={{ position: "relative", p: 0, bgcolor: "background.default", height: '75vh', minHeight: 0, flexShrink: 0 }}>
             {currentImage && (
-              <Box
-                component="img"
-                src={getPreviewUrl(String(currentImage.id), 1600)}
-                srcSet={getMediaSrcSet(String(currentImage.id))}
-                sizes="100vw"
-                alt={currentImage.title}
-                sx={{
-                  display: "block",
-                  maxWidth: "100%",
-                  maxHeight: "80vh",
-                  objectFit: "contain",
-                }}
-              />
+              <>
+                <Box
+                  component="img"
+                  src={getPreviewUrl(String(currentImage.id), 600)}
+                  srcSet={getMediaSrcSet(String(currentImage.id))}
+                  sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, (max-width: 1200px) 25vw, 200px"
+                  alt=""
+                  aria-hidden
+                  sx={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+                <Box
+                  component="img"
+                  src={getPreviewUrl(String(currentImage.id), 1600)}
+                  srcSet={getMediaSrcSet(String(currentImage.id))}
+                  sizes="100vw"
+                  alt={currentImage.title}
+                  onLoad={() => setLoadedImageId(String(currentImage.id))}
+                  sx={{
+                    display: "block",
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    opacity: loadedImageId === String(currentImage.id) ? 1 : 0,
+                    objectFit: "contain",
+                  }}
+                />
+              </>
             )}
 
             {media.length > 1 && (
