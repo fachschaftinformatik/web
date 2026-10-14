@@ -315,10 +315,10 @@ const GlobalSearch = () => {
 
 const navItems = [
   { label: 'Startseite', href: '/', icon: <DashboardRounded />, isRoute: true },
-  { label: 'Diskussionen', href: '/discussions', icon: <QuestionAnswerRounded />, isRoute: true },
+  { label: 'Forum', href: '/discussions', icon: <QuestionAnswerRounded />, isRoute: true },
   { label: 'Galerie', href: '/events', icon: <CollectionsRounded />, isRoute: true },
-  { label: 'Archiv', href: '/archive', icon: <LibraryBooksRounded />, isRoute: true },
-  { label: 'Team', href: '/team', icon: <PeopleRounded />, isRoute: true },
+  { label: 'Altklausuren', href: '/archive', icon: <LibraryBooksRounded />, isRoute: true },
+  { label: 'Unser Team', href: '/team', icon: <PeopleRounded />, isRoute: true },
   { label: 'Kontakt', href: '/contact', icon: <MailRounded />, isRoute: true },
 ];
 
