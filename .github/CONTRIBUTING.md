@@ -103,7 +103,7 @@ If you plan to make any changes, the workflow is typically like this:
 3. Make the changes you wish to commit and test them
 4. Review your changes
 5. Add, commit and push the changes
-6. Open a PR to merge the changes into `main`
+6. Open a PR to squash-merge the changes into `main`
 
 Example workflow:
 ```
@@ -164,6 +164,16 @@ fix(db): enforce unique email constraint
 ```
 
 PR titles should follow the same format. See the [full spec][2] for details.
+
+Pull requests use lowercase Conventional Commit titles, checked by CI. Squash
+merging uses the PR title as the final commit title. `feat` releases a minor
+version; `fix`, `perf`, and `chore(deps)` release a patch; breaking changes release
+a major version. Other changes do not release by themselves.
+
+After a merge, the Release workflow runs API, website, and security checks, then
+semantic-release builds and publishes versioned images, pushes the version tag,
+and creates the GitHub Release automatically. See [release operations](release/README.md)
+for dry runs, recovery, and the release-tooling security patch.
 
 Relevant documentation:
 - [Conventional Commits 1.0.0][2]
