@@ -50,6 +50,27 @@ cd website
 bun run gen:api
 ```
 
+## Dependency updates
+
+Renovate runs on Mondays at 08:00 Europe/Berlin, with automatic daylight-saving adjustment.
+It opens one pull request per dependency, including lockfile and generated-code changes,
+using titles such as `chore(deps): bump next from 16.4.1 to 16.4.2`.
+Updates require review and are not automatically merged.
+
+The workflow uses a dedicated GitHub App installed on this repository. Configure its
+App ID as `RENOVATE_APP_ID` and its PEM private key as `RENOVATE_APP_PRIVATE_KEY`
+in repository Actions secrets. The App needs repository read/write permissions for
+Contents, Pull requests, and Workflows, plus read access to Checks and Commit statuses.
+
+The Renovate workflow can also be started manually. Its `dry-run` input defaults to
+true: Renovate checks updates and artifact generation without creating branches or
+pull requests. Disable it to publish updates immediately.
+
+Go updates run `go mod tidy` and `go generate ./...`; Go and Bun updates regenerate
+the website API client. Existing API and website CI checks validate the results.
+Indirect Go modules are included. Floating Docker tags remain floating; existing
+digest-pinned images receive digest updates.
+
 ## Making changes
 If you plan to make any changes, the workflow is typically like this:
 
