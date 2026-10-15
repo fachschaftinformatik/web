@@ -8,7 +8,7 @@ on:
       - docs/**
       - .node-version
       - .dockerignore
-      - docker-bake.hcl
+      - bake.hcl
       - compose.yaml
       - garage.toml
       - .github/workflows/website.yaml

@@ -128,7 +128,7 @@ jobs:
         working-directory: .
         env:
           RELEASE_TAG: v0.0.0-test
-        run: docker buildx bake --file docker-bake.hcl --print
+        run: docker buildx bake --file bake.hcl --print
 
   security:
     name: Security checks

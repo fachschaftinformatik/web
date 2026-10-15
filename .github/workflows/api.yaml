@@ -10,7 +10,7 @@ on:
       - database/**
       - internal/**
       - Dockerfile
-      - docker-bake.hcl
+      - bake.hcl
       - .dockerignore
       - compose.yaml
       - garage.toml

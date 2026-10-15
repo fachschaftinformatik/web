@@ -1,4 +1,4 @@
-name: Release build
+name: Images
 
 on:
   pull_request:
@@ -6,14 +6,14 @@ on:
     paths:
       - .github/release/**
       - .github/workflows/release.yaml
-      - .github/workflows/release-build.yaml
-      - docker-bake.hcl
+      - .github/workflows/images.yaml
+      - bake.hcl
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-build-${{ github.event.pull_request.number }}
+  group: images-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -31,5 +31,5 @@ jobs:
         env:
           RELEASE_TAG: v0.0.0-test
         with:
-          files: docker-bake.hcl
+          files: bake.hcl
           set: '*.output=type=cacheonly'

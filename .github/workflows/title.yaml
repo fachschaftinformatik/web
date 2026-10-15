@@ -22,4 +22,4 @@ jobs:
       - name: Validate Conventional Commit title
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: node .github/release/validate-title.mjs
+        run: node .github/release/title.mjs

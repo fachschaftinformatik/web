@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import { analyzeCommits } from '@semantic-release/commit-analyzer';
-import { validateTitle } from '../validate-title.mjs';
+import { validateTitle } from '../title.mjs';
 import config from '../release.config.cjs';
 
 const require = createRequire(import.meta.url);

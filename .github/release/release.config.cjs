@@ -10,7 +10,7 @@ module.exports = {
       ],
     }],
     ['@semantic-release/github', {
-      releaseBodyTemplate: '',
+      releaseBodyTemplate: '<%= "" %>',
       successComment: false,
       failComment: false,
       failTitle: false,
@@ -18,7 +18,7 @@ module.exports = {
     }],
     ['@semantic-release/exec', {
       execCwd: '../..',
-      prepareCmd: 'RELEASE_TAG=${nextRelease.gitTag} docker buildx bake --file docker-bake.hcl --push',
+      prepareCmd: 'RELEASE_TAG=${nextRelease.gitTag} docker buildx bake --file bake.hcl --push',
       successCmd: 'printf "released=true\\ntag=%s\\n" "${nextRelease.gitTag}" >> "$GITHUB_OUTPUT"',
     }],
   ],
