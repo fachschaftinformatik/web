@@ -71,5 +71,7 @@ jobs:
         run: bun run check
       - name: Lint
         run: bun run lint
+      - name: Check Next ESLint glob compatibility
+        run: bun run test:eslint-globs
       - name: Build
         run: bun run build
