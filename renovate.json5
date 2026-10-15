@@ -20,6 +20,11 @@
   "lockFileMaintenance": { "enabled": false },
   "packageRules": [
     {
+      "matchManagers": ["bun"],
+      "matchFileNames": [".github/release/**"],
+      "semanticCommitScope": "ci"
+    },
+    {
       "matchManagers": ["github-actions"],
       "semanticCommitScope": "ci",
       "commitMessageTopic": "{{{depName}}}"
@@ -35,6 +40,7 @@
     },
     {
       "matchManagers": ["gomod", "bun"],
+      "matchFileNames": ["go.mod", "website/**"],
       "postUpgradeTasks": {
         "commands": ["cd website && bun install --frozen-lockfile && bun run gen:api"],
         "fileFilters": ["website/src/lib/api/**"],
