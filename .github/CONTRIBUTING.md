@@ -71,6 +71,24 @@ the website API client. Existing API and website CI checks validate the results.
 Indirect Go modules are included. Floating Docker tags remain floating; existing
 digest-pinned images receive digest updates.
 
+## Security checks
+
+GitHub secret scanning checks repository history and new commits; push protection
+blocks supported secrets before they enter the repository.
+
+The Security workflow runs on pull requests, pushes to `main`, and Mondays at
+09:00 Europe/Berlin. It can also be started manually. Its parallel jobs include:
+
+- CodeQL with extended security queries for Go, JavaScript/TypeScript, and Actions.
+  Findings appear in the repository's Security tab and pull-request code scanning.
+- Dependency review on pull requests, failing for newly introduced high or critical
+  vulnerabilities in runtime and development dependencies recognized by GitHub.
+- `govulncheck` for known vulnerabilities reachable from the Go application.
+- `bun audit` against the frontend lockfile, including development dependencies,
+  failing for high or critical vulnerabilities.
+
+Scheduled scans also detect advisories published since the last code change.
+
 ## Making changes
 If you plan to make any changes, the workflow is typically like this:
 
