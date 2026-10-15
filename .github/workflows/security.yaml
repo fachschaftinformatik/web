@@ -1,17 +1,16 @@
 name: Security
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   schedule:
     - cron: '0 9 * * 1'
       timezone: Europe/Berlin
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
-  group: security-${{ github.event.pull_request.number || github.ref }}
+  group: security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -103,3 +102,45 @@ jobs:
       - name: Audit Bun lockfile
         working-directory: website
         run: bun audit --audit-level=high
+
+  release-tools:
+    name: Release tools
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: .github/release
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run test
+      - run: bun run audit
+      - uses: docker/setup-buildx-action@v4
+      - name: Validate image build configuration
+        working-directory: .
+        env:
+          RELEASE_TAG: v0.0.0-test
+        run: docker buildx bake --file bake.hcl --print
+
+  security:
+    name: Security checks
+    if: always()
+    needs: [codeql, dependency-review, go-vulnerabilities, website-vulnerabilities, release-tools]
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Require successful security checks
+        env:
+          RESULTS: ${{ join(needs.*.result, ',') }}
+        run: |
+          if [[ "$RESULTS" == *failure* || "$RESULTS" == *cancelled* ]]; then
+            exit 1
+          fi

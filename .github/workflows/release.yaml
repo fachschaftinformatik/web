@@ -2,55 +2,102 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Preview the next version without building images or publishing
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        service: [api, website]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+  api:
+    uses: ./.github/workflows/api.yaml
+  website:
+    uses: ./.github/workflows/website.yaml
+  security:
+    uses: ./.github/workflows/security.yaml
+    permissions:
+      contents: read
+      security-events: write
 
-      - name: Authenticate ghcr.io
-        uses: docker/login-action@v4
+  release:
+    if: github.ref == 'refs/heads/main'
+    needs: [api, website, security]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      packages: write
+    outputs:
+      released: ${{ steps.semantic-release.outputs.released }}
+      tag: ${{ steps.semantic-release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install release tools
+        working-directory: .github/release
+        run: bun install --frozen-lockfile --ignore-scripts
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build and push ${{ matrix.service }}
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ${{ matrix.service == 'api' && 'Dockerfile' || 'website/Dockerfile' }}
-          push: true
-          platforms: linux/amd64
-          build-args: ${{ matrix.service == 'api' && format('VERSION={0}', github.ref_name) || '' }}
-          tags: |
-            ghcr.io/${{ github.repository }}/${{ matrix.service }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}/${{ matrix.service }}:latest
-          cache-from: type=gha,scope=${{ matrix.service }}-amd64
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}-amd64
-
-  release:
-    needs: publish
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Create release
-        uses: softprops/action-gh-release@v3
-        with:
-          generate_release_notes: false
+      - uses: docker/setup-buildx-action@v4
+      - name: Expose Buildx cache credentials
+        uses: crazy-max/ghaction-github-runtime@v4
+      - name: Release
+        id: semantic-release
+        working-directory: .github/release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run && 'true' || 'false' }}
+        run: |
+          if [[ "$DRY_RUN" == true ]]; then
+            bun run release --dry-run
+          else
+            bun run release
+          fi
+      - name: Select published release for image aliases
+        id: aliases
+        if: github.event_name != 'workflow_dispatch' || !inputs.dry-run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.semantic-release.outputs.tag }}
+        run: |
+          if [[ -z "$RELEASE_TAG" ]]; then
+            RELEASE_TAG=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)
+          fi
+          if [[ "$(git rev-list -n 1 "$RELEASE_TAG")" == "$GITHUB_SHA" ]]; then
+            printf 'tag=%s\n' "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Promote latest image aliases
+        if: steps.aliases.outputs.tag != ''
+        env:
+          IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+          RELEASE_TAG: ${{ steps.aliases.outputs.tag }}
+        run: |
+          for service in api website; do
+            docker buildx imagetools inspect "$IMAGE_PREFIX/$service:$RELEASE_TAG"
+          done
+          for service in api website; do
+            docker buildx imagetools create \
+              --tag "$IMAGE_PREFIX/$service:latest" \
+              "$IMAGE_PREFIX/$service:$RELEASE_TAG"
+          done
