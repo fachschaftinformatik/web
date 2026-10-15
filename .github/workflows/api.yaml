@@ -1,20 +1,6 @@
 name: API CI
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '**/*.go'
-      - go.mod
-      - go.sum
-      - database/**
-      - internal/**
-      - Dockerfile
-      - .dockerignore
-      - compose.yaml
-      - garage.toml
-      - .github/workflows/api.yaml
-      - .github/workflows/release.yaml
   pull_request:
     branches: [main]
     paths:
@@ -24,15 +10,17 @@ on:
       - database/**
       - internal/**
       - Dockerfile
+      - docker-bake.hcl
       - .dockerignore
       - compose.yaml
       - garage.toml
       - .github/workflows/api.yaml
       - .github/workflows/release.yaml
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
-  group: api-${{ github.event.pull_request.number || github.ref }}
+  group: api-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:

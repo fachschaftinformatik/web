@@ -1,17 +1,6 @@
 name: Website CI
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - website/**
-      - docs/**
-      - .node-version
-      - .dockerignore
-      - compose.yaml
-      - garage.toml
-      - .github/workflows/website.yaml
-      - .github/workflows/release.yaml
   pull_request:
     branches: [main]
     paths:
@@ -19,14 +8,16 @@ on:
       - docs/**
       - .node-version
       - .dockerignore
+      - docker-bake.hcl
       - compose.yaml
       - garage.toml
       - .github/workflows/website.yaml
       - .github/workflows/release.yaml
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
-  group: website-${{ github.event.pull_request.number || github.ref }}
+  group: website-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
