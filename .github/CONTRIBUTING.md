@@ -89,6 +89,12 @@ The Security workflow runs on pull requests, pushes to `main`, and Mondays at
 
 Scheduled scans also detect advisories published since the last code change.
 
+The frontend overrides `js-yaml` to a patched release because the API generator's
+parser pins an affected version. It also replaces `fast-glob` with `tinyglobby`:
+Next's ESLint plugin uses its compatible `globSync` API, avoiding the unpatched
+`braces` dependency. `bun run test:eslint-globs` verifies the plugin's root-directory
+discovery. Revisit these overrides when the upstream dependencies are updated.
+
 ## Making changes
 If you plan to make any changes, the workflow is typically like this:
 
