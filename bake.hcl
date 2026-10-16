@@ -7,7 +7,7 @@ variable "RELEASE_TAG" {
 }
 
 group "default" {
-  targets = ["api", "website"]
+  targets = ["app"]
 }
 
 target "common" {
@@ -18,21 +18,13 @@ target "common" {
   }
 }
 
-target "api" {
+target "app" {
   inherits  = ["common"]
   dockerfile = "Dockerfile"
   args = {
     VERSION = RELEASE_TAG
   }
-  tags       = ["${IMAGE_PREFIX}/api:${RELEASE_TAG}"]
-  cache-from = ["type=gha,scope=api-amd64"]
-  cache-to   = ["type=gha,mode=max,scope=api-amd64"]
-}
-
-target "website" {
-  inherits   = ["common"]
-  dockerfile = "website/Dockerfile"
-  tags       = ["${IMAGE_PREFIX}/website:${RELEASE_TAG}"]
-  cache-from = ["type=gha,scope=website-amd64"]
-  cache-to   = ["type=gha,mode=max,scope=website-amd64"]
+  tags       = ["${IMAGE_PREFIX}:${RELEASE_TAG}"]
+  cache-from = ["type=gha,scope=app-amd64"]
+  cache-to   = ["type=gha,mode=max,scope=app-amd64"]
 }
