@@ -375,6 +375,8 @@ jobs:
           files: bake.hcl
           targets: app
           load: true
+          provenance: false
+          sbom: false
           set: '*.cache-to='
       - name: Start disposable application and storage fixtures
         run: docker compose up --wait --wait-timeout 60
