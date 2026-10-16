@@ -28,7 +28,7 @@ go version
 
 Start the local API and Garage object storage from the repository root:
 ```bash
-docker compose up --build api garage
+docker compose up --build app garage
 ```
 
 Configure `website/.env.local` as described in the [README](../README.md#getting-started), then start the frontend:
@@ -71,13 +71,49 @@ the website API client. Existing API and website CI checks validate the results.
 Indirect Go modules are included. Floating Docker tags remain floating; existing
 digest-pinned images receive digest updates.
 
-## Security checks
+## CI
+
+The `ci:app` workflow in [ci.yaml](workflows/ci.yaml) runs on pull requests and pushes
+to `main`. It uses consistent job names:
+
+- `lint:api`, `lint:website`, `lint:app`, `lint:workflows`
+- `test:api`, `test:website`, `test:app`, `test:release`
+- `security:api`, `security:website`, `security:workflows`,
+  `security:dependencies`, `security:release`
+- `build:app`
+- `release:plan`, `release:check`, `release:publish`
+
+`release:plan` selects checks from the changed paths. Independent jobs run in
+parallel; there is no global lint/test/build barrier. A website-only content
+change does not run Go checks. Changes to the pipeline itself run all checks.
+Scheduled and manually dispatched runs also select all checks.
+
+`release:check` rejects a failed plan or any failed or cancelled check, while
+allowing checks to be skipped for unaffected components. Branch protection should require `release:check` and
+`lint:commit`. The latter runs in the separate `ci:lint` workflow so editing a PR
+title does not restart application checks. Keep both required-check names in sync
+when renaming jobs.
+
+The dependency-update workflow is named `ci:renovate`, with the job
+`maintenance:dependencies`. Deployment is managed separately from CI.
+
+Go modules are cached only after downloading the complete module graph, including
+generators. Compiled Go caches are isolated by job purpose and use rolling keys,
+so a faster security job cannot freeze an incomplete generator cache. Production
+images build the committed generated files; `test:api` verifies Go and OpenAPI
+generation, and `test:website` checks the API client when its inputs change.
+`build:app` builds the combined image, and `test:app` loads it from the build cache
+and runs a small Compose smoke test for HTTP routing, native image processing,
+and shutdown. There are no duplicate standalone API or website builds.
+
+### Security checks
 
 GitHub secret scanning checks repository history and new commits; push protection
 blocks supported secrets before they enter the repository.
 
-The Security workflow runs on pull requests, pushes to `main`, and Mondays at
-09:00 Europe/Berlin. It can also be started manually. Its parallel jobs include:
+The `security:*` jobs run for affected components on pull requests and pushes to
+`main`. The full pipeline also runs on Mondays at 09:00 Europe/Berlin and can be
+started manually. Security checks include:
 
 - CodeQL with extended security queries for Go, JavaScript/TypeScript, and Actions.
   Findings appear in the repository's Security tab and pull-request code scanning.
@@ -92,8 +128,7 @@ Scheduled scans also detect advisories published since the last code change.
 The frontend overrides `js-yaml` to a patched release because the API generator's
 parser pins an affected version. It also replaces `fast-glob` with `tinyglobby`:
 Next's ESLint plugin uses its compatible `globSync` API, avoiding the unpatched
-`braces` dependency. `bun run test:eslint-globs` verifies the plugin's root-directory
-discovery. Revisit these overrides when the upstream dependencies are updated.
+`braces` dependency. Revisit these overrides when the upstream dependencies are updated.
 
 ## Making changes
 If you plan to make any changes, the workflow is typically like this:
@@ -152,6 +187,12 @@ Use the [Conventional Commits][2] spec when writing commit messages and titles:
 Common types are `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`, `chore`, and `style`.
 Please keep the description short and meaningful.
 
+When a commit or PR directly relates to an existing issue or pull request, append
+its number in parentheses where useful: `fix(api): correct password reset logging (#123)`.
+Use real, relevant issue or PR numbers; omit the suffix when there is no useful
+reference. Keep `Fixes #123` or `Closes #123` in the PR description when the merge
+should close an issue automatically.
+
 Breaking changes must include a footer:
 ```
 BREAKING CHANGE: explain what changed and how to migrate
@@ -161,17 +202,19 @@ Examples:
 ```
 feat(api): add user registration endpoint
 fix(db): enforce unique email constraint
+fix(api): correct password reset logging (#123)
 ```
 
 PR titles should follow the same format. See the [full spec][2] for details.
 
 Pull requests use lowercase Conventional Commit titles, checked by CI. Squash
-merging uses the PR title as the final commit title. `feat` releases a minor
-version; `fix`, `perf`, and `chore(deps)` release a patch; breaking changes release
+merging uses the PR title as the final commit title, with the merged PR number
+appended as `(#123)` where appropriate. Avoid duplicating the same reference.
+`feat` releases a minor version; `fix`, `perf`, and `chore(deps)` release a patch; breaking changes release
 a major version. Other changes do not release by themselves.
 
-After a merge, the Release workflow runs API, website, and security checks, then
-semantic-release builds and publishes versioned images, pushes the version tag,
+After a merge, `ci:app` runs the applicable checks. Once `release:check` succeeds,
+`release:publish` uses semantic-release to build and publish versioned images and push the version tag,
 and creates the GitHub Release automatically. See [release operations](release/README.md)
 for dry runs, recovery, and the release-tooling security patch.
 

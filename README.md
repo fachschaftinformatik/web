@@ -48,30 +48,36 @@ The `database` holds all relevant meta data and references to the blobs. All blo
 
 ## Getting started
 
-For local development, run the Go API and Garage via Docker Compose and the Next.js frontend separately.
-The API listens on `http://localhost:8080`; the frontend proxies requests under `/api/v1` to it.
+The application image bundles the Go API and Next.js frontend in one Alpine
+container. Docker Compose starts the application and Garage:
 
 ```sh
-docker compose up --build api garage
+docker compose up --build
 ```
 
-To build and run the frontend:
+Open `http://localhost:3000`. Next.js proxies `/api/v1` and `/swagger` to the API
+inside the container. SQLite data persists at `/data`. Compose also exposes the
+API on `127.0.0.1:8080` for local development.
+
+To develop the frontend with hot reload while Compose is running, use a separate
+development port:
 ```sh
 cd website
 bun install
-bun run dev
+bun run dev --port 3001
 ```
 
 Configure the frontend in `website/.env.local`:
 
 ```dotenv
 BACKEND_URL=http://localhost:8080
-AUTH_URL=http://localhost:3000
+AUTH_URL=http://localhost:3001
 AUTH_SECRET=replace-with-a-random-secret
 INTERNAL_JWT_SECRET=replace-with-a-shared-random-secret
 ```
 
-Set the same `INTERNAL_JWT_SECRET` in the repository-root `.env` file for Compose.
+Set `AUTH_SECRET` and the same `INTERNAL_JWT_SECRET` in the repository-root `.env`
+file for Compose.
 Generate secrets with `openssl rand -hex 32`.
 
 ### Object storage
@@ -102,7 +108,9 @@ The following environment variables are being used and should be set accordingly
 | `DOMAIN` | `http://localhost:3000` | The domain the frontend will be reachable at. Used for CORS, redirects and URL generation. |
 | `SIGNUPS_ENABLED` | `true` | Whether new signups are allowed. |
 | `SIGNUPS_VERIFY` | `true` | Whether signups must verify their email address. Requires SMTP configuration. |
-| `INTERNAL_JWT_SECRET` |  | Shared secret used by the frontend to authenticate API requests. Set the same value on both services. |
+| `AUTH_URL` | `http://localhost:3000` | Public URL used by the application's authentication flow. |
+| `AUTH_SECRET` | Development-only default | Authentication session secret; override outside local development. |
+| `INTERNAL_JWT_SECRET` | Development-only default | Secret used by the frontend to authenticate API requests. |
 | `S3_ENDPOINT` | `garage:3900` | S3 service host and port, without a URL scheme. |
 | `S3_BUCKET` | `development` | Name of the bucket. |
 | `S3_USE_SSL` | `false` | Whether to use TLS for the S3 connection. |

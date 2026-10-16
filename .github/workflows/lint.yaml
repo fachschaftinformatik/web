@@ -1,4 +1,4 @@
-name: PR title
+name: ci:lint
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   title:
-    name: PR title
+    name: lint:commit
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
