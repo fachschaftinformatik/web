@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/url"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	_ "modernc.org/sqlite"
@@ -14,6 +15,49 @@ type User struct {
 	ID, Name, Email, Permission string
 	Program, Status             string
 	Verified                    bool
+}
+
+// Directory is an immutable account display snapshot. It contains neither
+// credentials nor authentication decisions.
+type Directory struct {
+	users []User
+}
+
+func NewDirectory(users []User) *Directory {
+	users = slices.Clone(users)
+	for i := range users {
+		users[i].Email = strings.ToLower(users[i].Email)
+	}
+	return &Directory{users: users}
+}
+
+func (d *Directory) Get(id string) (User, bool) {
+	for _, user := range d.users {
+		if user.ID == id {
+			return user, true
+		}
+	}
+	return User{}, false
+}
+
+const UsersPerPage = 20
+
+type UserPage struct {
+	Users                []User
+	Number, Pages, Total int
+}
+
+// Search applies the shared account search and page bounds. Empty results have
+// one valid, empty page. Out-of-range page numbers are rejected, not clamped.
+func (d *Directory) Search(query string, number int) (UserPage, bool) {
+	users := SearchUsers(d.users, query)
+	page := UserPage{Number: number, Pages: max(1, (len(users)+UsersPerPage-1)/UsersPerPage), Total: len(users)}
+	if number < 1 || number > page.Pages {
+		return page, false
+	}
+	start := (number - 1) * UsersPerPage
+	page.Users = users[start:min(start+UsersPerPage, len(users))]
+	return page, true
 }
 
 // Users contains fictional accounts for the administration demo.

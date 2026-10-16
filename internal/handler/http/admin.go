@@ -140,32 +140,32 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if id != "" {
-			for _, user := range c.users {
-				if user.ID == id {
-					a.View = "user"
-					a.ResetPreview = r.URL.Query().Get("zuruecksetzen") == "demo"
-					a.User = &user
-					c.adminRender(w, user.Name, a, http.StatusOK)
-					return
-				}
+			if user, ok := c.users.Get(id); ok {
+				a.View = "user"
+				a.ResetPreview = r.URL.Query().Get("zuruecksetzen") == "demo"
+				a.User = &user
+				c.adminRender(w, user.Name, a, http.StatusOK)
+				return
 			}
 			http.NotFound(w, r)
 			return
 		}
 		a.View, a.Query = "users", strings.TrimSpace(r.URL.Query().Get("q"))
-		users := account.SearchUsers(c.users, a.Query)
-		a.Total, a.Page = len(users), 1
-		a.Pages = max(1, (len(users)+19)/20)
+		a.Page = 1
 		if value := r.URL.Query().Get("seite"); value != "" {
 			page, err := strconv.Atoi(value)
-			if err != nil || page < 1 || page > a.Pages {
+			if err != nil {
 				http.Redirect(w, r, a.UserPageURL(1), http.StatusSeeOther)
 				return
 			}
 			a.Page = page
 		}
-		start := (a.Page - 1) * 20
-		a.Users = users[start:min(start+20, len(users))]
+		page, ok := c.users.Search(a.Query, a.Page)
+		if !ok {
+			http.Redirect(w, r, a.UserPageURL(1), http.StatusSeeOther)
+			return
+		}
+		a.Users, a.Total, a.Pages = page.Users, page.Total, page.Pages
 		if a.Page > 1 {
 			a.PreviousURL = a.UserPageURL(a.Page - 1)
 		}
@@ -431,10 +431,7 @@ func (c *Handler) Document(w http.ResponseWriter, r *http.Request) {
 // ResetUserPassword previews the future mail action; it does not change a
 // password, create a reset token or send mail to production-copy accounts.
 func (c *Handler) ResetUserPassword(w http.ResponseWriter, r *http.Request) {
-	for _, user := range c.users {
-		if user.ID != r.PathValue("id") {
-			continue
-		}
+	if user, ok := c.users.Get(r.PathValue("id")); ok {
 		if r.Method == http.MethodPost {
 			http.Redirect(w, r, "/verwaltung/benutzer/"+url.PathEscape(user.ID)+"?zuruecksetzen=demo", http.StatusSeeOther)
 			return

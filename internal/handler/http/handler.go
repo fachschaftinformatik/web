@@ -20,7 +20,7 @@ type Handler struct {
 	views    *Renderer
 	team     *team.Store
 	meetings *meetings.Store
-	users    []account.User
+	users    *account.Directory
 	sessions sessionStore
 }
 
@@ -33,10 +33,7 @@ func NewWithUsers(users []account.User) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &Handler{views: views, team: team.NewStore(), meetings: meetings.NewStore(), users: slices.Clone(users), sessions: newSessionStore()}
-	for i := range c.users {
-		c.users[i].Email = strings.ToLower(c.users[i].Email)
-	}
+	c := &Handler{views: views, team: team.NewStore(), meetings: meetings.NewStore(), users: account.NewDirectory(users), sessions: newSessionStore()}
 	router := http.NewServeMux()
 	router.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
