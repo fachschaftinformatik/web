@@ -27,6 +27,15 @@ outputs for subsequent deployment jobs.
 
 ## Application image
 
+Published images include a BuildKit-generated SPDX SBOM as an OCI attestation
+in GHCR. It describes the final runtime image and is published by the existing
+Docker Bake release build. Inspect a version's SBOM with:
+
+```sh
+docker buildx imagetools inspect ghcr.io/fachschaftinformatik/web:<version> \
+  --format '{{ json .SBOM }}'
+```
+
 One Alpine runtime contains the stripped, path-trimmed static Go API binary,
 database migrations, Node, and Next.js standalone output. Separate builder stages
 keep Go sources, generated-code tools, npm, Bun, and other build tools out of the

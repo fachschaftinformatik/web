@@ -13,6 +13,7 @@ group "default" {
 target "common" {
   context   = "."
   platforms = ["linux/amd64"]
+  attest = ["type=sbom"]
   labels = {
     "org.opencontainers.image.version" = RELEASE_TAG
   }
