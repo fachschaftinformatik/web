@@ -1,49 +1,24 @@
-networks:
-  app:
-
-
-volumes:
-  garage:
-  database:
-
-
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    restart: always
+    restart: unless-stopped
     ports:
-      - 3000:80
-      - 127.0.0.1:8080:8080
+      - "127.0.0.1:8090:8080"
     volumes:
       - database:/data
-    networks:
-      - app
-    environment:
-      - DOMAIN=http://localhost:3000
-      - AUTH_URL=http://localhost:3000
-      - AUTH_SECRET=${AUTH_SECRET:-development-only-auth-secret-change-in-production}
-      - SIGNUPS_VERIFY=true
-      - INTERNAL_JWT_SECRET=${INTERNAL_JWT_SECRET:-change-me-internal-secret}
-      - S3_ENDPOINT=garage:3900
-      - S3_BUCKET=development
-      - S3_USE_SSL=false
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-GK0123456789abcdef01234567}
-      - S3_SECRET_KEY=${S3_SECRET_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
-    depends_on:
-      garage:
-        condition: service_healthy
+    stop_grace_period: 15s
 
+  # Optional object storage for development of the persistent storage adapter.
   garage:
+    profiles: [storage]
     image: dxflrs/garage:v2.4.1@sha256:9c96caa2612d3411acc5b0e6701fb238dbfba33e533a6d7d3d811a4b12d0d020
     restart: on-failure
     command: /garage server --single-node --default-bucket
     volumes:
       - ./garage.toml:/etc/garage.toml:ro
       - garage:/var/lib/garage
-    networks:
-      - app
     environment:
       GARAGE_DEFAULT_ACCESS_KEY: ${S3_ACCESS_KEY:-GK0123456789abcdef01234567}
       GARAGE_DEFAULT_SECRET_KEY: ${S3_SECRET_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
@@ -54,3 +29,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 5s
+
+volumes:
+  database:
+  garage:

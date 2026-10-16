@@ -4,115 +4,27 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
+    branches: [main, 'v2/**']
   schedule:
     - cron: '0 9 * * 1'
       timezone: Europe/Berlin
   workflow_dispatch:
     inputs:
       dry-run:
-        description: Preview the next version without publishing images or a release
+        description: Preview the next release without publishing
         type: boolean
         default: true
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || startsWith(github.ref, 'refs/heads/v2/') }}
 
 permissions:
   contents: read
 
 jobs:
-  plan:
-    name: release:plan
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      api: ${{ steps.mode.outputs.full == 'true' || steps.changes.outputs.shared == 'true' || steps.changes.outputs.api == 'true' }}
-      website: ${{ steps.mode.outputs.full == 'true' || steps.changes.outputs.shared == 'true' || steps.changes.outputs.website == 'true' }}
-      generated: ${{ steps.mode.outputs.full == 'true' || steps.changes.outputs.shared == 'true' || steps.changes.outputs.generated == 'true' }}
-      workflows: ${{ steps.mode.outputs.full == 'true' || steps.changes.outputs.shared == 'true' }}
-      release_tools: ${{ steps.mode.outputs.full == 'true' || steps.changes.outputs.shared == 'true' || steps.changes.outputs.release_tools == 'true' }}
-      dependencies: ${{ steps.mode.outputs.full == 'true' || steps.changes.outputs.shared == 'true' || steps.changes.outputs.dependencies == 'true' }}
-      app: ${{ steps.mode.outputs.full == 'true' || steps.changes.outputs.shared == 'true' || steps.changes.outputs.app == 'true' }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Select full verification for scheduled and manual runs
-        id: mode
-        env:
-          FULL: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-        run: printf 'full=%s\n' "$FULL" >> "$GITHUB_OUTPUT"
-      - name: Select applicable checks from changed paths
-        id: changes
-        if: steps.mode.outputs.full != 'true'
-        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
-        with:
-          base: ${{ github.event.before || github.event.pull_request.base.sha }}
-          filters: |
-            shared:
-              - '.github/workflows/**'
-              - '.github/actions/**'
-              - '.github/ci/**'
-            api:
-              - '**/*.go'
-              - 'go.mod'
-              - 'go.sum'
-              - 'internal/**'
-              - 'database/**'
-            website:
-              - 'website/**'
-              - 'docs/**'
-              - '.node-version'
-            generated:
-              - '**/*.go'
-              - 'go.mod'
-              - 'go.sum'
-              - 'database/**'
-              - 'docs/**'
-              - 'website/openapi-ts.config.ts'
-              - 'website/src/lib/api/**'
-              - 'website/package.json'
-              - 'website/bun.lock'
-              - '.node-version'
-            release_tools:
-              - '.github/release/**'
-              - '.node-version'
-            app:
-              - 'Dockerfile'
-              - '.dockerignore'
-              - 'bake.hcl'
-              - 'compose.yaml'
-              - 'garage.toml'
-              - 'docker/**'
-              - '**/*.go'
-              - 'go.mod'
-              - 'go.sum'
-              - 'internal/**'
-              - 'database/**'
-              - 'website/**'
-              - 'docs/**'
-              - '.node-version'
-              - '.github/release/**'
-            dependencies:
-              - 'go.mod'
-              - 'go.sum'
-              - 'website/package.json'
-              - 'website/bun.lock'
-              - '.github/release/package.json'
-              - '.github/release/bun.lock'
-              - 'Dockerfile'
-              - '.node-version'
-
-  lint-api:
-    name: lint:api
-    needs: plan
-    if: needs.plan.outputs.api == 'true'
+  lint-go:
+    name: lint:go
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -121,41 +33,12 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-go
         with:
-          scope: lint-api
+          scope: lint-go
+      - run: test -z "$(gofmt -l main.go database internal)"
       - run: go vet ./...
 
-  lint-app:
-    name: lint:app
-    needs: plan
-    if: needs.plan.outputs.app == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - run: shellcheck docker/*.sh docker/services/*/run
-
-  lint-website:
-    name: lint:website
-    needs: plan
-    if: needs.plan.outputs.website == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-bun
-        with:
-          directory: website
-      - run: bun run check && bun run lint
-        working-directory: website
-
-  lint-workflows:
+  lint-tooling:
     name: lint:workflows
-    needs: plan
-    if: needs.plan.outputs.workflows == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -166,49 +49,27 @@ jobs:
         with:
           scope: lint-workflows
       - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - run: shellcheck tools/*.sh
 
-  test-api:
-    name: test:api
-    needs: plan
-    if: needs.plan.outputs.api == 'true'
+  test-go:
+    name: test:go
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-go
         with:
-          scope: test-api
-      - name: Check generated Go and OpenAPI files
+          scope: test-go
+      - name: Verify generated database queries
         run: |
-          go generate ./...
-          git diff --exit-code -- docs internal/database
-      - run: go test ./...
+          go generate ./database
+          git diff --exit-code -- internal/database
+      - run: go test -race ./...
 
-  test-website:
-    name: test:website
-    needs: plan
-    if: needs.plan.outputs.generated == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-bun
-        with:
-          directory: website
-      - name: Check generated API client
-        working-directory: website
-        run: |
-          bun run gen:api
-          git diff --exit-code -- src/lib/api
-
-  test-release-tools:
+  test-release:
     name: test:release
-    needs: plan
-    if: needs.plan.outputs.release_tools == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -222,10 +83,8 @@ jobs:
       - run: bun run test
         working-directory: .github/release
 
-  security-api:
-    name: security:api
-    needs: plan
-    if: needs.plan.outputs.api == 'true'
+  security-go:
+    name: security:go
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -237,7 +96,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-go
         with:
-          scope: security-api
+          scope: security-go
       - uses: github/codeql-action/init@v4
         with:
           languages: go
@@ -247,13 +106,10 @@ jobs:
       - uses: github/codeql-action/analyze@v4
         with:
           category: /language:go
-      - name: Check reachable vulnerabilities
-        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
-  security-website:
-    name: security:website
-    needs: plan
-    if: needs.plan.outputs.website == 'true'
+  security-browser:
+    name: security:browser
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -270,17 +126,10 @@ jobs:
           queries: security-extended
       - uses: github/codeql-action/analyze@v4
         with:
-          category: /language:javascript-typescript
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: latest
-      - run: bun audit --audit-level=high
-        working-directory: website
+          category: /language:javascript
 
   security-workflows:
     name: security:workflows
-    needs: plan
-    if: needs.plan.outputs.workflows == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -301,8 +150,7 @@ jobs:
 
   security-dependencies:
     name: security:dependencies
-    needs: plan
-    if: github.event_name == 'pull_request' && needs.plan.outputs.dependencies == 'true'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -316,10 +164,8 @@ jobs:
           license-check: false
           comment-summary-in-pr: never
 
-  security-release-tools:
+  security-release:
     name: security:release
-    needs: plan
-    if: needs.plan.outputs.release_tools == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -335,8 +181,6 @@ jobs:
 
   build-app:
     name: build:app
-    needs: plan
-    if: needs.plan.outputs.app == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -344,8 +188,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-      - name: Build application image
-        uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7
+      - uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7
         env:
           RELEASE_TAG: v0.0.0-test
         with:
@@ -353,85 +196,19 @@ jobs:
           targets: app
           set: '*.output=type=cacheonly'
 
-  test-app:
-    name: test:app
-    needs: [plan, build-app]
-    if: needs.plan.outputs.app == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      APP_IMAGE: ghcr.io/${{ github.repository }}:v0.0.0-test
-      COMPOSE_FILE: .github/ci/compose.yaml
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-      - name: Load the cached application image
-        uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7
-        env:
-          RELEASE_TAG: v0.0.0-test
-        with:
-          files: bake.hcl
-          targets: app
-          load: true
-          provenance: false
-          sbom: false
-          set: '*.cache-to='
-      - name: Start disposable application and storage fixtures
-        run: docker compose up --wait --wait-timeout 60
-      - name: Test frontend, API proxy, and Swagger
-        run: |
-          for path in /team /api/v1/office-status /swagger/index.html; do
-            docker compose exec -T app wget -q -O /dev/null "http://127.0.0.1$path"
-          done
-      - name: Test native image processing as the website user
-        run: |
-          docker compose exec -T --user 1001:1001 -w /app/website app node -e '
-            require("sharp")({create: {width: 2, height: 2, channels: 3, background: "#000"}})
-              .png().toBuffer().then(b => { if (!b.length) process.exit(1); })
-              .catch(e => { console.error(e); process.exit(1); });
-          '
-      - name: Test graceful shutdown
-        run: |
-          docker compose stop --timeout 10 app
-          test "$(docker inspect --format '{{.State.ExitCode}}' "$(docker compose ps -aq app)")" = 0
-      - name: Show runtime logs on failure
-        if: failure()
-        run: docker compose logs --no-color --tail 60
-      - name: Remove disposable fixtures
-        if: always()
-        run: docker compose down --volumes --remove-orphans
-
   check:
     name: release:check
     if: always()
-    needs:
-      - plan
-      - lint-api
-      - lint-app
-      - lint-website
-      - lint-workflows
-      - test-api
-      - test-app
-      - test-website
-      - test-release-tools
-      - security-api
-      - security-website
-      - security-workflows
-      - security-dependencies
-      - security-release-tools
-      - build-app
+    needs: [lint-go, lint-tooling, test-go, test-release, security-go, security-browser, security-workflows, security-dependencies, security-release, build-app]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Require every applicable check to succeed
+      - name: Require all applicable checks
         env:
-          PLAN_RESULT: ${{ needs.plan.result }}
           RESULTS: ${{ join(needs.*.result, ',') }}
         run: |
           echo "Check results: $RESULTS"
-          [[ "$PLAN_RESULT" == success && "$RESULTS" != *failure* && "$RESULTS" != *cancelled* ]]
+          [[ "$RESULTS" != *failure* && "$RESULTS" != *cancelled* ]]
 
   publish:
     name: release:publish
@@ -442,9 +219,6 @@ jobs:
     permissions:
       contents: write
       packages: write
-    outputs:
-      released: ${{ steps.semantic-release.outputs.released }}
-      tag: ${{ steps.semantic-release.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -500,13 +274,11 @@ jobs:
             --format '{{ json .SBOM.SPDX }}' > "$SBOM_FILE"
           jq -e '.spdxVersion and .SPDXID == "SPDXRef-DOCUMENT"' "$SBOM_FILE" > /dev/null
           gh release upload "$RELEASE_TAG" "$SBOM_FILE" --clobber
-      - name: Promote latest image aliases
+      - name: Promote latest image alias
         if: steps.aliases.outputs.tag != ''
         env:
           IMAGE_PREFIX: ghcr.io/${{ github.repository }}
           RELEASE_TAG: ${{ steps.aliases.outputs.tag }}
         run: |
           docker buildx imagetools inspect "$IMAGE_PREFIX:$RELEASE_TAG"
-          docker buildx imagetools create \
-            --tag "$IMAGE_PREFIX:latest" \
-            "$IMAGE_PREFIX:$RELEASE_TAG"
+          docker buildx imagetools create --tag "$IMAGE_PREFIX:latest" "$IMAGE_PREFIX:$RELEASE_TAG"

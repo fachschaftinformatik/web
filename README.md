@@ -6,149 +6,84 @@
 
 Website of the student representative body for computer science at Westphalian University.
 
-## V2 development
+## Getting started
 
-The `v2/go-templates` branch develops the Go-template replacement, with
-domain-first packages, embedded browser assets and selective HTMX. Start it with:
-
-```sh
-go run ./cmd/web-demo
-```
-
-Open <http://127.0.0.1:8090/> and sign in with **admin / admin** to try the local
-administration workflows. For account display data from the local database copy:
+The `v2/go-templates` branch develops the server-rendered replacement with Go
+templates, embedded browser assets and selective HTMX. Go 1.27.2 is required.
 
 ```sh
-go run ./cmd/web-demo -data .dev-data/production-2026-10-14
+go run .
 ```
 
-See [V2 development and repository migration](docs/v2-development.md),
-[implementation and checks](docs/web-demo.md) and [design research](docs/govuk-patterns.md).
-The existing API/Next.js setup below documents V1 during the repository cutover.
+Open <http://127.0.0.1:8090/>. Sign in with **admin / admin** to try the local
+administration workflows. Edits and uploaded documents currently live in memory
+and reset on restart. Normal account authentication and mail are not connected.
 
-If you believe you have found a security issue, please contact us at security@fsv-wh.de.
+To display accounts from a local read-only SQLite copy:
 
-## Documentation
-
-For the API spec please refer to [/docs](/docs). The live API documentation can be found [here](https://ik.fsv-wh.de/swagger/index.html).
-
-### Architecture
-
-```mermaid
-flowchart TB
-  subgraph Client[Client]
-    Browser[Browser]
-    Frontend[Next.js frontend]
-  end
-
-  subgraph Server[Server]
-    Proxy[HTTP Proxy]
-    subgraph Backend[Backend]
-      API[RESTful API]
-      DB[(database)]
-      S3[(Garage object storage)]
-      DB -. "references" .-> S3
-    end
-  end
-
-  Browser -->|loads website| Proxy
-  Proxy -->|serves website| Frontend
-  Frontend -->|calls RESTful API| Proxy
-  Proxy -->|forwards API calls| API
-  API --> DB
-  API -->|accesses| S3
-
-  class Browser,Frontend client
-  class Proxy service
-  class API service
-  class DB,S3 data
+```sh
+go run . -data .dev-data/production-2026-10-14
 ```
 
-The `database` holds all relevant meta data and references to the blobs. All blobs are stored in the S3 compatible `object storage`. For a more detailed overview have a look at the [initial SQL schema](https://github.com/fachschaftinformatik/web/blob/main/database/migrations/0001_initial_schema.sql).
+Only user display fields are imported. Passwords, tokens and production sessions
+are not loaded. Keep local data and credentials under ignored paths.
 
-## V1 getting started
-
-The application image bundles the Go API and Next.js frontend in one Alpine
-container. Docker Compose starts the application and Garage:
+### Container
 
 ```sh
 docker compose up --build
 ```
 
-Open `http://localhost:3000`. Next.js proxies `/api/v1` and `/swagger` to the API
-inside the container. SQLite data persists at `/data`. Compose also exposes the
-API on `127.0.0.1:8080` for local development.
+The same site is available at <http://127.0.0.1:8090/>. The image runs one static
+Go executable as UID 1001 on port 8080, with embedded templates and assets.
+`/healthz` is the container health endpoint. SIGTERM drains HTTP requests before
+exit. `-addr`, `-data`, `-version` and `-check-health` are executable flags.
 
-To develop the frontend with hot reload while Compose is running, use a separate
-development port:
-```sh
-cd website
-bun install
-bun run dev --port 3001
+Compose retains the `/data` volume for the persistence work. The current
+application does not write to it. Optional Garage object storage is available
+with `docker compose --profile storage up -d garage`; its configuration and
+default credentials are for local development. Existing SQLite migrations, SQLC
+queries, SMTP transport and S3/image adapters remain available for domain wiring.
+
+## Architecture
+
+```text
+main.go                 Executable and HTTP lifecycle
+internal/
+  account/              Account policies and directory
+  archive/              Modules, uploads and filtering
+  forum/                Discussions, rich text and drafts
+  images/               Albums, photographs and image processing
+  home/                 Landing-page content
+  meetings/             Documents and publication workflow
+  team/                 Member profiles and responsibilities
+  handler/http/         HTML handlers, templates and embedded assets
+  database/             Generated SQLC queries
+  storage/              Blob-storage adapters
+  email/                SMTP transport and email templates
+database/               SQLite migrations, SQL queries and generation
 ```
 
-Configure the frontend in `website/.env.local`:
+HTML handlers call domain operations directly. The V1 REST API, Next.js website,
+OpenAPI client generation and multi-process runtime are retired on this branch;
+their implementation remains in Git history at `86a6968`.
 
-```dotenv
-BACKEND_URL=http://localhost:8080
-AUTH_URL=http://localhost:3001
-AUTH_SECRET=replace-with-a-random-secret
-INTERNAL_JWT_SECRET=replace-with-a-shared-random-secret
-```
-
-Set `AUTH_SECRET` and the same `INTERNAL_JWT_SECRET` in the repository-root `.env`
-file for Compose.
-Generate secrets with `openssl rand -hex 32`.
-
-### Object storage
-
-Garage v2.4.1 provides S3-compatible object storage. Compose initializes a single-node instance,
-an application key, and the `development` bucket automatically. Data and metadata persist in
-the `garage` volume; the SQLite application database persists separately in `database`.
-The storage API is only exposed on the internal Compose network.
-
-`garage.toml` and the default Compose credentials are for local development. For production,
-generate a unique RPC secret, create a dedicated application key with read/write access to its
-bucket, and configure the API with that key. Garage's S3 region is `us-east-1`.
-The Go storage adapter uses the S3-compatible `minio-go` client library; no MinIO server is required.
-
-Inspect local storage with:
+## Checks and documentation
 
 ```sh
-docker compose exec garage /garage status
-docker compose exec garage /garage bucket info development
+go test -race ./...
+go vet ./...
+go generate ./database
+go build -o /path/to/output/web .
 ```
 
-For more information on how to build the project, read [CONTRIBUTING.md](https://github.com/fachschaftinformatik/web/blob/main/.github/CONTRIBUTING.md#building).
+See [V2 migration status](docs/v2-development.md),
+[implemented journeys and checks](docs/web-demo.md),
+[design research](docs/govuk-patterns.md), [contribution instructions](.github/CONTRIBUTING.md)
+and [release operations](.github/release/README.md).
 
-The following environment variables are being used and should be set accordingly:
-
-| Variable | Local Compose value | Notes |
-| --- | --- | --- |
-| `DOMAIN` | `http://localhost:3000` | The domain the frontend will be reachable at. Used for CORS, redirects and URL generation. |
-| `SIGNUPS_ENABLED` | `true` | Whether new signups are allowed. |
-| `SIGNUPS_VERIFY` | `true` | Whether signups must verify their email address. Requires SMTP configuration. |
-| `AUTH_URL` | `http://localhost:3000` | Public URL used by the application's authentication flow. |
-| `AUTH_SECRET` | Development-only default | Authentication session secret; override outside local development. |
-| `INTERNAL_JWT_SECRET` | Development-only default | Secret used by the frontend to authenticate API requests. |
-| `S3_ENDPOINT` | `garage:3900` | S3 service host and port, without a URL scheme. |
-| `S3_BUCKET` | `development` | Name of the bucket. |
-| `S3_USE_SSL` | `false` | Whether to use TLS for the S3 connection. |
-| `S3_ACCESS_KEY` | `GK0123456789abcdef01234567` | Development key; override via Compose environment variables. |
-| `S3_SECRET_KEY` | `0123456789abcdef` repeated four times | Development secret; override via Compose environment variables. |
-| `SMTP_HOST` |  | SMTP host. |
-| `SMTP_PORT` |  | SMTP port. |
-| `SMTP_USERNAME` |  | SMTP username. |
-| `SMTP_PASSWORD` |  | SMTP password. |
-| `SMTP_FROM` |  | SMTP address used for sending emails. |
-
-## Contributing
-
-If you wish to contribute to the this project, thank you!
-Please refer to [CONTRIBUTING.md][1] for guidance.
+If you believe you have found a security issue, contact security@fsv-wh.de.
 
 ## Legal
 
 SPDX-License-Identifier: MPL-2.0
-
-[1]: https://github.com/fachschaftinformatik/web/tree/main?tab=contributing-ov-file

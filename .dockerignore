@@ -8,3 +8,7 @@
 **/.env.*
 .github
 **/*.tsbuildinfo
+*.private-key.pem
+**/*.db
+**/*.db-shm
+**/*.db-wal
