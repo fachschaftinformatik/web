@@ -15,7 +15,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fachschaftinformatik/web/internal/account"
+	"github.com/fachschaftinformatik/web/internal/users"
 	"github.com/fachschaftinformatik/web/internal/web"
 )
 
@@ -62,16 +62,16 @@ func run(ctx context.Context, args []string) error {
 		}
 		return nil
 	}
-	users := account.Users("")
+	records := users.Examples()
 	if *data != "" {
 		var err error
-		users, err = account.LoadUsers(filepath.Join(*data, "sqlite.db"))
+		records, err = users.Load(filepath.Join(*data, "sqlite.db"))
 		if err != nil {
 			return fmt.Errorf("load account snapshot: %w", err)
 		}
-		log.Printf("Read-only account snapshot: %d accounts", len(users))
+		log.Printf("Read-only account snapshot: %d accounts", len(records))
 	}
-	handler, err := web.NewWithUsers(users)
+	handler, err := web.NewWithUsers(records)
 	if err != nil {
 		return err
 	}

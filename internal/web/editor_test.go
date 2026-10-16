@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fachschaftinformatik/web/internal/forum"
+	"github.com/fachschaftinformatik/web/internal/content/posts"
 )
 
 func TestForumEditor(t *testing.T) {
@@ -58,7 +58,7 @@ func TestForumEditor(t *testing.T) {
 			}
 		})
 	}
-	thread, _ := forum.Lookup("203823111852785665")
+	thread, _ := posts.Lookup("203823111852785665")
 	if thread.Title != "LaTeX Template für Bachelor-/Masterarbeit" {
 		t.Fatal("source was mutated")
 	}

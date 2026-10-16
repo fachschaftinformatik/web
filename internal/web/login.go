@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/fachschaftinformatik/web/internal/account"
+	"github.com/fachschaftinformatik/web/internal/users"
 )
 
 // LoginPage supports an explicit local demo credential; normal account login remains a preview.
@@ -42,7 +42,7 @@ func (c *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			c.renderStatus(w, "login", false, data, http.StatusUnprocessableEntity)
 			return
 		}
-		data.Login.EmailError = account.EmailError(data.Login.Email)
+		data.Login.EmailError = users.EmailError(data.Login.Email)
 		if r.PostForm.Get("password") == "" {
 			data.Login.PasswordError = "Gib dein Passwort ein."
 		}

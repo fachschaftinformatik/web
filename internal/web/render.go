@@ -8,20 +8,20 @@ import (
 	"io/fs"
 	"net/url"
 
-	"github.com/fachschaftinformatik/web/internal/archive"
-	"github.com/fachschaftinformatik/web/internal/forum"
-	"github.com/fachschaftinformatik/web/internal/team"
+	"github.com/fachschaftinformatik/web/internal/content/files"
+	"github.com/fachschaftinformatik/web/internal/content/posts"
+	"github.com/fachschaftinformatik/web/internal/people"
 )
 
 //go:embed templates/*.html assets/*
-var files embed.FS
+var resources embed.FS
 
 type Page struct {
 	Title, Active string
 	DocumentTitle string
 	Community     bool
 	Fachschaft    bool
-	Team          []team.Group
+	Team          []people.Group
 	Archive       ArchivePage
 	Images        ImagesPage
 	Home          HomePage
@@ -37,12 +37,12 @@ type Page struct {
 }
 
 type ArchivePage struct {
-	Module   *archive.Module
-	Filter   archive.Filter
+	Module   *files.Module
+	Filter   files.Filter
 	Programs []FilterOption
 	Versions []FilterOption
 	Degrees  []FilterOption
-	Modules  []archive.Module
+	Modules  []files.Module
 }
 
 func (p ArchivePage) querySuffix() string {
@@ -63,7 +63,7 @@ func (p ArchivePage) querySuffix() string {
 
 func (p ArchivePage) SearchURL() string { return "/archive" + p.querySuffix() }
 
-func (p ArchivePage) ModuleURL(module archive.Module) string {
+func (p ArchivePage) ModuleURL(module files.Module) string {
 	return "/archive/" + url.PathEscape(module.ID) + p.querySuffix()
 }
 
@@ -101,7 +101,7 @@ type Renderer struct {
 func newRenderer() (*Renderer, error) {
 	r := &Renderer{pages: make(map[string]*template.Template)}
 	for _, name := range []string{"home", "team", "contact", "archive", "module", "images", "community", "fachschaft", "content", "elections", "regulations", "login", "register", "forgot", "forum", "thread", "editor", "admin"} {
-		t, err := template.New("layout").Funcs(template.FuncMap{"forumText": forumText, "richHTML": func(source string) template.HTML { return template.HTML(forum.SanitizeRichText(source)) }}).ParseFS(files, "templates/layout.html", "templates/"+name+".html")
+		t, err := template.New("layout").Funcs(template.FuncMap{"forumText": forumText, "richHTML": func(source string) template.HTML { return template.HTML(posts.SanitizeRichText(source)) }}).ParseFS(resources, "templates/layout.html", "templates/"+name+".html")
 		if err != nil {
 			return nil, err
 		}
@@ -123,6 +123,6 @@ func (r *Renderer) Render(w io.Writer, page string, fragment bool, data Page) er
 }
 
 func Assets() fs.FS {
-	assets, _ := fs.Sub(files, "assets")
+	assets, _ := fs.Sub(resources, "assets")
 	return assets
 }

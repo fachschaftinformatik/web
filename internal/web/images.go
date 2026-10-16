@@ -4,14 +4,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/fachschaftinformatik/web/internal/images"
+	"github.com/fachschaftinformatik/web/internal/content/media"
 )
 
 type ImagesPage struct {
-	Albums                     []images.Album
-	Album                      images.Album
-	Images                     []images.Image
-	Image                      images.Image
+	Albums                     []media.Album
+	Album                      media.Album
+	Images                     []media.Image
+	Image                      media.Image
 	Detail, Viewer             bool
 	Number, Total, Page, Pages int
 	PageNumbers                []int
@@ -19,10 +19,10 @@ type ImagesPage struct {
 }
 
 func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
-	g := ImagesPage{Albums: images.Albums()}
+	g := ImagesPage{Albums: media.Albums()}
 	data := Page{Title: "Galerie", Active: "events", Community: true}
 	if id := r.PathValue("album"); id != "" {
-		album, found := images.Find(id)
+		album, found := media.Find(id)
 		if !found {
 			http.NotFound(w, r)
 			return
@@ -51,7 +51,7 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 			}
 			data.Title = g.Image.Title
 		} else {
-			g.Pages = max(1, (g.Total+images.PageSize-1)/images.PageSize)
+			g.Pages = max(1, (g.Total+media.PageSize-1)/media.PageSize)
 			for number := 1; number <= g.Pages; number++ {
 				g.PageNumbers = append(g.PageNumbers, number)
 			}
@@ -64,8 +64,8 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 				}
 				g.Page = page
 			}
-			start := (g.Page - 1) * images.PageSize
-			g.Images = album.Images[start:min(start+images.PageSize, g.Total)]
+			start := (g.Page - 1) * media.PageSize
+			g.Images = album.Images[start:min(start+media.PageSize, g.Total)]
 			if g.Pages > 1 {
 				data.DocumentTitle = data.Title + " – Seite " + strconv.Itoa(g.Page) + " von " + strconv.Itoa(g.Pages)
 			}

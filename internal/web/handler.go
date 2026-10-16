@@ -8,38 +8,38 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/fachschaftinformatik/web/internal/account"
-	"github.com/fachschaftinformatik/web/internal/archive"
 	"github.com/fachschaftinformatik/web/internal/content"
-	"github.com/fachschaftinformatik/web/internal/images"
-	"github.com/fachschaftinformatik/web/internal/team"
+	"github.com/fachschaftinformatik/web/internal/content/files"
+	"github.com/fachschaftinformatik/web/internal/content/media"
+	"github.com/fachschaftinformatik/web/internal/people"
+	"github.com/fachschaftinformatik/web/internal/users"
 )
 
 type Handler struct {
 	views    *Renderer
-	team     *team.Store
+	people   *people.Store
 	content  *content.Store
-	users    *account.Directory
+	users    *users.Directory
 	sessions sessionStore
 }
 
 func New() (http.Handler, error) {
-	return NewWithUsers(account.Users(""))
+	return NewWithUsers(users.Examples())
 }
 
-func NewWithUsers(users []account.User) (http.Handler, error) {
+func NewWithUsers(records []users.User) (http.Handler, error) {
 	views, err := newRenderer()
 	if err != nil {
 		return nil, err
 	}
-	c := &Handler{views: views, team: team.NewStore(), content: content.NewStore(), users: account.NewDirectory(users), sessions: newSessionStore()}
+	c := &Handler{views: views, people: people.NewStore(), content: content.NewStore(), users: users.NewDirectory(records), sessions: newSessionStore()}
 	router := http.NewServeMux()
 	router.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = w.Write([]byte("ok\n"))
 	})
 	router.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		c.render(w, "home", false, Page{Title: "Startseite", Active: "home", Home: homeContent(), Images: ImagesPage{Albums: images.Albums()}})
+		c.render(w, "home", false, Page{Title: "Startseite", Active: "home", Home: homeContent(), Images: ImagesPage{Albums: media.Albums()}})
 	})
 	router.HandleFunc("GET /team", c.Team)
 	router.HandleFunc("GET /contact", func(w http.ResponseWriter, r *http.Request) {
@@ -99,31 +99,31 @@ func NewWithUsers(users []account.User) (http.Handler, error) {
 }
 
 func (c *Handler) Team(w http.ResponseWriter, r *http.Request) {
-	c.render(w, "team", false, Page{Title: "Mitglieder", Active: "team", Fachschaft: true, Team: c.team.Groups()})
+	c.render(w, "team", false, Page{Title: "Mitglieder", Active: "team", Fachschaft: true, Team: c.people.Groups()})
 }
 
-func archiveFilter(r *http.Request) archive.Filter {
+func archiveFilter(r *http.Request) files.Filter {
 	q := r.URL.Query()
-	return archive.Filter{Query: q.Get("q"), Programs: q["program"], Versions: slices.DeleteFunc(q["version"], func(version string) bool { return version == "" }), Degrees: q["degree"]}
+	return files.Filter{Query: q.Get("q"), Programs: q["program"], Versions: slices.DeleteFunc(q["version"], func(version string) bool { return version == "" }), Degrees: q["degree"]}
 }
 
 func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 	filter := archiveFilter(r)
 	programs := make([]FilterOption, 0)
-	for _, program := range archive.Programs() {
+	for _, program := range files.Programs() {
 		programs = append(programs, FilterOption{Name: program, Selected: slices.Contains(filter.Programs, program)})
 	}
 	versions := make([]FilterOption, 0)
-	for _, version := range archive.Versions() {
+	for _, version := range files.Versions() {
 		versions = append(versions, FilterOption{Name: version, Selected: slices.Contains(filter.Versions, version)})
 	}
 	degrees := make([]FilterOption, 0)
-	for _, degree := range archive.Degrees() {
+	for _, degree := range files.Degrees() {
 		degrees = append(degrees, FilterOption{Name: degree, Selected: slices.Contains(filter.Degrees, degree)})
 	}
 	data := Page{
 		Title: "Altklausuren", Active: "archive",
-		Archive: ArchivePage{Filter: filter, Programs: programs, Versions: versions, Degrees: degrees, Modules: archive.FindModules(filter)},
+		Archive: ArchivePage{Filter: filter, Programs: programs, Versions: versions, Degrees: degrees, Modules: files.FindModules(filter)},
 	}
 	w.Header().Set("Vary", "HX-Request, HX-History-Restore-Request")
 	fragment := r.Header.Get("HX-Request") == "true" && r.Header.Get("HX-History-Restore-Request") != "true"
@@ -132,7 +132,7 @@ func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 
 func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
 	filter := archiveFilter(r)
-	module, ok := archive.FindModule(r.PathValue("module"), filter)
+	module, ok := files.FindModule(r.PathValue("module"), filter)
 	if !ok {
 		http.NotFound(w, r)
 		return

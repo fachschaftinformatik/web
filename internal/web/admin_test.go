@@ -3,7 +3,7 @@ package web
 import (
 	"bytes"
 	"fmt"
-	"github.com/fachschaftinformatik/web/internal/account"
+	"github.com/fachschaftinformatik/web/internal/users"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -172,7 +172,7 @@ func TestPublicationReviewAndVisibility(t *testing.T) {
 	b.login()
 	other := newAdminBrowser(t, server)
 	other.login()
-	pdf, err := files.ReadFile("assets/example.pdf")
+	pdf, err := resources.ReadFile("assets/example.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,7 +233,7 @@ func TestPublicationReviewAndVisibility(t *testing.T) {
 }
 
 func TestPasswordResetConfirmationPreview(t *testing.T) {
-	handler, err := NewWithUsers([]account.User{{ID: "42", Name: "Kim Beispiel", Email: "Kim@STUDMAIL.W-HS.DE", Permission: "FSV", Status: "Aktiv"}})
+	handler, err := NewWithUsers([]users.User{{ID: "42", Name: "Kim Beispiel", Email: "Kim@STUDMAIL.W-HS.DE", Permission: "FSV", Status: "Aktiv"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,11 +268,11 @@ func TestPasswordResetConfirmationPreview(t *testing.T) {
 }
 
 func TestUserPaginationKeepsSearchContext(t *testing.T) {
-	var users []account.User
+	var records []users.User
 	for i := 1; i <= 45; i++ {
-		users = append(users, account.User{ID: fmt.Sprint(i), Name: fmt.Sprintf("Beispiel %02d", i), Email: fmt.Sprintf("user%d@example.org", i), Verified: i%2 == 0, Status: "Aktiv"})
+		records = append(records, users.User{ID: fmt.Sprint(i), Name: fmt.Sprintf("Beispiel %02d", i), Email: fmt.Sprintf("user%d@example.org", i), Verified: i%2 == 0, Status: "Aktiv"})
 	}
-	handler, err := NewWithUsers(users)
+	handler, err := NewWithUsers(records)
 	if err != nil {
 		t.Fatal(err)
 	}

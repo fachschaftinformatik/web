@@ -64,8 +64,8 @@ jobs:
           scope: test-go
       - name: Verify generated database queries
         run: |
-          go generate ./internal/database
-          git diff --exit-code -- internal/database
+          go generate ./internal/data
+          git diff --exit-code -- internal/data
       - run: go test -race ./...
 
   security-go:

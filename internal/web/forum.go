@@ -5,18 +5,18 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/fachschaftinformatik/web/internal/forum"
+	"github.com/fachschaftinformatik/web/internal/content/posts"
 )
 
 type ForumPage struct {
-	Filter  forum.Filter
-	Posts   []forum.Post
-	Thread  *forum.Thread
+	Filter  posts.Filter
+	Posts   []posts.Post
+	Thread  *posts.Thread
 	BackURL string
 }
 
 func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
-	thread, ok := forum.Lookup(r.PathValue("post"))
+	thread, ok := posts.Lookup(r.PathValue("post"))
 	if !ok {
 		http.NotFound(w, r)
 		return
@@ -38,7 +38,7 @@ func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
 
 func (c *Handler) Forum(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	filter := forum.Filter{Query: strings.TrimSpace(query.Get("q")), Type: query.Get("type")}
+	filter := posts.Filter{Query: strings.TrimSpace(query.Get("q")), Type: query.Get("type")}
 	switch filter.Type {
 	case "discussion", "news", "event":
 	default:
@@ -46,7 +46,7 @@ func (c *Handler) Forum(w http.ResponseWriter, r *http.Request) {
 	}
 	data := Page{
 		Title: "Forum", Active: "forum", Community: true,
-		Forum: ForumPage{Filter: filter, Posts: forum.Find(filter)},
+		Forum: ForumPage{Filter: filter, Posts: posts.Find(filter)},
 	}
 	if filter.Query != "" || filter.Type != "" {
 		data.DocumentTitle = "Forum – Suchergebnisse"

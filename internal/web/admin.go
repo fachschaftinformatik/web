@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fachschaftinformatik/web/internal/account"
 	"github.com/fachschaftinformatik/web/internal/content"
-	"github.com/fachschaftinformatik/web/internal/team"
+	"github.com/fachschaftinformatik/web/internal/people"
+	"github.com/fachschaftinformatik/web/internal/users"
 )
 
 const uploadBodyLimit = content.MaxPDFBytes + 1<<20
@@ -48,8 +48,8 @@ type AdminPage struct {
 	Section, SectionTitle, View, Action, Query, Message, Success, AddLabel string
 	Fields                                                                 []AdminField
 	Rows                                                                   []AdminRow
-	Users                                                                  []account.User
-	User                                                                   *account.User
+	Users                                                                  []users.User
+	User                                                                   *users.User
 	Meetings                                                               []content.Meeting
 	Publication                                                            *content.Publication
 	Page, Pages, Total                                                     int
@@ -178,7 +178,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		a.View, a.AddLabel = "list", "Mitglied hinzufügen"
-		for _, p := range c.team.People() {
+		for _, p := range c.people.People() {
 			a.Rows = append(a.Rows, AdminRow{p.Name, p.Email, "/verwaltung/mitglieder/" + p.ID})
 		}
 	case "referate", "projektstellen":
@@ -190,9 +190,9 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 		if section == "projektstellen" {
 			a.AddLabel = "Projektstelle hinzufügen"
 		}
-		for _, responsibility := range c.team.Responsibilities(responsibilityGroup(section)) {
+		for _, responsibility := range c.people.Responsibilities(responsibilityGroup(section)) {
 			var names []string
-			for _, p := range c.team.People() {
+			for _, p := range c.people.People() {
 				if slices.Contains(responsibility.MemberIDs, p.ID) {
 					names = append(names, p.Name)
 				}
@@ -231,9 +231,9 @@ func attachErrors(fields []AdminField, errors map[string]string) {
 
 func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPage) {
 	id := r.PathValue("id")
-	p := team.Person{ID: id}
+	p := people.Person{ID: id}
 	found := id == "neu"
-	for _, person := range c.team.People() {
+	for _, person := range c.people.People() {
 		if person.ID == id {
 			p = person
 			found = true
@@ -250,7 +250,7 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPag
 	errors := map[string]string{}
 	if r.Method == http.MethodPost {
 		p.Name, p.Email, p.Role = r.PostForm.Get("name"), r.PostForm.Get("email"), r.PostForm.Get("role")
-		errors = c.team.SavePerson(p)
+		errors = c.people.SavePerson(p)
 		if len(errors) == 0 {
 			http.Redirect(w, r, "/verwaltung/mitglieder?gespeichert=1", http.StatusSeeOther)
 			return
@@ -269,9 +269,9 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPag
 
 func (c *Handler) EditResponsibility(w http.ResponseWriter, r *http.Request, a *AdminPage) {
 	id, group := r.PathValue("id"), responsibilityGroup(a.Section)
-	responsibility := team.Responsibility{ID: id, Group: group}
+	responsibility := people.Responsibility{ID: id, Group: group}
 	found := id == "neu"
-	for _, existing := range c.team.Responsibilities(group) {
+	for _, existing := range c.people.Responsibilities(group) {
 		if existing.ID == id {
 			responsibility = existing
 			found = true
@@ -292,7 +292,7 @@ func (c *Handler) EditResponsibility(w http.ResponseWriter, r *http.Request, a *
 	errors := map[string]string{}
 	if r.Method == http.MethodPost {
 		responsibility.Title, responsibility.Email, responsibility.MemberIDs = r.PostForm.Get("title"), r.PostForm.Get("email"), r.PostForm["members"]
-		errors = c.team.SaveResponsibility(responsibility)
+		errors = c.people.SaveResponsibility(responsibility)
 		if len(errors) == 0 {
 			http.Redirect(w, r, "/verwaltung/"+a.Section+"?gespeichert=1", http.StatusSeeOther)
 			return
@@ -301,7 +301,7 @@ func (c *Handler) EditResponsibility(w http.ResponseWriter, r *http.Request, a *
 	a.View, a.Action = "form", r.URL.Path
 	a.Fields = []AdminField{field("title", "Bezeichnung", responsibility.Title, "text"), field("email", "Öffentliche E-Mail-Adresse (optional)", responsibility.Email, "email"), field("members", "Mitglieder", "", "checkboxes")}
 	a.Fields[2].Hint = "Wähle die zuständigen Personen aus. Entferne ein Häkchen, um eine Zuordnung aufzuheben."
-	for _, p := range c.team.People() {
+	for _, p := range c.people.People() {
 		a.Fields[2].Options = append(a.Fields[2].Options, AdminOption{p.ID, p.Name, slices.Contains(responsibility.MemberIDs, p.ID)})
 	}
 	attachErrors(a.Fields, errors)

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/fachschaftinformatik/web/internal/account"
+	"github.com/fachschaftinformatik/web/internal/users"
 )
 
 type ForgotPage struct {
@@ -23,7 +23,7 @@ func (c *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		data.Forgot.Email = strings.TrimSpace(r.PostForm.Get("email"))
-		data.Forgot.EmailError = account.EmailError(data.Forgot.Email)
+		data.Forgot.EmailError = users.EmailError(data.Forgot.Email)
 		if data.Forgot.EmailError != "" {
 			data.DocumentTitle = "Fehler: Passwort vergessen"
 			status = http.StatusUnprocessableEntity
