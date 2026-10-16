@@ -1,0 +1,45 @@
+{{define "sidebar"}}{{end}}
+{{define "content"}}
+{{$g := .Images}}
+{{if not $g.Detail}}
+<p class="govuk-body">Einblicke in unsere LAN-Partys und das Fachschaftsleben. Hier siehst du eine Auswahl aus den <a class="govuk-link" href="https://ik.fsv-wh.de/events">vollständigen Fotoalben</a>.</p>
+<ul class="govuk-list app-gallery-grid">
+  {{range $g.Albums}}
+  <li>
+    <h2 class="govuk-heading-m"><a class="govuk-link app-gallery-link" href="{{.URL}}">{{if .Images}}{{$cover := index .Images 0}}<img class="app-gallery-thumbnail" src="{{$cover.Thumbnail}}" width="{{$cover.Width}}" height="{{$cover.Height}}" alt="" loading="lazy">{{end}}<span>{{.Title}}</span></a></h2>
+    <p class="govuk-body-s">{{len .Images}} von {{.OriginalCount}} Bildern</p>
+  </li>
+  {{end}}
+</ul>
+{{else if $g.Viewer}}
+<p class="govuk-body"><a class="govuk-link" href="{{$g.Return}}">Zurück zum Album: {{$g.Album.Title}}</a></p>
+<p class="govuk-body-s">Bild {{$g.Number}} von {{$g.Total}} der Fotoauswahl</p>
+<figure class="app-gallery-figure">
+  <img class="app-gallery-image" src="{{$g.Image.Source}}" width="{{$g.Image.Width}}" height="{{$g.Image.Height}}" alt="{{$g.Image.Description}}">
+  <figcaption class="govuk-body-s govuk-!-margin-top-3">{{$g.Image.Title}}</figcaption>
+</figure>
+<nav class="govuk-pagination govuk-pagination--block" aria-label="Bildernavigation">
+  {{if $g.Previous}}<div class="govuk-pagination__prev"><a class="govuk-link govuk-pagination__link" href="{{$g.Previous}}" rel="prev"><span class="govuk-pagination__link-title">Vorheriges Bild</span></a></div>{{end}}
+  {{if $g.Next}}<div class="govuk-pagination__next"><a class="govuk-link govuk-pagination__link" href="{{$g.Next}}" rel="next"><span class="govuk-pagination__link-title">Nächstes Bild</span></a></div>{{end}}
+</nav>
+{{else}}
+<p class="govuk-body"><a class="govuk-link" href="/community/events">Alle Alben</a></p>
+{{if $g.Images}}
+<p class="govuk-body-s">{{$g.Total}} von {{$g.Album.OriginalCount}} Bildern · <a class="govuk-link" href="{{$g.Album.OriginalURL}}">Vollständiges Album</a></p>
+<ul class="govuk-list app-gallery-grid">
+  {{range $g.Images}}
+  <li><a class="govuk-link app-gallery-link" id="image-{{.ID}}" href="{{$g.Album.ImageURL .}}"><img class="app-gallery-thumbnail" src="{{.Thumbnail}}" width="{{.Width}}" height="{{.Height}}" alt="" loading="lazy"><span>{{.Title}}</span></a></li>
+  {{end}}
+</ul>
+{{if gt $g.Pages 1}}
+<nav class="govuk-pagination" aria-label="Albumseiten">
+  {{if $g.Previous}}<div class="govuk-pagination__prev"><a class="govuk-link govuk-pagination__link" href="{{$g.Previous}}" rel="prev"><span class="govuk-pagination__link-title">Vorherige Seite</span></a></div>{{end}}
+  <ul class="govuk-pagination__list">
+    {{range $g.PageNumbers}}<li class="govuk-pagination__item {{if eq $g.Page .}}govuk-pagination__item--current{{end}}"><a class="govuk-link govuk-pagination__link" href="{{$g.Album.PageURL .}}" aria-label="Seite {{.}}" {{if eq $g.Page .}}aria-current="page"{{end}}>{{.}}</a></li>{{end}}
+  </ul>
+  {{if $g.Next}}<div class="govuk-pagination__next"><a class="govuk-link govuk-pagination__link" href="{{$g.Next}}" rel="next"><span class="govuk-pagination__link-title">Nächste Seite</span></a></div>{{end}}
+</nav>
+{{end}}
+{{else}}<p class="govuk-body">In diesem Album sind noch keine Bilder vorhanden.</p>{{end}}
+{{end}}
+{{end}}

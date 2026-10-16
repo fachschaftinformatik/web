@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/account"
-	web "github.com/fachschaftinformatik/web/internal/handler/http"
+	"github.com/fachschaftinformatik/web/internal/web"
 )
 
 // Version is injected by the image build.

@@ -1,13 +1,19 @@
 package database
 
 import (
+	"context"
 	"database/sql"
+	"embed"
 	"fmt"
+	"io/fs"
 	"log"
 
 	"github.com/pressly/goose/v3"
 	_ "modernc.org/sqlite"
 )
+
+//go:embed migrations/*.sql
+var migrations embed.FS
 
 func Migrate(dsn string, logger *log.Logger) error {
 	logger.Println("Running database migrations...")
@@ -21,11 +27,15 @@ func Migrate(dsn string, logger *log.Logger) error {
 		return fmt.Errorf("goose: failed to ping DB: %w", err)
 	}
 
-	if err := goose.SetDialect("sqlite3"); err != nil {
-		return fmt.Errorf("goose: failed to set dialect: %w", err)
+	files, err := fs.Sub(migrations, "migrations")
+	if err != nil {
+		return fmt.Errorf("goose: embedded migrations: %w", err)
 	}
-
-	if err := goose.Up(db, "database/migrations"); err != nil {
+	provider, err := goose.NewProvider(goose.DialectSQLite3, db, files)
+	if err != nil {
+		return fmt.Errorf("goose: create migration provider: %w", err)
+	}
+	if _, err := provider.Up(context.Background()); err != nil {
 		return fmt.Errorf("goose: up failed: %w", err)
 	}
 

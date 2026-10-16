@@ -31,10 +31,10 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-go
+      - uses: ./.github/actions/go
         with:
           scope: lint-go
-      - run: test -z "$(gofmt -l main.go database internal)"
+      - run: test -z "$(gofmt -l main.go internal)"
       - run: go vet ./...
 
   lint-tooling:
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-go
+      - uses: ./.github/actions/go
         with:
           scope: lint-workflows
       - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
@@ -59,12 +59,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-go
+      - uses: ./.github/actions/go
         with:
           scope: test-go
       - name: Verify generated database queries
         run: |
-          go generate ./database
+          go generate ./internal/database
           git diff --exit-code -- internal/database
       - run: go test -race ./...
 
@@ -79,7 +79,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-go
+      - uses: ./.github/actions/go
         with:
           scope: security-go
       - uses: github/codeql-action/init@v4
@@ -157,7 +157,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/bun
         with:
           directory: .github/release
           ignore-scripts: 'true'
@@ -209,7 +209,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/bun
         with:
           directory: .github/release
           ignore-scripts: 'true'
