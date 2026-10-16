@@ -6,6 +6,26 @@
 
 Website of the student representative body for computer science at Westphalian University.
 
+## V2 development
+
+The `v2/go-templates` branch develops the Go-template replacement, with
+domain-first packages, embedded browser assets and selective HTMX. Start it with:
+
+```sh
+go run ./cmd/web-demo
+```
+
+Open <http://127.0.0.1:8090/> and sign in with **admin / admin** to try the local
+administration workflows. For account display data from the local database copy:
+
+```sh
+go run ./cmd/web-demo -data .dev-data/production-2026-10-14
+```
+
+See [V2 development and repository migration](docs/v2-development.md),
+[implementation and checks](docs/web-demo.md) and [design research](docs/govuk-patterns.md).
+The existing API/Next.js setup below documents V1 during the repository cutover.
+
 If you believe you have found a security issue, please contact us at security@fsv-wh.de.
 
 ## Documentation
@@ -46,7 +66,7 @@ flowchart TB
 
 The `database` holds all relevant meta data and references to the blobs. All blobs are stored in the S3 compatible `object storage`. For a more detailed overview have a look at the [initial SQL schema](https://github.com/fachschaftinformatik/web/blob/main/database/migrations/0001_initial_schema.sql).
 
-## Getting started
+## V1 getting started
 
 The application image bundles the Go API and Next.js frontend in one Alpine
 container. Docker Compose starts the application and Garage:

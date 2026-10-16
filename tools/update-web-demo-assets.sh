@@ -17,7 +17,7 @@ sass --no-source-map --style=compressed --quiet-deps \
     "$root/internal/webdemo/handler/http/styles/govuk.scss" "$assets/govuk.css"
 cp "$temp/package/dist/govuk/govuk-frontend.min.js" "$assets/govuk.js"
 mkdir -p "$assets/fonts"
-cp "$temp/package/dist/govuk/assets/fonts/"*.woff2 "$assets/fonts/"
+install -m 0644 "$temp/package/dist/govuk/assets/fonts/"*.woff2 "$assets/fonts/"
 curl --fail --location --silent --show-error \
     "https://raw.githubusercontent.com/alphagov/govuk-frontend/v$version/LICENSE.txt" \
     --output "$assets/GOVUK-LICENSE.txt"
