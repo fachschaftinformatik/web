@@ -1,0 +1,25 @@
+// Local design prototype using the reference's typeface.
+@use "govuk/index" with (
+  $govuk-assets-path: "/assets/",
+  $govuk-page-width: 1100px,
+  $govuk-global-styles: true
+);
+@use "govuk/base" as govuk;
+
+:root {
+  --app-editor-toolbar-background: #{govuk.govuk-colour("black", $variant: "tint-95")};
+}
+
+.app-rich-content h2, .mce-content-body h2 {
+  @include govuk.govuk-font($size: 27, $weight: bold);
+  margin: 30px 0 20px;
+}
+
+.app-rich-content h3, .mce-content-body h3 {
+  @include govuk.govuk-font($size: 19, $weight: bold);
+  margin: 20px 0 15px;
+}
+
+.app-rich-content > :first-child, .mce-content-body > :first-child {
+  margin-top: 0;
+}
