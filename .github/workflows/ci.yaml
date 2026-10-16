@@ -486,6 +486,17 @@ jobs:
           if [[ "$(git rev-list -n 1 "$RELEASE_TAG")" == "$GITHUB_SHA" ]]; then
             printf 'tag=%s\n' "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           fi
+      - name: Attach release SBOM
+        if: steps.aliases.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+          RELEASE_TAG: ${{ steps.aliases.outputs.tag }}
+        run: |
+          docker buildx imagetools inspect "$IMAGE_PREFIX:$RELEASE_TAG" \
+            --format '{{ json .SBOM.SPDX }}' > "$RUNNER_TEMP/sbom.spdx.json"
+          jq -e '.spdxVersion and .SPDXID == "SPDXRef-DOCUMENT"' "$RUNNER_TEMP/sbom.spdx.json" > /dev/null
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/sbom.spdx.json" --clobber
       - name: Promote latest image aliases
         if: steps.aliases.outputs.tag != ''
         env:

@@ -29,11 +29,12 @@ outputs for subsequent deployment jobs.
 
 Published images include a BuildKit-generated SPDX SBOM as an OCI attestation
 in GHCR. It describes the final runtime image and is published by the existing
-Docker Bake release build. Inspect a version's SBOM with:
+Docker Bake release build. The same SPDX document is also attached to the GitHub
+Release as `sbom.spdx.json` for direct download. Inspect a version's SBOM with:
 
 ```sh
 docker buildx imagetools inspect ghcr.io/fachschaftinformatik/web:<version> \
-  --format '{{ json .SBOM }}'
+  --format '{{ json .SBOM.SPDX }}'
 ```
 
 One Alpine runtime contains the stripped, path-trimmed static Go API binary,
