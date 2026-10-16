@@ -143,7 +143,7 @@ func (s *Server) PostAuthForgot(w http.ResponseWriter, r *http.Request) {
 			PasswordResetExpires: &expires,
 			ID:                   user.ID,
 		}); err != nil {
-			s.Log.Error("Failed to set password reset token", "email", payload.Email, "err", err)
+			s.Log.Error("Failed to set password reset token", "userID", user.ID, "err", err)
 			s.JsonError(w, "internal_error", "Failed to process request", http.StatusInternalServerError)
 			return
 		}
