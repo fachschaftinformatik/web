@@ -12,7 +12,6 @@
     "start": "next start",
     "lint": "eslint .",
     "check": "tsc --noEmit",
-    "test:eslint-globs": "node --test tests/eslint-root-dirs.test.mjs",
     "gen:api": "openapi-ts"
   },
   "dependencies": {
