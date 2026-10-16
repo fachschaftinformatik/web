@@ -34,7 +34,7 @@ current fixture/in-memory behaviour.
   Compose exposes localhost:8090 and keeps the existing `/data` volume. Garage is
   an optional development profile, not a startup requirement.
 - `ci:app` covers branch/PR tests, formatting, vet, race detection, SQLC generation,
-  security analysis, release-tool tests and the application image build. The
+  security analysis and the application image build. The
   release gate remains `release:check`. Smoke tests and their Compose fixture
   were removed at the user's request.
 - Renovate no longer regenerates a website API client. Go generation remains;

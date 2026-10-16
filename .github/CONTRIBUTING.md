@@ -71,7 +71,7 @@ The `ci:app` workflow in [ci.yaml](workflows/ci.yaml) runs on pull requests and 
 to `main`, and on pushes to `v2/**`. It uses consistent job names:
 
 - `lint:go`, `lint:workflows`
-- `test:go`, `test:release`
+- `test:go`
 - `security:go`, `security:browser`, `security:workflows`,
   `security:dependencies`, `security:release`
 - `build:app`

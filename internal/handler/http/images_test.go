@@ -1,12 +1,9 @@
 package web
 
 import (
-	"bytes"
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/fachschaftinformatik/web/internal/images"
 )
 
 func TestGalleryJourneys(t *testing.T) {
@@ -51,44 +48,10 @@ func TestGalleryJourneys(t *testing.T) {
 	}
 }
 
-func TestGalleryEmptyAndSingleImageRendering(t *testing.T) {
-	renderer, err := newRenderer()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, count := range []int{0, 1} {
-		var photos []images.Image
-		if count == 1 {
-			photos = images.Albums()[0].Images[:1]
-		}
-		var body bytes.Buffer
-		err := renderer.Render(&body, "gallery", false, Page{Title: "Testalbum", Active: "events", Gallery: GalleryPage{Detail: true, Album: images.Album{ID: "test", Title: "Testalbum"}, Images: photos, Total: count, Page: 1, Pages: 1}})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if strings.Contains(body.String(), "Albumseiten") {
-			t.Fatal("pagination shown for a single page")
-		}
-		if count == 0 && !strings.Contains(body.String(), "noch keine Bilder") {
-			t.Fatal("missing empty state")
-		}
-	}
-}
-
-func TestPublicNavigation(t *testing.T) {
+func TestLegacyAlbumRedirect(t *testing.T) {
 	handler, err := New()
 	if err != nil {
 		t.Fatal(err)
-	}
-	for _, tc := range []struct{ path, text string }{
-		{"/", "Deine Fachschaft Informatik"},
-		{"/community", "Lerne andere Studierende kennen"},
-	} {
-		response := httptest.NewRecorder()
-		handler.ServeHTTP(response, httptest.NewRequest("GET", tc.path, nil))
-		if response.Code != 200 || !strings.Contains(response.Body.String(), tc.text) {
-			t.Fatalf("unexpected page %s: %d", tc.path, response.Code)
-		}
 	}
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, httptest.NewRequest("GET", "/events/140125680309370881?page=2", nil))

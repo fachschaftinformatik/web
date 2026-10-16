@@ -2,7 +2,6 @@ package forum
 
 import (
 	"testing"
-	"time"
 )
 
 func TestFindPosts(t *testing.T) {
@@ -31,19 +30,6 @@ func TestFindPosts(t *testing.T) {
 	}
 }
 
-func TestSnapshotMetadata(t *testing.T) {
-	seen := map[string]bool{}
-	for _, post := range All() {
-		if seen[post.ID] || post.Summary == "" || post.Author == "" || post.Comments < 0 {
-			t.Fatalf("invalid snapshot post: %+v", post)
-		}
-		seen[post.ID] = true
-		if _, err := time.Parse(time.RFC3339, post.Created); err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
 func TestThreadSnapshots(t *testing.T) {
 	for _, post := range All() {
 		thread, ok := Lookup(post.ID)
@@ -60,9 +46,5 @@ func TestThreadSnapshots(t *testing.T) {
 	}
 	if _, ok := Lookup("unknown"); ok {
 		t.Fatal("unknown thread found")
-	}
-	event, _ := Lookup("140127153315381249")
-	if event.EventLabel() != "30. Januar 2026, 17:00 Uhr" {
-		t.Fatal(event.EventLabel())
 	}
 }

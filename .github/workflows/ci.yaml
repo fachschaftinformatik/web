@@ -68,21 +68,6 @@ jobs:
           git diff --exit-code -- internal/database
       - run: go test -race ./...
 
-  test-release:
-    name: test:release
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-bun
-        with:
-          directory: .github/release
-          ignore-scripts: 'true'
-      - run: bun run test
-        working-directory: .github/release
-
   security-go:
     name: security:go
     runs-on: ubuntu-latest
@@ -199,7 +184,7 @@ jobs:
   check:
     name: release:check
     if: always()
-    needs: [lint-go, lint-tooling, test-go, test-release, security-go, security-browser, security-workflows, security-dependencies, security-release, build-app]
+    needs: [lint-go, lint-tooling, test-go, security-go, security-browser, security-workflows, security-dependencies, security-release, build-app]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

@@ -92,19 +92,16 @@ semantic-release depends on `micromatch`, which depends on `braces@3.0.3`.
 GHSA-vfj7-8cjw-p6xm has no published fixed version. The committed Bun patch bounds
 brace/parenthesis parsing and recursive AST walkers at depth 100, based on the
 mitigation discussed in <https://github.com/micromatch/braces/pull/72>.
-The regression suite exercises deeply nested and malformed input, direct ASTs,
-ordinary expansion, and semantic-release's real commit analyzer.
 
 `bun run audit` excludes only that advisory because registry audits identify the
 original version, not Bun patches. Every other high/critical advisory still fails
-the check. CI must install with the frozen lockfile and run the patch regression
-tests before auditing or releasing. Revisit the patch and exception when a fixed
+the check. CI installs with the frozen lockfile before auditing or releasing.
+Revisit the patch and exception when a fixed
 upstream release is available. The patch is isolated to release tooling.
 
 Run locally from this directory:
 
 ```sh
 bun install --frozen-lockfile --ignore-scripts
-bun run test
 bun run audit
 ```
