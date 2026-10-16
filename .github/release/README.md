@@ -30,7 +30,8 @@ outputs for subsequent deployment jobs.
 Published images include a BuildKit-generated SPDX SBOM as an OCI attestation
 in GHCR. It describes the final runtime image and is published by the existing
 Docker Bake release build. The same SPDX document is also attached to the GitHub
-Release as `sbom.spdx.json` for direct download. Inspect a version's SBOM with:
+Release as `web-<version>.sbom.spdx.json` (for example,
+`web-v0.1.22.sbom.spdx.json`) for direct download. Inspect a version's SBOM with:
 
 ```sh
 docker buildx imagetools inspect ghcr.io/fachschaftinformatik/web:<version> \

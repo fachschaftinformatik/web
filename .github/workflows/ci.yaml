@@ -493,10 +493,11 @@ jobs:
           IMAGE_PREFIX: ghcr.io/${{ github.repository }}
           RELEASE_TAG: ${{ steps.aliases.outputs.tag }}
         run: |
+          SBOM_FILE="$RUNNER_TEMP/${GITHUB_REPOSITORY##*/}-$RELEASE_TAG.sbom.spdx.json"
           docker buildx imagetools inspect "$IMAGE_PREFIX:$RELEASE_TAG" \
-            --format '{{ json .SBOM.SPDX }}' > "$RUNNER_TEMP/sbom.spdx.json"
-          jq -e '.spdxVersion and .SPDXID == "SPDXRef-DOCUMENT"' "$RUNNER_TEMP/sbom.spdx.json" > /dev/null
-          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/sbom.spdx.json" --clobber
+            --format '{{ json .SBOM.SPDX }}' > "$SBOM_FILE"
+          jq -e '.spdxVersion and .SPDXID == "SPDXRef-DOCUMENT"' "$SBOM_FILE" > /dev/null
+          gh release upload "$RELEASE_TAG" "$SBOM_FILE" --clobber
       - name: Promote latest image aliases
         if: steps.aliases.outputs.tag != ''
         env:
