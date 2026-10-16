@@ -6,3 +6,5 @@
 **/.next
 **/.env
 **/.env.*
+.github
+**/*.tsbuildinfo

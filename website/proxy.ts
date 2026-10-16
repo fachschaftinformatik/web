@@ -8,8 +8,8 @@ const secret = new TextEncoder().encode(INTERNAL_JWT_SECRET);
 export const proxy = auth(async (req) => {
   const { pathname } = req.nextUrl;
 
-  // 1. API Proxying with Internal JWT
-  if (pathname.startsWith("/api/v1")) {
+  // 1. Backend proxying, including the API documentation.
+  if (pathname.startsWith("/api/v1") || pathname === "/swagger" || pathname.startsWith("/swagger/")) {
     const backendUrl = process.env.BACKEND_URL || "http://api";
     const targetUrl = new URL(req.url);
     targetUrl.protocol = new URL(backendUrl).protocol;
@@ -52,6 +52,7 @@ export const proxy = auth(async (req) => {
 export const config = {
   matcher: [
     "/api/v1/:path*",
+    "/swagger/:path*",
     "/admin/:path*",
     "/settings/:path*",
     "/archive/:path*",
