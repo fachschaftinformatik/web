@@ -1,0 +1,167 @@
+{{define "layout"}}<!doctype html>
+<html lang="de" class="govuk-template">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="htmx-config" content='{"historyCacheSize":0,"refreshOnHistoryMiss":true}'>
+  <title>{{if .DocumentTitle}}{{.DocumentTitle}}{{else}}{{.Title}}{{end}} · fsInformatik</title>
+  <link rel="stylesheet" href="/assets/govuk.css">
+  <link rel="stylesheet" href="/assets/site.css">
+  <script src="/assets/htmx.js" defer></script>
+  <script src="/assets/site.js" type="module"></script>
+  {{if .Editor}}<script src="/assets/tinymce/tinymce.min.js" defer></script><script src="/assets/forum-editor.js" defer></script>{{end}}
+</head>
+<body class="govuk-template__body">
+  <script>document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');</script>
+  <a class="govuk-skip-link" data-module="govuk-skip-link" href="#main-content">Zum Hauptinhalt</a>
+  <header class="govuk-generic-header app-header">
+    <div class="govuk-generic-header__container govuk-width-container app-header-container {{if .SignedIn}}app-header-container--signed-in{{end}}">
+      <div class="govuk-generic-header__logo">
+        <a class="govuk-generic-header__homepage-link" href="/"><strong>fsInformatik</strong></a>
+      </div>
+      {{if not (or (eq .Active "login") (eq .Active "forgot"))}}<div class="app-header-tools">
+      <div class="app-site-search" role="search" aria-label="Website-Suche (Vorschau ohne Funktion)">
+        <label class="govuk-visually-hidden" for="site-search">Website durchsuchen (Vorschau ohne Funktion)</label>
+        <svg class="app-site-search__icon" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="m13 13 5 5"/></svg>
+        <input class="govuk-input app-site-search__input" id="site-search" type="search" placeholder="Website durchsuchen">
+       </div>
+       <div class="app-account-actions">{{if .SignedIn}}
+       <a class="govuk-button govuk-button--inverse app-login" href="/verwaltung">Verwaltung</a>
+       <form action="/logout" method="post" class="app-logout"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="govuk-button govuk-button--inverse app-login" type="submit">Abmelden</button></form>
+       {{else}}<a class="govuk-button govuk-button--inverse app-login" href="/login" {{if eq .Active "login"}}aria-current="page"{{end}}>Anmelden</a>{{end}}</div>
+       </div>{{end}}
+    </div>
+  </header>
+  <div class="govuk-service-navigation {{if eq .Active "home"}}govuk-service-navigation--inverse{{end}}" data-module="govuk-service-navigation">
+    <div class="govuk-width-container">
+      <div class="govuk-service-navigation__container">
+        <nav class="govuk-service-navigation__wrapper" aria-label="Hauptnavigation">
+          <button type="button" class="govuk-service-navigation__toggle govuk-js-service-navigation-toggle" aria-controls="navigation" hidden aria-hidden="true">Menü</button>
+           <ul class="govuk-service-navigation__list" id="navigation">
+             <li class="govuk-service-navigation__item {{if .Fachschaft}}govuk-service-navigation__item--active{{end}}">
+               <a class="govuk-service-navigation__link" href="/fachschaft" {{if .Fachschaft}}aria-current="{{if eq .Active "fachschaft"}}page{{else}}true{{end}}"{{end}}>{{if .Fachschaft}}<strong class="govuk-service-navigation__active-fallback">Fachschaft</strong>{{else}}Fachschaft{{end}}</a>
+             </li>
+            <li class="govuk-service-navigation__item {{if .Community}}govuk-service-navigation__item--active{{end}}">
+              <a class="govuk-service-navigation__link" href="/community" {{if .Community}}aria-current="{{if eq .Active "community"}}page{{else}}true{{end}}"{{end}}>{{if .Community}}<strong class="govuk-service-navigation__active-fallback">Community</strong>{{else}}Community{{end}}</a>
+            </li>
+            <li class="govuk-service-navigation__item {{if eq .Active "archive"}}govuk-service-navigation__item--active{{end}}">
+              <a class="govuk-service-navigation__link" href="/archive" {{if eq .Active "archive"}}aria-current="page"{{end}}>{{if eq .Active "archive"}}<strong class="govuk-service-navigation__active-fallback">Altklausuren</strong>{{else}}Altklausuren{{end}}</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+   {{if eq .Active "home"}}
+  <main id="main-content" tabindex="-1">{{template "content" .}}</main>
+   {{else if eq .Active "archive"}}
+   <div class="govuk-width-container">
+     {{template "breadcrumbs" .}}
+     <main class="govuk-main-wrapper" id="main-content" tabindex="-1">
+       <h1 class="govuk-heading-xl">{{.Title}}</h1>
+       {{template "content" .}}
+     </main>
+   </div>
+   {{else if eq .Active "contact"}}
+   <div class="govuk-width-container">
+     <div class="govuk-grid-row">
+       <div class="govuk-grid-column-two-thirds">
+         {{template "breadcrumbs" .}}
+         <main class="govuk-main-wrapper" id="main-content" tabindex="-1">
+           <h1 class="govuk-heading-xl">{{.Title}}</h1>
+           {{template "content" .}}
+         </main>
+       </div>
+     </div>
+   </div>
+   {{else if or (eq .Active "login") (eq .Active "forgot") (eq .Active "register")}}
+   <div class="govuk-width-container">{{template "breadcrumbs" .}}</div>
+   <main class="govuk-width-container govuk-main-wrapper" id="main-content" tabindex="-1">
+     <div class="govuk-grid-row">
+       <div class="govuk-grid-column-two-thirds">
+         {{template "content" .}}
+       </div>
+     </div>
+   </main>
+   {{else}}
+   <div class="govuk-width-container app-split-pane">
+      <aside class="app-sidebar" aria-label="{{if .Admin}}Verwaltungsnavigation{{else if eq .Active "archive"}}Klausurfilter{{else if .Fachschaft}}Navigation der Fachschaft{{else}}Community-Navigation{{end}}">
+      {{if .Fachschaft}}{{template "fachschaft-navigation" .}}{{end}}
+      {{if .Community}}{{template "community-navigation" .}}{{end}}
+      {{template "sidebar" .}}
+    </aside>
+     <div class="app-main-column">
+       {{template "breadcrumbs" .}}
+       <main id="main-content" tabindex="-1">
+         <div class="app-page-heading"><h1 class="govuk-heading-xl">{{.Title}}</h1></div>
+         <div class="app-content">{{template "content" .}}</div>
+       </main>
+     </div>
+   </div>
+  {{end}}
+  <footer class="govuk-footer">
+    <div class="govuk-width-container">
+      <div class="govuk-footer__meta">
+        <div class="govuk-footer__meta-item govuk-footer__meta-item--grow">
+          <h2 class="govuk-visually-hidden">Weiterführende Links</h2>
+          <ul class="govuk-footer__inline-list">
+            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="https://design-system.service.gov.uk/accessibility-statement/">Erklärung zur Barrierefreiheit</a></li>
+            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="https://design-system.service.gov.uk/sitemap/">Seitenübersicht</a></li>
+            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="https://design-system.service.gov.uk/cookies/">Cookies</a></li>
+            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="https://design-system.service.gov.uk/privacy-policy/">Datenschutz</a></li>
+            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="/contact">Fachschaft kontaktieren</a></li>
+          </ul>
+          <div class="govuk-footer__meta-custom">Entwickelt vom <a class="govuk-footer__link" href="https://design-system.service.gov.uk/design-system-team/">GOV.UK Design System Team</a></div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>{{end}}
+
+{{define "breadcrumbs"}}
+{{if .Breadcrumbs}}
+<nav class="govuk-breadcrumbs" aria-label="Brotkrümelnavigation">
+  <ol class="govuk-breadcrumbs__list">
+    {{range .Breadcrumbs}}<li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{.URL}}">{{.Title}}</a></li>{{end}}
+  </ol>
+</nav>
+{{end}}
+{{end}}
+
+{{define "community-navigation"}}
+<nav class="app-section-nav" aria-label="Seiten in Community">
+  <h2 class="govuk-visually-hidden">Seiten in Community</h2>
+  <h3 class="app-subnav-theme">Austausch</h3>
+  <ul class="govuk-list app-subnav">
+     <li>
+       <a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/discussions" {{if eq .Active "forum"}}aria-current="{{if or .Forum.Thread .Editor}}true{{else}}page{{end}}"{{end}}>Forum</a>
+     </li>
+  </ul>
+  <h3 class="app-subnav-theme">Veranstaltungen</h3>
+  <ul class="govuk-list app-subnav">
+    <li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/community/events" {{if eq .Active "events"}}aria-current="{{if .Gallery.Detail}}true{{else}}page{{end}}"{{end}}>Galerie</a></li>
+  </ul>
+</nav>
+{{end}}
+
+{{define "fachschaft-navigation"}}
+<nav class="app-section-nav" aria-label="Seiten der Fachschaft">
+  <h2 class="govuk-visually-hidden">Seiten der Fachschaft</h2>
+  <h3 class="app-subnav-theme">Die Fachschaft</h3>
+  <ul class="govuk-list app-subnav">
+    <li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/fachschaft" {{if eq .Active "fachschaft"}}aria-current="page"{{end}}>Über uns</a></li>
+    <li>
+      <a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/team" {{if eq .Active "team"}}aria-current="page"{{end}}>Mitglieder</a>
+      {{if eq .Active "team"}}
+      <ul class="govuk-list app-subnav app-subnav--nested">
+        {{range .Team}}<li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/team#team-{{.ID}}">{{if eq .ID "project"}}Projektstellen{{else}}{{.Title}}{{end}}</a></li>{{end}}
+      </ul>
+      {{end}}
+    </li>
+    <li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/fachschaft/wahlen" {{if eq .Active "elections"}}aria-current="page"{{end}}>Wahlen</a></li>
+    <li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/fachschaft/sitzungen" {{if eq .Active "meetings"}}aria-current="page"{{end}}>Sitzungen und Protokolle</a></li>
+    <li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/fachschaft/ordnungen" {{if eq .Active "regulations"}}aria-current="page"{{end}}>Satzung und Ordnungen</a></li>
+  </ul>
+</nav>
+{{end}}

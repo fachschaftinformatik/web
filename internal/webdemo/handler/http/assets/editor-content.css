@@ -1,0 +1,41 @@
+body {
+  font-family: "GDS Transport", Arial, sans-serif;
+  font-size: 19px;
+  line-height: 1.25;
+  color: var(--govuk-text-colour);
+  background: var(--govuk-body-background-colour);
+  margin: 5px;
+  overflow-wrap: anywhere;
+}
+p {
+  margin: 0 0 20px;
+}
+a {
+  color: var(--govuk-link-colour);
+  text-decoration-thickness: max(1px, 0.0625rem);
+  text-underline-offset: 0.1em;
+}
+a:visited {
+  color: var(--govuk-link-visited-colour);
+}
+a:hover {
+  color: var(--govuk-link-hover-colour);
+}
+a:focus {
+  background: var(--govuk-focus-colour);
+  color: var(--govuk-focus-text-colour);
+  outline: 3px solid transparent;
+  box-shadow:
+    0 -2px var(--govuk-focus-colour),
+    0 4px var(--govuk-focus-text-colour);
+}
+blockquote {
+  border-left: 5px solid var(--govuk-border-colour);
+  margin: 20px 0;
+  padding-left: 20px;
+}
+@media (forced-colors: active) {
+  a:focus {
+    outline-color: Highlight;
+  }
+}

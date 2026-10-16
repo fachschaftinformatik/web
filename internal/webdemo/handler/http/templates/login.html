@@ -1,0 +1,44 @@
+{{define "sidebar"}}{{end}}
+{{define "content"}}
+{{if or .Login.EmailError .Login.PasswordError}}
+<div class="govuk-error-summary" data-module="govuk-error-summary">
+  <div role="alert">
+    <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
+    <div class="govuk-error-summary__body">
+      <ul class="govuk-list govuk-error-summary__list">
+        {{if .Login.EmailError}}<li><a href="#email">{{.Login.EmailError}}</a></li>{{end}}
+        {{if .Login.PasswordError}}<li><a href="#password">{{.Login.PasswordError}}</a></li>{{end}}
+      </ul>
+    </div>
+  </div>
+</div>
+{{end}}
+{{if .Login.Submitted}}
+<div class="govuk-notification-banner" role="alert" aria-labelledby="login-preview-title" data-module="govuk-notification-banner" tabindex="-1">
+  <div class="govuk-notification-banner__header"><h2 class="govuk-notification-banner__title" id="login-preview-title">Anmeldung derzeit nicht verfügbar</h2></div>
+  <div class="govuk-notification-banner__content"><p class="govuk-body"><a class="govuk-notification-banner__link" href="https://ik.fsv-wh.de/login">Auf der bestehenden Website anmelden</a></p></div>
+</div>
+{{end}}
+<h1 class="govuk-heading-l">Anmelden</h1>
+<p class="govuk-inset-text">Demozugang: Benutzername <strong>admin</strong>, Passwort <strong>admin</strong>.</p>
+<form action="/login" method="post" novalidate>
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <div class="govuk-form-group {{if .Login.EmailError}}govuk-form-group--error{{end}}">
+    <label class="govuk-label" for="email">E-Mail-Adresse oder Demobenutzername</label>
+    <div class="govuk-hint" id="email-hint">Nutze deine E-Mail-Adresse mit @studmail.w-hs.de oder @fsv-wh.de. Für die Demo kannst du admin eingeben.</div>
+    {{if .Login.EmailError}}<p class="govuk-error-message" id="email-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Login.EmailError}}</p>{{end}}
+    <input class="govuk-input {{if .Login.EmailError}}govuk-input--error{{end}}" id="email" name="email" type="text" autocomplete="username" spellcheck="false" autocapitalize="none" value="{{.Login.Email}}" aria-describedby="email-hint{{if .Login.EmailError}} email-error{{end}}" {{if .Login.EmailError}}aria-invalid="true"{{end}}>
+  </div>
+  <div class="govuk-form-group govuk-password-input {{if .Login.PasswordError}}govuk-form-group--error{{end}}" data-module="govuk-password-input">
+    <label class="govuk-label" for="password">Passwort</label>
+    {{if .Login.PasswordError}}<p class="govuk-error-message" id="password-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Login.PasswordError}}</p>{{end}}
+    <div class="govuk-input__wrapper govuk-password-input__wrapper">
+      <input class="govuk-input govuk-password-input__input govuk-js-password-input-input {{if .Login.PasswordError}}govuk-input--error{{end}}" id="password" name="password" type="password" autocomplete="current-password" spellcheck="false" autocapitalize="none" {{if .Login.PasswordError}}aria-describedby="password-error" aria-invalid="true"{{end}}>
+      <button class="govuk-button govuk-button--secondary govuk-password-input__toggle govuk-js-password-input-toggle" type="button" data-module="govuk-button" aria-controls="password" aria-label="Passwort anzeigen" hidden>Anzeigen</button>
+    </div>
+  </div>
+  <button class="govuk-button" type="submit" data-module="govuk-button">Anmelden</button>
+</form>
+<p class="govuk-body"><a class="govuk-link" href="/forgot">Passwort vergessen?</a></p>
+<p class="govuk-body">Du hast noch kein Konto? <a class="govuk-link" href="/register">Konto erstellen</a></p>
+{{end}}

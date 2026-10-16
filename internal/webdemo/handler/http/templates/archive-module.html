@@ -1,0 +1,36 @@
+{{define "sidebar"}}{{end}}
+{{define "content"}}
+{{with .Archive.Module}}
+<h2 class="govuk-heading-m">{{if eq (len .Exams) 0}}Keine Rekos gefunden{{else if eq (len .Exams) 1}}1 Reko{{else}}{{len .Exams}} Rekos{{end}}</h2>
+{{if .Exams}}
+<table class="govuk-table app-archive-table app-archive-upload-table" role="table">
+  <caption class="govuk-visually-hidden">Klausurrekonstruktionen für {{.Title}}</caption>
+  <thead class="govuk-table__head" role="rowgroup">
+    <tr class="govuk-table__row" role="row">
+      <th class="govuk-table__header" scope="col" role="columnheader">Datum</th>
+      <th class="govuk-table__header" scope="col" role="columnheader">Studiengang</th>
+      <th class="govuk-table__header" scope="col" role="columnheader">Abschluss</th>
+      <th class="govuk-table__header" scope="col" role="columnheader">Prüfungsordnung</th>
+      <th class="govuk-table__header" scope="col" role="columnheader">Dokumente</th>
+    </tr>
+  </thead>
+  <tbody class="govuk-table__body" role="rowgroup">
+    {{range .Exams}}
+    <tr class="govuk-table__row" role="row">
+      <th class="govuk-table__header govuk-!-font-weight-regular" scope="row" role="rowheader">
+        {{.Date}}
+      </th>
+      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Studiengang</span><span>{{.Program}}</span></td>
+      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Abschluss</span><span>{{.Degree}}</span></td>
+      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Prüfungsordnung</span><span>{{.Version}}</span></td>
+      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Dokumente</span><span><a class="govuk-link" href="/assets/archive-example.pdf">Beispiel-Reko<span class="govuk-visually-hidden"> für {{.Title}} vom {{.Date}}</span></a> (PDF, 1 kB)</span></td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="govuk-body">Für deine Suche und Filter wurden in diesem Modul keine Rekos gefunden.</p>
+{{end}}
+{{end}}
+{{if .Archive.Filtered}}<p class="govuk-body"><a class="govuk-link" href="/archive/{{.Archive.Module.ID}}">Alle Rekos für dieses Modul anzeigen</a>.</p>{{end}}
+{{end}}

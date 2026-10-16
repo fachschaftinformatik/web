@@ -1,0 +1,44 @@
+{{define "sidebar"}}{{end}}
+{{define "content"}}
+<p class="govuk-body-l">Fragen zum Studium, Erfahrungen und Neuigkeiten aus der Fachschaft.</p>
+<a class="govuk-button govuk-!-margin-bottom-0" href="/d/new" role="button" draggable="false" data-module="govuk-button">Beitrag verfassen</a>
+<form action="/discussions" method="get" role="search" aria-label="Forum durchsuchen" class="govuk-!-margin-top-6 govuk-!-margin-bottom-6">
+  <div class="app-forum-controls">
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="forum-query">Beiträge durchsuchen</label>
+      <input class="govuk-input" id="forum-query" name="q" type="search" value="{{.Forum.Filter.Query}}">
+    </div>
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="forum-type">Beitragsart</label>
+      <select class="govuk-select app-forum-type" id="forum-type" name="type">
+        <option value="" {{if eq .Forum.Filter.Type ""}}selected{{end}}>Alle Beiträge</option>
+        <option value="discussion" {{if eq .Forum.Filter.Type "discussion"}}selected{{end}}>Diskussionen</option>
+        <option value="news" {{if eq .Forum.Filter.Type "news"}}selected{{end}}>Neuigkeiten</option>
+        <option value="event" {{if eq .Forum.Filter.Type "event"}}selected{{end}}>Veranstaltungen</option>
+      </select>
+    </div>
+  </div>
+  <div class="govuk-button-group govuk-!-margin-bottom-0">
+    <button class="govuk-button govuk-button--secondary" type="submit" data-module="govuk-button">Suchen</button>
+    {{if or .Forum.Filter.Query .Forum.Filter.Type}}<a class="govuk-link" href="/discussions">Filter zurücksetzen</a>{{end}}
+  </div>
+</form>
+<section aria-labelledby="forum-results-heading">
+  <h2 class="govuk-heading-m" id="forum-results-heading">{{len .Forum.Posts}} {{if eq (len .Forum.Posts) 1}}Beitrag{{else}}Beiträge{{end}}</h2>
+  {{if .Forum.Posts}}
+  <ul class="govuk-list app-forum-posts">
+    {{range .Forum.Posts}}
+    <li>
+      <p class="govuk-body-s govuk-!-margin-bottom-2">{{.TypeLabel}}</p>
+      <h3 class="govuk-heading-m govuk-!-margin-bottom-2"><a class="govuk-link" href="{{.URL}}{{if or $.Forum.Filter.Query $.Forum.Filter.Type}}?q={{$.Forum.Filter.Query}}&amp;type={{$.Forum.Filter.Type}}{{end}}">{{.Title}}</a></h3>
+      <p class="govuk-body govuk-!-margin-bottom-2">{{.Summary}}</p>
+      <p class="govuk-body-s govuk-!-margin-bottom-0">{{.Author}} · <time datetime="{{.DateISO}}">{{.DateLabel}}</time> · {{.Comments}} {{if eq .Comments 1}}Kommentar{{else}}Kommentare{{end}}</p>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="govuk-body">Keine passenden Beiträge gefunden. Versuche einen anderen Suchbegriff oder wähle eine andere Beitragsart.</p>
+  {{end}}
+</section>
+<p class="govuk-body-s govuk-!-margin-top-6">Stand: 16. Oktober 2026.</p>
+{{end}}

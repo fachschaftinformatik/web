@@ -1,0 +1,38 @@
+{{define "sidebar"}}{{end}}
+{{define "content"}}
+{{with .Forum.Thread}}
+<article class="app-thread" aria-label="Beitrag">
+  <p class="govuk-body-s">{{.TypeLabel}} von {{.Author}} · <time datetime="{{.Created}}">{{.DateLabel}}</time>{{if .Edited}}<br>Bearbeitet am <time datetime="{{.Updated}}">{{.UpdatedLabel}}</time>{{end}}</p>
+  {{if .EventDate}}<dl class="govuk-summary-list">
+    <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Termin</dt><dd class="govuk-summary-list__value"><time datetime="{{.EventDate}}">{{.EventLabel}}</time></dd></div>
+    {{if .Location}}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Ort</dt><dd class="govuk-summary-list__value">{{.Location}}</dd></div>{{end}}
+  </dl>{{end}}
+  {{if eq .BodyFormat "html"}}<div class="app-rich-content">{{richHTML .Body}}</div>{{else}}{{template "forum-body" (forumText .Body)}}{{end}}
+  <a class="govuk-button govuk-button--secondary" href="{{.URL}}/edit" role="button" draggable="false" data-module="govuk-button">Beitrag bearbeiten</a>
+</article>
+<section class="app-thread" aria-labelledby="comments-heading">
+  <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
+  <h2 class="govuk-heading-l" id="comments-heading">{{len .Replies}} {{if eq (len .Replies) 1}}Kommentar{{else}}Kommentare{{end}}</h2>
+  {{if .Replies}}<ol class="govuk-list app-forum-posts">
+    {{range .Replies}}<li id="comment-{{.ID}}">
+      <article aria-labelledby="comment-heading-{{.ID}}">
+        <h3 class="govuk-heading-s govuk-!-margin-bottom-2" id="comment-heading-{{.ID}}">{{.Author}}</h3>
+        <p class="govuk-body-s"><a class="govuk-link" href="#comment-{{.ID}}"><time datetime="{{.Created}}">{{.DateLabel}}</time><span class="govuk-visually-hidden"> – Kommentar von {{.Author}}</span></a>{{if .Edited}} · bearbeitet am <time datetime="{{.Updated}}">{{.UpdatedLabel}}</time>{{end}}</p>
+        {{template "forum-body" (forumText .Text)}}
+      </article>
+    </li>{{end}}
+  </ol>{{else}}<p class="govuk-body">Noch keine Kommentare.</p>{{end}}
+  <p class="govuk-body govuk-!-margin-top-4"><a class="govuk-link" href="{{.SourceURL}}">Auf der bestehenden Website kommentieren</a></p>
+  <p class="govuk-body-s">Stand: 16. Oktober 2026.</p>
+</section>
+{{end}}
+{{end}}
+
+{{define "forum-body"}}
+{{range .}}
+  {{if eq .Kind "list"}}<ul class="govuk-list govuk-list--bullet">{{range .Lines}}<li>{{template "forum-parts" .}}</li>{{end}}</ul>
+  {{else if eq .Kind "quote"}}<blockquote class="govuk-inset-text app-thread-quote">{{range $i, $line := .Lines}}{{if $i}}<br>{{end}}{{template "forum-parts" $line}}{{end}}</blockquote>
+  {{else if eq .Kind "paragraph"}}<p class="govuk-body">{{range $i, $line := .Lines}}{{if $i}}<br>{{end}}{{template "forum-parts" $line}}{{end}}</p>{{end}}
+{{end}}
+{{end}}
+{{define "forum-parts"}}{{range .}}{{if .URL}}<a class="govuk-link" href="{{.URL}}">{{.Text}}</a>{{else}}{{.Text}}{{end}}{{end}}{{end}}

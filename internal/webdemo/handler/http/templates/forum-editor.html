@@ -1,0 +1,90 @@
+{{define "sidebar"}}{{end}}
+{{define "content"}}
+{{with .Editor}}
+{{if .Errors}}<div class="govuk-error-summary" data-module="govuk-error-summary"><div role="alert">
+  <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
+  <div class="govuk-error-summary__body"><ul class="govuk-list govuk-error-summary__list">{{range .Errors}}<li><a href="#{{.Field}}">{{.Message}}</a></li>{{end}}</ul></div>
+</div></div>{{end}}
+{{if .Unavailable}}<div class="govuk-notification-banner" role="alert" aria-labelledby="save-title" data-module="govuk-notification-banner" tabindex="-1">
+  <div class="govuk-notification-banner__header"><h2 class="govuk-notification-banner__title" id="save-title">Speichern derzeit nicht verfügbar</h2></div>
+  <div class="govuk-notification-banner__content">
+    <p class="govuk-body">Dein Beitrag wurde nicht gespeichert. Deine Eingaben stehen weiterhin im Formular.</p>
+    <p class="govuk-body"><a class="govuk-notification-banner__link" href="{{.SourceURL}}">Beitrag auf der bestehenden Website {{if .Editing}}bearbeiten{{else}}verfassen{{end}}</a>. Kopiere deinen Text dorthin, um ihn zu veröffentlichen.</p>
+  </div>
+</div>{{end}}
+<form action="{{.Action}}" method="post" novalidate>
+  <div class="govuk-form-group {{if .Error "title"}}govuk-form-group--error{{end}}">
+    <label class="govuk-label govuk-label--s" for="title">Titel</label>
+    <div class="govuk-hint" id="title-hint">Fasse kurz zusammen, worum es geht.</div>
+    {{if .Error "title"}}<p class="govuk-error-message" id="title-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Error "title"}}</p>{{end}}
+    <input class="govuk-input {{if .Error "title"}}govuk-input--error{{end}}" id="title" name="title" value="{{.Draft.Title}}" aria-describedby="title-hint{{if .Error "title"}} title-error{{end}}" {{if .Error "title"}}aria-invalid="true"{{end}}>
+  </div>
+  <div class="govuk-form-group {{if .Error "body"}}govuk-form-group--error{{end}}">
+    <label class="govuk-label govuk-label--s" for="body">Text</label>
+    <div class="govuk-hint" id="body-hint">Hier ist Platz für deine Fragen und alles, was du mit anderen Studierenden teilen möchtest.</div>
+    {{if .Error "body"}}<p class="govuk-error-message" id="body-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Error "body"}}</p>{{end}}
+    <textarea class="govuk-textarea {{if .Error "body"}}govuk-textarea--error{{end}}" id="body" name="body" rows="12" aria-describedby="body-hint{{if .Error "body"}} body-error{{end}}" {{if .Error "body"}}aria-invalid="true"{{end}}>{{.Draft.Body}}</textarea>
+    <div id="rich-editor" hidden>
+      <div class="govuk-button-group app-editor-toolbar" role="toolbar" aria-label="Text formatieren" hidden>
+        <select class="govuk-select app-editor-format" id="editor-format" aria-label="Textformat" tabindex="0">
+          <option value="p">Normaler Text</option>
+          <option value="h2">Überschrift 2</option>
+          <option value="h3">Überschrift 3</option>
+        </select>
+        <button class="govuk-button govuk-button--secondary" type="button" data-editor-command="Bold" aria-label="Fett" aria-pressed="false" title="Fett" tabindex="-1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true" focusable="false"><path d="M7 4h6a4 4 0 0 1 0 8H7V4Zm0 8h7a4 4 0 0 1 0 8H7v-8Z"/></svg></button>
+        <button class="govuk-button govuk-button--secondary" type="button" data-editor-command="Italic" aria-label="Kursiv" aria-pressed="false" title="Kursiv" tabindex="-1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true" focusable="false"><path d="M10 4h9M5 20h9M15 4 9 20"/></svg></button>
+        <button class="govuk-button govuk-button--secondary" type="button" data-editor-command="InsertUnorderedList" aria-label="Aufzählung" aria-pressed="false" title="Aufzählung" tabindex="-1"><img src="/assets/editor-icons/bullet-list.svg" width="20" height="20" alt=""></button>
+        <button class="govuk-button govuk-button--secondary" type="button" data-editor-command="InsertOrderedList" aria-label="Nummerierte Liste" aria-pressed="false" title="Nummerierte Liste" tabindex="-1"><img src="/assets/editor-icons/ordered-list.svg" width="20" height="20" alt=""></button>
+        <button class="govuk-button govuk-button--secondary" type="button" data-editor-command="quote" aria-label="Zitat" aria-pressed="false" title="Zitat" tabindex="-1"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M3 5h7v8H6c0 3 1 4 3 5v2c-5-1-6-4-6-8V5Zm11 0h7v8h-4c0 3 1 4 3 5v2c-5-1-6-4-6-8V5Z"/></svg></button>
+        <button class="govuk-button govuk-button--secondary" type="button" data-editor-command="link" aria-label="Link einfügen oder bearbeiten" aria-controls="editor-link-panel" aria-expanded="false" title="Link einfügen oder bearbeiten" tabindex="-1"><img src="/assets/editor-icons/link.svg" width="20" height="20" alt=""></button>
+        <button class="govuk-button govuk-button--secondary" type="button" data-editor-command="Undo" aria-label="Rückgängig" aria-disabled="true" title="Rückgängig" tabindex="-1"><img src="/assets/editor-icons/undo.svg" width="20" height="20" alt=""></button>
+        <button class="govuk-button govuk-button--secondary" type="button" data-editor-command="Redo" aria-label="Wiederholen" aria-disabled="true" title="Wiederholen" tabindex="-1"><img src="/assets/editor-icons/redo.svg" width="20" height="20" alt=""></button>
+      </div>
+      <div class="app-editor-link-panel" id="editor-link-panel" hidden>
+        <fieldset class="govuk-fieldset">
+          <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Link einfügen oder bearbeiten</legend>
+          <div class="govuk-form-group" id="editor-url-group">
+            <label class="govuk-label" for="editor-url">Link-Adresse</label>
+            <p class="govuk-error-message" id="editor-url-error" role="alert" hidden></p>
+            <input class="govuk-input" id="editor-url" type="url" placeholder="https://www.w-hs.de" spellcheck="false" autocapitalize="none">
+          </div>
+          <div class="govuk-form-group"><label class="govuk-label" for="editor-link-text">Linktext</label><input class="govuk-input" id="editor-link-text"></div>
+          <div class="govuk-button-group govuk-!-margin-bottom-0">
+            <button class="govuk-button" type="button" id="editor-link-apply">Link übernehmen</button>
+            <button class="govuk-button govuk-button--secondary" type="button" id="editor-link-remove" hidden>Link entfernen</button>
+            <button class="govuk-button govuk-button--secondary" type="button" id="editor-link-cancel">Abbrechen</button>
+          </div>
+        </fieldset>
+      </div>
+      <textarea id="rich-body" name="rich_body" disabled>{{.RichBody}}</textarea>
+    </div>
+    <p class="govuk-hint" id="editor-fallback">Einfache Textversion: Ohne Texteditor bleiben die Inhalte erhalten, Formatierungen werden beim Absenden entfernt.</p>
+  </div>
+  {{if eq .Draft.Type "event"}}
+  <details class="govuk-details" {{if or (eq .Draft.Type "event") .Draft.Date .Draft.Time .Draft.Location}}open{{end}}>
+    <summary class="govuk-details__summary"><span class="govuk-details__summary-text">Termin und Ort für Veranstaltungen</span></summary>
+    <div class="govuk-details__text">
+          <div class="govuk-form-group {{if .Error "date"}}govuk-form-group--error{{end}}">
+            <label class="govuk-label" for="date">Datum (optional)</label>
+            <div class="govuk-hint" id="date-hint">Zum Beispiel 30.01.2027.</div>
+            {{if .Error "date"}}<p class="govuk-error-message" id="date-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Error "date"}}</p>{{end}}
+            <input class="govuk-input govuk-input--width-10 {{if .Error "date"}}govuk-input--error{{end}}" id="date" name="date" value="{{.Draft.Date}}" aria-describedby="date-hint{{if .Error "date"}} date-error{{end}}" {{if .Error "date"}}aria-invalid="true"{{end}}>
+          </div>
+          <div class="govuk-form-group {{if .Error "time"}}govuk-form-group--error{{end}}">
+            <label class="govuk-label" for="time">Uhrzeit (optional)</label>
+            <div class="govuk-hint" id="time-hint">Zum Beispiel 17:00.</div>
+            {{if .Error "time"}}<p class="govuk-error-message" id="time-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Error "time"}}</p>{{end}}
+            <input class="govuk-input govuk-input--width-5 {{if .Error "time"}}govuk-input--error{{end}}" id="time" name="time" value="{{.Draft.Time}}" aria-describedby="time-hint{{if .Error "time"}} time-error{{end}}" {{if .Error "time"}}aria-invalid="true"{{end}}>
+          </div>
+          <div class="govuk-form-group"><label class="govuk-label" for="location">Ort (optional)</label><input class="govuk-input" id="location" name="location" value="{{.Draft.Location}}"></div>
+    </div>
+  </details>
+  {{end}}
+  <div class="govuk-button-group">
+    <button class="govuk-button" type="submit" data-module="govuk-button">{{if .Editing}}Änderungen speichern{{else}}Beitrag veröffentlichen{{end}}</button>
+    <a class="govuk-link" href="{{.BackURL}}">Abbrechen</a>
+  </div>
+</form>
+{{if .Unavailable}}<section class="app-rich-content" aria-labelledby="post-preview-heading"><h2 class="govuk-heading-m" id="post-preview-heading">Vorschau deines Beitrags</h2>{{.RichHTML}}</section>{{end}}
+{{end}}
+{{end}}
