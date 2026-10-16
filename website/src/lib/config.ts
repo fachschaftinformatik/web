@@ -34,8 +34,8 @@ export const TEAM_SECTIONS: TeamSection[] = [
         title: "Vorstand",
         group: "elected",
         members: [
-            { id: 1, name: "Eric Nik König (Vorsitz)", email: "vorsitz.informatik@fsv-whs.de", img: null },
-            { id: 2, name: "Linda Gudaqi (Stellvertretender Vorsitz)", email: "stellv.vorsitz.informatik@fsv-whs.de", img: null },
+            { id: 1, name: "Toni Gudaqi (Vorsitz)", email: "vorsitz.informatik@fsv-whs.de", img: null },
+            { id: 2, name: "Malte Gaelings (Stellvertretender Vorsitz)", email: "stellv.vorsitz.informatik@fsv-whs.de", img: null },
             { id: 3, name: "Leon Pearse (Finanzen)", email: "finanzen.informatik@fsv-whs.de", img: null },
         ],
     },
@@ -44,7 +44,6 @@ export const TEAM_SECTIONS: TeamSection[] = [
         title: "Kultur",
         group: "elected",
         members: [
-            { id: 4, name: "Hannah Willemsen", email: "kultur.informatik@fsv-whs.de", img: null },
             { id: 5, name: "Joel Enrico Soriano", email: "kultur.informatik@fsv-whs.de", img: null },
             { id: 6, name: "Carlo Niermann", email: "kultur.informatik@fsv-whs.de", img: null },
             { id: 7, name: "Leon Weihrauch", email: "kultur.informatik@fsv-whs.de", img: null },
@@ -61,20 +60,11 @@ export const TEAM_SECTIONS: TeamSection[] = [
         ],
     },
     {
-        id: "hochschulpolitik",
-        title: "Hochschulpolitik",
-        group: "elected",
-        members: [
-            { id: 10, name: "Thuy Hong Nguyen", email: "hopo.informatik@fsv-whs.de", img: null },
-        ],
-    },
-    {
         id: "oeffentlichkeit",
         title: "Öffentlichkeit",
         group: "elected",
         members: [
-            { id: 11, name: "Linda Gudaqi", email: "oeffentlichkeit.informatik@fsv-whs.de", img: null },
-            { id: 12, name: "Thuy Hong Nguyen", email: "oeffentlichkeit.informatik@fsv-whs.de", img: null },
+            { id: 11, name: "Toni Gudaqi", email: "oeffentlichkeit.informatik@fsv-whs.de", img: null },
         ],
     },
     {
@@ -93,40 +83,22 @@ export const TEAM_SECTIONS: TeamSection[] = [
         group: "elected",
         members: [
             { id: 17, name: "Caner Bayram", email: "", img: null },
-            { id: 18, name: "Imad Boubkar", email: "", img: null },
-            { id: 19, name: "Sami Boubkar", email: "", img: null },
         ],
     },
     {
-        id: "projekt-fotografie",
-        title: "Fotografie",
+        id: "projekt-oeffentlichkeit",
+        title: "Öffentlichkeit",
         group: "project",
         members: [
             { id: 21, name: "Kubilay Cakmakkaya", email: "", img: null },
         ],
     },
     {
-        id: "projekt-infrastruktur-webseite",
-        title: "Infrastruktur & Webseite",
+        id: "projekt-infrastruktur",
+        title: "Infrastruktur",
         group: "project",
         members: [
             { id: 22, name: "Francesco La Camera", email: "", img: null },
-        ],
-    },
-    {
-        id: "projekt-sport",
-        title: "Sport",
-        group: "project",
-        members: [
-            { id: 23, name: "Mohamed Boubkar El Hachni", email: "", img: null },
-        ],
-    },
-    {
-        id: "projekt-licht-ton",
-        title: "Licht & Ton",
-        group: "project",
-        members: [
-            { id: 24, name: "Yannic Leismann", email: "", img: null },
         ],
     },
 ];
