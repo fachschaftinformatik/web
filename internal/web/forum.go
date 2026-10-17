@@ -22,7 +22,7 @@ func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
 	var ok bool
 	if c.posts != nil {
 		var err error
-		thread, err = c.posts.Lookup(r.Context(), r.PathValue("post"))
+		thread, err = c.posts.Lookup(r.Context(), r.PathValue("post"), forumUser(w))
 		if err != nil {
 			c.forumError(w, r, err)
 			return
@@ -74,7 +74,7 @@ func (c *Handler) Forum(w http.ResponseWriter, r *http.Request) {
 	}
 	if c.posts != nil {
 		var err error
-		data.Forum.Posts, err = c.posts.Find(r.Context(), filter)
+		data.Forum.Posts, err = c.posts.Find(r.Context(), filter, forumUser(w))
 		if err != nil {
 			c.serverError(w, err)
 			return

@@ -25,6 +25,49 @@ const frontendOptions = {
 };
 initAll(frontendOptions);
 
+// Voting remains a normal POST form without JavaScript. Enhance it in place
+// so keyboard focus and the reader's position in the discussion are retained.
+document.querySelectorAll("form.app-vote").forEach((form) => {
+  form.addEventListener("submit", async (event) => {
+    const button = event.submitter;
+    if (!button) return;
+    event.preventDefault();
+    if (form.dataset.pending) return;
+    form.dataset.pending = "true";
+    const buttons = [...form.querySelectorAll("button")];
+    buttons.forEach((item) => item.setAttribute("aria-disabled", "true"));
+    form.parentElement.querySelector("[data-vote-error]")?.remove();
+    try {
+      const body = new URLSearchParams(new FormData(form));
+      body.set("vote", button.value);
+      const response = await fetch(form.action, {
+        method: "POST", body, headers: { Accept: "application/json" },
+      });
+      if (response.redirected) { window.location.assign(response.url); return; }
+      if (!response.ok) throw new Error("vote failed");
+      const result = await response.json();
+      form.querySelector("[data-vote-score]").textContent = result.score;
+      for (const item of buttons) {
+        const up = item.classList.contains("app-vote__button--up");
+        const selected = result.selected === (up ? 1 : -1);
+        item.setAttribute("aria-pressed", String(selected));
+        item.value = selected ? "0" : (up ? "1" : "-1");
+        item.setAttribute("aria-label", `${selected ? (up ? "Positive Bewertung zurücknehmen" : "Negative Bewertung zurücknehmen") : (up ? "Positiv bewerten" : "Negativ bewerten")}: ${form.dataset.voteLabel}`);
+      }
+    } catch {
+      const error = document.createElement("p");
+      error.className = "govuk-error-message";
+      error.dataset.voteError = "true";
+      error.setAttribute("role", "alert");
+      error.textContent = "Die Bewertung konnte nicht gespeichert werden. Bitte versuche es erneut.";
+      form.after(error);
+    } finally {
+      delete form.dataset.pending;
+      buttons.forEach((item) => item.removeAttribute("aria-disabled"));
+    }
+  });
+});
+
 // Keep the upload's accessible name in the same order as its visible text.
 // GOV.UK 6.6.0 inserts a hidden comma into the middle of the button contents
 // but references it before those contents, breaking label-in-name checks.

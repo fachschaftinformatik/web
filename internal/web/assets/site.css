@@ -656,6 +656,55 @@
   padding-top: 0;
 }
 
+.app-post-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 15px;
+}
+
+.app-vote {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin: 0;
+  border-radius: 24px;
+  background: #f3f2f1;
+  color: #0b0c0c;
+  font: 700 16px / 1.25 "GDS Transport", Arial, sans-serif;
+}
+
+.app-vote__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.app-vote__button:hover { background: #d8dde0; }
+.app-vote__button--up[aria-pressed="true"] { color: #a33800; }
+.app-vote__button--down[aria-pressed="true"] { color: #1d70b8; }
+.app-vote__button[aria-pressed="true"] svg path { fill: currentColor; }
+.app-vote__button:focus-visible {
+  outline: 3px solid #0b0c0c;
+  background: #ffdd00;
+  color: #0b0c0c;
+}
+.app-vote__score { min-width: 2ch; text-align: center; }
+
+@media (forced-colors: active) {
+  .app-vote { border: 1px solid CanvasText; }
+  .app-vote__button[aria-pressed="true"] { outline: 2px solid Highlight; }
+}
+
 @media (min-width: 60em) {
   .app-forum-controls {
     display: grid;

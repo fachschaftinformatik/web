@@ -8,6 +8,7 @@
     {{if .Location}}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Ort</dt><dd class="govuk-summary-list__value">{{.Location}}</dd></div>{{end}}
   </dl>{{end}}
   {{if eq .BodyFormat "html"}}<div class="app-rich-content">{{richHTML .Body}}</div>{{else if $.Forum.Live}}{{template "forum-body" (rawForumText .Body)}}{{else}}{{template "forum-body" (forumText .Body)}}{{end}}
+  <div class="govuk-!-margin-bottom-4" id="post-vote">{{template "vote" (voteControl $ (printf "%s/vote" .URL) (printf "%s#post-vote" .URL) .Title .Votes .UserVote)}}</div>
   {{if or (not $.Forum.Live) $.Forum.CanEdit}}<a class="govuk-button govuk-button--secondary" href="{{.URL}}/edit" role="button" draggable="false" data-module="govuk-button">Beitrag bearbeiten</a>{{end}}
 </article>
 <section class="app-thread" aria-labelledby="comments-heading">
@@ -19,6 +20,7 @@
         <h3 class="govuk-heading-s govuk-!-margin-bottom-2" id="comment-heading-{{.ID}}">{{.Author}}</h3>
         <p class="govuk-body-s"><a class="govuk-link" href="#comment-{{.ID}}"><time datetime="{{.Created}}">{{.DateLabel}}</time><span class="govuk-visually-hidden"> – Kommentar von {{.Author}}</span></a>{{if .Edited}} · bearbeitet am <time datetime="{{.Updated}}">{{.UpdatedLabel}}</time>{{end}}</p>
         {{if $.Forum.Live}}{{template "forum-body" (rawForumText .Text)}}{{else}}{{template "forum-body" (forumText .Text)}}{{end}}
+        {{template "vote" (voteControl $ (printf "%s/comments/%s/vote" $.Forum.Thread.URL .ID) (printf "%s#comment-%s" $.Forum.Thread.URL .ID) (printf "Kommentar von %s" .Author) .Votes .UserVote)}}
         {{if .CanEdit}}<details class="govuk-details"><summary class="govuk-details__summary"><span class="govuk-details__summary-text">Kommentar bearbeiten</span></summary><div class="govuk-details__text"><form method="post" action="{{$.Forum.Thread.URL}}/comments/{{.ID}}/edit"><input type="hidden" name="csrf" value="{{$.CSRF}}"><label class="govuk-label" for="edit-comment-{{.ID}}">Kommentar</label><textarea class="govuk-textarea" id="edit-comment-{{.ID}}" name="text" rows="4" required maxlength="10000">{{.Text}}</textarea><button class="govuk-button" type="submit">Änderungen speichern</button></form></div></details>{{end}}
       </article>
     </li>{{end}}

@@ -32,6 +32,7 @@ type Page struct {
 	Forum         ForumPage
 	Editor        *ForumEditor
 	SignedIn      bool
+	Voting        bool
 	CanAdmin      bool
 	Token         TokenPage
 	Upload        UploadPage
@@ -112,7 +113,7 @@ type Renderer struct {
 func newRenderer() (*Renderer, error) {
 	r := &Renderer{pages: make(map[string]*template.Template)}
 	for _, name := range []string{"home", "team", "contact", "sitemap", "archive", "archivepreferences", "module", "upload", "request", "requests", "images", "community", "fachschaft", "content", "elections", "regulations", "login", "register", "forgot", "token", "invite", "forum", "thread", "editor", "admin"} {
-		t, err := template.New("layout").Funcs(template.FuncMap{"requestScope": requestScope, "assignmentSummary": assignmentSummary, "scopeField": scopeField, "poLabel": files.VersionLabel, "forumText": forumText, "rawForumText": rawForumText, "richHTML": func(source string) template.HTML { return template.HTML(posts.SanitizeRichText(source)) }}).ParseFS(resources, "templates/layout.html", "templates/requestlist.html", "templates/archivescope.html", "templates/assignmentsummary.html", "templates/adminnav.html", "templates/"+name+".html")
+		t, err := template.New("layout").Funcs(template.FuncMap{"voteControl": voteControl, "requestScope": requestScope, "assignmentSummary": assignmentSummary, "scopeField": scopeField, "poLabel": files.VersionLabel, "forumText": forumText, "rawForumText": rawForumText, "richHTML": func(source string) template.HTML { return template.HTML(posts.SanitizeRichText(source)) }}).ParseFS(resources, "templates/layout.html", "templates/vote.html", "templates/requestlist.html", "templates/archivescope.html", "templates/assignmentsummary.html", "templates/adminnav.html", "templates/"+name+".html")
 		if err != nil {
 			return nil, err
 		}

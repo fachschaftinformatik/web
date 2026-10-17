@@ -32,7 +32,10 @@
       <p class="govuk-body-s govuk-!-margin-bottom-2">{{.TypeLabel}}</p>
       <h3 class="govuk-heading-m govuk-!-margin-bottom-2"><a class="govuk-link" href="{{.URL}}{{if or $.Forum.Filter.Query $.Forum.Filter.Type}}?q={{$.Forum.Filter.Query}}&amp;type={{$.Forum.Filter.Type}}{{end}}">{{.Title}}</a></h3>
       <p class="govuk-body govuk-!-margin-bottom-2">{{.Summary}}</p>
-      <p class="govuk-body-s govuk-!-margin-bottom-0">{{.Author}} · <time datetime="{{.DateISO}}">{{.DateLabel}}</time> · {{.Comments}} {{if eq .Comments 1}}Kommentar{{else}}Kommentare{{end}}</p>
+      <div class="app-post-meta">
+        {{template "vote" (voteControl $ (printf "%s/vote" .URL) (printf "/discussions?q=%s&type=%s" (urlquery $.Forum.Filter.Query) (urlquery $.Forum.Filter.Type)) .Title .Votes .UserVote)}}
+        <p class="govuk-body-s govuk-!-margin-bottom-0">{{.Author}} · <time datetime="{{.DateISO}}">{{.DateLabel}}</time> · {{.Comments}} {{if eq .Comments 1}}Kommentar{{else}}Kommentare{{end}}</p>
+      </div>
     </li>
     {{end}}
   </ul>

@@ -17,6 +17,7 @@ type Post struct {
 	ID, Title, Body, Summary, Author, Created, Type string
 	BodyFormat                                      string
 	Comments                                        int
+	Votes, UserVote                                 int
 	Tags                                            []string
 }
 

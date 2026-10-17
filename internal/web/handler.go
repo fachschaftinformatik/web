@@ -73,7 +73,7 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 		_, _ = w.Write([]byte("ok\n"))
 	})
 	router.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		home, err := c.home(r.Context())
+		home, err := c.home(r.Context(), forumUser(w))
 		if err != nil {
 			c.serverError(w, err)
 			return
@@ -131,6 +131,8 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 	router.HandleFunc("POST /d/{post}/edit", c.EditDiscussion)
 	router.HandleFunc("POST /d/{post}/comments", c.Comment)
 	router.HandleFunc("POST /d/{post}/comments/{comment}/edit", c.Comment)
+	router.HandleFunc("POST /d/{post}/vote", c.Vote)
+	router.HandleFunc("POST /d/{post}/comments/{comment}/vote", c.Vote)
 	router.HandleFunc("GET /media/{id}/{size}", c.MediaFile)
 	router.HandleFunc("GET /media/events/{id}/cover/{size}", c.EventCover)
 	router.HandleFunc("GET /login", c.Login)
@@ -266,6 +268,7 @@ func (c *Handler) serverError(w http.ResponseWriter, err error) {
 }
 
 func (c *Handler) renderStatus(w http.ResponseWriter, page string, fragment bool, data Page, status int) {
+	data.Voting = c.posts != nil
 	if response, ok := w.(*sessionResponse); ok && response.session != nil {
 		data.SignedIn, data.CSRF = response.session.Authenticated, response.session.CSRF
 		data.CanAdmin = response.session.CanReview()

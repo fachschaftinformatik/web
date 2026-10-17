@@ -1,0 +1,17 @@
+{{define "vote"}}
+{{if .Page.Voting}}
+{{if .Page.SignedIn}}<form class="app-vote" method="post" action="{{.Action}}" aria-label="Bewertung: {{.Label}}" data-vote-label="{{.Label}}">
+  <input type="hidden" name="csrf" value="{{.Page.CSRF}}">
+  <input type="hidden" name="return" value="{{.Return}}">
+  <button class="app-vote__button app-vote__button--up" type="submit" name="vote" value="{{.Up}}" aria-pressed="{{if eq .Selected 1}}true{{else}}false{{end}}" aria-label="{{if eq .Selected 1}}Positive Bewertung zurücknehmen{{else}}Positiv bewerten{{end}}: {{.Label}}">{{template "vote-up"}}</button>
+  <span class="app-vote__score" role="status" aria-atomic="true"><span class="govuk-visually-hidden">Punktestand: </span><span data-vote-score>{{.Score}}</span></span>
+  <button class="app-vote__button app-vote__button--down" type="submit" name="vote" value="{{.Down}}" aria-pressed="{{if eq .Selected -1}}true{{else}}false{{end}}" aria-label="{{if eq .Selected -1}}Negative Bewertung zurücknehmen{{else}}Negativ bewerten{{end}}: {{.Label}}">{{template "vote-down"}}</button>
+</form>{{else}}<div class="app-vote" role="group" aria-label="Bewertung: {{.Label}}">
+  <a class="app-vote__button" href="/login" aria-label="Anmelden und positiv bewerten: {{.Label}}">{{template "vote-up"}}</a>
+  <span class="app-vote__score"><span class="govuk-visually-hidden">Punktestand: </span>{{.Score}}</span>
+  <a class="app-vote__button" href="/login" aria-label="Anmelden und negativ bewerten: {{.Label}}">{{template "vote-down"}}</a>
+</div>{{end}}
+{{else}}<p class="govuk-body-s"><span class="govuk-visually-hidden">Punktestand: </span>{{.Score}} Punkte</p>{{end}}
+{{end}}
+{{define "vote-up"}}<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 3 9 9h-6v9H9v-9H3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>{{end}}
+{{define "vote-down"}}<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 21 9-9h-6V3H9v9H3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>{{end}}

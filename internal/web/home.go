@@ -7,6 +7,7 @@ import (
 
 type HomePost struct {
 	Title, Summary, URL, Date, DateISO string
+	Votes, UserVote                    int
 }
 
 type HomePage struct {
@@ -14,17 +15,17 @@ type HomePage struct {
 	Forum []HomePost
 }
 
-func (c *Handler) home(ctx context.Context) (HomePage, error) {
+func (c *Handler) home(ctx context.Context, viewer ...int64) (HomePage, error) {
 	if c.posts == nil {
 		return homeContent(), nil
 	}
-	records, err := c.posts.Find(ctx, posts.Filter{})
+	records, err := c.posts.Find(ctx, posts.Filter{}, viewer...)
 	if err != nil {
 		return HomePage{}, err
 	}
 	var page HomePage
 	for _, post := range records {
-		item := HomePost{Title: post.Title, Summary: post.Summary, URL: post.URL(), Date: post.DateLabel(), DateISO: post.DateISO()}
+		item := HomePost{Title: post.Title, Summary: post.Summary, URL: post.URL(), Date: post.DateLabel(), DateISO: post.DateISO(), Votes: post.Votes, UserVote: post.UserVote}
 		if post.Type == "news" && page.News.URL == "" {
 			page.News = item
 		}

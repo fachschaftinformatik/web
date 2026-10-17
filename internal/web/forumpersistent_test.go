@@ -90,6 +90,56 @@ func TestPersistentForumRequests(t *testing.T) {
 	if err != nil || len(list) != 1 || list[0].Comments != 1 {
 		t.Fatalf("%+v %v", list, err)
 	}
+	t.Run("voting authentication csrf and local return", func(t *testing.T) {
+		c.sessions = newSessionStore()
+		session := c.sessions.create(true)
+		session.UserID = 1
+		c.sessions.items[session.ID] = *session
+		router := http.NewServeMux()
+		router.HandleFunc("POST /d/{post}/vote", c.Vote)
+		router.HandleFunc("POST /d/{post}/comments/{comment}/vote", c.Vote)
+		handler := c.withSession(router)
+		for _, tc := range []struct {
+			cookie, token, value, back string
+			code                       int
+			location                   string
+		}{
+			{"", session.CSRF, "1", "/", 303, "/login"},
+			{session.ID, "wrong", "1", "/", 403, ""},
+			{session.ID, session.CSRF, "2", "/", 422, ""},
+			{session.ID, session.CSRF, "1", "https://example.org/", 303, "/d/" + post},
+			{session.ID, session.CSRF, "-1", "//example.org/", 303, "/d/" + post},
+			{session.ID, session.CSRF, "0", "/#home-forum", 303, "/#home-forum"},
+		} {
+			form := url.Values{"csrf": {tc.token}, "vote": {tc.value}, "return": {tc.back}}
+			r := httptest.NewRequest("POST", "/d/"+post+"/vote", strings.NewReader(form.Encode()))
+			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			if tc.cookie != "" {
+				r.AddCookie(&http.Cookie{Name: sessionCookie, Value: tc.cookie})
+			}
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, r)
+			if w.Code != tc.code || w.Header().Get("Location") != tc.location {
+				t.Fatalf("%+v: %d %s", tc, w.Code, w.Header().Get("Location"))
+			}
+		}
+		current, err := c.posts.Lookup(context.Background(), post)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, suffix := range []string{"/vote", "/comments/" + current.Replies[0].ID + "/vote"} {
+			form := url.Values{"csrf": {session.CSRF}, "vote": {"1"}}
+			r := httptest.NewRequest("POST", "/d/"+post+suffix, strings.NewReader(form.Encode()))
+			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			r.Header.Set("Accept", "application/json")
+			r.AddCookie(&http.Cookie{Name: sessionCookie, Value: session.ID})
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, r)
+			if w.Code != 200 || strings.TrimSpace(w.Body.String()) != `{"score":1,"selected":1}` {
+				t.Fatalf("JSON vote: %d %s", w.Code, w.Body.String())
+			}
+		}
+	})
 	for _, text := range []string{
 		"Literal &lt;script&gt; und &amp; bleiben erhalten.",
 		"https://example.org/?value=&lt;script&gt;&amp;next=1",
