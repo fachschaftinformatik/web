@@ -37,7 +37,7 @@ Garage is optional through the `storage` Compose profile.
 
 When changing SQL queries, regenerate the committed SQLC code before building:
 ```bash
-go generate ./internal/data
+go generate ./internal/database
 go build -o /path/to/output/web .
 ```
 

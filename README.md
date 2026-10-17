@@ -16,17 +16,9 @@ go run .
 ```
 
 Open <http://127.0.0.1:8090/>. SQLite data is stored in `data/sqlite.db`, with
-uploaded objects in `data/blobs` unless S3 is configured. For an in-memory demo
-with **admin / admin** credentials, run `go run . -demo`.
-
-To display accounts from a local read-only SQLite copy:
-
-```sh
-go run . -data .dev-data/production-2026-10-14
-```
-
-Only user display fields are imported. Passwords, tokens and production sessions
-are not loaded. Keep local data and credentials under ignored paths.
+uploaded objects in `data/blobs` unless S3 is configured. All environments use
+the same database-backed application. Keep local data and credentials under
+ignored paths.
 
 ### Container
 
@@ -48,22 +40,30 @@ through the environment variables listed in `compose.yaml`.
 ## Architecture
 
 ```text
-main.go                 Executable and HTTP lifecycle
+main.go                 Executable flags and HTTP lifecycle
+application.go          Dependency wiring and background maintenance
 internal/
-  users/                Login identities, access policies and user management
-  people/               Public profiles, groups and responsibilities
-  content/              Documents and publication
-    files/              File records, grouping and filtering
-    posts/              Posts, comments, drafts and rich text
-    media/              Albums, images and processing
-  data/                 Database access, migrations and queries
-    blob/               Binary-object storage
-      s3/               S3-compatible adapter
-  web/                  HTML handlers, templates and embedded assets
+  controller/           Routing, HTTP handlers, sessions and request validation
+  model/
+    archive/            Exam files, submissions, assignments and review
+    forum/              Discussions, announcements, comments and voting
+    gallery/            Albums, photographs and covers
+    meetings/           Meeting documents and publication
+    events/             Calendar events and imports
+    users/              Accounts, authentication and access policies
+    people/             Members, groups and responsibilities
+  view/                 Presentation types, templates and embedded assets
+  content/              Shared text sanitization and content validation
+  database/             SQLite connections, migrations and generated queries
+  storage/              Binary objects and image processing; disk/S3 adapters
   email/                SMTP transport and email templates
 ```
 
-HTML handlers call domain operations directly. The V1 REST API, Next.js website,
+Controllers call model operations and pass presentation data to views. Models
+own assignment resolution, publication rules and event classification. Typed view
+adapters own website URLs, display labels, summaries and image-preview paths.
+Models do not depend on controllers or views, and views do not access storage or
+the database. The V1 REST API, Next.js website,
 OpenAPI client generation and multi-process runtime are retired;
 their implementation remains in Git history at `86a6968`.
 
@@ -72,7 +72,7 @@ their implementation remains in Git history at `86a6968`.
 ```sh
 go test -race ./...
 go vet ./...
-go generate ./internal/data
+go generate ./internal/database
 go build -o /path/to/output/web .
 ```
 
