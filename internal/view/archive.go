@@ -42,7 +42,7 @@ func (g *AssignmentGroup) add(a archive.Assignment, checked bool) {
 		p = len(degree.Programs)
 		degree.Programs = append(degree.Programs, AssignmentProgram{Name: a.Program})
 	}
-	degree.Programs[p].Choices = append(degree.Programs[p].Choices, AssignmentChoice{Value: AssignmentKey(a), Label: archive.VersionLabel(a.Version), Selected: checked})
+	degree.Programs[p].Choices = append(degree.Programs[p].Choices, AssignmentChoice{Value: a.Key(), Label: archive.VersionLabel(a.Version), Selected: checked})
 	g.Selected = g.Selected || checked
 }
 
@@ -53,21 +53,6 @@ func assignmentSummary(selected []archive.Assignment) []string {
 	}
 	slices.Sort(titles)
 	return titles
-}
-
-func RequestScope(request archive.Request) archive.Filter {
-	var scope archive.Filter
-	for _, document := range request.Documents {
-		for _, a := range document.Assignments {
-			scope.Degrees = UniqueChoice(scope.Degrees, a.Degree)
-			scope.Programs = UniqueChoice(scope.Programs, a.Program)
-			scope.Versions = UniqueChoice(scope.Versions, a.Version)
-		}
-	}
-	slices.Sort(scope.Degrees)
-	slices.Sort(scope.Programs)
-	slices.Sort(scope.Versions)
-	return scope
 }
 
 func sortAssignmentGroups(groups []AssignmentGroup) {
@@ -98,36 +83,23 @@ func UploadOptions(values, selected []string) []FilterOption {
 	return options
 }
 
-func AssignmentKey(a archive.Assignment) string { return a.ModuleID + "|" + a.Version }
-
-func UploadGroups(catalog archive.Catalog, scope archive.Filter, selected []archive.Assignment) ([]AssignmentGroup, map[string]archive.Assignment) {
+// UploadGroups organizes resolved assignments for display; it does not select
+// which combinations are valid for a submission.
+func UploadGroups(available, selected []archive.Assignment) []AssignmentGroup {
 	var groups []AssignmentGroup
 	indices := map[string]int{}
-	allowed := map[string]archive.Assignment{}
-	for _, module := range catalog.Modules() {
-		program, degree := module.Qualification()
-		if !slices.Contains(scope.Programs, program) || !slices.Contains(scope.Degrees, degree) {
-			continue
+	for _, a := range available {
+		index, ok := indices[a.Title]
+		if !ok {
+			index = len(groups)
+			indices[a.Title] = index
+			groups = append(groups, AssignmentGroup{Title: a.Title})
 		}
-		for _, version := range catalog.ProgramVersions(module.Program) {
-			if !slices.Contains(scope.Versions, version) {
-				continue
-			}
-			a := archive.Assignment{ModuleID: module.ID, Version: version, Title: module.Title, Program: program, Degree: degree}
-			key := AssignmentKey(a)
-			allowed[key] = a
-			index, ok := indices[module.Title]
-			if !ok {
-				index = len(groups)
-				indices[module.Title] = index
-				groups = append(groups, AssignmentGroup{Title: module.Title})
-			}
-			checked := slices.ContainsFunc(selected, func(value archive.Assignment) bool { return AssignmentKey(value) == key })
-			groups[index].add(a, checked)
-		}
+		checked := slices.ContainsFunc(selected, func(value archive.Assignment) bool { return value.Key() == a.Key() })
+		groups[index].add(a, checked)
 	}
 	sortAssignmentGroups(groups)
-	return groups, allowed
+	return groups
 }
 
 type datePart struct {

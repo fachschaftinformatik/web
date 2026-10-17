@@ -146,11 +146,7 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	form.Revision = revisionOf != ""
-	for _, a := range selected {
-		form.Scope.Programs = view.UniqueChoice(form.Scope.Programs, a.Program)
-		form.Scope.Degrees = view.UniqueChoice(form.Scope.Degrees, a.Degree)
-		form.Scope.Versions = view.UniqueChoice(form.Scope.Versions, a.Version)
-	}
+	form.Scope = archive.Scope(selected)
 	if len(selected) == 0 {
 		preferred, err := c.archive.Preferences(r.Context(), userID)
 		if err != nil {
@@ -221,8 +217,12 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 	form.Programs = view.UploadOptions(catalog.Programs(), form.Scope.Programs)
 	form.Degrees = view.UploadOptions(catalog.Degrees(), form.Scope.Degrees)
 	form.Versions = view.UploadOptions(catalog.Versions(), form.Scope.Versions)
-	var allowed map[string]archive.Assignment
-	form.Groups, allowed = view.UploadGroups(catalog, form.Scope, selected)
+	available := catalog.Assignments(form.Scope)
+	allowed := make(map[string]archive.Assignment, len(available))
+	for _, a := range available {
+		allowed[a.Key()] = a
+	}
+	form.Groups = view.UploadGroups(available, selected)
 	if !form.ChooseScope && len(form.Groups) == 0 {
 		form.ChooseScope = true
 		form.Errors["version"] = "Für diese Auswahl gibt es keine passenden Module. Ändere die Auswahl."
@@ -245,27 +245,13 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 		form.Groups[i].Selected = slices.Contains(form.Modules, form.Groups[i].Title)
 	}
 	if moduleSelection {
-		selected = nil
-		for _, title := range form.Modules {
-			if !slices.ContainsFunc(form.Groups, func(g view.AssignmentGroup) bool { return g.Title == title }) {
-				form.Errors["module_id"] = "Wähle gültige Module aus."
-			}
-		}
-		// Expand only catalogue-backed combinations, never the Cartesian product
-		// of the independent scope fields. Iterating groups keeps review stable.
-		for _, group := range form.Groups {
-			if !group.Selected {
-				continue
-			}
-			for _, degree := range group.Degrees {
-				for _, program := range degree.Programs {
-					for _, choice := range program.Choices {
-						selected = append(selected, allowed[choice.Value])
-					}
-				}
-			}
+		var fields archive.ValidationErrors
+		selected, fields = archive.ResolveModules(available, form.Modules)
+		for field, message := range fields {
+			form.Errors[field] = message
 		}
 	}
+
 	if r.Method == http.MethodPost && !form.ChooseScope {
 		submission := archive.Submission{Comment: form.Comment, RevisionOf: revisionOf, RequestID: requestID}
 		var dateError string
@@ -279,7 +265,7 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		for _, a := range selected {
-			if value, ok := allowed[view.AssignmentKey(a)]; ok {
+			if value, ok := allowed[a.Key()]; ok {
 				submission.Assignments = append(submission.Assignments, value)
 			} else {
 				form.Errors["module_id"] = "Wähle gültige Module und dazugehörige Prüfungsordnungen aus."

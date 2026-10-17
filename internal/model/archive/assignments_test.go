@@ -10,6 +10,21 @@ import (
 	"testing"
 )
 
+func TestResolveModulesUsesOnlyAvailableAssignments(t *testing.T) {
+	available := []Assignment{
+		{ModuleID: "10", Title: "Datenbanken", Program: "Informatik", Degree: "Bachelor", Version: "2023"},
+		{ModuleID: "20", Title: "Datenbanken", Program: "Wirtschaftsinformatik", Degree: "Bachelor", Version: "2017"},
+		{ModuleID: "30", Title: "Mathematik", Program: "Informatik", Degree: "Bachelor", Version: "2023"},
+	}
+	selected, fields := ResolveModules(available, []string{"Datenbanken", "Datenbanken"})
+	if len(fields) != 0 || len(selected) != 2 || selected[0] != available[0] || selected[1] != available[1] {
+		t.Fatalf("invalid expansion: %+v %v", selected, fields)
+	}
+	if _, fields = ResolveModules(available, []string{"Unbekannt"}); fields["module_id"] == "" {
+		t.Fatal("unknown title accepted")
+	}
+}
+
 func TestOnePDFMultipleAssignmentsAndSharedObjectPrivacy(t *testing.T) {
 	s, db := reviewService(t)
 	ctx := context.Background()

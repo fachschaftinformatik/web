@@ -21,6 +21,70 @@ type Assignment struct {
 	Degree   string
 }
 
+func (a Assignment) Key() string { return a.ModuleID + "|" + a.Version }
+
+// Scope describes the qualifications represented by these assignments.
+func Scope(assignments []Assignment) Filter {
+	var scope Filter
+	add := func(values []string, value string) []string {
+		if !slices.Contains(values, value) {
+			return append(values, value)
+		}
+		return values
+	}
+	for _, a := range assignments {
+		scope.Programs = add(scope.Programs, a.Program)
+		scope.Degrees = add(scope.Degrees, a.Degree)
+		scope.Versions = add(scope.Versions, a.Version)
+	}
+	slices.Sort(scope.Programs)
+	slices.Sort(scope.Degrees)
+	slices.Sort(scope.Versions)
+	return scope
+}
+
+func (r Request) Scope() Filter {
+	var values []Assignment
+	for _, document := range r.Documents {
+		values = append(values, document.Assignments...)
+	}
+	return Scope(values)
+}
+
+// Assignments returns only catalogue-backed combinations within the scope.
+func (c Catalog) Assignments(scope Filter) []Assignment {
+	var result []Assignment
+	for _, module := range c.Modules() {
+		program, degree := module.Qualification()
+		if !slices.Contains(scope.Programs, program) || !slices.Contains(scope.Degrees, degree) {
+			continue
+		}
+		for _, version := range c.ProgramVersions(module.Program) {
+			if slices.Contains(scope.Versions, version) {
+				result = append(result, Assignment{ModuleID: module.ID, Version: version, Title: module.Title, Program: program, Degree: degree})
+			}
+		}
+	}
+	return result
+}
+
+// ResolveModules expands selected titles without inventing qualification pairs.
+func ResolveModules(available []Assignment, titles []string) ([]Assignment, ValidationErrors) {
+	fields := ValidationErrors{}
+	for _, title := range titles {
+		if !slices.ContainsFunc(available, func(a Assignment) bool { return a.Title == title }) {
+			fields["module_id"] = "Wähle gültige Module aus."
+		}
+	}
+	var result []Assignment
+	for _, a := range available {
+		if slices.Contains(titles, a.Title) {
+			result = append(result, a)
+		}
+	}
+	return result, fields
+}
+
 func (a Assignment) VersionLabel() string { return VersionLabel(a.Version) }
 
 func (s Submission) placements() []Assignment {
