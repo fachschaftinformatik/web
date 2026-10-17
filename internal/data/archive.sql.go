@@ -249,6 +249,7 @@ func (q *Queries) GetLatestByGroupId(ctx context.Context, groupID int64) (Archiv
 
 const listArchiveCatalog = `-- name: ListArchiveCatalog :many
 SELECT a.id, a.module_id, a.version, a.exam_date, a.comment, a.nbytes,
+       CAST((SELECT original.user_id FROM archive original WHERE original.group_id=a.group_id ORDER BY original.edit_version, original.id LIMIT 1) AS INTEGER) AS owner_id,
        m.name AS module_name, m.alias, p.name AS program_name
 FROM archive a
 JOIN modules m ON m.id = a.module_id AND m.deleted_at IS NULL
@@ -264,6 +265,7 @@ type ListArchiveCatalogRow struct {
 	ExamDate    string  `json:"exam_date"`
 	Comment     *string `json:"comment"`
 	Nbytes      int64   `json:"nbytes"`
+	OwnerID     int64   `json:"owner_id"`
 	ModuleName  string  `json:"module_name"`
 	Alias       *string `json:"alias"`
 	ProgramName string  `json:"program_name"`
@@ -285,6 +287,7 @@ func (q *Queries) ListArchiveCatalog(ctx context.Context) ([]ListArchiveCatalogR
 			&i.ExamDate,
 			&i.Comment,
 			&i.Nbytes,
+			&i.OwnerID,
 			&i.ModuleName,
 			&i.Alias,
 			&i.ProgramName,

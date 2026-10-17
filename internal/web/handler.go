@@ -73,6 +73,10 @@ func newHandler(records []users.User, identity *users.Service, archive *files.Se
 	})
 	router.HandleFunc("GET /archive", c.Archive)
 	router.HandleFunc("GET /archive/{module}", c.ArchiveModule)
+	router.HandleFunc("GET /archive/new", c.UploadArchive)
+	router.HandleFunc("POST /archive/new", c.UploadArchive)
+	router.HandleFunc("GET /archive/files/{id}/revision", c.UploadArchive)
+	router.HandleFunc("POST /archive/files/{id}/revision", c.UploadArchive)
 	router.HandleFunc("GET /archive/files/{id}", c.ArchiveFile)
 	router.HandleFunc("GET /api/v1/archive/{id}/file", c.ArchiveFile)
 	router.HandleFunc("GET /archive/{module}/{entry}", func(w http.ResponseWriter, r *http.Request) {
@@ -174,7 +178,7 @@ func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
 	}
 	c.render(w, "module", false, Page{
 		Title: module.Title, Active: "archive",
-		Archive: ArchivePage{Module: &module, Filter: filter},
+		Archive: ArchivePage{Module: &module, Filter: filter, Submitted: r.URL.Query().Get("eingereicht") == "1"},
 	})
 }
 
@@ -198,6 +202,7 @@ func (c *Handler) renderStatus(w http.ResponseWriter, page string, fragment bool
 	if response, ok := w.(*sessionResponse); ok && response.session != nil {
 		data.SignedIn, data.CSRF = response.session.Authenticated, response.session.CSRF
 		data.CanAdmin = response.session.CanAdmin()
+		data.UserID, data.Role = response.session.UserID, response.session.Role
 	}
 	var html bytes.Buffer
 	if err := c.views.Render(&html, page, fragment, data); err != nil {

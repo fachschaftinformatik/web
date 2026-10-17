@@ -37,14 +37,23 @@ func ValidatePublication(p Publication) map[string]string {
 	if p.Kind != "Einladung" && p.Kind != "Protokoll" {
 		errors["kind"] = "Wähle Einladung oder Protokoll aus."
 	}
-	if len(p.Data) == 0 {
-		errors["file"] = "Wähle eine PDF-Datei aus."
-	} else if len(p.Data) > MaxPDFBytes {
-		errors["file"] = "Die PDF-Datei darf höchstens 8 MB groß sein."
-	} else if !bytes.HasPrefix(p.Data, []byte("%PDF-")) || !bytes.Contains(p.Data, []byte("%%EOF")) {
-		errors["file"] = "Die ausgewählte Datei muss eine PDF-Datei sein."
+	if message := PDFError(p.Data); message != "" {
+		errors["file"] = message
 	}
 	return errors
+}
+
+func PDFError(data []byte) string {
+	if len(data) == 0 {
+		return "Wähle eine PDF-Datei aus."
+	}
+	if len(data) > MaxPDFBytes {
+		return "Die PDF-Datei darf höchstens 8 MB groß sein."
+	}
+	if !bytes.HasPrefix(data, []byte("%PDF-")) || !bytes.Contains(data, []byte("%%EOF")) {
+		return "Die ausgewählte Datei muss eine PDF-Datei sein."
+	}
+	return ""
 }
 
 func (s *Store) Save(p Publication) error {
@@ -60,7 +69,7 @@ func (s *Store) Save(p Publication) error {
 		}
 	}
 	if total > 32<<20 {
-		return errors.New("Der Demospeicher ist voll. Starte die Demo neu.")
+		return errors.New("Die Dateien konnten nicht gespeichert werden. Versuche es später erneut.")
 	}
 	p.Data = slices.Clone(p.Data)
 	s.publications[p.ID] = p

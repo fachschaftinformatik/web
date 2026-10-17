@@ -1,5 +1,6 @@
 {{define "sidebar"}}{{end}}
 {{define "content"}}
+{{if .Archive.Submitted}}<div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="archive-success-title" data-module="govuk-notification-banner"><div class="govuk-notification-banner__header"><h2 class="govuk-notification-banner__title" id="archive-success-title">Erfolgreich</h2></div><div class="govuk-notification-banner__content"><p class="govuk-notification-banner__heading">Die Rekos wurden eingereicht.</p></div></div>{{end}}
 {{with .Archive.Module}}
 <h2 class="govuk-heading-m">{{if eq (len .Exams) 0}}Keine Rekos gefunden{{else if eq (len .Exams) 1}}1 Reko{{else}}{{len .Exams}} Rekos{{end}}</h2>
 {{if .Exams}}
@@ -23,7 +24,7 @@
       <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Studiengang</span><span>{{.Program}}</span></td>
       <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Abschluss</span><span>{{.Degree}}</span></td>
       <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Prüfungsordnung</span><span>{{.Version}}</span></td>
-      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Dokumente</span><span><a class="govuk-link" href="{{.URL}}">Reko<span class="govuk-visually-hidden"> für {{.Title}} vom {{.Date}}</span></a> (PDF, {{.Size}})</span></td>
+      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Dokumente</span><span><a class="govuk-link" href="{{.URL}}">Reko<span class="govuk-visually-hidden"> für {{.Title}} vom {{.Date}}</span></a> (PDF, {{.Size}}){{if .CanRevise $.UserID $.Role}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0"><a class="govuk-link" href="{{.URL}}/revision">Neue Revision einreichen<span class="govuk-visually-hidden"> für {{.Title}} vom {{.Date}}</span></a></p>{{end}}</span></td>
     </tr>
     {{end}}
   </tbody>

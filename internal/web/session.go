@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/content/files"
 	"github.com/fachschaftinformatik/web/internal/users"
 )
 
@@ -88,6 +89,7 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 			}
 		}
 		account := r.URL.Path == "/login" || r.URL.Path == "/register" || r.URL.Path == "/forgot" || r.URL.Path == "/reset" || r.URL.Path == "/verify"
+		archiveWrite := r.URL.Path == "/archive/new" || strings.HasPrefix(r.URL.Path, "/archive/files/") && strings.HasSuffix(r.URL.Path, "/revision")
 		if s == nil && (r.URL.Path == "/login" || c.identity != nil && account) && r.Method == http.MethodGet {
 			if c.identity != nil {
 				var err error
@@ -107,7 +109,7 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 			w.Header().Set("Cache-Control", "no-store")
 		}
 		w.Header().Add("Vary", "Cookie")
-		if admin && (s == nil || !s.Authenticated) {
+		if (admin || archiveWrite) && (s == nil || !s.Authenticated) {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
@@ -115,10 +117,13 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 			http.Error(w, "Du hast keine Berechtigung für die Verwaltung.", http.StatusForbidden)
 			return
 		}
-		if r.Method == http.MethodPost && (admin || r.URL.Path == "/logout" || c.identity != nil && account) {
+		if r.Method == http.MethodPost && (admin || archiveWrite || r.URL.Path == "/logout" || c.identity != nil && account) {
 			limit := int64(uploadBodyLimit)
 			if account {
 				limit = 64 << 10
+			}
+			if archiveWrite {
+				limit = files.MaxUploadBytes + 1<<20
 			}
 			r.Body = http.MaxBytesReader(w, r.Body, limit)
 			if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {

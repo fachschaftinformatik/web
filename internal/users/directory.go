@@ -63,7 +63,7 @@ func (d *Directory) Search(query string, number int) (Page, bool) {
 // Examples returns fictional users for the administration demo.
 func Examples() []User {
 	return []User{
-		{ID: "admin", Name: "Demo-Administration", Email: "admin@fsv-wh.de", Permission: "FSV", Status: "Aktiv", Verified: true},
+		{ID: "admin", Name: "Administration", Email: "admin@fsv-wh.de", Permission: "FSV", Status: "Aktiv", Verified: true},
 		{ID: "1", Name: "Alex Beispiel", Email: "alex.beispiel@studmail.w-hs.de", Permission: "Mitglied", Status: "Aktiv", Verified: true},
 		{ID: "2", Name: "Kim Muster", Email: "kim.muster@studmail.w-hs.de", Permission: "FSV", Status: "Aktiv", Verified: true},
 		{ID: "3", Name: "Robin Beispiel", Email: "robin.beispiel@studmail.w-hs.de", Permission: "Mitglied", Status: "Inaktiv"},

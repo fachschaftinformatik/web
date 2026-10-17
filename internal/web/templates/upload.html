@@ -1,0 +1,48 @@
+{{define "sidebar"}}{{end}}
+{{define "content"}}
+{{with .Upload}}
+{{if .Errors}}<div class="govuk-error-summary" data-module="govuk-error-summary"><div role="alert">
+  <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
+  <div class="govuk-error-summary__body"><ul class="govuk-list govuk-error-summary__list">{{range $field, $message := .Errors}}<li><a href="#{{$field}}">{{$message}}</a></li>{{end}}</ul></div>
+</div></div>{{end}}
+<form action="{{.Action}}" method="post" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf" value="{{$.CSRF}}">
+  <div class="govuk-form-group {{if index .Errors "module_id"}}govuk-form-group--error{{end}}">
+    <label class="govuk-label" for="module_id">Modul</label>
+    {{if index .Errors "module_id"}}<p class="govuk-error-message" id="module-error">{{index .Errors "module_id"}}</p>{{end}}
+    <select class="govuk-select" id="module_id" name="module_id" {{if index .Errors "module_id"}}aria-describedby="module-error" aria-invalid="true"{{end}}>
+      <option value="">Bitte auswählen</option>
+      {{range .Modules}}<option value="{{.ID}}" {{if eq $.Upload.ModuleID .ID}}selected{{end}}>{{.Title}} – {{.Program}}</option>{{end}}
+    </select>
+  </div>
+  <div class="govuk-form-group {{if index .Errors "version"}}govuk-form-group--error{{end}}">
+    <label class="govuk-label" for="version">Prüfungsordnung</label>
+    {{if index .Errors "version"}}<p class="govuk-error-message" id="version-error">{{index .Errors "version"}}</p>{{end}}
+    <select class="govuk-select" id="version" name="version" {{if index .Errors "version"}}aria-describedby="version-error" aria-invalid="true"{{end}}>
+      <option value="">Bitte auswählen</option>
+      {{range .Versions}}<option value="{{.}}" {{if eq $.Upload.Version .}}selected{{end}}>{{.}}</option>{{end}}
+    </select>
+  </div>
+  <div class="govuk-form-group {{if index .Errors "date"}}govuk-form-group--error{{end}}">
+    <label class="govuk-label" for="date">Prüfungsdatum</label>
+    <div class="govuk-hint" id="date-hint">Zum Beispiel 12.02.2026.</div>
+    {{if index .Errors "date"}}<p class="govuk-error-message" id="date-error">{{index .Errors "date"}}</p>{{end}}
+    <input class="govuk-input govuk-input--width-10" id="date" name="date" type="text" value="{{.Date}}" aria-describedby="date-hint{{if index .Errors "date"}} date-error{{end}}" {{if index .Errors "date"}}aria-invalid="true"{{end}}>
+  </div>
+  <div class="govuk-form-group">
+    <label class="govuk-label" for="comment">Anmerkung (optional)</label>
+    <textarea class="govuk-textarea" id="comment" name="comment" rows="3">{{.Comment}}</textarea>
+  </div>
+  <div class="govuk-form-group {{if index .Errors "files"}}govuk-form-group--error{{end}}">
+    <label class="govuk-label" for="files">{{if .Revision}}PDF-Datei{{else}}PDF-Dateien{{end}}</label>
+    <div class="govuk-hint" id="files-hint">{{if .Revision}}Höchstens 8 MB.{{else}}Du kannst mehrere PDFs auswählen. Pro Datei sind höchstens 8 MB möglich, insgesamt höchstens 32 MB.{{end}}</div>
+    {{if index .Errors "files"}}<p class="govuk-error-message" id="files-error">{{index .Errors "files"}}</p>{{end}}
+    <input class="govuk-file-upload" id="files" name="files" type="file" accept="application/pdf,.pdf" {{if not .Revision}}multiple{{end}} aria-describedby="files-hint{{if index .Errors "files"}} files-error{{end}}" {{if index .Errors "files"}}aria-invalid="true"{{end}}>
+  </div>
+  <div class="govuk-button-group">
+    <button class="govuk-button" type="submit" data-module="govuk-button">{{if .Revision}}Revision einreichen{{else}}Rekos einreichen{{end}}</button>
+    <a class="govuk-link" href="/archive">Abbrechen</a>
+  </div>
+</form>
+{{end}}
+{{end}}

@@ -78,7 +78,7 @@ func (s *Service) Catalog(ctx context.Context) (Catalog, error) {
 		return Catalog{}, err
 	}
 	for _, m := range modules {
-		result.modules = append(result.modules, Module{ID: strconv.FormatInt(m.ID, 10), Title: m.Name})
+		result.modules = append(result.modules, Module{ID: strconv.FormatInt(m.ID, 10), Title: m.Name, Program: m.ProgramName})
 	}
 	entries, err := q.ListArchiveCatalog(ctx)
 	if err != nil {
@@ -90,7 +90,7 @@ func (s *Service) Catalog(ctx context.Context) (Catalog, error) {
 		if err != nil {
 			return Catalog{}, fmt.Errorf("archive entry %d: %w", entry.ID, err)
 		}
-		exam := Exam{ID: strconv.FormatInt(entry.ID, 10), ModuleID: strconv.FormatInt(entry.ModuleID, 10), Title: entry.ModuleName, Program: program, Degree: degree, Version: entry.Version, Date: date.Format("02.01.2006"), Bytes: entry.Nbytes}
+		exam := Exam{ID: strconv.FormatInt(entry.ID, 10), ModuleID: strconv.FormatInt(entry.ModuleID, 10), Title: entry.ModuleName, Program: program, Degree: degree, Version: entry.Version, Date: date.Format("02.01.2006"), Bytes: entry.Nbytes, OwnerID: entry.OwnerID}
 		if entry.Comment != nil {
 			exam.Description = *entry.Comment
 		}
@@ -109,6 +109,8 @@ func (s *Service) Catalog(ctx context.Context) (Catalog, error) {
 	}
 	return result, nil
 }
+
+func (c Catalog) Modules() []Module { return slices.Clone(c.modules) }
 
 func parseDate(value string) (time.Time, error) {
 	for _, layout := range []string{"2006-01-02", time.RFC3339, "02.01.2006"} {

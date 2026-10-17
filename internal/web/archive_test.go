@@ -1,8 +1,10 @@
 package web
 
 import (
+	"bytes"
 	"context"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
@@ -64,5 +66,71 @@ INSERT INTO archive (id,group_id,user_id,module_id,version,exam_date,access_key,
 	}
 	if status, _, _ := b.get("/archive/files/100"); status != 303 {
 		t.Fatal("deactivated user retained PDF access")
+	}
+}
+
+func TestAuthenticatedMultiplePDFSubmission(t *testing.T) {
+	storage, err := disk.New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer storage.Close()
+	b, db := identityBrowserWithStorage(t, storage)
+	if _, err := db.Exec(`
+INSERT INTO programs(id,name) VALUES (1,'Informatik (B. Sc.)');
+INSERT INTO program_versions(program_id,name) VALUES (1,'2023');
+INSERT INTO modules(id,program_id,name) VALUES (10,1,'Datenbanken');
+INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-wh.de','Person','unused',1,1);`); err != nil {
+		t.Fatal(err)
+	}
+	if status, _, _ := b.get("/archive/new"); status != 303 {
+		t.Fatal("anonymous upload form allowed")
+	}
+	session, err := users.NewService(db, "http://example.org").CreateSession(context.Background(), 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base, _ := url.Parse(b.server.URL)
+	b.client.Jar.SetCookies(base, []*http.Cookie{{Name: sessionCookie, Value: session.ID, Path: "/"}})
+	status, body, _ := b.get("/archive/new")
+	if status != 200 {
+		t.Fatal("upload form unavailable")
+	}
+	csrf := csrfFrom(t, body)
+	for _, value := range []string{"", csrf} {
+		var buffer bytes.Buffer
+		form := multipart.NewWriter(&buffer)
+		for name, field := range map[string]string{"csrf": value, "module_id": "10", "version": "2023", "date": "12.02.2026"} {
+			if err := form.WriteField(name, field); err != nil {
+				t.Fatal(err)
+			}
+		}
+		for _, filename := range []string{"eins.pdf", "zwei.pdf"} {
+			part, err := form.CreateFormFile("files", filename)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := io.WriteString(part, "%PDF-1.7\n"+filename+"\n%%EOF"); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := form.Close(); err != nil {
+			t.Fatal(err)
+		}
+		status, body, headers := b.request("POST", "/archive/new", form.FormDataContentType(), &buffer)
+		if value == "" {
+			if status != 403 {
+				t.Fatal("upload accepted without CSRF")
+			}
+		} else if status != 303 || headers.Get("Location") != "/archive/10?eingereicht=1" {
+			t.Fatalf("multiple upload: %d %s", status, body)
+		}
+	}
+	var count int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM archive WHERE is_latest=1`).Scan(&count); err != nil || count != 2 {
+		t.Fatal("multiple PDFs were not independently persisted")
+	}
+	if status, body, _ := b.get("/archive/10"); status != 200 || !strings.Contains(body, "2 Rekos") || !strings.Contains(body, "Neue Revision einreichen") {
+		t.Fatal("uploaded PDFs not available in module view")
 	}
 }

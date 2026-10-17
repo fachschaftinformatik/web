@@ -28,6 +28,7 @@ SELECT * FROM archive WHERE id = sqlc.arg(id) AND deleted_at IS NULL LIMIT 1;
 
 -- name: ListArchiveCatalog :many
 SELECT a.id, a.module_id, a.version, a.exam_date, a.comment, a.nbytes,
+       CAST((SELECT original.user_id FROM archive original WHERE original.group_id=a.group_id ORDER BY original.edit_version, original.id LIMIT 1) AS INTEGER) AS owner_id,
        m.name AS module_name, m.alias, p.name AS program_name
 FROM archive a
 JOIN modules m ON m.id = a.module_id AND m.deleted_at IS NULL

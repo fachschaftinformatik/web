@@ -15,7 +15,12 @@ type Exam struct {
 	ModuleID                                   string
 	ID                                         string
 	Bytes                                      int64
+	OwnerID                                    int64
 	alias                                      string
+}
+
+func (e Exam) CanRevise(userID int64, role string) bool {
+	return e.ID != "" && userID != 0 && (e.OwnerID == userID || role == "admin" || role == "editor")
 }
 
 func (e Exam) URL() string {
@@ -61,6 +66,7 @@ func Degrees() []string  { return slices.Clone(degrees) }
 
 type Module struct {
 	ID, Title string
+	Program   string
 	Exams     []Exam
 }
 
