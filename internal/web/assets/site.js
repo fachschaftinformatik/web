@@ -35,8 +35,10 @@ document.querySelectorAll("form.app-vote").forEach((form) => {
     if (form.dataset.pending) return;
     form.dataset.pending = "true";
     const buttons = [...form.querySelectorAll("button")];
+    const feedback = form.parentElement.querySelector("[data-vote-feedback]");
+    feedback.className = "govuk-body-s govuk-!-margin-top-1 govuk-!-margin-bottom-0";
+    feedback.textContent = "Wird gespeichert …";
     buttons.forEach((item) => item.setAttribute("aria-disabled", "true"));
-    form.parentElement.querySelector("[data-vote-error]")?.remove();
     try {
       const body = new URLSearchParams(new FormData(form));
       body.set("vote", button.value);
@@ -47,20 +49,19 @@ document.querySelectorAll("form.app-vote").forEach((form) => {
       if (!response.ok) throw new Error("vote failed");
       const result = await response.json();
       form.querySelector("[data-vote-score]").textContent = result.score;
+      form.querySelector("[data-vote-unit]").textContent = result.score === 1 ? "Punkt" : "Punkte";
       for (const item of buttons) {
         const up = item.classList.contains("app-vote__button--up");
         const selected = result.selected === (up ? 1 : -1);
         item.setAttribute("aria-pressed", String(selected));
         item.value = selected ? "0" : (up ? "1" : "-1");
-        item.setAttribute("aria-label", `${selected ? (up ? "Positive Bewertung zurücknehmen" : "Negative Bewertung zurücknehmen") : (up ? "Positiv bewerten" : "Negativ bewerten")}: ${form.dataset.voteLabel}`);
       }
+      feedback.className = "govuk-visually-hidden";
+      const state = result.selected === 0 ? "Bewertung zurückgenommen" : (result.selected === 1 ? "Positiv bewertet" : "Negativ bewertet");
+      feedback.textContent = `${form.dataset.voteLabel}: ${state}. Punktestand: ${result.score}.`;
     } catch {
-      const error = document.createElement("p");
-      error.className = "govuk-error-message";
-      error.dataset.voteError = "true";
-      error.setAttribute("role", "alert");
-      error.textContent = "Die Bewertung konnte nicht gespeichert werden. Bitte versuche es erneut.";
-      form.after(error);
+      feedback.className = "govuk-error-message govuk-!-margin-top-1 govuk-!-margin-bottom-0";
+      feedback.textContent = "Die Bewertung konnte nicht gespeichert werden. Bitte versuche es erneut.";
     } finally {
       delete form.dataset.pending;
       buttons.forEach((item) => item.removeAttribute("aria-disabled"));
