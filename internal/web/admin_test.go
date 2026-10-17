@@ -116,11 +116,14 @@ func TestAdminAuthenticationAndMutations(t *testing.T) {
 	if _, body, _ := b.get("/team"); !strings.Contains(body, "Demo-Vorsitz") {
 		t.Fatal("public team did not reflect edit")
 	}
-	if status, _, _ := b.post("/verwaltung/referate/neu", url.Values{"csrf": {b.csrf}, "title": {"Demo-Referat"}, "members": {"1"}}); status != 303 {
+	if status, _, headers := b.post("/verwaltung/aufgaben/neu", url.Values{"csrf": {b.csrf}, "title": {"Demo-Referat"}, "group": {"departments"}, "members": {"1"}}); status != 303 || headers.Get("Location") != "/verwaltung/mitglieder?gespeichert=1" {
 		t.Fatal("responsibility add failed")
 	}
 	if _, body, _ := b.get("/team"); !strings.Contains(body, "Demo-Referat") {
 		t.Fatal("public responsibility missing")
+	}
+	if status, body, _ := b.get("/verwaltung/mitglieder"); status != 200 || !strings.Contains(body, "Demo-Vorsitz") || !strings.Contains(body, "Demo-Referat (Referat)") {
+		t.Fatal("combined member overview lost assignments")
 	}
 	oldCookies := b.client.Jar.Cookies(mustURL(t, server.URL))
 	if status, _, _ := b.post("/logout", url.Values{"csrf": {b.csrf}}); status != 303 {

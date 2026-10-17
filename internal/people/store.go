@@ -113,7 +113,7 @@ func (s *Store) SaveResponsibility(r Responsibility) map[string]string {
 		errors["email"] = "Gib eine gültige E-Mail-Adresse ein."
 	}
 	if r.Group != "departments" && r.Group != "project" {
-		errors["title"] = "Dieser Bereich kann hier nicht bearbeitet werden."
+		errors["group"] = "Wähle Referat oder Projektstelle aus."
 	}
 	for _, id := range r.MemberIDs {
 		if !slices.ContainsFunc(s.people, func(p Person) bool { return p.ID == id }) {
@@ -130,7 +130,7 @@ func (s *Store) SaveResponsibility(r Responsibility) map[string]string {
 		return nil
 	}
 	for i, old := range s.responsibilities {
-		if old.ID == r.ID && old.Group == r.Group {
+		if old.ID == r.ID && old.Group != "board" {
 			s.responsibilities[i] = r
 			return nil
 		}

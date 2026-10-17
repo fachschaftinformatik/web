@@ -23,7 +23,7 @@
 {{if .Success}}<div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="admin-success-title" data-module="govuk-notification-banner"><div class="govuk-notification-banner__header"><h2 class="govuk-notification-banner__title" id="admin-success-title">Erfolgreich</h2></div><div class="govuk-notification-banner__content"><p class="govuk-notification-banner__heading">{{.Success}}</p></div></div>{{end}}
 
 {{if eq .View "index"}}
-<p class="govuk-body">Verwalte Benutzer, die Mitglieder der Fachschaft und Sitzungsdokumente.</p>
+<p class="govuk-body">Verwalte Benutzer, Mitglieder und Aufgaben sowie Sitzungsdokumente.</p>
 <ul class="govuk-list govuk-list--spaced">
   {{range .Links}}<li><a class="govuk-link" href="{{.URL}}">{{.Label}}</a></li>{{end}}
 </ul>
@@ -72,13 +72,30 @@
 
 {{if eq .View "reset"}}{{template "password-reset-form" $}}{{end}}
 
-{{if eq .View "list"}}
-<a class="govuk-button" data-module="govuk-button" href="/verwaltung/{{.Section}}/neu">{{.AddLabel}}</a>
-<table class="govuk-table app-admin-table">
-  <caption class="govuk-visually-hidden">{{.SectionTitle}}</caption>
-  <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">{{if eq .Section "mitglieder"}}Name{{else}}Bezeichnung{{end}}</th><th class="govuk-table__header" scope="col">{{if eq .Section "mitglieder"}}E-Mail-Adresse{{else}}Mitglieder{{end}}</th></tr></thead>
-  <tbody class="govuk-table__body">{{range .Rows}}<tr class="govuk-table__row"><th class="govuk-table__header" scope="row"><a class="govuk-link" href="{{.URL}}">{{.Name}}<span class="govuk-visually-hidden"> bearbeiten</span></a></th><td class="govuk-table__cell">{{if .Detail}}{{.Detail}}{{else}}Nicht angegeben{{end}}</td></tr>{{end}}</tbody>
-</table>
+{{if eq .View "people"}}
+<div class="govuk-button-group">
+  <a class="govuk-button" data-module="govuk-button" href="/verwaltung/mitglieder/neu">Mitglied hinzufügen</a>
+  <a class="govuk-button govuk-button--secondary" data-module="govuk-button" href="/verwaltung/aufgaben/neu">Aufgabe hinzufügen</a>
+</div>
+<section aria-labelledby="members-heading">
+  <h2 class="govuk-heading-m" id="members-heading">Mitglieder</h2>
+  <table class="govuk-table app-admin-table">
+    <caption class="govuk-visually-hidden">Mitglieder und ihre Aufgaben</caption>
+    <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Name</th><th class="govuk-table__header" scope="col">Aufgaben</th></tr></thead>
+    <tbody class="govuk-table__body">{{range .Members}}<tr class="govuk-table__row">
+      <th class="govuk-table__header" scope="row"><a class="govuk-link" href="/verwaltung/mitglieder/{{.ID}}">{{.Name}}<span class="govuk-visually-hidden"> bearbeiten</span></a>{{if .Email}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0 app-wrap-anywhere">{{.Email}}</p>{{end}}</th>
+      <td class="govuk-table__cell">{{if .Tasks}}<ul class="govuk-list govuk-!-margin-bottom-0">{{range .Tasks}}<li>{{.}}</li>{{end}}</ul>{{else}}Keine Aufgaben zugeordnet{{end}}</td>
+    </tr>{{end}}</tbody>
+  </table>
+</section>
+<section aria-labelledby="tasks-heading">
+  <h2 class="govuk-heading-m" id="tasks-heading">Aufgaben</h2>
+  <table class="govuk-table app-admin-table">
+    <caption class="govuk-visually-hidden">Referate und Projektstellen mit ihren Mitgliedern</caption>
+    <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Bezeichnung</th><th class="govuk-table__header" scope="col">Art</th><th class="govuk-table__header" scope="col">Mitglieder</th></tr></thead>
+    <tbody class="govuk-table__body">{{range .Tasks}}<tr class="govuk-table__row"><th class="govuk-table__header" scope="row"><a class="govuk-link" href="{{.URL}}">{{.Title}}<span class="govuk-visually-hidden"> bearbeiten</span></a></th><td class="govuk-table__cell">{{.Kind}}</td><td class="govuk-table__cell">{{if .Members}}{{.Members}}{{else}}Keine Mitglieder zugeordnet{{end}}</td></tr>{{end}}</tbody>
+  </table>
+</section>
 {{end}}
 
 {{if eq .View "meetings"}}

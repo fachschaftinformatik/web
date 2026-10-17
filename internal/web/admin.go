@@ -28,7 +28,11 @@ type AdminField struct {
 	Day, Month, Year                    string
 	Options                             []AdminOption
 }
-type AdminRow struct{ Name, Detail, URL string }
+type AdminMemberRow struct {
+	people.Person
+	Tasks []string
+}
+type AdminTaskRow struct{ Title, Kind, Members, URL string }
 type PaginationItem struct {
 	Number            int
 	URL               string
@@ -38,22 +42,21 @@ type AdminLink struct{ ID, Label, URL string }
 
 var adminLinks = []AdminLink{
 	{"benutzer", "Benutzer", "/verwaltung/benutzer"},
-	{"mitglieder", "Mitglieder", "/verwaltung/mitglieder"},
-	{"referate", "Referate", "/verwaltung/referate"},
-	{"projektstellen", "Projektstellen", "/verwaltung/projektstellen"},
+	{"mitglieder", "Mitglieder und Aufgaben", "/verwaltung/mitglieder"},
 	{"sitzungen", "Sitzungen und Protokolle", "/verwaltung/sitzungen"},
 }
 
 type AdminPage struct {
-	Section, SectionTitle, View, Action, Query, Message, Success, AddLabel string
-	Fields                                                                 []AdminField
-	Rows                                                                   []AdminRow
-	Users                                                                  []users.User
-	User                                                                   *users.User
-	Meetings                                                               []content.Meeting
-	Publication                                                            *content.Publication
-	Page, Pages, Total                                                     int
-	PreviousURL, NextURL                                                   string
+	Section, SectionTitle, View, Action, Query, Message, Success string
+	Fields                                                       []AdminField
+	Members                                                      []AdminMemberRow
+	Tasks                                                        []AdminTaskRow
+	Users                                                        []users.User
+	User                                                         *users.User
+	Meetings                                                     []content.Meeting
+	Publication                                                  *content.Publication
+	Page, Pages, Total                                           int
+	PreviousURL, NextURL                                         string
 }
 
 func (a AdminPage) Links() []AdminLink { return adminLinks }
@@ -116,6 +119,19 @@ func (c *Handler) adminRender(w http.ResponseWriter, title string, a *AdminPage,
 func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 	section, id := r.PathValue("section"), r.PathValue("id")
 	a := &AdminPage{Section: section, View: "index"}
+	if section == "referate" || section == "projektstellen" || section == "aufgaben" {
+		if id == "" {
+			target := "/verwaltung/mitglieder"
+			if r.URL.Query().Get("gespeichert") == "1" {
+				target += "?gespeichert=1"
+			}
+			http.Redirect(w, r, target, http.StatusSeeOther)
+			return
+		}
+		a.Section, a.SectionTitle = "mitglieder", "Mitglieder und Aufgaben"
+		c.EditResponsibility(w, r, a)
+		return
+	}
 	if section == "" {
 		c.adminRender(w, "Verwaltung", a, http.StatusOK)
 		return
@@ -187,27 +203,29 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 			c.EditMember(w, r, a)
 			return
 		}
-		a.View, a.AddLabel = "list", "Mitglied hinzufügen"
-		for _, p := range c.people.People() {
-			a.Rows = append(a.Rows, AdminRow{p.Name, p.Email, "/verwaltung/mitglieder/" + p.ID})
-		}
-	case "referate", "projektstellen":
-		if id != "" {
-			c.EditResponsibility(w, r, a)
-			return
-		}
-		a.View, a.AddLabel = "list", "Referat hinzufügen"
-		if section == "projektstellen" {
-			a.AddLabel = "Projektstelle hinzufügen"
-		}
-		for _, responsibility := range c.people.Responsibilities(responsibilityGroup(section)) {
-			var names []string
-			for _, p := range c.people.People() {
-				if slices.Contains(responsibility.MemberIDs, p.ID) {
-					names = append(names, p.Name)
+		a.View = "people"
+		members := c.people.People()
+		responsibilities := append(c.people.Responsibilities("departments"), c.people.Responsibilities("project")...)
+		for _, person := range members {
+			row := AdminMemberRow{Person: person}
+			if person.Role != "" {
+				row.Tasks = append(row.Tasks, person.Role+" (Vorstand)")
+			}
+			for _, task := range responsibilities {
+				if slices.Contains(task.MemberIDs, person.ID) {
+					row.Tasks = append(row.Tasks, task.Title+" ("+responsibilityKind(task.Group)+")")
 				}
 			}
-			a.Rows = append(a.Rows, AdminRow{responsibility.Title, strings.Join(names, ", "), "/verwaltung/" + section + "/" + responsibility.ID})
+			a.Members = append(a.Members, row)
+		}
+		for _, task := range responsibilities {
+			var names []string
+			for _, person := range members {
+				if slices.Contains(task.MemberIDs, person.ID) {
+					names = append(names, person.Name)
+				}
+			}
+			a.Tasks = append(a.Tasks, AdminTaskRow{Title: task.Title, Kind: responsibilityKind(task.Group), Members: strings.Join(names, ", "), URL: "/verwaltung/aufgaben/" + task.ID})
 		}
 	case "sitzungen":
 		if id != "" {
@@ -228,6 +246,13 @@ func responsibilityGroup(section string) string {
 		return "departments"
 	}
 	return "project"
+}
+
+func responsibilityKind(group string) string {
+	if group == "departments" {
+		return "Referat"
+	}
+	return "Projektstelle"
 }
 
 func field(id, label, value, kind string) AdminField {
@@ -268,7 +293,7 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPag
 	}
 	a.View, a.Action = "form", r.URL.Path
 	a.Fields = []AdminField{field("name", "Name", p.Name, "text"), field("email", "Öffentliche E-Mail-Adresse (optional)", p.Email, "email"), field("role", "Aufgabe im Vorstand (optional)", p.Role, "text")}
-	a.Fields[2].Hint = "Wird nur bei Mitgliedern des Vorstands angezeigt. Die Zuordnung zu Referaten und Projektstellen bearbeitest du im jeweiligen Bereich."
+	a.Fields[2].Hint = "Wird bei Mitgliedern des Vorstands angezeigt."
 	attachErrors(a.Fields, errors)
 	status := http.StatusOK
 	if len(errors) != 0 {
@@ -278,41 +303,50 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPag
 }
 
 func (c *Handler) EditResponsibility(w http.ResponseWriter, r *http.Request, a *AdminPage) {
-	id, group := r.PathValue("id"), responsibilityGroup(a.Section)
+	id, section := r.PathValue("id"), r.PathValue("section")
+	group := responsibilityGroup(section)
+	if section == "aufgaben" {
+		group = "departments"
+	}
 	responsibility := people.Responsibility{ID: id, Group: group}
 	found := id == "neu"
-	for _, existing := range c.people.Responsibilities(group) {
-		if existing.ID == id {
-			responsibility = existing
-			found = true
+	for _, kind := range []string{"departments", "project"} {
+		if section != "aufgaben" && kind != group {
+			continue
+		}
+		for _, existing := range c.people.Responsibilities(kind) {
+			if existing.ID == id {
+				responsibility = existing
+				found = true
+			}
 		}
 	}
 	if !found {
 		http.NotFound(w, r)
 		return
 	}
-	label := "Referat"
-	if group == "project" {
-		label = "Projektstelle"
-	}
-	title := label + " bearbeiten"
+	title := "Aufgabe bearbeiten"
 	if id == "neu" {
-		title = label + " hinzufügen"
+		title = "Aufgabe hinzufügen"
 	}
 	errors := map[string]string{}
 	if r.Method == http.MethodPost {
 		responsibility.Title, responsibility.Email, responsibility.MemberIDs = r.PostForm.Get("title"), r.PostForm.Get("email"), r.PostForm["members"]
+		if value := r.PostForm.Get("group"); value != "" {
+			responsibility.Group = value
+		}
 		errors = c.people.SaveResponsibility(responsibility)
 		if len(errors) == 0 {
-			http.Redirect(w, r, "/verwaltung/"+a.Section+"?gespeichert=1", http.StatusSeeOther)
+			http.Redirect(w, r, "/verwaltung/mitglieder?gespeichert=1", http.StatusSeeOther)
 			return
 		}
 	}
 	a.View, a.Action = "form", r.URL.Path
-	a.Fields = []AdminField{field("title", "Bezeichnung", responsibility.Title, "text"), field("email", "Öffentliche E-Mail-Adresse (optional)", responsibility.Email, "email"), field("members", "Mitglieder", "", "checkboxes")}
-	a.Fields[2].Hint = "Wähle die zuständigen Personen aus. Entferne ein Häkchen, um eine Zuordnung aufzuheben."
+	a.Fields = []AdminField{field("title", "Bezeichnung", responsibility.Title, "text"), field("group", "Art", responsibility.Group, "radios"), field("email", "Öffentliche E-Mail-Adresse (optional)", responsibility.Email, "email"), field("members", "Mitglieder", "", "checkboxes")}
+	a.Fields[1].Options = []AdminOption{{Value: "departments", Label: "Referat", Selected: responsibility.Group == "departments"}, {Value: "project", Label: "Projektstelle", Selected: responsibility.Group == "project"}}
+	a.Fields[3].Hint = "Wähle die zuständigen Personen aus. Entferne ein Häkchen, um eine Zuordnung aufzuheben."
 	for _, p := range c.people.People() {
-		a.Fields[2].Options = append(a.Fields[2].Options, AdminOption{p.ID, p.Name, slices.Contains(responsibility.MemberIDs, p.ID)})
+		a.Fields[3].Options = append(a.Fields[3].Options, AdminOption{p.ID, p.Name, slices.Contains(responsibility.MemberIDs, p.ID)})
 	}
 	attachErrors(a.Fields, errors)
 	status := http.StatusOK
