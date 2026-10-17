@@ -96,6 +96,9 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 	})
 	router.HandleFunc("GET /team", c.Team)
 	router.HandleFunc("GET /sitemap", c.Sitemap)
+	router.HandleFunc("GET /impressum", c.Legal)
+	router.HandleFunc("GET /datenschutz", c.Legal)
+	router.HandleFunc("GET /barrierefreiheit", c.Legal)
 	router.HandleFunc("GET /contact", func(w http.ResponseWriter, r *http.Request) {
 		c.render(w, "contact", false, Page{Title: "Kontakt", Active: "contact"})
 	})
@@ -197,6 +200,7 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 	router.HandleFunc("GET /events", legacyEvents)
 	router.HandleFunc("GET /events/{rest...}", legacyEvents)
 	router.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServerFS(Assets())))
+	router.HandleFunc("/", c.notFound)
 	return c.withSession(router), nil
 }
 
@@ -276,7 +280,7 @@ func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
 	if c.archive != nil {
 		module, total, err := c.archive.ModulePage(r.Context(), r.PathValue("module"), filter, requestedPage(r), 20)
 		if errors.Is(err, files.ErrNotFound) {
-			http.NotFound(w, r)
+			c.notFound(w, r)
 			return
 		}
 		if err != nil {
@@ -289,7 +293,7 @@ func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
 	catalog := files.Examples()
 	module, ok := catalog.FindModule(r.PathValue("module"), filter)
 	if !ok {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	c.render(w, "module", false, Page{
@@ -304,10 +308,18 @@ func (c *Handler) render(w http.ResponseWriter, page string, fragment bool, data
 
 func (c *Handler) serverError(w http.ResponseWriter, err error) {
 	log.Printf("Request failed: %v", err)
-	http.Error(w, "Die Anfrage konnte nicht verarbeitet werden. Versuche es später erneut.", http.StatusInternalServerError)
+	c.pageError(w, "Versuche es später erneut. Deine Anfrage konnte nicht abgeschlossen werden.", http.StatusInternalServerError)
 }
 
 func (c *Handler) renderStatus(w http.ResponseWriter, page string, fragment bool, data Page, status int) {
+	if status == http.StatusUnprocessableEntity {
+		if data.DocumentTitle == "" {
+			data.DocumentTitle = data.Title
+		}
+		if !strings.HasPrefix(data.DocumentTitle, "Fehler: ") {
+			data.DocumentTitle = "Fehler: " + data.DocumentTitle
+		}
+	}
 	data.Voting = c.posts != nil
 	if response, ok := w.(*sessionResponse); ok && response.session != nil {
 		data.SignedIn, data.CSRF = response.session.Authenticated, response.session.CSRF

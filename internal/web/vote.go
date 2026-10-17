@@ -30,7 +30,7 @@ func voteControl(page Page, action, back, label string, score, selected int) Vot
 
 func (c *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 	if c.posts == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	user := forumUser(w)
@@ -40,19 +40,19 @@ func (c *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Das Formular konnte nicht gelesen werden.", http.StatusBadRequest)
+		c.pageError(w, "Das Formular konnte nicht gelesen werden.", http.StatusBadRequest)
 		return
 	}
 	value, err := strconv.Atoi(r.PostForm.Get("vote"))
 	if err != nil {
-		http.Error(w, "Ungültige Bewertung.", http.StatusUnprocessableEntity)
+		c.pageError(w, "Ungültige Bewertung.", http.StatusUnprocessableEntity)
 		return
 	}
 	post, comment := r.PathValue("post"), r.PathValue("comment")
 	if err := c.posts.Vote(r.Context(), user, post, comment, value); err != nil {
 		var validation *posts.ValidationError
 		if errors.As(err, &validation) {
-			http.Error(w, validation.Fields[0].Message, http.StatusUnprocessableEntity)
+			c.pageError(w, validation.Fields[0].Message, http.StatusUnprocessableEntity)
 			return
 		}
 		c.forumError(w, r, err)

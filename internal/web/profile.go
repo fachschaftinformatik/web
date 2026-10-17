@@ -10,12 +10,12 @@ import (
 
 func (c *Handler) PublicProfile(w http.ResponseWriter, r *http.Request) {
 	if c.identity == nil || c.posts == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	profile, err := c.identity.PublicProfile(r.Context(), r.PathValue("id"))
 	if errors.Is(err, users.ErrProfileNotFound) {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	if err != nil {

@@ -20,11 +20,6 @@
         <a class="govuk-generic-header__homepage-link" href="/"><strong>fsInformatik</strong></a>
       </div>
       {{if not (or (eq .Active "login") (eq .Active "forgot"))}}<div class="app-header-tools">
-      <div class="app-site-search" role="search" aria-label="Website-Suche">
-        <label class="govuk-visually-hidden" for="site-search">Website durchsuchen</label>
-        <svg class="app-site-search__icon" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="m13 13 5 5"/></svg>
-        <input class="govuk-input app-site-search__input" id="site-search" type="search" placeholder="Website durchsuchen">
-       </div>
        <div class="app-account-actions">{{if .SignedIn}}
        {{if .CanAdmin}}<a class="govuk-button govuk-button--inverse app-login" href="/verwaltung">Verwaltung</a>{{end}}
        <form action="/logout" method="post" class="app-logout"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="govuk-button govuk-button--inverse app-login" type="submit">Abmelden</button></form>
@@ -68,7 +63,7 @@
         {{if or .Upload.Action .Request}}</div></div>{{end}}
      </main>
    </div>
-   {{else if or (eq .Active "contact") (eq .Active "sitemap")}}
+   {{else if or (eq .Active "contact") (eq .Active "sitemap") (eq .Active "legal") (eq .Active "error")}}
    <div class="govuk-width-container">
      <div class="govuk-grid-row">
        <div class="govuk-grid-column-two-thirds">
@@ -111,12 +106,13 @@
         <div class="govuk-footer__meta-item govuk-footer__meta-item--grow">
           <h2 class="govuk-visually-hidden">Weiterführende Links</h2>
           <ul class="govuk-footer__inline-list">
-            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="https://design-system.service.gov.uk/accessibility-statement/">Erklärung zur Barrierefreiheit</a></li>
+            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="/impressum">Impressum</a></li>
+            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="/barrierefreiheit">Barrierefreiheit</a></li>
             <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="/sitemap">Seitenübersicht</a></li>
-            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="https://design-system.service.gov.uk/privacy-policy/">Datenschutz</a></li>
+            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="/datenschutz">Datenschutz</a></li>
             <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="/contact">Fachschaft kontaktieren</a></li>
           </ul>
-          <div class="govuk-footer__meta-custom">Entwickelt vom <a class="govuk-footer__link" href="https://design-system.service.gov.uk/design-system-team/">GOV.UK Design System Team</a></div>
+          <div class="govuk-footer__meta-custom">Fachschaft Informatik · Westfälische Hochschule</div>
         </div>
       </div>
     </div>

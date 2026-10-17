@@ -44,7 +44,7 @@ func (c *Handler) Events(w http.ResponseWriter, r *http.Request) {
 		page.Upcoming, page.Past = groupEvents(records, time.Now())
 		page.Pagination = listPagination(r, total, eventsPageSize)
 	} else if r.PathValue("event") != "" {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	c.render(w, "events", false, Page{Title: "Veranstaltungen", Active: "calendar", Community: true, Events: page})
@@ -79,7 +79,7 @@ func groupEvents(records []events.Event, now time.Time) (upcoming, past []events
 func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	if c.events == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	user := forumUser(w)
@@ -126,7 +126,7 @@ func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {
 			err = r.ParseForm()
 		}
 		if err != nil {
-			http.Error(w, "Das Formular konnte nicht gelesen werden. Das Titelbild darf höchstens 6 MB groß sein.", http.StatusBadRequest)
+			c.pageError(w, "Das Formular konnte nicht gelesen werden. Das Titelbild darf höchstens 6 MB groß sein.", http.StatusBadRequest)
 			return
 		}
 		editor.Draft = posts.Draft{Type: "event", Title: r.PostForm.Get("title"), Body: r.PostForm.Get("body"), Date: r.PostForm.Get("date"), Time: r.PostForm.Get("time"), Location: r.PostForm.Get("location")}
@@ -177,7 +177,11 @@ func (c *Handler) CalendarCover(w http.ResponseWriter, r *http.Request) {
 	}
 	object, err := c.events.OpenCover(r.Context(), r.PathValue("event"))
 	if err != nil {
-		c.eventError(w, r, err)
+		if errors.Is(err, events.ErrNotFound) {
+			http.NotFound(w, r)
+		} else {
+			http.Error(w, "Das Titelbild konnte nicht geladen werden.", http.StatusServiceUnavailable)
+		}
 		return
 	}
 	c.serveGalleryObject(w, r, object)
@@ -185,9 +189,9 @@ func (c *Handler) CalendarCover(w http.ResponseWriter, r *http.Request) {
 
 func (c *Handler) eventError(w http.ResponseWriter, r *http.Request, err error) {
 	if errors.Is(err, events.ErrNotFound) {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 	} else if errors.Is(err, events.ErrCoverStorage) {
-		http.Error(w, "Das Titelbild konnte nicht gespeichert oder geladen werden.", http.StatusServiceUnavailable)
+		c.pageError(w, "Das Titelbild konnte nicht gespeichert oder geladen werden.", http.StatusServiceUnavailable)
 	} else {
 		c.forumError(w, r, err)
 	}

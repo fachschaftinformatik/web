@@ -7,6 +7,62 @@ Reviewed the merged implementation at `62d1d0a` against the GOV.UK
 
 ## Scope and evidence
 
+### Implementation follow-up
+
+Findings 1, 2, 4, 5, 6 and 8 have been addressed on this branch:
+local service information replaces the GOV.UK footer content, the non-functional
+global search has been removed, document failures use shared HTML recovery pages,
+comment errors retain input and reopen the correct edit page, validation titles
+receive an error prefix, and the forum call to action is a navigation link.
+The event cover upload now uses the enhanced drop-zone markup.
+
+Finding 7 has both code and local editorial changes: decorative thumbnails have
+empty alternatives with descriptive link text; full-image alternatives retain
+curated descriptions; importer publisher/date strings fall back to image titles.
+Thirty imported descriptions were rewritten after visual inspection, with original
+provenance retained in the ignored curation record. These content changes are in
+the local preview database and must be transferred separately from Git.
+
+Finding 3 is explicitly deferred at the user's request. The documented GOV.UK
+restriction is not presented as a separately established font-licence violation.
+
+The minimal service information is available at `/impressum`, `/datenschutz` and
+`/barrierefreiheit`. The chair comes from the same member assignments as `/team`,
+not a hard-coded historical name. The user confirmed AStA provides hosting and
+email. The text describes the implemented session cookie, accounts, public and
+private profile behaviour, archive submissions and external links. It does not
+copy the unrelated analytics/cookie claims in the AStA website's own policy.
+Provider-specific logging retention and the formal allocation of data-protection
+responsibility/contact should be confirmed with AStA when finalising the text.
+
+Follow-up verification passed:
+
+- Race tests for `internal/web` and `internal/content/media`, `go vet ./...`
+  and the application build.
+- Chromium/axe checks on 13 page states, including three 404 responses: no
+  reported violations. Seven routes checked at 320, 768 and 1280 pixels:
+  no horizontal document overflow.
+- Error-summary and linked-field focus for new and edited comments, automatic
+  reopening of invalid comment edits, event validation titles/focus, and the
+  translated improved cover-upload control.
+- Thirty local image alternatives checked against the curation record; seven
+  eligible albums remain, and the pre-existing foreign-key violation count is
+  unchanged at 15. No original image bytes or Instagram captions were changed.
+
+Evidence: `.dev-data/govuk-review/verify-fixes.cjs`, `fixes-report.json`,
+`photo-alternatives.json` and desktop/mobile screenshots. The current preview is
+served at `http://127.0.0.1:18099/` by `.dev-data/govuk-review/web`.
+
+Sources for the draft service information:
+
+- [HG NRW, §§ 53 and 56](https://recht.nrw.de/lrgv/gesetz/04082026-hochschulgesetz-hg/)
+- [DDG, § 5](https://www.gesetze-im-internet.de/ddg/__5.html)
+- [Published Fachschaft address](https://github.com/fachschaftinformatik)
+- [AStA contact and technical-service context](https://www.asta-wh.de/impressum/)
+- [AStA data-protection contact](https://www.asta-wh.de/datenschutz/)
+
+The original review observations below describe the pre-fix implementation.
+
 - Chromium and axe-core checks on 22 public page states and 8 authenticated
   page states: home, community, forum, news, events and pagination, event detail,
   albums, archive, Fachschaft content, contact, sitemap, authentication,

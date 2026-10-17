@@ -23,7 +23,7 @@ type RequestPage struct {
 
 func (c *Handler) ArchiveRequests(w http.ResponseWriter, r *http.Request) {
 	if c.archive == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	requests, err := c.archive.Requests(r.Context(), w.(*sessionResponse).session.UserID, false)
@@ -36,7 +36,7 @@ func (c *Handler) ArchiveRequests(w http.ResponseWriter, r *http.Request) {
 
 func (c *Handler) ArchiveRequest(w http.ResponseWriter, r *http.Request) {
 	if c.archive == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	userID := w.(*sessionResponse).session.UserID
@@ -69,7 +69,7 @@ func (c *Handler) ReviewArchiveRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if c.archive == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	session := w.(*sessionResponse).session
@@ -83,7 +83,7 @@ func (c *Handler) ReviewArchiveRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		decision := r.PostForm.Get("decision")
 		if decision != "approve" && decision != "reject" {
-			http.Error(w, "Wähle Bestätigen oder Ablehnen aus.", http.StatusBadRequest)
+			c.pageError(w, "Wähle Bestätigen oder Ablehnen aus.", http.StatusBadRequest)
 			return
 		}
 		err := c.archive.Review(r.Context(), session.UserID, request.ID, decision == "approve")

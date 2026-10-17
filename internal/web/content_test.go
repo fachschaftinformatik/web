@@ -193,8 +193,8 @@ func TestMeetingYears(t *testing.T) {
 		{"?jahr=2020", "6. März 2020", 200},
 		{"?jahr=2021", "22. Januar 2021", 200},
 		{"?jahr=2023", "18. Januar 2023", 200},
-		{"?jahr=1999", "404", 404},
-		{"?jahr=invalid", "404", 404},
+		{"?jahr=1999", "Seite nicht gefunden", 404},
+		{"?jahr=invalid", "Seite nicht gefunden", 404},
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest("GET", "/fachschaft/sitzungen"+tc.query, nil))
