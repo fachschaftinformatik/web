@@ -96,8 +96,9 @@
 {{with $.Admin.Person}}<p class="govuk-body"><a class="govuk-link" href="/verwaltung/mitglieder/{{.ID}}">Mitglied anzeigen</a></p>{{end}}
 <div class="govuk-button-group">
 <a class="govuk-button govuk-button--secondary" data-module="govuk-button" data-dialog="password-reset-dialog" href="/verwaltung/benutzer/{{.ID}}/passwort-zuruecksetzen">Passwort zurücksetzen</a>
-{{if $.Admin.CanResendConfirmation}}<form action="/verwaltung/benutzer/{{.ID}}/bestaetigung-senden" method="post"><input type="hidden" name="csrf" value="{{$csrf}}"><button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="submit">{{if $.Admin.Person}}Einladung erneut senden{{else}}Bestätigung erneut senden{{end}}</button></form>{{end}}
+{{if $.Admin.CanResendConfirmation}}<button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="submit" form="confirmation-form">{{if $.Admin.Person}}Einladung erneut senden{{else}}Bestätigung erneut senden{{end}}</button>{{end}}
 </div>
+{{if $.Admin.CanResendConfirmation}}<form id="confirmation-form" action="/verwaltung/benutzer/{{.ID}}/bestaetigung-senden" method="post"><input type="hidden" name="csrf" value="{{$csrf}}"></form>{{end}}
 <dialog class="app-dialog" id="password-reset-dialog" aria-labelledby="password-reset-title">
   <h2 class="govuk-heading-m" id="password-reset-title" tabindex="-1">Passwort zurücksetzen</h2>
   {{template "password-reset-form" $}}
