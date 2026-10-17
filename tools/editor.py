@@ -7,7 +7,7 @@ from pathlib import Path
 
 VERSION = "8.10.0"
 LANG_VERSION = "26.9.28"
-ROOT = Path(__file__).resolve().parents[1] / "internal/web/assets/tinymce"
+ROOT = Path(__file__).resolve().parents[1] / "internal/view/assets/tinymce"
 PLUGINS = {"lists"}
 
 def unpack(url, accept):
