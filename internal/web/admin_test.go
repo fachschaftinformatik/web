@@ -116,14 +116,17 @@ func TestAdminAuthenticationAndMutations(t *testing.T) {
 	if _, body, _ := b.get("/team"); !strings.Contains(body, "Demo-Vorsitz") {
 		t.Fatal("public team did not reflect edit")
 	}
-	if status, _, headers := b.post("/verwaltung/aufgaben/neu", url.Values{"csrf": {b.csrf}, "title": {"Demo-Referat"}, "group": {"departments"}, "members": {"1"}}); status != 303 || headers.Get("Location") != "/verwaltung/mitglieder?gespeichert=1" {
+	if status, _, headers := b.post("/verwaltung/funktionen/neu", url.Values{"csrf": {b.csrf}, "title": {"Demo-Referat"}, "group": {"departments"}, "members": {"1"}}); status != 303 || headers.Get("Location") != "/verwaltung/funktionen?gespeichert=1" {
 		t.Fatal("responsibility add failed")
 	}
 	if _, body, _ := b.get("/team"); !strings.Contains(body, "Demo-Referat") {
 		t.Fatal("public responsibility missing")
 	}
 	if status, body, _ := b.get("/verwaltung/mitglieder"); status != 200 || !strings.Contains(body, "Demo-Vorsitz") || !strings.Contains(body, "Demo-Referat (Referat)") {
-		t.Fatal("combined member overview lost assignments")
+		t.Fatal("member overview lost assignments")
+	}
+	if status, body, _ := b.get("/verwaltung/funktionen"); status != 200 || !strings.Contains(body, "Demo-Referat") || !strings.Contains(body, "Demo-Vorsitz") {
+		t.Fatal("function overview lost member assignments")
 	}
 	oldCookies := b.client.Jar.Cookies(mustURL(t, server.URL))
 	if status, _, _ := b.post("/logout", url.Values{"csrf": {b.csrf}}); status != 303 {
@@ -280,7 +283,7 @@ func TestUserPaginationKeepsSearchContext(t *testing.T) {
 	b := newAdminBrowser(t, server)
 	b.login()
 	status, body, _ := b.get("/verwaltung/benutzer?q=Beispiel&seite=2")
-	if status != 200 || !strings.Contains(body, "Benutzer – Seite 2 von 3") || !strings.Contains(body, `aria-current="page">2`) || !strings.Contains(body, `q=Beispiel&amp;seite=3`) || !strings.Contains(body, "Beispiel 21") || strings.Contains(body, "Beispiel 01</a>") {
+	if status != 200 || !strings.Contains(body, "Benutzerkonten – Seite 2 von 3") || !strings.Contains(body, `aria-current="page">2`) || !strings.Contains(body, `q=Beispiel&amp;seite=3`) || !strings.Contains(body, "Beispiel 21") || strings.Contains(body, "Beispiel 01</a>") {
 		t.Fatal("numbered pagination lost page/search context")
 	}
 	for _, value := range []string{"0", "999", "invalid"} {

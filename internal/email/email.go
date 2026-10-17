@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"net"
 	"net/smtp"
+	"net/url"
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/config"
@@ -48,11 +49,13 @@ func (s *Sender) SendVerificationEmail(toEmail, name, link string) error {
 	}
 
 	var body bytes.Buffer
-	if err := s.tpl.ExecuteTemplate(&body, "verification.html", data); err != nil {
+	view, subject := "verification.html", "Bitte bestätige deine E-Mail-Adresse"
+	if target, err := url.Parse(link); err == nil && target.Path == "/invite" {
+		view, subject = "invitation.html", "Einladung zur Fachschaft Informatik"
+	}
+	if err := s.tpl.ExecuteTemplate(&body, view, data); err != nil {
 		return fmt.Errorf("failed to execute email template: %w", err)
 	}
-
-	subject := "Bitte bestätige deine E-Mail-Adresse"
 
 	headers := make(map[string]string)
 	headers["From"] = s.cfg.SMTPFrom

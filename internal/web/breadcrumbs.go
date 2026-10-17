@@ -11,7 +11,7 @@ func (p Page) Breadcrumbs() []Breadcrumb {
 	}
 	items := []Breadcrumb{{"Startseite", "/"}}
 	if p.Admin != nil {
-		if p.Admin.Section != "" && !p.Admin.ReviewerOnly {
+		if p.Admin.Section != "" {
 			items = append(items, Breadcrumb{"Verwaltung", "/verwaltung"})
 		}
 		if p.Admin.View == "form" || p.Admin.View == "user" || p.Admin.View == "review" || p.Admin.View == "reset" {

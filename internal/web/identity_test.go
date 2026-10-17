@@ -13,6 +13,7 @@ import (
 
 	"github.com/fachschaftinformatik/web/internal/content/files"
 	"github.com/fachschaftinformatik/web/internal/data"
+	"github.com/fachschaftinformatik/web/internal/people"
 	"github.com/fachschaftinformatik/web/internal/users"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -32,7 +33,11 @@ func identityBrowserWithStorage(t *testing.T, storage files.Storage) (*adminBrow
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	handler, err := NewPersistent(users.NewService(db, "https://example.org"), files.NewService(db, storage), false)
+	team, err := people.Open(context.Background(), db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler, err := NewPersistent(users.NewService(db, "https://example.org"), files.NewService(db, storage), team, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +88,11 @@ func TestPersistentLoginAuthorizationAndLogout(t *testing.T) {
 		t.Fatal("live directory or updated role not used")
 	}
 	// Build a fresh handler and service, keeping only the database and browser cookie.
-	handler, err := NewPersistent(users.NewService(db, "https://example.org"), files.NewService(db, nil), false)
+	team, err := people.Open(context.Background(), db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler, err := NewPersistent(users.NewService(db, "https://example.org"), files.NewService(db, nil), team, false)
 	if err != nil {
 		t.Fatal(err)
 	}

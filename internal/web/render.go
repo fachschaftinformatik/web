@@ -37,6 +37,7 @@ type Page struct {
 	Upload        UploadPage
 	Request       *RequestPage
 	RequestList   RequestListPage
+	Invite        InvitationPage
 	UserID        int64
 	Role          string
 	CSRF          string
@@ -107,7 +108,7 @@ type Renderer struct {
 
 func newRenderer() (*Renderer, error) {
 	r := &Renderer{pages: make(map[string]*template.Template)}
-	for _, name := range []string{"home", "team", "contact", "archive", "module", "upload", "request", "requests", "images", "community", "fachschaft", "content", "elections", "regulations", "login", "register", "forgot", "token", "forum", "thread", "editor", "admin"} {
+	for _, name := range []string{"home", "team", "contact", "archive", "module", "upload", "request", "requests", "images", "community", "fachschaft", "content", "elections", "regulations", "login", "register", "forgot", "token", "invite", "forum", "thread", "editor", "admin"} {
 		t, err := template.New("layout").Funcs(template.FuncMap{"forumText": forumText, "richHTML": func(source string) template.HTML { return template.HTML(posts.SanitizeRichText(source)) }}).ParseFS(resources, "templates/layout.html", "templates/requestlist.html", "templates/adminnav.html", "templates/"+name+".html")
 		if err != nil {
 			return nil, err

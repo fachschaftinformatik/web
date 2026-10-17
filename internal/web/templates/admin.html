@@ -15,10 +15,51 @@
 {{if .Success}}<div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="admin-success-title" data-module="govuk-notification-banner"><div class="govuk-notification-banner__header"><h2 class="govuk-notification-banner__title" id="admin-success-title">Erfolgreich</h2></div><div class="govuk-notification-banner__content"><p class="govuk-notification-banner__heading">{{.Success}}</p></div></div>{{end}}
 
 {{if eq .View "index"}}
-<p class="govuk-body">Verwalte Benutzer, Mitglieder und Aufgaben sowie Sitzungsdokumente.</p>
-<ul class="govuk-list govuk-list--spaced">
-  {{range .Links}}<li><a class="govuk-link" href="{{.URL}}">{{.Label}}</a></li>{{end}}
-</ul>
+<p class="govuk-body">Hier organisieren wir die Arbeit der Fachschaft: Mitglieder und Funktionen verwalten, Sitzungsdokumente veröffentlichen und Einreichungen prüfen.</p>
+<hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+{{if not .ReviewerOnly}}
+<h2 class="govuk-heading-l">Organisation</h2>
+<div class="app-community-cards">
+<div class="app-community-card">
+  <img class="app-community-card__image" src="/assets/community/workshop.png" alt="" width="320" height="180" loading="lazy">
+  <h3 class="govuk-heading-m">Mitglieder</h3>
+  <p class="govuk-body">Lade Mitglieder ein, bearbeite ihre Daten und sieh, welche Funktionen sie übernehmen.</p>
+  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/mitglieder">Zu den Mitgliedern</a></p>
+</div>
+<div class="app-community-card">
+  <img class="app-community-card__image" src="/assets/community/catchup-groupshot.png" alt="" width="320" height="180" loading="lazy">
+  <h3 class="govuk-heading-m">Funktionen</h3>
+  <p class="govuk-body">Verwalte Vorstand, Referate und Projektstellen und ordne ihnen die zuständigen Mitglieder zu.</p>
+  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/funktionen">Zu den Funktionen</a></p>
+</div>
+<div class="app-community-card">
+  <img class="app-community-card__image" src="/assets/community/propose-a-change-to-pages.svg" alt="" width="320" height="180" loading="lazy">
+  <h3 class="govuk-heading-m">Sitzungen</h3>
+  <p class="govuk-body">Stelle Einladungen zur Sitzung und Sitzungsprotokolle für die Studierenden bereit.</p>
+  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/sitzungen">Zu den Sitzungen</a></p>
+</div>
+</div>
+{{end}}
+<h2 class="govuk-heading-l">Vorgänge</h2>
+<div class="app-community-cards">
+<div class="app-community-card">
+  <img class="app-community-card__image" src="/assets/community/share-your-examples-and-research.svg" alt="" width="320" height="180" loading="lazy">
+  <h3 class="govuk-heading-m">Einreichungen</h3>
+  <p class="govuk-body">Prüfe eingereichte Rekos und bestätige ihre Veröffentlichung im Archiv oder lehne sie ab.</p>
+  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/einreichungen">Zu den Einreichungen</a></p>
+</div>
+</div>
+{{if not .ReviewerOnly}}
+<h2 class="govuk-heading-l">Zugänge</h2>
+<div class="app-community-cards">
+<div class="app-community-card">
+  <img class="app-community-card__image" src="/assets/community/discuss-and-give-feedback.svg" alt="" width="320" height="180" loading="lazy">
+  <h3 class="govuk-heading-m">Benutzerkonten</h3>
+  <p class="govuk-body">Suche nach Benutzerkonten, prüfe ihren Status und hilf bei Problemen mit der Anmeldung.</p>
+  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/benutzer">Zu den Benutzerkonten</a></p>
+</div>
+</div>
+{{end}}
 {{end}}
 
 {{if eq .View "users"}}
@@ -27,7 +68,7 @@
   <button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="submit">Suchen</button>
   {{if .Query}}<a class="govuk-link govuk-!-margin-left-3" href="/verwaltung/benutzer">Suche zurücksetzen</a>{{end}}
 </form>
-<h2 class="govuk-heading-m">{{.Total}} Benutzer gefunden</h2>
+<h2 class="govuk-heading-m">{{.Total}} Benutzerkonten gefunden</h2>
 {{if .Users}}
 <table class="govuk-table app-admin-table app-admin-users app-archive-upload-table" role="table">
   <caption class="govuk-visually-hidden">Benutzerkonten</caption>
@@ -42,7 +83,7 @@
   </ul>
   {{if .NextURL}}<div class="govuk-pagination__next"><a class="govuk-link govuk-pagination__link" href="{{.NextURL}}" rel="next"><span class="govuk-pagination__link-title">Weiter<span class="govuk-visually-hidden"> zur nächsten Seite</span></span><svg class="govuk-pagination__icon govuk-pagination__icon--next" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13"><path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"></path></svg></a></div>{{end}}
 </nav>{{end}}
-{{else}}<p class="govuk-body">Für diese Suche wurden keine Benutzer gefunden. Versuche einen anderen Namen oder eine E-Mail-Adresse.</p>{{end}}
+{{else}}<p class="govuk-body">Für diese Suche wurden keine Benutzerkonten gefunden. Versuche einen anderen Namen oder eine E-Mail-Adresse.</p>{{end}}
 {{end}}
 
 {{if eq .View "user"}}
@@ -67,24 +108,28 @@
 {{if eq .View "people"}}
 <div class="govuk-button-group">
   <a class="govuk-button" data-module="govuk-button" href="/verwaltung/mitglieder/neu">Mitglied hinzufügen</a>
-  <a class="govuk-button govuk-button--secondary" data-module="govuk-button" href="/verwaltung/aufgaben/neu">Aufgabe hinzufügen</a>
 </div>
 <section aria-labelledby="members-heading">
   <h2 class="govuk-heading-m" id="members-heading">Mitglieder</h2>
-  <table class="govuk-table app-admin-table">
-    <caption class="govuk-visually-hidden">Mitglieder und ihre Aufgaben</caption>
-    <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Name</th><th class="govuk-table__header" scope="col">Aufgaben</th></tr></thead>
-    <tbody class="govuk-table__body">{{range .Members}}<tr class="govuk-table__row">
-      <th class="govuk-table__header" scope="row"><a class="govuk-link" href="/verwaltung/mitglieder/{{.ID}}">{{.Name}}<span class="govuk-visually-hidden"> bearbeiten</span></a>{{if .Email}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0 app-wrap-anywhere">{{.Email}}</p>{{end}}</th>
-      <td class="govuk-table__cell">{{if .Tasks}}<ul class="govuk-list govuk-!-margin-bottom-0">{{range .Tasks}}<li>{{.}}</li>{{end}}</ul>{{else}}Keine Aufgaben zugeordnet{{end}}</td>
+  <table class="govuk-table app-admin-table app-archive-upload-table" role="table">
+    <caption class="govuk-visually-hidden">Mitglieder und ihre Funktionen</caption>
+    <thead class="govuk-table__head" role="rowgroup"><tr class="govuk-table__row" role="row"><th class="govuk-table__header" scope="col" role="columnheader">Name</th><th class="govuk-table__header" scope="col" role="columnheader">Funktionen</th><th class="govuk-table__header" scope="col" role="columnheader">Status</th></tr></thead>
+    <tbody class="govuk-table__body" role="rowgroup">{{range .Members}}<tr class="govuk-table__row" role="row">
+      <th class="govuk-table__header" scope="row" role="rowheader"><a class="govuk-link" href="/verwaltung/mitglieder/{{.ID}}">{{.Name}}<span class="govuk-visually-hidden"> bearbeiten</span></a>{{if or .InviteEmail .Email}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0 app-wrap-anywhere">{{if .InviteEmail}}{{.InviteEmail}}{{else}}{{.Email}}{{end}}</p>{{end}}</th>
+      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Funktionen</span><div>{{if .Tasks}}<ul class="govuk-list govuk-!-margin-bottom-0">{{range .Tasks}}<li>{{.}}</li>{{end}}</ul>{{else}}Keine Funktionen zugeordnet{{end}}</div></td>
+      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Status</span><strong class="govuk-tag {{if .Confirmed}}govuk-tag--green{{else}}govuk-tag--blue{{end}}">{{.Status}}</strong></td>
     </tr>{{end}}</tbody>
   </table>
 </section>
+{{end}}
+{{if eq .View "functions"}}
+<a class="govuk-button" data-module="govuk-button" href="/verwaltung/funktionen/neu">Funktion hinzufügen</a>
+<p class="govuk-body">Verwalte Funktionen im Vorstand, in Referaten und Projektstellen und besetze sie mit Mitgliedern.</p>
 <section aria-labelledby="tasks-heading">
-  <h2 class="govuk-heading-m" id="tasks-heading">Aufgaben</h2>
+  <h2 class="govuk-heading-m" id="tasks-heading">Funktionen</h2>
   <table class="govuk-table app-admin-table">
-    <caption class="govuk-visually-hidden">Referate und Projektstellen mit ihren Mitgliedern</caption>
-    <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Aufgabe</th><th class="govuk-table__header" scope="col">Mitglieder</th></tr></thead>
+    <caption class="govuk-visually-hidden">Vorstand, Referate und Projektstellen mit ihren Mitgliedern</caption>
+    <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Funktion</th><th class="govuk-table__header" scope="col">Mitglieder</th></tr></thead>
     <tbody class="govuk-table__body">{{range .Tasks}}<tr class="govuk-table__row"><th class="govuk-table__header" scope="row"><a class="govuk-link" href="{{.URL}}">{{.Title}}<span class="govuk-visually-hidden"> bearbeiten</span></a><p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">{{.Kind}}</p></th><td class="govuk-table__cell">{{if .Members}}<ul class="govuk-list govuk-!-margin-bottom-0">{{range .Members}}<li>{{.}}</li>{{end}}</ul>{{else}}Keine Mitglieder zugeordnet{{end}}</td></tr>{{end}}</tbody>
   </table>
 </section>
@@ -141,8 +186,9 @@
   </div>
   {{end}}
   {{with .Publication}}{{if .Data}}<p class="govuk-body app-wrap-anywhere">Ausgewählt: <a class="govuk-link" href="/documents/{{.ID}}">{{.Filename}}</a> (PDF, {{.Size}}). Ohne neue Auswahl wird diese Datei beibehalten.</p>{{end}}{{end}}
-  <div class="govuk-button-group"><button class="govuk-button" data-module="govuk-button" type="submit">{{if .Publication}}Weiter zur Prüfung{{else}}Änderungen speichern{{end}}</button><a class="govuk-link" href="/verwaltung/{{.Section}}">Abbrechen</a></div>
+  <div class="govuk-button-group"><button class="govuk-button" data-module="govuk-button" type="submit">{{if .Publication}}Weiter zur Prüfung{{else if .Inviting}}Einladung senden{{else}}Änderungen speichern{{end}}</button><a class="govuk-link" href="/verwaltung/{{.Section}}">Abbrechen</a></div>
 </form>
+{{with .Person}}{{if and .UserID (not .Confirmed)}}<form action="/verwaltung/mitglieder/{{.ID}}/einladen" method="post"><input type="hidden" name="csrf" value="{{$csrf}}"><button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="submit">Einladung erneut senden</button></form>{{end}}{{end}}
 {{end}}
 
 {{if eq .View "review"}}

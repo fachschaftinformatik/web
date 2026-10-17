@@ -163,6 +163,18 @@ type Notification struct {
 	DeletedAt *string `json:"deleted_at"`
 }
 
+type PeopleState struct {
+	ID int64 `json:"id"`
+}
+
+type Person struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	UserID   *int64 `json:"user_id"`
+	Position int64  `json:"position"`
+}
+
 type Program struct {
 	ID        int64   `json:"id"`
 	Name      string  `json:"name"`
@@ -190,6 +202,20 @@ type RefNotificationType struct {
 
 type RefUserRole struct {
 	Role string `json:"role"`
+}
+
+type Responsibility struct {
+	ID        string `json:"id"`
+	GroupName string `json:"group_name"`
+	Title     string `json:"title"`
+	Email     string `json:"email"`
+	Position  int64  `json:"position"`
+}
+
+type ResponsibilityMember struct {
+	ResponsibilityID string `json:"responsibility_id"`
+	PersonID         string `json:"person_id"`
+	Position         int64  `json:"position"`
 }
 
 type Session struct {

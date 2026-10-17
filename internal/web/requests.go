@@ -3,6 +3,7 @@ package web
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/fachschaftinformatik/web/internal/content/files"
 )
@@ -61,6 +62,10 @@ func (c *Handler) ArchiveRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Handler) ReviewArchiveRequest(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.URL.Path, "/verwaltung/antraege/") {
+		http.Redirect(w, r, "/verwaltung/einreichungen/"+r.PathValue("request"), http.StatusTemporaryRedirect)
+		return
+	}
 	if c.archive == nil {
 		http.NotFound(w, r)
 		return
@@ -71,7 +76,7 @@ func (c *Handler) ReviewArchiveRequest(w http.ResponseWriter, r *http.Request) {
 		c.archiveWriteError(w, r, err)
 		return
 	}
-	page := Page{Title: "Antrag prüfen", Active: "admin", Admin: &AdminPage{Section: "antraege", SectionTitle: "Anträge", View: "review", ReviewerOnly: !session.CanAdmin()}, Request: &RequestPage{Entry: request, Reviewing: true}}
+	page := Page{Title: "Einreichung prüfen", Active: "admin", Admin: &AdminPage{Section: "einreichungen", SectionTitle: "Einreichungen", View: "review", ReviewerOnly: !session.CanAdmin()}, Request: &RequestPage{Entry: request, Reviewing: true}}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		decision := r.PostForm.Get("decision")
@@ -81,14 +86,14 @@ func (c *Handler) ReviewArchiveRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		err := c.archive.Review(r.Context(), session.UserID, request.ID, decision == "approve")
 		if errors.Is(err, files.ErrConflict) {
-			page.Request.Error = "Der Antrag oder die bisherige Revision wurde bereits geändert. Lade die Seite neu und prüfe den aktuellen Stand."
-			page.DocumentTitle = "Fehler: Antrag prüfen"
+			page.Request.Error = "Die Einreichung oder die bisherige Revision wurde bereits geändert. Lade die Seite neu und prüfe den aktuellen Stand."
+			page.DocumentTitle = "Fehler: Einreichung prüfen"
 			status = http.StatusConflict
 		} else if err != nil {
 			c.archiveWriteError(w, r, err)
 			return
 		} else {
-			http.Redirect(w, r, "/verwaltung/antraege/"+request.ID, http.StatusSeeOther)
+			http.Redirect(w, r, "/verwaltung/einreichungen/"+request.ID, http.StatusSeeOther)
 			return
 		}
 	}

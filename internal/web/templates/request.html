@@ -20,8 +20,8 @@
 {{if $editable}}
 <form action="/archive/requests/{{.Entry.ID}}/review" method="post"><input type="hidden" name="csrf" value="{{$.CSRF}}"><div class="govuk-button-group"><button class="govuk-button" type="submit" data-module="govuk-button">Rekos einreichen</button><a class="govuk-link" href="/archive/requests">Später fortsetzen</a></div></form>
 {{else if and .Reviewing (eq .Entry.Status "pending")}}
-<form action="/verwaltung/antraege/{{.Entry.ID}}" method="post"><input type="hidden" name="csrf" value="{{$.CSRF}}"><div class="govuk-button-group"><button class="govuk-button" type="submit" name="decision" value="approve" data-module="govuk-button">Einreichung bestätigen</button><button class="govuk-button govuk-button--secondary" type="submit" name="decision" value="reject" data-module="govuk-button">Ablehnen</button></div></form>
+<form action="/verwaltung/einreichungen/{{.Entry.ID}}" method="post"><input type="hidden" name="csrf" value="{{$.CSRF}}"><div class="govuk-button-group"><button class="govuk-button" type="submit" name="decision" value="approve" data-module="govuk-button">Einreichung bestätigen</button><button class="govuk-button govuk-button--secondary" type="submit" name="decision" value="reject" data-module="govuk-button">Ablehnen</button></div></form>
 {{end}}
-<p class="govuk-body"><a class="govuk-link" href="{{if .Reviewing}}/verwaltung/antraege{{else}}/archive/requests{{end}}">Zur Übersicht</a></p>
+<p class="govuk-body"><a class="govuk-link" href="{{if .Reviewing}}/verwaltung/einreichungen{{else}}/archive/requests{{end}}">Zur Übersicht</a></p>
 {{end}}
 {{end}}

@@ -23,6 +23,7 @@ import (
 	"github.com/fachschaftinformatik/web/internal/data/blob/disk"
 	"github.com/fachschaftinformatik/web/internal/data/blob/s3"
 	"github.com/fachschaftinformatik/web/internal/email"
+	"github.com/fachschaftinformatik/web/internal/people"
 	"github.com/fachschaftinformatik/web/internal/users"
 	"github.com/fachschaftinformatik/web/internal/web"
 )
@@ -117,7 +118,12 @@ func run(ctx context.Context, args []string) error {
 			}
 			storage = client
 		}
-		handler, err = web.NewPersistent(identity, files.NewService(db, storage), origin.Scheme == "https")
+		var team *people.Store
+		team, err = people.Open(ctx, db)
+		if err != nil {
+			return err
+		}
+		handler, err = web.NewPersistent(identity, files.NewService(db, storage), team, origin.Scheme == "https")
 		if err == nil {
 			mailCtx, cancel := context.WithCancel(ctx)
 			done := make(chan struct{})

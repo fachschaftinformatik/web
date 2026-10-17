@@ -141,14 +141,14 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 		t.Fatal("user confirmation failed")
 	}
 	requestID := strings.TrimSuffix(strings.TrimPrefix(reviewPath, "/archive/requests/"), "/review")
-	adminPath := "/verwaltung/antraege/" + requestID
+	adminPath := "/verwaltung/einreichungen/" + requestID
 	if status, _, _ := b.get(adminPath); status != 403 {
 		t.Fatal("ordinary user accessed administration review")
 	}
 	if _, err := db.Exec(`UPDATE users SET role='editor' WHERE id=1`); err != nil {
 		t.Fatal(err)
 	}
-	if status, body, _ := b.get("/verwaltung/antraege"); status != 200 || !strings.Contains(body, requestID) {
+	if status, body, _ := b.get("/verwaltung/einreichungen"); status != 200 || !strings.Contains(body, requestID) {
 		t.Fatal("editor cannot find submitted request")
 	}
 	if status, _, _ := b.get("/verwaltung/benutzer"); status != 403 {

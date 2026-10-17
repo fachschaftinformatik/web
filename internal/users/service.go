@@ -216,6 +216,14 @@ func (s *Service) Register(ctx context.Context, name, email, password, programID
 }
 
 func (s *Service) queueToken(ctx context.Context, tx *sql.Tx, userID int64, email, name, kind string) error {
+	path := "/reset"
+	if kind == "verify" {
+		path = "/verify"
+	}
+	return s.queueLink(ctx, tx, userID, email, name, kind, path)
+}
+
+func (s *Service) queueLink(ctx context.Context, tx *sql.Tx, userID int64, email, name, kind, path string) error {
 	value, err := token()
 	if err != nil {
 		return err
@@ -230,10 +238,6 @@ func (s *Service) queueToken(ctx context.Context, tx *sql.Tx, userID int64, emai
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM mail_outbox WHERE user_id=? AND kind=?`, userID, kind); err != nil {
 		return err
-	}
-	path := "/reset"
-	if kind == "verify" {
-		path = "/verify"
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO mail_outbox (id,user_id,kind,recipient,name,link) VALUES (?,?,?,?,?,?)`, int64(id.New()), userID, kind, email, name, s.baseURL+path+"?token="+url.QueryEscape(value))
 	return err
@@ -264,6 +268,13 @@ func (s *Service) RequestReset(ctx context.Context, email string) error {
 func (s *Service) ConsumeToken(ctx context.Context, value, kind, password string) error {
 	if len(value) != 64 || kind != "verify" && kind != "reset" {
 		return ErrToken
+	}
+	if kind == "verify" {
+		if _, err := s.Invitation(ctx, value); err == nil {
+			return ErrToken
+		} else if !errors.Is(err, ErrToken) {
+			return err
+		}
 	}
 	var hash string
 	if kind == "reset" {

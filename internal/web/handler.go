@@ -32,15 +32,15 @@ func New() (http.Handler, error) {
 }
 
 func NewWithUsers(records []users.User) (http.Handler, error) {
-	return newHandler(records, nil, nil, false)
+	return newHandler(records, nil, nil, nil, false)
 }
 
 // NewPersistent uses database-backed identities instead of demo credentials.
-func NewPersistent(identity *users.Service, archive *files.Service, secureCookies bool) (http.Handler, error) {
-	return newHandler(nil, identity, archive, secureCookies)
+func NewPersistent(identity *users.Service, archive *files.Service, team *people.Store, secureCookies bool) (http.Handler, error) {
+	return newHandler(nil, identity, archive, team, secureCookies)
 }
 
-func newHandler(records []users.User, identity *users.Service, archive *files.Service, secureCookies bool) (http.Handler, error) {
+func newHandler(records []users.User, identity *users.Service, archive *files.Service, team *people.Store, secureCookies bool) (http.Handler, error) {
 	views, err := newRenderer()
 	if err != nil {
 		return nil, err
@@ -49,6 +49,9 @@ func newHandler(records []users.User, identity *users.Service, archive *files.Se
 	c.identity = identity
 	c.secureCookies = secureCookies
 	c.archive = archive
+	if team != nil {
+		c.people = team
+	}
 	router := http.NewServeMux()
 	router.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -101,8 +104,11 @@ func newHandler(records []users.User, identity *users.Service, archive *files.Se
 	router.HandleFunc("GET /verwaltung/{section}", c.Admin)
 	router.HandleFunc("GET /verwaltung/{section}/{id}", c.Admin)
 	router.HandleFunc("POST /verwaltung/{section}/{id}", c.Admin)
+	router.HandleFunc("POST /verwaltung/mitglieder/{id}/einladen", c.ResendInvitation)
 	router.HandleFunc("GET /verwaltung/antraege/{request}", c.ReviewArchiveRequest)
 	router.HandleFunc("POST /verwaltung/antraege/{request}", c.ReviewArchiveRequest)
+	router.HandleFunc("GET /verwaltung/einreichungen/{request}", c.ReviewArchiveRequest)
+	router.HandleFunc("POST /verwaltung/einreichungen/{request}", c.ReviewArchiveRequest)
 	router.HandleFunc("GET /verwaltung/sitzungen/{id}/pruefen", c.ReviewPublication)
 	router.HandleFunc("POST /verwaltung/sitzungen/{id}/pruefen", c.ReviewPublication)
 	router.HandleFunc("GET /verwaltung/benutzer/{id}/passwort-zuruecksetzen", c.ResetUserPassword)
@@ -116,6 +122,8 @@ func newHandler(records []users.User, identity *users.Service, archive *files.Se
 	router.HandleFunc("POST /verify", c.Token)
 	router.HandleFunc("GET /reset", c.Token)
 	router.HandleFunc("POST /reset", c.Token)
+	router.HandleFunc("GET /invite", c.Invitation)
+	router.HandleFunc("POST /invite", c.Invitation)
 	router.HandleFunc("GET /community", func(w http.ResponseWriter, r *http.Request) {
 		c.render(w, "community", false, Page{Title: "Community", Active: "community", Community: true})
 	})
@@ -136,6 +144,10 @@ func newHandler(records []users.User, identity *users.Service, archive *files.Se
 }
 
 func (c *Handler) Team(w http.ResponseWriter, r *http.Request) {
+	if err := c.people.Refresh(r.Context()); err != nil {
+		c.serverError(w, err)
+		return
+	}
 	c.render(w, "team", false, Page{Title: "Mitglieder", Active: "team", Fachschaft: true, Team: c.people.Groups()})
 }
 
