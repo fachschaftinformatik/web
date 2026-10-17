@@ -1,0 +1,173 @@
+package meetings
+
+import (
+	"bytes"
+	"database/sql"
+	_ "embed"
+	"encoding/json"
+	"fmt"
+	"slices"
+	"time"
+
+	"github.com/fachschaftinformatik/web/internal/storage"
+)
+
+//go:embed catalog.json
+var catalog []byte
+
+type Document struct {
+	Kind, File, Note, SHA256 string
+	Bytes                    int
+	Sources                  []string
+	Stored                   bool
+}
+
+func (d Document) URL() string {
+	if d.Stored {
+		return "/documents/" + d.File
+	}
+	return "/assets/content/" + d.File
+}
+
+func (d Document) Size() string { return fmt.Sprintf("%d kB", (d.Bytes+999)/1000) }
+
+func kindLabel(kind string) string {
+	if kind == "Einladung" {
+		return "Einladung zur Sitzung"
+	}
+	if kind == "Protokoll" {
+		return "Sitzungsprotokoll"
+	}
+	return kind
+}
+
+func (d Document) Label() string { return kindLabel(d.Kind) }
+
+type Meeting struct {
+	Year, Number int
+	Date         string
+	Documents    []Document
+}
+
+func (m Meeting) DateLabel() string {
+	date, err := time.Parse("2006-01-02", m.Date)
+	if err != nil {
+		return "Datum uneindeutig"
+	}
+	months := [...]string{"Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"}
+	return fmt.Sprintf("%d. %s %d", date.Day(), months[date.Month()-1], date.Year())
+}
+
+// All returns a fresh copy of the curated, newest-first document index.
+func All() []Meeting {
+	var records []Meeting
+	if err := json.Unmarshal(catalog, &records); err != nil {
+		panic("invalid embedded meeting catalog: " + err.Error())
+	}
+	return records
+}
+
+func Years() []int {
+	var years []int
+	for _, meeting := range All() {
+		if len(years) == 0 || years[len(years)-1] != meeting.Year {
+			years = append(years, meeting.Year)
+		}
+	}
+	return years
+}
+
+func ForYear(year int) []Meeting {
+	var result []Meeting
+	for _, meeting := range All() {
+		if meeting.Year == year {
+			result = append(result, meeting)
+		}
+	}
+	return result
+}
+
+const MaxPDFBytes = 8 << 20
+
+type Publication struct {
+	ID, Owner, Date, Kind, Filename string
+	Number                          int
+	Data                            []byte
+	Published                       bool
+}
+
+type Store struct {
+	db    *sql.DB
+	blobs storage.Provider
+}
+
+func ValidatePublication(p Publication) map[string]string {
+	errors := map[string]string{}
+	date, err := time.Parse("2006-01-02", p.Date)
+	if err != nil || date.Year() < 2000 || date.Year() > 2100 {
+		errors["date"] = "Gib ein gültiges Sitzungsdatum zwischen 2000 und 2100 ein."
+	}
+	if p.Number < 1 || p.Number > 999 {
+		errors["number"] = "Gib eine Sitzungsnummer zwischen 1 und 999 ein."
+	}
+	if p.Kind != "Einladung" && p.Kind != "Protokoll" {
+		errors["kind"] = "Wähle Einladung zur Sitzung oder Sitzungsprotokoll aus."
+	}
+	if message := PDFError(p.Data); message != "" {
+		errors["file"] = message
+	}
+	return errors
+}
+
+func PDFError(data []byte) string {
+	if len(data) == 0 {
+		return "Wähle eine Datei aus."
+	}
+	if len(data) > MaxPDFBytes {
+		return "Die Datei darf höchstens 8 MB groß sein."
+	}
+	if !bytes.HasPrefix(data, []byte("%PDF-")) || !bytes.Contains(data, []byte("%%EOF")) {
+		return "Die ausgewählte Datei muss im PDF-Format vorliegen."
+	}
+	return ""
+}
+
+func (s *Store) Get(id string) (Publication, bool) {
+	p, ok, _ := s.GetWithError(id)
+	return p, ok
+}
+
+func appendPublication(records []Meeting, p Publication, size int) []Meeting {
+	date, _ := time.Parse("2006-01-02", p.Date)
+	doc := Document{Kind: p.Kind, File: p.ID, Bytes: size, Stored: true}
+	index := slices.IndexFunc(records, func(m Meeting) bool { return m.Date == p.Date && m.Number == p.Number })
+	if index < 0 {
+		records = append(records, Meeting{Year: date.Year(), Number: p.Number, Date: p.Date, Documents: []Document{doc}})
+	} else {
+		records[index].Documents = append(records[index].Documents, doc)
+	}
+	return records
+}
+
+func sortMeetings(records []Meeting) {
+	slices.SortFunc(records, func(a, b Meeting) int {
+		if a.Year != b.Year {
+			return b.Year - a.Year
+		}
+		if a.Date != b.Date {
+			if a.Date > b.Date {
+				return -1
+			}
+			return 1
+		}
+		return b.Number - a.Number
+	})
+}
+
+func (s *Store) All() []Meeting { records, _ := s.AllWithError(); return records }
+
+func (p Publication) Size() string { return fmt.Sprintf("%d kB", (len(p.Data)+999)/1000) }
+
+func (p Publication) KindLabel() string { return kindLabel(p.Kind) }
+
+func (p Publication) DateLabel() string { return (Meeting{Date: p.Date}).DateLabel() }

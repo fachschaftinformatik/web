@@ -1,0 +1,193 @@
+package controller
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"path/filepath"
+	"strconv"
+	"time"
+
+	"github.com/fachschaftinformatik/web/internal/model/meetings"
+	"github.com/fachschaftinformatik/web/internal/view"
+)
+
+func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *view.AdminPage) {
+	owner := c.publicationOwner(w)
+	id := r.PathValue("id")
+	p := meetings.Publication{ID: id, Owner: owner, Date: r.URL.Query().Get("datum")}
+	p.Number, _ = strconv.Atoi(r.URL.Query().Get("nummer"))
+	if id != "neu" {
+		var ok bool
+		var err error
+		p, ok, err = c.meetings.GetWithError(id)
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
+		if !ok || p.Owner != owner || p.Published {
+			c.notFound(w, r)
+			return
+		}
+	}
+	errors := map[string]string{}
+	day, month, year := "", "", ""
+	if date, err := time.Parse("2006-01-02", p.Date); err == nil {
+		day, month, year = strconv.Itoa(date.Day()), strconv.Itoa(int(date.Month())), strconv.Itoa(date.Year())
+	}
+	number := ""
+	if p.Number > 0 {
+		number = strconv.Itoa(p.Number)
+	}
+	if r.Method == http.MethodPost {
+		if id == "neu" {
+			p.ID = randomToken()
+		}
+		day, month, year = r.PostForm.Get("day"), r.PostForm.Get("month"), r.PostForm.Get("year")
+		d, _ := strconv.Atoi(day)
+		m, _ := strconv.Atoi(month)
+		y, _ := strconv.Atoi(year)
+		p.Date = fmt.Sprintf("%04d-%02d-%02d", y, m, d)
+		number = r.PostForm.Get("number")
+		p.Number, _ = strconv.Atoi(number)
+		p.Kind = r.PostForm.Get("kind")
+		file, header, err := r.FormFile("file")
+		if err == nil {
+			defer file.Close()
+			data, readErr := io.ReadAll(io.LimitReader(file, meetings.MaxPDFBytes+1))
+			candidate := p
+			candidate.Data = data
+			if readErr != nil {
+				errors["file"] = "Die Datei konnte nicht gelesen werden. Wähle sie erneut aus."
+			} else {
+				if msg := meetings.ValidatePublication(candidate)["file"]; msg != "" {
+					errors["file"] = msg
+				} else {
+					p.Data, p.Filename = data, filepath.Base(header.Filename)
+				}
+			}
+		} else {
+			if err != http.ErrMissingFile {
+				errors["file"] = "Die Datei konnte nicht gelesen werden. Wähle sie erneut aus."
+			}
+		}
+		for key, message := range meetings.ValidatePublication(p) {
+			if errors[key] == "" {
+				errors[key] = message
+			}
+		}
+		if err := c.meetings.Save(p); err != nil {
+			a.Message = err.Error()
+			if id == "neu" {
+				p.ID = "neu"
+				p.Data = nil
+				if errors["file"] == "" {
+					errors["file"] = "Die Datei wurde nicht gespeichert. Wähle sie erneut aus."
+				}
+			}
+		} else {
+			if len(errors) == 0 {
+				http.Redirect(w, r, "/verwaltung/sitzungen/"+p.ID+"/pruefen", http.StatusSeeOther)
+				return
+			}
+		}
+	}
+	a.View, a.Action, a.Publication = "form", "/verwaltung/sitzungen/"+p.ID, &p
+	a.Fields = []view.AdminField{
+		{ID: "date", Label: "Sitzungsdatum", Kind: "date", Day: day, Month: month, Year: year},
+		view.Field("number", "Sitzungsnummer", number, "text"),
+		{ID: "kind", Label: "Dokumentart", Kind: "radios", Options: []view.AdminOption{{Value: "Einladung", Label: "Einladung zur Sitzung", Selected: p.Kind == "Einladung"}, {Value: "Protokoll", Label: "Sitzungsprotokoll", Selected: p.Kind == "Protokoll"}}},
+		{ID: "file", Label: "Datei", Kind: "file", Hint: "PDF, höchstens 8 MB."},
+	}
+	view.AttachErrors(a.Fields, errors)
+	status := http.StatusOK
+	if len(errors) != 0 || a.Message != "" {
+		status = http.StatusUnprocessableEntity
+	}
+	c.adminRender(w, "Dokument hinzufügen", a, status)
+}
+
+func (c *Handler) ReviewPublication(w http.ResponseWriter, r *http.Request) {
+	owner := c.publicationOwner(w)
+	p, ok, err := c.meetings.GetWithError(r.PathValue("id"))
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
+	if !ok || p.Owner != owner {
+		c.notFound(w, r)
+		return
+	}
+	a := &view.AdminPage{Section: "sitzungen", SectionTitle: "Sitzungen und Protokolle", View: "review", Publication: &p, Action: r.URL.Path}
+	status := http.StatusOK
+	if r.Method == http.MethodPost {
+		if err := c.meetings.Publish(p.ID, owner); err != nil {
+			a.Message = err.Error()
+			status = http.StatusUnprocessableEntity
+		} else {
+			http.Redirect(w, r, "/verwaltung/sitzungen?veroeffentlicht=1", http.StatusSeeOther)
+			return
+		}
+	}
+	if p.Published {
+		http.Redirect(w, r, "/verwaltung/sitzungen", http.StatusSeeOther)
+		return
+	}
+	c.adminRender(w, "Veröffentlichung prüfen", a, status)
+}
+
+func (c *Handler) publicationOwner(w http.ResponseWriter) string {
+	s := w.(*sessionResponse).session
+	if s == nil || !s.Authenticated {
+		return ""
+	}
+
+	if s.UserID <= 0 {
+		return ""
+	}
+	return strconv.FormatInt(s.UserID, 10)
+
+}
+
+func (c *Handler) Meetings(w http.ResponseWriter, r *http.Request) {
+	all, err := c.meetings.AllWithError()
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
+	var years []int
+	var next *meetings.Meeting
+	today := time.Now().Format("2006-01-02")
+	for _, meeting := range all {
+		if len(years) == 0 || years[len(years)-1] != meeting.Year {
+			years = append(years, meeting.Year)
+		}
+		if meeting.Date >= today && (next == nil || meeting.Date < next.Date) {
+			copy := meeting
+			next = &copy
+		}
+	}
+	year := years[0]
+	if value := r.URL.Query().Get("jahr"); value != "" {
+		var err error
+		year, err = strconv.Atoi(value)
+		if err != nil {
+			c.notFound(w, r)
+			return
+		}
+	}
+	var records []meetings.Meeting
+	for _, meeting := range all {
+		if meeting.Year == year {
+			records = append(records, meeting)
+		}
+	}
+	if len(records) == 0 {
+		c.notFound(w, r)
+		return
+	}
+	c.render(w, "content", false, view.Page{
+		Title: "Sitzungen und Protokolle", Active: "meetings", Fachschaft: true,
+		Meetings: view.MeetingsPage{Year: year, Years: years, Meetings: records, Next: next},
+	})
+}
