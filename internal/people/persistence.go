@@ -156,24 +156,12 @@ func (s *Store) Resend(ctx context.Context, identity *users.Service, personID st
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	tx, err := s.db.BeginTx(ctx, nil)
+	var userID int64
+	err := s.db.QueryRowContext(ctx, `SELECT u.id FROM people p JOIN users u ON u.id=p.user_id WHERE p.id=? AND u.deleted_at IS NULL`, personID).Scan(&userID)
 	if err != nil {
 		return false, err
 	}
-	defer tx.Rollback()
-	var name, email string
-	err = tx.QueryRowContext(ctx, `SELECT u.name,u.email FROM people p JOIN users u ON u.id=p.user_id WHERE p.id=? AND u.deleted_at IS NULL`, personID).Scan(&name, &email)
-	if err != nil {
-		return false, err
-	}
-	user, err := identity.Invite(ctx, tx, name, email)
-	if err != nil {
-		return false, err
-	}
-	if err := tx.Commit(); err != nil {
-		return false, err
-	}
-	return user.Verified != 1, nil
+	return identity.ResendConfirmation(ctx, userID)
 }
 
 func (s *Store) Invite(ctx context.Context, identity *users.Service, name, email string) (map[string]string, error) {

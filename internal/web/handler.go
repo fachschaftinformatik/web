@@ -113,6 +113,7 @@ func newHandler(records []users.User, identity *users.Service, archive *files.Se
 	router.HandleFunc("POST /verwaltung/sitzungen/{id}/pruefen", c.ReviewPublication)
 	router.HandleFunc("GET /verwaltung/benutzer/{id}/passwort-zuruecksetzen", c.ResetUserPassword)
 	router.HandleFunc("POST /verwaltung/benutzer/{id}/passwort-zuruecksetzen", c.ResetUserPassword)
+	router.HandleFunc("POST /verwaltung/benutzer/{id}/bestaetigung-senden", c.ResendUserConfirmation)
 	router.HandleFunc("GET /documents/{id}", c.Document)
 	router.HandleFunc("GET /register", c.Register)
 	router.HandleFunc("POST /register", c.Register)

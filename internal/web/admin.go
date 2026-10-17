@@ -53,6 +53,7 @@ var adminLinks = []AdminLink{
 }
 
 type AdminPage struct {
+	CanResendConfirmation                                        bool
 	Person                                                       *people.Person
 	Inviting                                                     bool
 	ReviewerOnly                                                 bool
@@ -138,6 +139,7 @@ func (a AdminPage) HasErrors() bool {
 }
 
 func (c *Handler) adminRender(w http.ResponseWriter, title string, a *AdminPage, status int) {
+	a.CanResendConfirmation = c.identity != nil && a.User != nil && !a.User.Verified
 	a.ReviewerOnly = !w.(*sessionResponse).session.CanAdmin()
 	p := Page{Title: title, Active: "admin", Admin: a}
 	if a.View == "users" && a.Pages > 1 {
@@ -236,6 +238,12 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 					if person.UserID != 0 && strconv.FormatInt(person.UserID, 10) == user.ID {
 						a.Person = &person
 						break
+					}
+				}
+				if c.identity != nil && r.URL.Query().Get("bestaetigung") == "1" {
+					a.Success = "Die E-Mail zur Bestätigung wurde zum Versand vorgemerkt."
+					if a.Person != nil {
+						a.Success = "Die Einladung wurde zum Versand vorgemerkt."
 					}
 				}
 				c.adminRender(w, user.Name, a, http.StatusOK)
