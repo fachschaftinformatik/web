@@ -3,11 +3,10 @@
 .env
 .env.*
 **/node_modules
-**/.next
 **/.env
 **/.env.*
 .github
-**/*.tsbuildinfo
+/data
 *.private-key.pem
 **/*.db
 **/*.db-shm

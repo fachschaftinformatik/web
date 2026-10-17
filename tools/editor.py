@@ -23,7 +23,7 @@ def unpack(url, accept):
                 target.write_bytes(archive.extractfile(entry).read())
 
 unpack(f"https://registry.npmjs.org/tinymce/-/tinymce-{VERSION}.tgz", lambda p:
-       p in {"tinymce.min.js", "license.md", "README.md"} or
+       p in {"tinymce.min.js", "license.md"} or
        p in {"themes/silver/theme.min.js", "icons/default/icons.min.js", "models/dom/model.min.js"} or
        p == "skins/content/default/content.min.css" or
        (p.startswith("skins/ui/oxide/") and p.endswith(".min.css")) or
