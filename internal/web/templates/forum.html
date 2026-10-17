@@ -33,7 +33,8 @@
       <p class="govuk-body govuk-!-margin-bottom-2">{{.Summary}}</p>
       <div class="app-post-meta">
         {{template "vote" (voteControl $ (printf "%s/vote" .URL) (printf "/discussions?q=%s&type=%s" (urlquery $.Forum.Filter.Query) (urlquery $.Forum.Filter.Type)) .Title .Votes .UserVote)}}
-        <p class="govuk-body-s govuk-!-margin-bottom-0"><time datetime="{{.Created}}" title="{{.PostedLabel}}" aria-label="{{.RelativeTime}}, {{.PostedLabel}}">{{.RelativeTime}}</time> · {{.Comments}} {{if eq .Comments 1}}Kommentar{{else}}Kommentare{{end}}</p>
+        <p class="govuk-body-s govuk-!-margin-bottom-0"><time datetime="{{.Created}}" title="{{.PostedLabel}}" aria-label="{{.RelativeTime}}, {{.PostedLabel}}">{{.RelativeTime}}</time></p>
+        <a class="app-comment-link" href="{{.URL}}{{if or $.Forum.Filter.Query $.Forum.Filter.Type}}?q={{$.Forum.Filter.Query}}&amp;type={{$.Forum.Filter.Type}}{{end}}#comments-heading" aria-label="{{.Comments}} {{if eq .Comments 1}}Kommentar{{else}}Kommentare{{end}} zu: {{.Title}}" title="Kommentare ansehen"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 11.5c0 4.7-4 8.5-9 8.5-1.4 0-2.8-.3-4-.9L3 21l1.6-4.3A8.1 8.1 0 0 1 3 11.5C3 6.8 7 3 12 3s9 3.8 9 8.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>{{.Comments}}</span></a>
       </div>
     </li>
     {{end}}

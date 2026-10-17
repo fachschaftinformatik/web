@@ -715,6 +715,28 @@
 .app-vote__button[aria-disabled="true"] { cursor: progress; }
 .app-vote__score { min-width: 2ch; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
+.app-comment-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  gap: 6px;
+  color: #505a5f;
+  font: 700 16px / 1.25 "GDS Transport", Arial, sans-serif;
+  text-decoration: none;
+}
+.app-comment-link:visited { color: #505a5f; }
+.app-comment-link:hover { color: #1d70b8; background: #f4f8fb; }
+.app-comment-link:hover span { text-decoration: underline; text-underline-offset: 3px; }
+.app-comment-link:focus-visible {
+  outline: 3px solid #0b0c0c;
+  background: #ffdd00;
+  color: #0b0c0c;
+}
+
 @media (forced-colors: active) {
   .app-vote__button[aria-pressed="true"] { outline: 2px solid Highlight; }
 }
