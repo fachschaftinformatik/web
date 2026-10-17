@@ -39,23 +39,27 @@ func (c *Handler) Events(w http.ResponseWriter, r *http.Request) {
 			c.serverError(w, err)
 			return
 		}
-		now := time.Now()
-		if zone, err := time.LoadLocation("Europe/Berlin"); err == nil {
-			now = now.In(zone)
-		}
-		for _, event := range records {
-			if len(event.EventDate) >= 10 && event.EventDate[:10] < now.Format("2006-01-02") {
-				page.Past = append(page.Past, event)
-			} else {
-				page.Upcoming = append(page.Upcoming, event)
-			}
-		}
+		page.Upcoming, page.Past = groupEvents(records, time.Now())
 	} else if r.PathValue("event") != "" {
 		http.NotFound(w, r)
 		return
 	}
-	sort.SliceStable(page.Upcoming, func(i, j int) bool {
-		a, b := page.Upcoming[i], page.Upcoming[j]
+	c.render(w, "events", false, Page{Title: "Veranstaltungen", Active: "calendar", Community: true, Events: page})
+}
+
+func groupEvents(records []events.Event, now time.Time) (upcoming, past []events.Event) {
+	if zone, err := time.LoadLocation("Europe/Berlin"); err == nil {
+		now = now.In(zone)
+	}
+	for _, event := range records {
+		if len(event.EventDate) >= 10 && event.EventDate[:10] < now.Format("2006-01-02") {
+			past = append(past, event)
+		} else {
+			upcoming = append(upcoming, event)
+		}
+	}
+	sort.SliceStable(upcoming, func(i, j int) bool {
+		a, b := upcoming[i], upcoming[j]
 		if a.EventDate == "" {
 			return false
 		}
@@ -64,8 +68,8 @@ func (c *Handler) Events(w http.ResponseWriter, r *http.Request) {
 		}
 		return a.EventDate < b.EventDate
 	})
-	sort.SliceStable(page.Past, func(i, j int) bool { return page.Past[i].EventDate > page.Past[j].EventDate })
-	c.render(w, "events", false, Page{Title: "Veranstaltungen", Active: "calendar", Community: true, Events: page})
+	sort.SliceStable(past, func(i, j int) bool { return past[i].EventDate > past[j].EventDate })
+	return upcoming, past
 }
 
 func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {

@@ -21,16 +21,3 @@
 <p class="govuk-body"><a class="govuk-link" href="/community/events">Fotos von unseren Veranstaltungen ansehen</a></p>
 {{end}}
 {{end}}
-{{define "event-list"}}<ul class="govuk-list app-image-cards" role="list">
-{{range .}}<li class="app-image-card">
-  <div class="app-image-card__image">{{if .CoverURL}}<img src="{{.CoverURL}}" width="{{.CoverWidth}}" height="{{.CoverHeight}}" alt="" loading="lazy" decoding="async">{{else}}<img src="/assets/community/event-placeholder.svg" width="800" height="450" alt="" loading="lazy" decoding="async">{{end}}</div>
-  <div class="app-image-card__content">
-    <h3 class="govuk-heading-s govuk-!-margin-bottom-2"><a class="govuk-link app-image-card__link" href="{{.URL}}">{{.Title}}</a></h3>
-    <p class="govuk-body-s app-image-card__summary govuk-!-margin-bottom-3">{{.Summary}}</p>
-    <dl class="app-image-card__meta govuk-body-s">
-      <div><dt class="govuk-visually-hidden">Termin</dt><dd>{{if .EventDate}}<time datetime="{{.EventDate}}">{{.EventLabel}}</time>{{else}}Termin folgt{{end}}</dd></div>
-      {{if .Location}}<div><dt class="govuk-visually-hidden">Ort</dt><dd>{{.Location}}</dd></div>{{end}}
-    </dl>
-  </div>
-</li>{{end}}
-</ul>{{end}}

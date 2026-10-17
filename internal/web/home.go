@@ -2,7 +2,9 @@ package web
 
 import (
 	"context"
+	"github.com/fachschaftinformatik/web/internal/content/events"
 	"github.com/fachschaftinformatik/web/internal/content/posts"
+	"time"
 )
 
 type HomePost struct {
@@ -11,19 +13,31 @@ type HomePost struct {
 }
 
 type HomePage struct {
-	News  HomePost
-	Forum []HomePost
+	News   HomePost
+	Forum  []HomePost
+	Events []events.Event
 }
 
 func (c *Handler) home(ctx context.Context, viewer ...int64) (HomePage, error) {
+	var upcoming []events.Event
+	if c.events != nil {
+		records, err := c.events.Find(ctx)
+		if err != nil {
+			return HomePage{}, err
+		}
+		upcoming, _ = groupEvents(records, time.Now())
+		upcoming = upcoming[:min(3, len(upcoming))]
+	}
 	if c.posts == nil {
-		return homeContent(), nil
+		page := homeContent()
+		page.Events = upcoming
+		return page, nil
 	}
 	records, err := c.posts.Find(ctx, posts.Filter{}, viewer...)
 	if err != nil {
 		return HomePage{}, err
 	}
-	var page HomePage
+	page := HomePage{Events: upcoming}
 	for _, post := range records {
 		item := HomePost{Title: post.Title, Summary: post.Summary, URL: post.URL(), Date: post.DateLabel(), DateISO: post.DateISO(), Votes: post.Votes, UserVote: post.UserVote}
 		if post.Type == "news" && page.News.URL == "" {
