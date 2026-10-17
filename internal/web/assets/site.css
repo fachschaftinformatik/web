@@ -675,11 +675,9 @@
 .app-vote {
   display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px 15px;
   margin: 0;
   color: #0b0c0c;
-  font: 400 16px / 1.25 "GDS Transport", Arial, sans-serif;
+  font: 700 16px / 1.25 "GDS Transport", Arial, sans-serif;
 }
 
 .app-vote__button {
@@ -687,39 +685,35 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: auto;
-  min-height: 44px;
+  width: 44px;
+  height: 44px;
   margin: 0;
-  padding: 8px 10px;
-  border: 2px solid #484949;
+  padding: 0;
+  border: 0;
   border-radius: 0;
-  background: #fff;
-  color: #484949;
-  box-shadow: none;
+  background: transparent;
+  color: #505a5f;
   font: inherit;
   text-decoration: none;
-  top: 0;
   cursor: pointer;
 }
 
-.app-vote__button::before { content: none; }
 .app-vote__button:link,
-.app-vote__button:visited { color: #484949; }
-.app-vote__button:hover { color: #0b0c0c; border-color: #0b0c0c; background: #f3f2f1; }
-.app-vote__button[aria-pressed="true"] { color: #fff; border-color: #1d70b8; background: #1d70b8; text-decoration: underline; text-underline-offset: 3px; }
-.app-vote__button[aria-pressed="true"]:hover { background: #003078; }
-.app-vote__button:focus {
+.app-vote__button:visited { color: #505a5f; }
+.app-vote__button:hover { color: #1d70b8; background: #f4f8fb; }
+.app-vote__button[aria-pressed="true"] { color: #1d70b8; }
+.app-vote__button[aria-pressed="true"] svg path { fill: currentColor; }
+.app-vote:has([aria-pressed="true"]) .app-vote__score { color: #1d70b8; }
+.app-vote__button:focus-visible {
   outline: 3px solid #0b0c0c;
   background: #ffdd00;
   color: #0b0c0c;
   outline-offset: 0;
-  border-color: #0b0c0c;
-  box-shadow: none;
 }
-.app-vote__button[aria-pressed="true"]:focus { background: #ffdd00; color: #0b0c0c; }
+.app-vote__button[aria-pressed="true"]:focus-visible { background: #ffdd00; color: #0b0c0c; }
 .app-vote[data-pending] { cursor: progress; }
 .app-vote__button[aria-disabled="true"] { cursor: progress; }
-.app-vote__score { white-space: nowrap; }
+.app-vote__score { min-width: 2ch; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 @media (forced-colors: active) {
   .app-vote__button[aria-pressed="true"] { outline: 2px solid Highlight; }

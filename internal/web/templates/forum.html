@@ -33,7 +33,7 @@
       <p class="govuk-body govuk-!-margin-bottom-2">{{.Summary}}</p>
       <div class="app-post-meta">
         {{template "vote" (voteControl $ (printf "%s/vote" .URL) (printf "/discussions?q=%s&type=%s" (urlquery $.Forum.Filter.Query) (urlquery $.Forum.Filter.Type)) .Title .Votes .UserVote)}}
-        <p class="govuk-body-s govuk-!-margin-bottom-0">{{if .AuthorURL}}<a class="govuk-link" href="{{.AuthorURL}}">{{.Author}}</a>{{else}}{{.Author}}{{end}} · <time datetime="{{.Created}}" title="{{.PostedLabel}}" aria-label="{{.RelativeTime}}, {{.PostedLabel}}">{{.RelativeTime}}</time> · {{.Comments}} {{if eq .Comments 1}}Kommentar{{else}}Kommentare{{end}}</p>
+        <p class="govuk-body-s govuk-!-margin-bottom-0"><time datetime="{{.Created}}" title="{{.PostedLabel}}" aria-label="{{.RelativeTime}}, {{.PostedLabel}}">{{.RelativeTime}}</time> · {{.Comments}} {{if eq .Comments 1}}Kommentar{{else}}Kommentare{{end}}</p>
       </div>
     </li>
     {{end}}

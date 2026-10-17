@@ -49,7 +49,6 @@ document.querySelectorAll("form.app-vote").forEach((form) => {
       if (!response.ok) throw new Error("vote failed");
       const result = await response.json();
       form.querySelector("[data-vote-score]").textContent = result.score;
-      form.querySelector("[data-vote-unit]").textContent = result.score === 1 ? "Punkt" : "Punkte";
       for (const item of buttons) {
         const up = item.classList.contains("app-vote__button--up");
         const selected = result.selected === (up ? 1 : -1);
