@@ -2,7 +2,7 @@
 {{define "content"}}
 {{with .Forum.Thread}}
 <article class="app-thread" aria-label="Beitrag">
-  <p class="govuk-body-s">{{if .AuthorURL}}<a class="govuk-link" href="{{.AuthorURL}}">{{.Author}}</a>{{else}}{{.Author}}{{end}} um <time datetime="{{.Created}}">{{.PostedLabel}}</time>{{if .Edited}} <span title="Bearbeitet am {{.UpdatedLabel}}">(Bearbeitet)</span>{{end}}</p>
+  <p class="govuk-body-s">{{if .AuthorURL}}<a class="govuk-link govuk-!-font-weight-bold" href="{{.AuthorURL}}">{{.Author}}</a>{{else}}{{.Author}}{{end}} · <time datetime="{{.Created}}" title="{{.PostedLabel}}" aria-label="{{.RelativeTime}}, {{.PostedLabel}}">{{.RelativeTime}}</time>{{if .Edited}} · <span title="Bearbeitet um {{.EditedLabel}}">bearbeitet<span class="govuk-visually-hidden"> um {{.EditedLabel}}</span></span>{{end}}</p>
   {{if .EventDate}}<dl class="govuk-summary-list">
     <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Termin</dt><dd class="govuk-summary-list__value"><time datetime="{{.EventDate}}">{{.EventLabel}}</time></dd></div>
     {{if .Location}}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Ort</dt><dd class="govuk-summary-list__value">{{.Location}}</dd></div>{{end}}
@@ -17,8 +17,10 @@
   {{if .Replies}}<ol class="govuk-list app-forum-posts">
     {{range .Replies}}<li id="comment-{{.ID}}">
       <article aria-labelledby="comment-heading-{{.ID}}">
-        <h3 class="govuk-heading-s govuk-!-margin-bottom-2" id="comment-heading-{{.ID}}">{{if .AuthorURL}}<a class="govuk-link" href="{{.AuthorURL}}">{{.Author}}</a>{{else}}{{.Author}}{{end}}</h3>
-        <p class="govuk-body-s"><a class="govuk-link" href="#comment-{{.ID}}"><time datetime="{{.Created}}">{{.DateLabel}}</time><span class="govuk-visually-hidden"> – Kommentar von {{.Author}}</span></a>{{if .Edited}} · bearbeitet am <time datetime="{{.Updated}}">{{.UpdatedLabel}}</time>{{end}}</p>
+        <div class="app-comment-byline govuk-!-margin-bottom-2">
+          <h3 class="govuk-heading-s govuk-!-margin-bottom-0" id="comment-heading-{{.ID}}">{{if .AuthorURL}}<a class="govuk-link" href="{{.AuthorURL}}">{{.Author}}</a>{{else}}{{.Author}}{{end}}</h3>
+          <p class="govuk-body-s govuk-!-margin-bottom-0">· <a class="govuk-link" href="#comment-{{.ID}}"><time datetime="{{.Created}}" title="{{.PostedLabel}}" aria-label="{{.RelativeTime}}, {{.PostedLabel}}">{{.RelativeTime}}</time><span class="govuk-visually-hidden"> – Kommentar von {{.Author}}</span></a>{{if .Edited}} · <span title="Bearbeitet um {{.EditedLabel}}">bearbeitet<span class="govuk-visually-hidden"> um {{.EditedLabel}}</span></span>{{end}}</p>
+        </div>
         {{if $.Forum.Live}}{{template "forum-body" (rawForumText .Text)}}{{else}}{{template "forum-body" (forumText .Text)}}{{end}}
         {{template "vote" (voteControl $ (printf "%s/comments/%s/vote" $.Forum.Thread.URL .ID) (printf "%s#comment-%s" $.Forum.Thread.URL .ID) (printf "Kommentar von %s" .Author) .Votes .UserVote)}}
         {{if .CanEdit}}<details class="govuk-details"><summary class="govuk-details__summary"><span class="govuk-details__summary-text">Kommentar bearbeiten</span></summary><div class="govuk-details__text"><form method="post" action="{{$.Forum.Thread.URL}}/comments/{{.ID}}/edit"><input type="hidden" name="csrf" value="{{$.CSRF}}"><label class="govuk-label" for="edit-comment-{{.ID}}">Kommentar</label><textarea class="govuk-textarea" id="edit-comment-{{.ID}}" name="text" rows="4" required maxlength="10000">{{.Text}}</textarea><button class="govuk-button" type="submit">Änderungen speichern</button></form></div></details>{{end}}

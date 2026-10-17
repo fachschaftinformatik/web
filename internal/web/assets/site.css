@@ -663,6 +663,13 @@
   gap: 10px 15px;
 }
 
+.app-comment-byline {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
 .app-vote-control { max-width: 100%; }
 
 .app-vote {
