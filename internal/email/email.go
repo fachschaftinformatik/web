@@ -6,8 +6,12 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"mime"
+	"mime/multipart"
+	"mime/quotedprintable"
 	"net"
 	"net/smtp"
+	"net/textproto"
 	"net/url"
 	"time"
 
@@ -34,102 +38,83 @@ func NewSender(cfg *config.Config) *Sender {
 	}
 }
 
-type verificationData struct {
-	Name       string
-	VerifyLink string
-	Domain     string
+type notification struct {
+	Name, Domain, Title, Intro, Action, Link, Validity, Note string
 }
 
 func (s *Sender) SendVerificationEmail(toEmail, name, link string) error {
-
-	data := verificationData{
-		Name:       name,
-		VerifyLink: link,
-		Domain:     s.cfg.Domain,
+	n := notification{
+		Name: name, Link: link,
+		Title:    "E-Mail-Adresse bestätigen",
+		Intro:    "Bestätige deine E-Mail-Adresse, um dein Benutzerkonto bei der Fachschaft Informatik zu nutzen.",
+		Action:   "E-Mail-Adresse bestätigen",
+		Validity: "Der Link ist 24 Stunden gültig.",
+		Note:     "Wenn du dich nicht registriert hast, kannst du diese E-Mail ignorieren.",
 	}
-
-	var body bytes.Buffer
-	view, subject := "verification.html", "Bitte bestätige deine E-Mail-Adresse"
 	if target, err := url.Parse(link); err == nil && target.Path == "/invite" {
-		view, subject = "invitation.html", "Einladung zur Fachschaft Informatik"
+		n.Title = "Einladung zur Fachschaft Informatik"
+		n.Intro = "Du wurdest als Mitglied der Fachschaft eingeladen. Lege dein Passwort fest und bestätige deine E-Mail-Adresse, um dein Benutzerkonto zu nutzen."
+		n.Action = "Einladung annehmen"
+		n.Note = "Bei Fragen zu deiner Einladung wende dich an die Fachschaft."
 	}
-	if err := s.tpl.ExecuteTemplate(&body, view, data); err != nil {
-		return fmt.Errorf("failed to execute email template: %w", err)
-	}
-
-	headers := make(map[string]string)
-	headers["From"] = s.cfg.SMTPFrom
-	headers["To"] = toEmail
-	headers["Subject"] = subject
-	headers["MIME-Version"] = "1.0"
-	headers["Content-Type"] = "text/html; charset=\"UTF-8\""
-
-	message := ""
-	for k, v := range headers {
-		message += fmt.Sprintf("%s: %s\r\n", k, v)
-	}
-	message += "\r\n" + body.String()
-
-	addr := fmt.Sprintf("%s:%s", s.cfg.SMTPHost, s.cfg.SMTPPort)
-
-	var auth smtp.Auth
-	if s.cfg.SMTPUser != "" {
-		auth = smtp.PlainAuth("", s.cfg.SMTPUser, s.cfg.SMTPPass, s.cfg.SMTPHost)
-	}
-
-	if err := send(addr, s.cfg.SMTPHost, auth, s.cfg.SMTPFrom, toEmail, []byte(message)); err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
-	}
-
-	return nil
-}
-
-type passwordResetData struct {
-	Name      string
-	ResetLink string
-	Domain    string
+	return s.notify(toEmail, n)
 }
 
 func (s *Sender) SendPasswordResetEmail(toEmail, name, link string) error {
+	return s.notify(toEmail, notification{
+		Name: name, Link: link,
+		Title:    "Passwort zurücksetzen",
+		Intro:    "Für dein Benutzerkonto wurde ein neues Passwort angefordert. Über den folgenden Link kannst du ein neues Passwort festlegen.",
+		Action:   "Passwort zurücksetzen",
+		Validity: "Der Link ist eine Stunde gültig.",
+		Note:     "Wenn du kein neues Passwort angefordert hast, kannst du diese E-Mail ignorieren. Dein bisheriges Passwort bleibt gültig.",
+	})
+}
 
-	data := passwordResetData{
-		Name:      name,
-		ResetLink: link,
-		Domain:    s.cfg.Domain,
+func (s *Sender) notify(to string, n notification) error {
+	n.Domain = s.cfg.Domain
+	message, err := s.message(to, n)
+	if err != nil {
+		return err
 	}
-
-	var body bytes.Buffer
-	if err := s.tpl.ExecuteTemplate(&body, "password_reset.html", data); err != nil {
-		return fmt.Errorf("failed to execute email template: %w", err)
-	}
-
-	subject := "Passwort zurücksetzen"
-
-	headers := make(map[string]string)
-	headers["From"] = s.cfg.SMTPFrom
-	headers["To"] = toEmail
-	headers["Subject"] = subject
-	headers["MIME-Version"] = "1.0"
-	headers["Content-Type"] = "text/html; charset=\"UTF-8\""
-
-	message := ""
-	for k, v := range headers {
-		message += fmt.Sprintf("%s: %s\r\n", k, v)
-	}
-	message += "\r\n" + body.String()
-
-	addr := fmt.Sprintf("%s:%s", s.cfg.SMTPHost, s.cfg.SMTPPort)
-
 	var auth smtp.Auth
 	if s.cfg.SMTPUser != "" {
 		auth = smtp.PlainAuth("", s.cfg.SMTPUser, s.cfg.SMTPPass, s.cfg.SMTPHost)
 	}
-
-	if err := send(addr, s.cfg.SMTPHost, auth, s.cfg.SMTPFrom, toEmail, []byte(message)); err != nil {
+	addr := net.JoinHostPort(s.cfg.SMTPHost, s.cfg.SMTPPort)
+	if err := send(addr, s.cfg.SMTPHost, auth, s.cfg.SMTPFrom, to, message); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
-
 	return nil
+}
+
+func (s *Sender) message(to string, n notification) ([]byte, error) {
+	var body bytes.Buffer
+	if err := s.tpl.ExecuteTemplate(&body, "notification.html", n); err != nil {
+		return nil, fmt.Errorf("failed to execute email template: %w", err)
+	}
+	var message bytes.Buffer
+	parts := multipart.NewWriter(&message)
+	fmt.Fprintf(&message, "From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=%q\r\n\r\n", s.cfg.SMTPFrom, to, mime.QEncoding.Encode("utf-8", n.Title), parts.Boundary())
+	plain := fmt.Sprintf("fsInformatik\n\n%s\n\nHallo %s,\n\n%s\n\n%s:\n%s\n\n%s\n\n%s\n\nDeine Fachschaft Informatik\n\nFachschaft Informatik · Westfälische Hochschule\nFachschaft kontaktieren: %s/contact\n", n.Title, n.Name, n.Intro, n.Action, n.Link, n.Validity, n.Note, n.Domain)
+	for _, part := range []struct{ kind, body string }{{"text/plain", plain}, {"text/html", body.String()}} {
+		header := textproto.MIMEHeader{"Content-Type": {part.kind + "; charset=UTF-8"}, "Content-Transfer-Encoding": {"quoted-printable"}}
+		out, err := parts.CreatePart(header)
+		if err != nil {
+			return nil, err
+		}
+		writer := quotedprintable.NewWriter(out)
+		if _, err := writer.Write([]byte(part.body)); err != nil {
+			return nil, err
+		}
+		if err := writer.Close(); err != nil {
+			return nil, err
+		}
+	}
+	if err := parts.Close(); err != nil {
+		return nil, err
+	}
+	return message.Bytes(), nil
 }
 
 // Bound the complete SMTP exchange so unavailable mail cannot block shutdown.
