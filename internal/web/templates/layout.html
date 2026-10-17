@@ -99,7 +99,7 @@
      <div class="app-main-column">
        {{template "breadcrumbs" .}}
        <main id="main-content" class="{{if eq .Active "events"}}app-gallery{{end}}" tabindex="-1">
-         <div class="app-page-heading"><h1 class="{{if eq .Active "events"}}govuk-heading-l{{else}}govuk-heading-xl{{end}}">{{.Title}}</h1></div>
+         <div class="app-page-heading"><h1 class="govuk-heading-xl">{{.Title}}</h1></div>
          <div class="app-content">{{template "content" .}}</div>
        </main>
      </div>

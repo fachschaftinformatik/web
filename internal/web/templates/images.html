@@ -29,10 +29,11 @@
 </section>
 {{else}}
 {{if $g.Images}}
-<p class="govuk-body-s">{{$g.Total}} {{if eq $g.Total 1}}Bild{{else}}Bilder{{end}}</p>
-<ul class="govuk-list app-gallery-grid">
-  {{range $g.Images}}
-  <li><a class="govuk-link app-gallery-link" id="image-{{.ID}}" href="{{$g.Album.ImageURL .}}"><img class="app-gallery-thumbnail" src="{{.Thumbnail}}" srcset="{{.ThumbnailSources}}" {{if .Width}}width="{{.Width}}" height="{{.Height}}"{{end}} alt="{{.Description}}" loading="lazy" decoding="async"><span class="govuk-visually-hidden">Vergrößern</span></a></li>
+<p class="govuk-body-s">{{$g.Total}} {{if eq $g.Total 1}}Foto{{else}}Fotos{{end}}{{if gt $g.Pages 1}} – Seite {{$g.Page}} von {{$g.Pages}}{{end}}</p>
+<p class="govuk-body">Wähle ein Foto aus, um es in voller Größe anzusehen.</p>
+<ul class="govuk-list app-image-cards app-photo-cards" role="list">
+  {{range $index, $image := $g.Images}}
+  <li class="app-image-card app-photo-card"><a class="govuk-link app-gallery-link app-photo-card__link" id="image-{{.ID}}" href="{{$g.Album.ImageURL .}}"><div class="app-image-card__image"><img class="app-gallery-thumbnail" src="{{.Thumbnail}}" srcset="{{.ThumbnailSources}}" {{if .Width}}width="{{.Width}}" height="{{.Height}}"{{end}} alt="{{.Description}}" loading="lazy" decoding="async"></div><span class="app-image-card__content govuk-body-s govuk-!-margin-bottom-0">Foto {{$g.ImageNumber $index}}<span class="govuk-visually-hidden"> vergrößern</span></span></a></li>
   {{end}}
 </ul>
 {{if gt $g.Pages 1}}

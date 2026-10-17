@@ -23,6 +23,10 @@ type ImagesPage struct {
 	Previous, Next, Return     string
 }
 
+func (g ImagesPage) ImageNumber(index int) int {
+	return (g.Page-1)*media.PageSize + index + 1
+}
+
 func (g ImagesPage) CarouselAlbums() []media.Album {
 	var albums []media.Album
 	for _, album := range g.Albums {

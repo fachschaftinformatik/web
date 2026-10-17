@@ -10,10 +10,9 @@
 {{if $.Events.CanCreate}}<p class="govuk-body"><a class="govuk-button govuk-button--secondary" href="{{.URL}}/edit">Veranstaltung bearbeiten</a></p>{{end}}
 {{if .LegacyURL}}<p class="govuk-body"><a class="govuk-link" href="{{.LegacyURL}}#comments-heading">Bisherige Diskussion zur Veranstaltung ansehen</a></p>{{end}}
 {{end}}{{else}}
-<p class="govuk-body-l">Partys, Grillabende und gemeinsame Aktionen der Fachschaft.</p>
 {{if .Events.CanCreate}}<p class="govuk-body"><a class="govuk-button" href="/community/veranstaltungen/new">Veranstaltung erstellen</a></p>{{end}}
 <section aria-labelledby="upcoming-events">
-  <h2 class="govuk-heading-l" id="upcoming-events">Nächste Veranstaltungen</h2>
+  <h2 class="govuk-visually-hidden" id="upcoming-events">Nächste Veranstaltungen</h2>
   {{if .Events.Upcoming}}{{template "event-list" .Events.Upcoming}}{{else}}<p class="govuk-body">Aktuell sind keine Veranstaltungen angekündigt. Neue Termine findest du hier, sobald sie feststehen.</p>{{end}}
 </section>
 {{if .Events.Past}}<hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
