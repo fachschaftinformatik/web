@@ -90,6 +90,7 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 		c.render(w, "home", false, Page{Title: "Startseite", Active: "home", Home: home, Images: ImagesPage{Albums: albums}})
 	})
 	router.HandleFunc("GET /team", c.Team)
+	router.HandleFunc("GET /sitemap", c.Sitemap)
 	router.HandleFunc("GET /contact", func(w http.ResponseWriter, r *http.Request) {
 		c.render(w, "contact", false, Page{Title: "Kontakt", Active: "contact"})
 	})
