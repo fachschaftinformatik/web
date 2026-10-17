@@ -4,12 +4,14 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/fachschaftinformatik/web/internal/content/posts"
 )
 
 type ForumPage struct {
+	Pagination              ListPagination
 	Live, CanWrite, CanEdit bool
 	Filter                  posts.Filter
 	Posts                   []posts.Post
@@ -17,12 +19,21 @@ type ForumPage struct {
 	BackURL                 string
 }
 
+func (p ForumPage) CommentURL(id string) string {
+	base := p.Thread.URL()
+	if p.Pagination.Page > 1 {
+		base = p.Pagination.PageURL(p.Pagination.Page)
+	}
+	return base + "#comment-" + id
+}
+
 func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
 	var thread posts.Thread
 	var ok bool
+	var total int
 	if c.posts != nil {
 		var err error
-		thread, err = c.posts.Lookup(r.Context(), r.PathValue("post"), forumUser(w))
+		thread, total, err = c.posts.LookupPage(r.Context(), r.PathValue("post"), requestedPage(r), forumUser(w))
 		if err != nil {
 			c.forumError(w, r, err)
 			return
@@ -47,7 +58,7 @@ func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
 	if len(values) > 0 {
 		back += "?" + values.Encode()
 	}
-	forum := ForumPage{Thread: &thread, BackURL: back, Live: c.posts != nil}
+	forum := ForumPage{Thread: &thread, BackURL: back, Live: c.posts != nil, Pagination: listPagination(r, total, 20)}
 	if c.posts != nil {
 		if user := forumUser(w); user != 0 {
 			forum.CanWrite = c.posts.CanWrite(r.Context(), user, 0, false) == nil
@@ -86,7 +97,9 @@ func (c *Handler) Forum(w http.ResponseWriter, r *http.Request) {
 	}
 	if c.posts != nil {
 		var err error
-		data.Forum.Posts, err = c.posts.Find(r.Context(), filter, forumUser(w))
+		var total int
+		data.Forum.Posts, total, err = c.posts.FindPage(r.Context(), filter, requestedPage(r), 20, forumUser(w))
+		data.Forum.Pagination = listPagination(r, total, 20)
 		if err != nil {
 			c.serverError(w, err)
 			return
@@ -94,6 +107,9 @@ func (c *Handler) Forum(w http.ResponseWriter, r *http.Request) {
 		data.Forum.Live = true
 	} else {
 		data.Forum.Posts = posts.Find(filter)
+		data.Forum.Pagination = listPagination(r, len(data.Forum.Posts), 20)
+		start := (data.Forum.Pagination.Page - 1) * 20
+		data.Forum.Posts = data.Forum.Posts[start:min(start+20, len(data.Forum.Posts))]
 	}
 	if filter.Query != "" {
 		data.DocumentTitle = "Forum – Suchergebnisse"
@@ -144,5 +160,14 @@ func (c *Handler) Comment(w http.ResponseWriter, r *http.Request) {
 		c.forumError(w, r, err)
 		return
 	}
-	http.Redirect(w, r, "/d/"+r.PathValue("post")+"#comment-"+comment, http.StatusSeeOther)
+	page, err := c.posts.CommentPage(r.Context(), r.PathValue("post"), comment)
+	if err != nil {
+		c.forumError(w, r, err)
+		return
+	}
+	back := "/d/" + r.PathValue("post")
+	if page > 1 {
+		back += "?page=" + strconv.Itoa(page)
+	}
+	http.Redirect(w, r, back+"#comment-"+comment, http.StatusSeeOther)
 }

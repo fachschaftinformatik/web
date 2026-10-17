@@ -13,6 +13,7 @@ import (
 )
 
 type ImagesPage struct {
+	Pagination                 ListPagination
 	Albums                     []media.Album
 	Album                      media.Album
 	Images                     []media.Image
@@ -38,15 +39,11 @@ func (g ImagesPage) CarouselAlbums() []media.Album {
 }
 
 func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
-	g := ImagesPage{Albums: media.Albums()}
 	if c.media != nil {
-		albums, err := c.media.Catalog(r.Context())
-		if err != nil {
-			c.serverError(w, err)
-			return
-		}
-		g.Albums = albums
+		c.pagedImages(w, r)
+		return
 	}
+	g := ImagesPage{Albums: media.Albums()}
 	data := Page{Title: "Fotos", Active: "events", Community: true}
 	if id := r.PathValue("album"); id != "" {
 		var album media.Album
@@ -107,6 +104,81 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 			if g.Page < g.Pages {
 				g.Next = album.PageURL(g.Page + 1)
 			}
+		}
+	}
+	data.Images = g
+	c.render(w, "images", false, data)
+}
+
+func (c *Handler) pagedImages(w http.ResponseWriter, r *http.Request) {
+	albums, total, err := c.media.AlbumPage(r.Context(), requestedPage(r), 12)
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
+	g := ImagesPage{Albums: albums, Pagination: listPagination(r, total, 12)}
+	data := Page{Title: "Fotos", Active: "events", Community: true}
+	if id := r.PathValue("album"); id != "" {
+		a, err := c.media.Album(r.Context(), id)
+		if errors.Is(err, media.ErrNotFound) {
+			http.NotFound(w, r)
+			return
+		}
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
+		g.Album, g.Detail, g.Total = a, true, a.OriginalCount
+		data.Title = a.Title
+		if imageID := r.PathValue("image"); imageID != "" {
+			index, err := c.media.PhotoPosition(r.Context(), id, imageID)
+			if errors.Is(err, media.ErrNotFound) {
+				http.NotFound(w, r)
+				return
+			}
+			if err != nil {
+				c.serverError(w, err)
+				return
+			}
+			start := max(0, index-1)
+			photos, err := c.media.Photos(r.Context(), a, start, 3)
+			if err != nil {
+				c.serverError(w, err)
+				return
+			}
+			if index-start >= len(photos) {
+				http.NotFound(w, r)
+				return
+			}
+			g.Image, g.Viewer, g.Number = photos[index-start], true, index+1
+			g.Return = a.PageURL(index/media.PageSize+1) + "#image-" + imageID
+			if index > 0 {
+				g.Previous = a.ImageURL(photos[0])
+			}
+			if index+1 < g.Total && index-start+1 < len(photos) {
+				g.Next = a.ImageURL(photos[index-start+1])
+			}
+			data.DocumentTitle = a.Title + " – Bild " + strconv.Itoa(g.Number) + " von " + strconv.Itoa(g.Total)
+		} else {
+			g.Pagination = listPagination(r, g.Total, media.PageSize)
+			if raw := r.URL.Query().Get("page"); raw != "" {
+				n, err := strconv.Atoi(raw)
+				if err != nil || n < 1 || n > g.Pagination.Pages {
+					http.Redirect(w, r, a.URL(), http.StatusSeeOther)
+					return
+				}
+			}
+			g.Page, g.Pages = g.Pagination.Page, g.Pagination.Pages
+			if g.Pages > 1 {
+				data.DocumentTitle = a.Title + " – Seite " + strconv.Itoa(g.Page) + " von " + strconv.Itoa(g.Pages)
+			}
+			g.Images, err = c.media.Photos(r.Context(), a, (g.Page-1)*media.PageSize, media.PageSize)
+			if err != nil {
+				c.serverError(w, err)
+				return
+			}
+			g.PageNumbers = galleryPageNumbers(g.Page, g.Pages)
+			g.Previous, g.Next = g.Pagination.PreviousURL(), g.Pagination.NextURL()
 		}
 	}
 	data.Images = g

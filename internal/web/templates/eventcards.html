@@ -2,12 +2,20 @@
 {{range .}}<li class="app-image-card">
   <div class="app-image-card__image">{{if .CoverURL}}<img src="{{.CoverURL}}" width="{{.CoverWidth}}" height="{{.CoverHeight}}" alt="" loading="lazy" decoding="async">{{else}}<img src="/assets/community/event-placeholder.svg" width="800" height="450" alt="" loading="lazy" decoding="async">{{end}}</div>
   <div class="app-image-card__content">
+    {{if .StatusLabel}}<p class="govuk-body-s govuk-!-margin-bottom-2"><strong class="govuk-tag {{if eq .SourceStatus "cancelled"}}govuk-tag--red{{else}}govuk-tag--grey{{end}}">{{.StatusLabel}}</strong></p>{{end}}
     <h3 class="govuk-heading-s govuk-!-margin-bottom-2"><a class="govuk-link app-image-card__link" href="{{.URL}}">{{.Title}}</a></h3>
     <p class="govuk-body-s app-image-card__summary govuk-!-margin-bottom-3">{{.Summary}}</p>
     <dl class="app-image-card__meta govuk-body-s">
-      <div><dt class="govuk-visually-hidden">Termin</dt><dd>{{if .EventDate}}<time datetime="{{.EventDate}}">{{.EventLabel}}</time>{{else}}Termin folgt{{end}}</dd></div>
+      <div><dt class="govuk-visually-hidden">{{if .EventDate}}Termin{{else}}Veröffentlichung{{end}}</dt><dd>{{if .EventDate}}<time datetime="{{.EventDate}}">{{.EventLabel}}</time>{{else if .SourcePublishedAt}}Veröffentlicht am <time datetime="{{.SourcePublishedAt}}">{{.SourceDateLabel}}</time>{{else}}Termin folgt{{end}}</dd></div>
       {{if .Location}}<div><dt class="govuk-visually-hidden">Ort</dt><dd>{{.Location}}</dd></div>{{end}}
     </dl>
   </div>
 </li>{{end}}
 </ul>{{end}}
+{{define "list-pagination"}}
+{{if gt .Pages 1}}<nav class="govuk-pagination" aria-label="Seitennavigation">
+{{if .PreviousURL}}<div class="govuk-pagination__prev"><a class="govuk-link govuk-pagination__link" href="{{.PreviousURL}}" rel="prev"><span class="govuk-pagination__link-title">Zurück</span></a></div>{{end}}
+<ul class="govuk-pagination__list">{{range .Items}}{{if .Ellipsis}}<li class="govuk-pagination__item govuk-pagination__item--ellipsis">⋯</li>{{else}}<li class="govuk-pagination__item {{if .Current}}govuk-pagination__item--current{{end}}"><a class="govuk-link govuk-pagination__link" href="{{.URL}}" aria-label="Seite {{.Number}}" {{if .Current}}aria-current="page"{{end}}>{{.Number}}</a></li>{{end}}{{end}}</ul>
+{{if .NextURL}}<div class="govuk-pagination__next"><a class="govuk-link govuk-pagination__link" href="{{.NextURL}}" rel="next"><span class="govuk-pagination__link-title">Weiter</span></a></div>{{end}}
+</nav>{{end}}
+{{end}}

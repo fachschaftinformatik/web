@@ -9,11 +9,12 @@
     <div class="app-image-card__image">{{with .CoverImage}}{{if .Source}}<img src="{{.Thumbnail}}" srcset="{{.ThumbnailSources}}" sizes="(max-width: 768px) calc(100vw - 60px), (max-width: 1200px) 35vw, 390px" {{if .Width}}width="{{.Width}}" height="{{.Height}}"{{end}} alt="" loading="lazy" decoding="async">{{end}}{{else}}<img src="/assets/community/event-placeholder.svg" width="800" height="450" alt="" loading="lazy" decoding="async">{{end}}</div>
     <div class="app-image-card__content">
       <h2 class="govuk-heading-s govuk-!-margin-bottom-2"><a class="govuk-link app-image-card__link" href="{{.URL}}">{{.Title}}</a></h2>
-      <p class="govuk-body-s app-image-card__meta">{{len .Images}} {{if eq (len .Images) 1}}Bild{{else}}Bilder{{end}}</p>
+      <p class="govuk-body-s app-image-card__meta">{{.OriginalCount}} Bilder</p>
     </div>
   </li>
   {{end}}
 </ul>
+{{template "list-pagination" $g.Pagination}}
 {{else if $g.Viewer}}
 <section class="app-gallery-viewer" aria-label="Bildansicht">
   <nav class="app-gallery-controls" aria-label="Bildernavigation">

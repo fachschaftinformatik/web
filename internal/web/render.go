@@ -47,6 +47,7 @@ type Page struct {
 }
 
 type ArchivePage struct {
+	ListPagination     ListPagination
 	Module             *files.Module
 	Filter             files.Filter
 	Programs           []FilterOption

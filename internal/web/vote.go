@@ -59,7 +59,16 @@ func (c *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Header.Get("Accept") == "application/json" {
-		thread, err := c.posts.Lookup(r.Context(), post, user)
+		page := 1
+		if comment != "" {
+			var err error
+			page, err = c.posts.CommentPage(r.Context(), post, comment)
+			if err != nil {
+				c.forumError(w, r, err)
+				return
+			}
+		}
+		thread, _, err := c.posts.LookupPage(r.Context(), post, page, user)
 		if err != nil {
 			c.forumError(w, r, err)
 			return
@@ -83,6 +92,14 @@ func (c *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 	}
 	back := "/d/" + post
 	if comment != "" {
+		page, err := c.posts.CommentPage(r.Context(), post, comment)
+		if err != nil {
+			c.forumError(w, r, err)
+			return
+		}
+		if page > 1 {
+			back += "?page=" + strconv.Itoa(page)
+		}
 		back += "#comment-" + comment
 	}
 	// Only local landing/forum/thread destinations are accepted after voting.

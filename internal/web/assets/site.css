@@ -364,12 +364,16 @@
 
 .app-event-carousel__dots {
   display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .app-event-carousel__dot {
   display: grid;
   place-items: center;
   width: 24px;
+  flex: 0 0 24px;
   height: 44px;
   margin: 0;
   padding: 0;

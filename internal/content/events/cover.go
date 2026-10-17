@@ -43,6 +43,10 @@ func (s *Service) CanPublish(ctx context.Context, user int64) error {
 }
 
 func prepareCover(data []byte) ([]byte, int, int, error) {
+	return prepareImage(data, 1600)
+}
+
+func prepareImage(data []byte, maxSide int) ([]byte, int, int, error) {
 	invalid := func() ([]byte, int, int, error) {
 		return nil, 0, 0, &ValidationError{Fields: []FieldError{{Field: "cover", Message: "Wähle ein JPEG-, PNG- oder WebP-Bild mit höchstens 6 MB und 24 Megapixeln."}}}
 	}
@@ -58,8 +62,8 @@ func prepareCover(data []byte) ([]byte, int, int, error) {
 		return invalid()
 	}
 	w, h := config.Width, config.Height
-	if max(w, h) > 1600 {
-		factor := 1600.0 / float64(max(w, h))
+	if max(w, h) > maxSide {
+		factor := float64(maxSide) / float64(max(w, h))
 		w = max(1, int(float64(w)*factor))
 		h = max(1, int(float64(h)*factor))
 	}

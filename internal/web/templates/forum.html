@@ -13,7 +13,7 @@
   {{if .Forum.Filter.Query}}<p class="govuk-body govuk-!-margin-top-3 govuk-!-margin-bottom-0"><a class="govuk-link" href="/discussions">Suche zurücksetzen</a></p>{{end}}
 </form>
 <section aria-labelledby="forum-results-heading">
-  <h2 class="govuk-heading-m" id="forum-results-heading">{{len .Forum.Posts}} {{if eq (len .Forum.Posts) 1}}Beitrag{{else}}Beiträge{{end}}</h2>
+  <h2 class="govuk-heading-m" id="forum-results-heading">{{.Forum.Pagination.Total}} {{if eq .Forum.Pagination.Total 1}}Beitrag{{else}}Beiträge{{end}}</h2>
   {{if .Forum.Posts}}
   <ul class="govuk-list app-forum-posts">
     {{range .Forum.Posts}}
@@ -32,5 +32,6 @@
   <p class="govuk-body">Keine passenden Beiträge gefunden. Versuche einen anderen Suchbegriff.</p>
   {{end}}
 </section>
+{{template "list-pagination" .Forum.Pagination}}
 {{if not .Forum.Live}}<p class="govuk-body-s govuk-!-margin-top-6">Stand: 16. Oktober 2026.</p>{{end}}
 {{end}}

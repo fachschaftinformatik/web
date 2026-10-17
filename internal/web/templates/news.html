@@ -9,4 +9,5 @@
   <p class="govuk-body-s govuk-!-margin-bottom-0"><time datetime="{{.Created}}">{{.DateLabel}}</time></p>
 </li>{{end}}
 </ul>{{else}}<p class="govuk-body">Noch keine Neuigkeiten veröffentlicht.</p>{{end}}
+{{template "list-pagination" .Forum.Pagination}}
 {{end}}

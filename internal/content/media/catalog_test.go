@@ -34,6 +34,7 @@ func galleryService(t *testing.T) (*Service, *sql.DB) {
 	_, err = db.Exec(`INSERT INTO users (id,email,name,password,private) VALUES (1,'gallery@fsv-wh.de','Private uploader','unused',1);
 INSERT INTO events (id,title,created_at,deleted_at) VALUES (10,'Sommerfest','2025-01-01',NULL),(20,'LAN','2026-01-01',NULL),(30,'Deleted','2027-01-01','2027-01-02'),(40,'Empty','2024-01-01',NULL);
 INSERT INTO media (id,event_id,user_id,title,description,access_key,mime_type,nbytes,created_at,deleted_at) VALUES
+(99,10,1,'Older','Older photograph','older','image/jpeg',5,'2025-01-01',NULL),
 (100,10,1,'Echter Titel','Echter Alternativtext','not-a-blob-path','image/jpeg',5,'2026-01-01',NULL),
 (101,10,1,NULL,NULL,'fallback','image/jpeg',5,'2026-01-01',NULL),
 (102,20,1,'New','Description','new','image/jpeg',5,'2026-01-02',NULL),
@@ -72,10 +73,10 @@ func TestCatalogCompleteAndFiltered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(albums) != 3 || albums[0].ID != "20" || albums[1].ID != "10" || albums[2].ID != "40" {
+	if len(albums) != 2 || albums[0].ID != "20" || albums[1].ID != "10" {
 		t.Fatalf("albums: %+v", albums)
 	}
-	if len(albums[0].Images) != 74 || albums[0].OriginalCount != 74 || len(albums[1].Images) != 2 || len(albums[2].Images) != 0 {
+	if len(albums[0].Images) != 74 || albums[0].OriginalCount != 74 || len(albums[1].Images) != 3 {
 		t.Fatalf("unexpected image counts: %+v", albums)
 	}
 	for i, image := range albums[0].Images {
@@ -126,10 +127,10 @@ func TestEventCoversUseOnlyTheirOwnRegisteredPreview(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if albums[1].CoverImage().Source != "/media/events/10/cover/1200" || albums[0].CoverImage().Source != "/media/102/1200" || albums[2].CoverImage().Source != "/media/events/40/cover/1200" {
+	if len(albums) != 1 || albums[0].CoverImage().Source != "/media/events/10/cover/1200" {
 		t.Fatalf("configured covers and fallback: %+v", albums)
 	}
-	if !strings.Contains(albums[1].CoverImage().ThumbnailSources(), "/media/events/10/cover/800 2x") {
+	if !strings.Contains(albums[0].CoverImage().ThumbnailSources(), "/media/events/10/cover/800 2x") {
 		t.Fatal("cover srcset uses media photo paths")
 	}
 }

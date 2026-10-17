@@ -39,4 +39,5 @@
   {{if .CanAdmin}}<h2 class="govuk-heading-m govuk-!-margin-top-7">Verwaltung</h2>
   <p class="govuk-body"><a class="govuk-link" href="/verwaltung">Zur Verwaltung</a></p>{{end}}
 </nav>
+{{template "list-pagination" .Images.Pagination}}
 {{end}}

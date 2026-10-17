@@ -37,6 +37,8 @@ type Event struct {
 	CoverKey, CoverAlt                                                 string
 	CoverWidth, CoverHeight                                            int
 	LegacyPostID                                                       sql.NullInt64
+	SourceURL, SourcePublishedAt, SourceStatus                         string
+	GalleryAlbumID, GalleryCoverID                                     sql.NullInt64
 }
 
 func (e Event) URL() string { return "/community/veranstaltungen/" + e.ID }
@@ -81,11 +83,14 @@ func (d Draft) Validate() []FieldError {
 	return (posts.Draft{Title: d.Title, Body: d.Body, Date: d.Date, Time: d.Time, Location: d.Location, Type: "event"}).Validate()
 }
 
-const selectEvent = `SELECT CAST(id AS TEXT),title,body,body_format,event_date,location,created_at,updated_at,cover_key,cover_alt,cover_width,cover_height,legacy_post_id FROM calendar_events WHERE deleted_at IS NULL`
+const selectEvent = `SELECT CAST(id AS TEXT),title,body,body_format,event_date,location,created_at,updated_at,cover_key,cover_alt,cover_width,cover_height,legacy_post_id,source_url,source_published_at,source_status,
+CASE WHEN EXISTS(SELECT 1 FROM events album WHERE album.id=gallery_album_id AND album.deleted_at IS NULL)
+AND (SELECT COUNT(*) FROM (SELECT 1 FROM media photos WHERE photos.event_id=gallery_album_id AND photos.deleted_at IS NULL AND photos.mime_type IN ('image/jpeg','image/png','image/gif','image/webp','image/bmp') LIMIT 3))=3
+THEN gallery_album_id END,gallery_cover_id FROM calendar_events WHERE deleted_at IS NULL`
 
 func scan(row interface{ Scan(...any) error }) (Event, error) {
 	var e Event
-	err := row.Scan(&e.ID, &e.Title, &e.Body, &e.BodyFormat, &e.EventDate, &e.Location, &e.Created, &e.Updated, &e.CoverKey, &e.CoverAlt, &e.CoverWidth, &e.CoverHeight, &e.LegacyPostID)
+	err := row.Scan(&e.ID, &e.Title, &e.Body, &e.BodyFormat, &e.EventDate, &e.Location, &e.Created, &e.Updated, &e.CoverKey, &e.CoverAlt, &e.CoverWidth, &e.CoverHeight, &e.LegacyPostID, &e.SourceURL, &e.SourcePublishedAt, &e.SourceStatus, &e.GalleryAlbumID, &e.GalleryCoverID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return e, ErrNotFound
 	}
@@ -112,6 +117,40 @@ func (s *Service) Find(ctx context.Context) ([]Event, error) {
 }
 func (s *Service) Lookup(ctx context.Context, event string) (Event, error) {
 	return scan(s.db.QueryRowContext(ctx, selectEvent+` AND id=?`, event))
+}
+
+func (e Event) SourceDateLabel() string {
+	return (posts.Post{Created: e.SourcePublishedAt}).DateLabel()
+}
+func (e Event) FullImageURL() string {
+	if e.GalleryCoverID.Valid {
+		return "/media/" + strconv.FormatInt(e.GalleryCoverID.Int64, 10) + "/original"
+	}
+	return e.CoverURL()
+}
+
+func (e Event) GalleryURL() string {
+	if e.GalleryAlbumID.Valid {
+		return "/community/events/" + strconv.FormatInt(e.GalleryAlbumID.Int64, 10)
+	}
+	return ""
+}
+func (e Event) SortDate() string {
+	if e.EventDate != "" {
+		return e.EventDate
+	}
+	return e.SourcePublishedAt
+}
+func (e Event) StatusLabel() string {
+	switch e.SourceStatus {
+	case "cancelled":
+		return "Abgesagt"
+	case "recap":
+		return "Rückblick"
+	case "rescheduled":
+		return "Termin geändert"
+	}
+	return ""
 }
 
 func (s *Service) Save(ctx context.Context, user int64, event string, d Draft, rich string, cover *CoverUpload) (string, error) {
@@ -199,6 +238,11 @@ func (s *Service) Save(ctx context.Context, user int64, event string, d Draft, r
 	}
 	if err != nil {
 		return "", err
+	}
+	if oldKey != coverKey {
+		if _, err = tx.ExecContext(ctx, `UPDATE calendar_events SET gallery_cover_id=NULL WHERE id=?`, event); err != nil {
+			return "", err
+		}
 	}
 	if err := tx.Commit(); err != nil {
 		return "", err

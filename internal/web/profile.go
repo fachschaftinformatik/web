@@ -22,10 +22,10 @@ func (c *Handler) PublicProfile(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
-	records, err := c.posts.Find(r.Context(), posts.Filter{AuthorID: profile.ID}, forumUser(w))
+	records, total, err := c.posts.FindPage(r.Context(), posts.Filter{AuthorID: profile.ID}, requestedPage(r), 20, forumUser(w))
 	if err != nil {
 		c.serverError(w, err)
 		return
 	}
-	c.render(w, "profile", false, Page{Title: profile.Name, Active: "forum", Community: true, Forum: ForumPage{Live: true, Posts: records}})
+	c.render(w, "profile", false, Page{Title: profile.Name, Active: "forum", Community: true, Forum: ForumPage{Live: true, Posts: records, Pagination: listPagination(r, total, 20)}})
 }

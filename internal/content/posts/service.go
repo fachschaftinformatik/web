@@ -121,26 +121,36 @@ func (s *Service) Find(ctx context.Context, f Filter, viewer ...int64) ([]Post, 
 }
 
 func (s *Service) Lookup(ctx context.Context, post string, viewer ...int64) (Thread, error) {
+	t, _, err := s.LookupPage(ctx, post, 1, viewer...)
+	return t, err
+}
+
+func (s *Service) LookupPage(ctx context.Context, post string, page int, viewer ...int64) (Thread, int, error) {
 	t, err := scanThread(s.db.QueryRowContext(ctx, postSelect+` AND p.id=?`, viewerID(viewer), post))
 	if err != nil {
-		return t, err
+		return t, 0, err
 	}
 	if err = s.tags(ctx, &t); err != nil {
-		return t, err
+		return t, 0, err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT CAST(c.id AS TEXT),c.user_id,CASE WHEN u.private=1 OR u.deleted_at IS NOT NULL THEN 'Anonym' ELSE u.name END,c.text,c.created_at,c.updated_at,COALESCE((SELECT SUM(vote) FROM discussion_comment_votes WHERE comment_id=c.id),0),COALESCE((SELECT vote FROM discussion_comment_votes WHERE comment_id=c.id AND user_id=?),0),u.private=0 AND u.deleted_at IS NULL FROM discussion_comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=? AND c.deleted_at IS NULL ORDER BY c.created_at DESC,c.id DESC`, viewerID(viewer), post)
+	var total int
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM discussion_comments WHERE post_id=? AND deleted_at IS NULL`, post).Scan(&total); err != nil {
+		return t, 0, err
+	}
+	page = max(1, min(page, max(1, (total+19)/20)))
+	rows, err := s.db.QueryContext(ctx, `SELECT CAST(c.id AS TEXT),c.user_id,CASE WHEN u.private=1 OR u.deleted_at IS NOT NULL THEN 'Anonym' ELSE u.name END,c.text,c.created_at,c.updated_at,COALESCE((SELECT SUM(vote) FROM discussion_comment_votes WHERE comment_id=c.id),0),COALESCE((SELECT vote FROM discussion_comment_votes WHERE comment_id=c.id AND user_id=?),0),u.private=0 AND u.deleted_at IS NULL FROM discussion_comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=? AND c.deleted_at IS NULL ORDER BY c.created_at DESC,c.id DESC LIMIT 20 OFFSET ?`, viewerID(viewer), post, (page-1)*20)
 	if err != nil {
-		return t, err
+		return t, 0, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var c Comment
 		if err = rows.Scan(&c.ID, &c.AuthorID, &c.Author, &c.Text, &c.Created, &c.Updated, &c.Votes, &c.UserVote, &c.AuthorPublic); err != nil {
-			return t, err
+			return t, 0, err
 		}
 		t.Replies = append(t.Replies, c)
 	}
-	return t, rows.Err()
+	return t, total, rows.Err()
 }
 
 // Save persists sanitized HTML, event details and tags atomically. An empty post creates a new record.

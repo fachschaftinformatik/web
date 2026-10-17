@@ -21,7 +21,7 @@ type HomePage struct {
 func (c *Handler) home(ctx context.Context, viewer ...int64) (HomePage, error) {
 	var upcoming []events.Event
 	if c.events != nil {
-		records, err := c.events.Find(ctx)
+		records, _, err := c.events.FindPage(ctx, time.Now(), 1, 3, true)
 		if err != nil {
 			return HomePage{}, err
 		}
@@ -33,11 +33,16 @@ func (c *Handler) home(ctx context.Context, viewer ...int64) (HomePage, error) {
 		page.Events = upcoming
 		return page, nil
 	}
-	records, err := c.posts.Find(ctx, posts.Filter{}, viewer...)
+	records, _, err := c.posts.FindPage(ctx, posts.Filter{Type: "discussion"}, 1, 2, viewer...)
 	if err != nil {
 		return HomePage{}, err
 	}
 	page := HomePage{Events: upcoming}
+	news, _, err := c.posts.FindPage(ctx, posts.Filter{Type: "news"}, 1, 1, viewer...)
+	if err != nil {
+		return HomePage{}, err
+	}
+	records = append(records, news...)
 	for _, post := range records {
 		item := HomePost{Title: post.Title, Summary: post.Summary, URL: post.URL(), Date: post.DateLabel(), DateISO: post.DateISO(), Votes: post.Votes, UserVote: post.UserVote}
 		if post.Type == "news" && page.News.URL == "" {

@@ -3,12 +3,12 @@ package web
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/fachschaftinformatik/web/internal/content"
@@ -86,7 +86,7 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 		albums := media.Albums()
 		if c.media != nil {
 			var err error
-			albums, err = c.media.Catalog(r.Context())
+			albums, _, err = c.media.AlbumPage(r.Context(), 1, 6)
 			if err != nil {
 				c.serverError(w, err)
 				return
@@ -214,12 +214,20 @@ func archiveFilter(r *http.Request) files.Filter {
 }
 
 func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
-	catalog, err := c.archiveCatalog(r.Context())
+	filter, err := c.preferredArchiveFilter(w, r)
 	if err != nil {
 		c.serverError(w, err)
 		return
 	}
-	filter, err := c.preferredArchiveFilter(w, r)
+	var catalog files.Catalog
+	var total int
+	pageNumber, _ := strconv.Atoi(r.URL.Query().Get("seite"))
+	pageNumber = max(1, pageNumber)
+	if c.archive != nil {
+		catalog, total, err = c.archive.CatalogPage(r.Context(), filter, pageNumber, archivePageSize)
+	} else {
+		catalog = files.Examples()
+	}
 	if err != nil {
 		c.serverError(w, err)
 		return
@@ -240,7 +248,13 @@ func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 		Title: "Altklausuren", Active: "archive",
 		Archive: ArchivePage{Filter: filter, Programs: programs, Versions: versions, Degrees: degrees, Modules: catalog.FindModules(filter)},
 	}
-	data.Archive.paginate(r.URL.Query().Get("seite"))
+	if c.archive != nil {
+		data.Archive.Total = total
+		data.Archive.Pages = max(1, (total+archivePageSize-1)/archivePageSize)
+		data.Archive.Page = min(pageNumber, data.Archive.Pages)
+	} else {
+		data.Archive.paginate(r.URL.Query().Get("seite"))
+	}
 	if raw := r.URL.Query().Get("seite"); raw != "" && raw != fmt.Sprint(data.Archive.Page) {
 		http.Redirect(w, r, data.Archive.PageURL(1), http.StatusSeeOther)
 		return
@@ -254,16 +268,25 @@ func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
-	catalog, err := c.archiveCatalog(r.Context())
-	if err != nil {
-		c.serverError(w, err)
-		return
-	}
 	filter, err := c.preferredArchiveFilter(w, r)
 	if err != nil {
 		c.serverError(w, err)
 		return
 	}
+	if c.archive != nil {
+		module, total, err := c.archive.ModulePage(r.Context(), r.PathValue("module"), filter, requestedPage(r), 20)
+		if errors.Is(err, files.ErrNotFound) {
+			http.NotFound(w, r)
+			return
+		}
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
+		c.render(w, "module", false, Page{Title: module.Title, Active: "archive", Archive: ArchivePage{Module: &module, Filter: filter, ListPagination: listPagination(r, total, 20)}})
+		return
+	}
+	catalog := files.Examples()
 	module, ok := catalog.FindModule(r.PathValue("module"), filter)
 	if !ok {
 		http.NotFound(w, r)
@@ -273,13 +296,6 @@ func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
 		Title: module.Title, Active: "archive",
 		Archive: ArchivePage{Module: &module, Filter: filter},
 	})
-}
-
-func (c *Handler) archiveCatalog(ctx context.Context) (files.Catalog, error) {
-	if c.archive == nil {
-		return files.Examples(), nil
-	}
-	return c.archive.Catalog(ctx)
 }
 
 func (c *Handler) render(w http.ResponseWriter, page string, fragment bool, data Page) {

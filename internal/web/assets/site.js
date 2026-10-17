@@ -316,6 +316,10 @@ if (carousel) {
         dots[index].setAttribute("aria-disabled", String(index === current));
       });
       status.textContent = `${current + 1} von ${slides.length}`;
+      const activeDot = dots[current];
+      const dotList = activeDot.parentElement;
+      dotList.scrollLeft += activeDot.getBoundingClientRect().left -
+        dotList.getBoundingClientRect().left - (dotList.clientWidth - activeDot.offsetWidth) / 2;
     };
     const show = (index) => {
       if (moving || index === current) return;

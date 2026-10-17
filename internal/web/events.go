@@ -15,6 +15,7 @@ import (
 const eventsURL = "/community/veranstaltungen"
 
 type EventsPage struct {
+	Pagination     ListPagination
 	Upcoming, Past []events.Event
 	Detail         *events.Event
 	CanCreate      bool
@@ -34,12 +35,13 @@ func (c *Handler) Events(w http.ResponseWriter, r *http.Request) {
 			c.render(w, "events", false, Page{Title: event.Title, Active: "calendar", Community: true, Events: page})
 			return
 		}
-		records, err := c.events.Find(r.Context())
+		records, total, err := c.events.FindPage(r.Context(), time.Now(), requestedPage(r), 12, false)
 		if err != nil {
 			c.serverError(w, err)
 			return
 		}
 		page.Upcoming, page.Past = groupEvents(records, time.Now())
+		page.Pagination = listPagination(r, total, 12)
 	} else if r.PathValue("event") != "" {
 		http.NotFound(w, r)
 		return
@@ -52,23 +54,24 @@ func groupEvents(records []events.Event, now time.Time) (upcoming, past []events
 		now = now.In(zone)
 	}
 	for _, event := range records {
-		if len(event.EventDate) >= 10 && event.EventDate[:10] < now.Format("2006-01-02") {
+		date := event.SortDate()
+		if event.SourceStatus == "cancelled" || len(date) >= 10 && date[:10] < now.Format("2006-01-02") {
 			past = append(past, event)
 		} else {
 			upcoming = append(upcoming, event)
 		}
 	}
 	sort.SliceStable(upcoming, func(i, j int) bool {
-		a, b := upcoming[i], upcoming[j]
-		if a.EventDate == "" {
+		a, b := upcoming[i].SortDate(), upcoming[j].SortDate()
+		if a == "" {
 			return false
 		}
-		if b.EventDate == "" {
+		if b == "" {
 			return true
 		}
-		return a.EventDate < b.EventDate
+		return a < b
 	})
-	sort.SliceStable(past, func(i, j int) bool { return past[i].EventDate > past[j].EventDate })
+	sort.SliceStable(past, func(i, j int) bool { return past[i].SortDate() > past[j].SortDate() })
 	return upcoming, past
 }
 
@@ -178,6 +181,7 @@ func (c *Handler) CalendarCover(w http.ResponseWriter, r *http.Request) {
 	}
 	c.serveGalleryObject(w, r, object)
 }
+
 func (c *Handler) eventError(w http.ResponseWriter, r *http.Request, err error) {
 	if errors.Is(err, events.ErrNotFound) {
 		http.NotFound(w, r)
