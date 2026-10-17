@@ -40,7 +40,7 @@
 </div>
 </div>
 {{end}}
-<h2 class="govuk-heading-l">Vorgänge</h2>
+<h2 class="govuk-heading-l">Studierende</h2>
 <div class="app-community-cards">
 <div class="app-community-card">
   <img class="app-community-card__image" src="/assets/community/share-your-examples-and-research.svg" alt="" width="320" height="180" loading="lazy">
@@ -48,18 +48,15 @@
   <p class="govuk-body">Prüfe eingereichte Rekos und bestätige ihre Veröffentlichung im Archiv oder lehne sie ab.</p>
   <p class="govuk-body"><a class="govuk-link" href="/verwaltung/einreichungen">Zu den Einreichungen</a></p>
 </div>
-</div>
 {{if not .ReviewerOnly}}
-<h2 class="govuk-heading-l">Zugänge</h2>
-<div class="app-community-cards">
 <div class="app-community-card">
   <img class="app-community-card__image" src="/assets/community/discuss-and-give-feedback.svg" alt="" width="320" height="180" loading="lazy">
   <h3 class="govuk-heading-m">Benutzerkonten</h3>
   <p class="govuk-body">Suche nach Benutzerkonten, prüfe ihren Status und hilf bei Problemen mit der Anmeldung.</p>
   <p class="govuk-body"><a class="govuk-link" href="/verwaltung/benutzer">Zu den Benutzerkonten</a></p>
 </div>
-</div>
 {{end}}
+</div>
 {{end}}
 
 {{if eq .View "users"}}
