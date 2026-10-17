@@ -90,6 +90,11 @@ type Catalog struct {
 	exams                       []Exam
 	modules                     []Module
 	programs, versions, degrees []string
+	programVersions             map[string][]string
+}
+
+func (c Catalog) ProgramVersions(program string) []string {
+	return slices.Clone(c.programVersions[program])
 }
 
 func Examples() Catalog {

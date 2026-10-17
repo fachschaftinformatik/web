@@ -57,9 +57,15 @@
    {{else if eq .Active "archive"}}
    <div class="govuk-width-container">
      {{template "breadcrumbs" .}}
-     <main class="govuk-main-wrapper" id="main-content" tabindex="-1">
-       <h1 class="govuk-heading-xl">{{.Title}}</h1>
-       {{template "content" .}}
+      <main class="govuk-main-wrapper" id="main-content" tabindex="-1">
+        {{if or .Upload.Action .Request}}<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">{{end}}
+        {{if and .Request (not .Request.Reviewing) (eq .Request.Entry.Status "pending")}}
+        <div class="govuk-panel govuk-panel--confirmation"><h1 class="govuk-panel__title">{{.Title}}</h1></div>
+        {{else}}
+        <h1 class="govuk-heading-xl">{{.Title}}</h1>
+        {{end}}
+        {{template "content" .}}
+        {{if or .Upload.Action .Request}}</div></div>{{end}}
      </main>
    </div>
    {{else if eq .Active "contact"}}

@@ -3,7 +3,7 @@
 {{with .Request}}
 {{if .Error}}<div class="govuk-error-summary" data-module="govuk-error-summary"><div role="alert"><h2 class="govuk-error-summary__title">Es gibt ein Problem</h2><div class="govuk-error-summary__body"><p class="govuk-body">{{.Error}}</p></div></div></div>{{end}}
 <p class="govuk-body">{{template "request-status" .Entry.Status}}</p>
-{{if and (not .Reviewing) (eq .Entry.Status "pending")}}<p class="govuk-body">Deine Einreichung wird von der Fachschaft geprüft. Nach der Bestätigung sind die PDFs im Archiv verfügbar.</p>{{end}}
+{{if and (not .Reviewing) (eq .Entry.Status "pending")}}<h2 class="govuk-heading-m">Wie geht es weiter?</h2><p class="govuk-body">Deine Einreichung wird von der Fachschaft geprüft. Nach der Bestätigung sind die PDFs im Archiv verfügbar.</p><p class="govuk-body">Den aktuellen Stand findest du unter <a class="govuk-link" href="/archive/requests">Meine Einreichungen</a>. Bei Fragen kannst du die <a class="govuk-link" href="/contact">Fachschaft kontaktieren</a>.</p><h2 class="govuk-heading-m">Deine Angaben</h2>{{end}}
 {{if and (not .Reviewing) (eq .Entry.Status "approved")}}<p class="govuk-body">Deine Einreichung wurde bestätigt. Die PDFs sind im Archiv verfügbar.</p>{{end}}
 {{if and (not .Reviewing) (eq .Entry.Status "rejected")}}<p class="govuk-body">Deine Einreichung wurde abgelehnt.</p>{{end}}
 {{$editable := and (not .Reviewing) (eq .Entry.Status "draft")}}
@@ -18,6 +18,8 @@
 </dl>
 {{end}}
 {{if $editable}}
+<h2 class="govuk-heading-m">Rekos zur Prüfung einreichen</h2>
+<p class="govuk-body">Mit dem Einreichen sendest du deine Rekos zur Prüfung an die Fachschaft. Sie werden erst nach der Bestätigung veröffentlicht.</p>
 <form action="/archive/requests/{{.Entry.ID}}/review" method="post"><input type="hidden" name="csrf" value="{{$.CSRF}}"><div class="govuk-button-group"><button class="govuk-button" type="submit" data-module="govuk-button">Rekos einreichen</button><a class="govuk-link" href="/archive/requests">Später fortsetzen</a></div></form>
 {{else if and .Reviewing (eq .Entry.Status "pending")}}
 <form action="/verwaltung/einreichungen/{{.Entry.ID}}" method="post"><input type="hidden" name="csrf" value="{{$.CSRF}}"><div class="govuk-button-group"><button class="govuk-button" type="submit" name="decision" value="approve" data-module="govuk-button">Einreichung bestätigen</button><button class="govuk-button govuk-button--secondary" type="submit" name="decision" value="reject" data-module="govuk-button">Ablehnen</button></div></form>

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -19,6 +20,20 @@ type UploadPage struct {
 	Modules                                  []files.Module
 	Versions                                 []string
 	Errors                                   map[string]string
+	Program                                  string
+	Programs                                 []string
+	ChooseProgram                            bool
+	ReselectFiles                            bool
+}
+
+func (u UploadPage) ErrorFields() []string {
+	var fields []string
+	for _, field := range []string{"program", "module_id", "version", "date", "comment", "files"} {
+		if u.Errors[field] != "" {
+			fields = append(fields, field)
+		}
+	}
+	return fields
 }
 
 func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
@@ -34,6 +49,13 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 	}
 	page := Page{Title: "Reko einreichen", Active: "archive", Upload: UploadPage{Action: r.URL.Path, Modules: catalog.Modules(), Versions: catalog.Versions()}}
 	form := &page.Upload
+	form.Program = r.URL.Query().Get("program")
+	for _, module := range form.Modules {
+		if !slices.Contains(form.Programs, module.Program) {
+			form.Programs = append(form.Programs, module.Program)
+		}
+	}
+	slices.Sort(form.Programs)
 	userID := w.(*sessionResponse).session.UserID
 	revisionOf := r.PathValue("id")
 	requestID := r.PathValue("request")
@@ -66,6 +88,7 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 	}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
+		form.Program = r.PostForm.Get("program")
 		form.ModuleID = strings.TrimSpace(r.PostForm.Get("module_id"))
 		form.Version = strings.TrimSpace(r.PostForm.Get("version"))
 		form.Date = strings.TrimSpace(r.PostForm.Get("date"))
@@ -110,11 +133,51 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 				c.archiveWriteError(w, r, err)
 				return
 			} else {
+				if r.Header.Get("HX-Request") == "true" {
+					w.Header().Set("HX-Redirect", "/archive/requests/"+result.RequestID+"/review")
+					w.WriteHeader(http.StatusOK)
+					return
+				}
 				http.Redirect(w, r, "/archive/requests/"+result.RequestID+"/review", http.StatusSeeOther)
 				return
 			}
 		}
 		status, page.DocumentTitle = http.StatusUnprocessableEntity, "Fehler: "+page.Title
+		form.ReselectFiles = len(submission.Documents) > 0 || form.Errors["files"] != ""
+		if form.ReselectFiles && form.Errors["files"] == "" && r.Header.Get("HX-Request") != "true" {
+			form.Errors["files"] = "Wähle die PDF-Dateien erneut aus. Deine übrigen Angaben sind erhalten geblieben."
+		}
+	}
+	if form.ModuleID != "" && (form.Program == "" || r.Method == http.MethodPost) {
+		for _, module := range form.Modules {
+			if module.ID == form.ModuleID {
+				form.Program = module.Program
+				break
+			}
+		}
+	}
+	if r.Method == http.MethodGet && r.URL.Query().Get("choose_program") == "1" {
+		form.Program = ""
+	}
+	if r.Method == http.MethodGet && form.Program != "" {
+		for _, module := range form.Modules {
+			if module.ID == form.ModuleID && module.Program != form.Program {
+				form.ModuleID = ""
+				form.Version = ""
+				break
+			}
+		}
+	}
+	if !slices.Contains(form.Programs, form.Program) {
+		form.ChooseProgram = true
+		if r.URL.Query().Has("program") {
+			form.Errors = map[string]string{"program": "Wähle einen Studiengang aus."}
+			status = 422
+			page.DocumentTitle = "Fehler: " + page.Title
+		}
+	} else {
+		form.Versions = catalog.ProgramVersions(form.Program)
+		form.Modules = slices.DeleteFunc(form.Modules, func(module files.Module) bool { return module.Program != form.Program })
 	}
 	c.renderStatus(w, "upload", false, page, status)
 }

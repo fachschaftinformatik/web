@@ -60,7 +60,7 @@ func (s *Service) Catalog(ctx context.Context) (Catalog, error) {
 	if err != nil {
 		return Catalog{}, err
 	}
-	result := Catalog{modules: []Module{}}
+	result := Catalog{modules: []Module{}, programVersions: map[string][]string{}}
 	for _, p := range programs {
 		name, degree := ProgramName(p.Name)
 		result.programs = appendUnique(result.programs, name)
@@ -72,6 +72,11 @@ func (s *Service) Catalog(ctx context.Context) (Catalog, error) {
 	}
 	for _, v := range versions {
 		result.versions = appendUnique(result.versions, v.Name)
+		for _, p := range programs {
+			if p.ID == v.ProgramID {
+				result.programVersions[p.Name] = appendUnique(result.programVersions[p.Name], v.Name)
+			}
+		}
 	}
 	modules, err := q.ListArchiveModules(ctx)
 	if err != nil {

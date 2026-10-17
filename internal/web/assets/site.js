@@ -1,7 +1,7 @@
 import { initAll } from "./govuk.js";
 
 // GOV.UK's responsive navigation, checkboxes and radios.
-initAll({
+const frontendOptions = {
   fileUpload: {
     i18n: {
       chooseFilesButton: "Datei auswählen",
@@ -22,18 +22,50 @@ initAll({
       passwordHiddenAnnouncement: "Dein Passwort ist verborgen.",
     },
   },
-});
+};
+initAll(frontendOptions);
 
 // Keep the upload's accessible name in the same order as its visible text.
 // GOV.UK 6.6.0 inserts a hidden comma into the middle of the button contents
 // but references it before those contents, breaking label-in-name checks.
-document.querySelectorAll(".govuk-file-upload-button").forEach((button) => {
+function fixUploadLabels(root) {
+root.querySelectorAll(".govuk-file-upload-button").forEach((button) => {
   const separatorID = `${button.id}-comma`;
   button.setAttribute(
     "aria-labelledby",
     button.getAttribute("aria-labelledby").split(" ").filter((id) => id !== separatorID).join(" "),
   );
   document.getElementById(separatorID)?.remove();
+});
+}
+fixUploadLabels(document);
+
+// Keep the user's local files when server-side validation returns the form.
+// Files stay in the browser until a valid draft has been saved.
+const uploadResponses = new WeakMap();
+document.addEventListener("htmx:beforeRequest", (event) => {
+  if (!event.detail.elt.matches("form.app-archive-upload")) return;
+  uploadResponses.set(event.detail.xhr, [...event.detail.elt.querySelector('[name="files"]').files]);
+});
+document.addEventListener("htmx:beforeSwap", (event) => {
+  if (!uploadResponses.has(event.detail.xhr) || event.detail.xhr.status !== 422) return;
+  event.detail.shouldSwap = true;
+  event.detail.isError = false;
+});
+document.addEventListener("htmx:afterSwap", (event) => {
+  const files = uploadResponses.get(event.detail.xhr);
+  if (!files) return;
+  uploadResponses.delete(event.detail.xhr);
+  const root = document.getElementById("main-content");
+  const input = root.querySelector('input[name="files"]');
+  if (input) {
+    const transfer = new DataTransfer();
+    files.forEach((file) => transfer.items.add(file));
+    input.files = transfer.files;
+  }
+  initAll({ ...frontendOptions, scope: root });
+  fixUploadLabels(root);
+  input?.dispatchEvent(new Event("change", { bubbles: true }));
 });
 
 // A normal confirmation page remains available without JavaScript or <dialog>.

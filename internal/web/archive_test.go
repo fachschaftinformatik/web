@@ -80,6 +80,9 @@ func TestAuthenticatedMultiplePDFSubmission(t *testing.T) {
 INSERT INTO programs(id,name) VALUES (1,'Informatik (B. Sc.)');
 INSERT INTO program_versions(program_id,name) VALUES (1,'2023');
 INSERT INTO modules(id,program_id,name) VALUES (10,1,'Datenbanken');
+INSERT INTO programs(id,name) VALUES (2,'Medieninformatik (B. Sc.)');
+INSERT INTO program_versions(program_id,name) VALUES (2,'2025');
+INSERT INTO modules(id,program_id,name) VALUES (20,2,'Fremdes Modul');
 INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-wh.de','Person','unused',1,1);`); err != nil {
 		t.Fatal(err)
 	}
@@ -92,11 +95,20 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 	}
 	base, _ := url.Parse(b.server.URL)
 	b.client.Jar.SetCookies(base, []*http.Cookie{{Name: sessionCookie, Value: session.ID, Path: "/"}})
-	status, body, _ := b.get("/archive/new")
+	if status, body, _ := b.get("/archive/new"); status != 200 || !strings.Contains(body, "Zu welchem Studiengang") {
+		t.Fatal("program selection is missing")
+	}
+	status, body, _ := b.get("/archive/new?program=" + url.QueryEscape("Informatik (B. Sc.)"))
 	if status != 200 {
 		t.Fatal("upload form unavailable")
 	}
 	csrf := csrfFrom(t, body)
+	if strings.Contains(body, "Fremdes Modul") || strings.Contains(body, `value="2025"`) {
+		t.Fatal("upload catalog is not scoped to the selected program")
+	}
+	if status, body, _ := b.post("/archive/new", url.Values{"csrf": {csrf}, "program": {"Informatik (B. Sc.)"}}); status != 422 || strings.Index(body, `href="#module_id"`) > strings.Index(body, `href="#date"`) {
+		t.Fatal("upload errors do not follow field order")
+	}
 	var reviewPath string
 	for _, value := range []string{"", csrf} {
 		var buffer bytes.Buffer
@@ -136,6 +148,39 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 	}
 	if status, body, _ := b.get(reviewPath); status != 200 || !strings.Contains(body, "Prüfe deine Angaben") || !strings.Contains(body, "Reko 2") {
 		t.Fatal("check-answers review missing")
+	}
+	// Enhanced uploads must redirect with a 200 response: browsers follow a 303
+	// before HTMX can inspect its HX-Redirect header.
+	var enhanced bytes.Buffer
+	writer := multipart.NewWriter(&enhanced)
+	for key, value := range map[string]string{"csrf": csrf, "module_id": "10", "version": "2023", "date": "27.03.2026"} {
+		if err := writer.WriteField(key, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	part, err := writer.CreateFormFile("files", "enhanced.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.WriteString(part, "%PDF-1.7\n%%EOF"); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequest("POST", b.server.URL+"/archive/new", &enhanced)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("HX-Request", "true")
+	response, err := b.client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response.Body.Close()
+	if response.StatusCode != 200 || !strings.HasSuffix(response.Header.Get("HX-Redirect"), "/review") {
+		t.Fatal("enhanced upload does not redirect to the saved draft")
 	}
 	if status, _, _ := b.post(reviewPath, url.Values{"csrf": {csrf}}); status != 303 {
 		t.Fatal("user confirmation failed")
