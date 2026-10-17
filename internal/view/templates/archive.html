@@ -96,7 +96,6 @@
       <tr class="govuk-table__row">
         <th class="govuk-table__header" scope="row">
           {{$title}}
-          {{range .Programs}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">{{.}}</p>{{end}}
         </th>
         <td class="govuk-table__cell">
           {{with index .Exams 0}}<a class="govuk-link" href="{{.URL}}">Reko vom {{.Date}}<span class="govuk-visually-hidden"> für {{$title}}</span></a> (PDF, {{.Size}}){{end}}
