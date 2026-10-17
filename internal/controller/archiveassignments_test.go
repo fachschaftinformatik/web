@@ -56,7 +56,7 @@ func TestArchiveAssignmentChoicesAndPreferenceDefaults(t *testing.T) {
 		t.Fatal("explicit filter does not override preferences")
 	}
 	scope := url.Values{"scope": {"1"}, "program": {"Informatik", "Wirtschaftsinformatik"}, "degree": {"Bachelor", "Master"}, "version": {"PO2016", "PO2023"}}
-	if status, body, _ := b.get("/archive/new?" + scope.Encode()); status != 200 || !strings.Contains(body, `name="module" type="checkbox" value="Mathematik"`) || strings.Contains(body, `name="assignment"`) {
+	if status, body, _ := b.get("/archive/new?" + scope.Encode()); status != 200 || !htmlContains(body, `name="module" type="checkbox" value="Mathematik"`) || strings.Contains(body, `name="assignment"`) {
 		t.Fatal("upload does not offer a single module choice")
 	}
 	scope.Set("module_selection", "1")
@@ -121,7 +121,7 @@ func TestArchiveAssignmentChoicesAndPreferenceDefaults(t *testing.T) {
 		t.Fatal("check answers does not show the actual placements for one PDF")
 	}
 	edit := strings.TrimSuffix(review, "/review") + "/edit"
-	if status, body, _ := b.get(edit); status != 200 || strings.Count(body, `name="module" type="checkbox"`) == 0 || strings.Count(body, `checked`) != 1 || strings.Contains(body, `name="assignment"`) {
+	if status, body, _ := b.get(edit); status != 200 || !htmlContains(body, `name="module" type="checkbox"`) || strings.Count(body, `checked`) != 1 || strings.Contains(body, `name="assignment"`) {
 		t.Fatal("editing lost module selection or reintroduced tuple choices")
 	}
 }

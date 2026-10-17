@@ -223,11 +223,11 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 	if err := db.QueryRow(`SELECT COUNT(*) FROM archive WHERE is_latest=1`).Scan(&count); err != nil || count != 1 {
 		t.Fatal("confirmed PDFs were not published")
 	}
-	if status, body, _ := b.get("/archive/10"); status != 200 || !strings.Contains(body, "1 Reko") || !strings.Contains(body, "Neue Revision einreichen") {
+	if status, body, _ := b.get("/archive/10"); status != 200 || !htmlContains(body, "1 Reko") || !htmlContains(body, "Neue Revision einreichen") {
 		t.Fatal("uploaded PDFs not available in module view")
 	}
 	for _, decision := range []string{"reject", "approve"} {
-		if status, body, _ := b.get(adminPath); status != 200 || !strings.Contains(body, `name="decision" value="`+decision+`"`) {
+		if status, body, _ := b.get(adminPath); status != 200 || !htmlContains(body, `name="decision" value="`+decision+`"`) {
 			t.Fatal("completed review does not offer the opposite decision")
 		}
 		if status, _, _ := b.post(adminPath, url.Values{"decision": {decision}}); status != 403 {

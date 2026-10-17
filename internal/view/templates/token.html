@@ -1,28 +1,62 @@
-{{define "sidebar"}}{{end}}
-{{define "content"}}
-{{if .Token.Error}}
-<div class="govuk-error-summary" data-module="govuk-error-summary"><div role="alert">
-  <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
-  <div class="govuk-error-summary__body"><ul class="govuk-list govuk-error-summary__list"><li><a href="#{{if eq .Token.Kind "reset"}}password{{else}}confirm{{end}}">{{.Token.Error}}</a></li></ul></div>
-</div></div>
-{{end}}
-<h1 class="govuk-heading-l">{{.Title}}</h1>
-{{if .Token.Done}}
-<p class="govuk-body">{{if eq .Token.Kind "verify"}}Deine E-Mail-Adresse ist bestätigt.{{else}}Dein Passwort wurde geändert. Melde dich mit deinem neuen Passwort an.{{end}}</p>
-<p class="govuk-body"><a class="govuk-link" href="/login">Zur Anmeldung</a></p>
-{{else}}
-<form action="/{{.Token.Kind}}" method="post" novalidate>
-  <input type="hidden" name="csrf" value="{{.CSRF}}">
-  <input type="hidden" name="token" value="{{.Token.Value}}">
-  {{if eq .Token.Kind "reset"}}
-  <div class="govuk-form-group {{if .Token.Error}}govuk-form-group--error{{end}}">
-    <label class="govuk-label" for="password">Neues Passwort</label>
-    <div class="govuk-hint" id="password-hint">Verwende mindestens 8 Zeichen.</div>
-    {{if .Token.Error}}<p class="govuk-error-message" id="password-error">{{.Token.Error}}</p>{{end}}
-    <input class="govuk-input" id="password" name="password" type="password" autocomplete="new-password" aria-describedby="password-hint{{if .Token.Error}} password-error{{end}}" {{if .Token.Error}}aria-invalid="true"{{end}}>
-  </div>
-  {{else}}<p class="govuk-body">Bestätige deine E-Mail-Adresse, um dich anmelden zu können.</p>{{end}}
-  <button class="govuk-button" id="confirm" type="submit" data-module="govuk-button">{{if eq .Token.Kind "verify"}}E-Mail-Adresse bestätigen{{else}}Passwort speichern{{end}}</button>
-</form>
-{{end}}
-{{end}}
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  {{ if .Token.Error }}
+    <div class="govuk-error-summary" data-module="govuk-error-summary">
+      <div role="alert">
+        <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
+        <div class="govuk-error-summary__body">
+          <ul class="govuk-list govuk-error-summary__list">
+            <li>
+              <a href="#{{- if eq .Token.Kind "reset" -}}password{{- else -}}confirm{{- end -}}"
+                >{{ .Token.Error }}</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  {{ end }}
+  <h1 class="govuk-heading-l">{{ .Title }}</h1>
+  {{ if .Token.Done }}
+    <p class="govuk-body">
+      {{ if eq .Token.Kind "verify" }}
+        Deine E-Mail-Adresse ist bestätigt.
+      {{ else }}
+        Dein Passwort wurde geändert. Melde dich mit deinem neuen Passwort an.
+      {{ end }}
+    </p>
+    <p class="govuk-body"><a class="govuk-link" href="/login">Zur Anmeldung</a></p>
+  {{ else }}
+    <form action="/{{ .Token.Kind }}" method="post" novalidate>
+      <input type="hidden" name="csrf" value="{{ .CSRF }}" />
+      <input type="hidden" name="token" value="{{ .Token.Value }}" />
+      {{ if eq .Token.Kind "reset" }}
+        <div class="govuk-form-group {{ if .Token.Error }}govuk-form-group--error{{ end }}">
+          <label class="govuk-label" for="password">Neues Passwort</label>
+          <div class="govuk-hint" id="password-hint">Verwende mindestens 8 Zeichen.</div>
+          {{ if .Token.Error }}
+            <p class="govuk-error-message" id="password-error">{{ .Token.Error }}</p>
+          {{ end }}
+          <input
+            class="govuk-input"
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            aria-describedby="password-hint{{ if .Token.Error }}password-error{{ end }}"
+            {{ if .Token.Error }}aria-invalid="true"{{ end }}
+          />
+        </div>
+      {{ else }}
+        <p class="govuk-body">Bestätige deine E-Mail-Adresse, um dich anmelden zu können.</p>
+      {{ end }}
+      <button class="govuk-button" id="confirm" type="submit" data-module="govuk-button">
+        {{ if eq .Token.Kind "verify" }}
+          E-Mail-Adresse bestätigen
+        {{ else }}
+          Passwort speichern
+        {{ end }}
+      </button>
+    </form>
+  {{ end }}
+{{ end }}

@@ -61,3 +61,12 @@ for name in bullet-list ordered-list link undo redo; do
     download "https://raw.githubusercontent.com/alphagov/govspeak-visual-editor/$gds_revision/lib/icons/$name.svg" "$assets/icons/$name.svg"
 done
 download "https://raw.githubusercontent.com/alphagov/govspeak-visual-editor/$gds_revision/LICENCE" "$assets/icons/GDS-LICENCE.txt"
+
+design_revision=a1bfd60d1e0fcc2de52a1d357b934c3098ec62a6
+design_url="https://raw.githubusercontent.com/alphagov/govuk-design-system/$design_revision"
+mkdir -p "$assets/community"
+for name in discuss-and-give-feedback.svg share-your-examples-and-research.svg \
+    propose-a-change-to-pages.svg research-interview.png catchup-groupshot.png workshop.png; do
+    download "$design_url/src/community/images/$name" "$assets/community/$name"
+done
+download "$design_url/LICENSE" "$assets/community/GDS-LICENCE.txt"

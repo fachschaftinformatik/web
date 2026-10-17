@@ -1,60 +1,138 @@
-{{define "sidebar"}}{{end}}
-{{define "content"}}
-<p class="govuk-body">Ob im Forum, bei Veranstaltungen oder mit einer eigenen Idee: Alle Studierenden können das Fachschaftsleben mitgestalten.</p>
-<p class="govuk-body">Die Fachschaft lebt davon, dass ihr euch einbringt. Eure Erfahrungen und Ideen helfen uns, Angebote zu gestalten, die zu eurem Studienalltag passen. Dafür musst du kein gewähltes Mitglied sein. <a class="govuk-link" href="/fachschaft">Lerne die Fachschaft kennen</a>.</p>
-<hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
-<h2 class="govuk-heading-l">Austausch und Ideen</h2>
-<div class="app-community-cards">
-  <div class="app-community-card">
-    <img class="app-community-card__image" src="/assets/community/discuss-and-give-feedback.svg" alt="" width="320" height="180" loading="lazy">
-    <h3 class="govuk-heading-m">Tausch dich im Forum aus</h3>
-    <p class="govuk-body">Du hast Fragen zum Studium oder Tipps für andere? Im Forum kannst du dich mit anderen Studierenden austauschen.</p>
-    <p class="govuk-body"><a class="govuk-link" href="/discussions">Zum Forum</a></p>
-  </div>
-  <div class="app-community-card">
-    <img class="app-community-card__image" src="/assets/community/research-interview.png" alt="" width="1220" height="814" loading="lazy">
-    <h3 class="govuk-heading-m">Bring deine Ideen ein</h3>
-    <p class="govuk-body">Du möchtest eine Veranstaltung organisieren oder ein eigenes Projekt starten? Stell uns deine Idee vor und gestalte die Fachschaft mit.</p>
-    <p class="govuk-body"><a class="govuk-link" href="#mitmachen">So kannst du mitmachen</a></p>
-  </div>
-  <div class="app-community-card">
-    <img class="app-community-card__image" src="/assets/community/workshop.png" alt="" width="1220" height="814" loading="lazy">
-    <h3 class="govuk-heading-m">Rekos finden und teilen</h3>
-    <p class="govuk-body">Nutze Klausurrekonstruktionen zur Prüfungsvorbereitung oder reiche selbst eine Reko ein und hilf anderen beim Lernen.</p>
-    <p class="govuk-body"><a class="govuk-link" href="/archive">Zu den Altklausuren</a></p>
-  </div>
-</div>
-<hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
-<section aria-labelledby="community-events">
-  <h2 class="govuk-heading-l" id="community-events">Veranstaltungen</h2>
-  <p class="govuk-body">Lerne andere Studierende kennen und verbringe Zeit mit ihnen – auch abseits von Vorlesungen und Prüfungen.</p>
-  <div class="app-community-event">
-    <img class="app-community-event__image" src="/assets/community/catchup-groupshot.png" alt="" width="1220" height="814" loading="lazy">
-    <div>
-      <h3 class="govuk-heading-m">Lerne andere Studierende kennen</h3>
-      <p class="govuk-body">Bei unseren Veranstaltungen lernst du andere Studierende kennen.</p>
-      <p class="govuk-body">Termine und Infos findest du unter <a class="govuk-link" href="/community/veranstaltungen">Veranstaltungen</a>.</p>
-      <p class="govuk-body">Unsere <a class="govuk-link" href="/community/events">Fotos</a> zeigen Eindrücke vergangener Treffen.</p>
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  <p class="govuk-body">
+    Ob im Forum, bei Veranstaltungen oder mit einer eigenen Idee: Alle Studierenden können das
+    Fachschaftsleben mitgestalten.
+  </p>
+  <p class="govuk-body">
+    Die Fachschaft lebt davon, dass ihr euch einbringt. Eure Erfahrungen und Ideen helfen uns,
+    Angebote zu gestalten, die zu eurem Studienalltag passen. Dafür musst du kein gewähltes Mitglied
+    sein.
+    <a class="govuk-link" href="/fachschaft">Lerne die Fachschaft kennen</a>.
+  </p>
+  <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible" />
+  <h2 class="govuk-heading-l">Austausch und Ideen</h2>
+  <div class="app-community-cards">
+    <div class="app-community-card">
+      <img
+        class="app-community-card__image"
+        src="/assets/community/discuss-and-give-feedback.svg"
+        alt=""
+        width="320"
+        height="180"
+        loading="lazy"
+      />
+      <h3 class="govuk-heading-m">Tausch dich im Forum aus</h3>
+      <p class="govuk-body">
+        Du hast Fragen zum Studium oder Tipps für andere? Im Forum kannst du dich mit anderen
+        Studierenden austauschen.
+      </p>
+      <p class="govuk-body"><a class="govuk-link" href="/discussions">Zum Forum</a></p>
+    </div>
+    <div class="app-community-card">
+      <img
+        class="app-community-card__image"
+        src="/assets/community/research-interview.png"
+        alt=""
+        width="1220"
+        height="814"
+        loading="lazy"
+      />
+      <h3 class="govuk-heading-m">Bring deine Ideen ein</h3>
+      <p class="govuk-body">
+        Du möchtest eine Veranstaltung organisieren oder ein eigenes Projekt starten? Stell uns
+        deine Idee vor und gestalte die Fachschaft mit.
+      </p>
+      <p class="govuk-body"><a class="govuk-link" href="#mitmachen">So kannst du mitmachen</a></p>
+    </div>
+    <div class="app-community-card">
+      <img
+        class="app-community-card__image"
+        src="/assets/community/workshop.png"
+        alt=""
+        width="1220"
+        height="814"
+        loading="lazy"
+      />
+      <h3 class="govuk-heading-m">Rekos finden und teilen</h3>
+      <p class="govuk-body">
+        Nutze Klausurrekonstruktionen zur Prüfungsvorbereitung oder reiche selbst eine Reko ein und
+        hilf anderen beim Lernen.
+      </p>
+      <p class="govuk-body"><a class="govuk-link" href="/archive">Zu den Altklausuren</a></p>
     </div>
   </div>
-  <div class="app-community-event">
-    <img class="app-community-event__image" src="/assets/community/workshop.png" alt="Haftnotizen mit Ideen aus einem Workshop." loading="lazy">
-    <div>
-      <h3 class="govuk-heading-m">Plane mit uns</h3>
-      <p class="govuk-body">Du hast eine Idee für eine Veranstaltung oder möchtest bei der Vorbereitung helfen? Bring dich ein und entwickle deine Ideen gemeinsam mit uns weiter.</p>
-      <p class="govuk-body"><a class="govuk-link" href="#mitmachen">So kannst du mitmachen</a>.</p>
+  <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible" />
+  <section aria-labelledby="community-events">
+    <h2 class="govuk-heading-l" id="community-events">Veranstaltungen</h2>
+    <p class="govuk-body">
+      Lerne andere Studierende kennen und verbringe Zeit mit ihnen – auch abseits von Vorlesungen
+      und Prüfungen.
+    </p>
+    <div class="app-community-event">
+      <img
+        class="app-community-event__image"
+        src="/assets/community/catchup-groupshot.png"
+        alt=""
+        width="1220"
+        height="814"
+        loading="lazy"
+      />
+      <div>
+        <h3 class="govuk-heading-m">Lerne andere Studierende kennen</h3>
+        <p class="govuk-body">Bei unseren Veranstaltungen lernst du andere Studierende kennen.</p>
+        <p class="govuk-body">
+          Termine und Infos findest du unter
+          <a class="govuk-link" href="/community/veranstaltungen">Veranstaltungen</a>.
+        </p>
+        <p class="govuk-body">
+          Unsere <a class="govuk-link" href="/community/events">Fotos</a> zeigen Eindrücke
+          vergangener Treffen.
+        </p>
+      </div>
     </div>
-  </div>
-</section>
-<hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
-<section aria-labelledby="mitmachen">
-  <h2 class="govuk-heading-l" id="mitmachen">Bring deine Ideen ein</h2>
-  <p class="govuk-body">Du möchtest eine Veranstaltung organisieren, ein Angebot für Studierende aufbauen oder ein eigenes Projekt starten? Stell uns deine Idee vor. Gemeinsam können wir überlegen, wie sie sich umsetzen lässt und welche Unterstützung du brauchst.</p>
-  <p class="govuk-body">Dafür musst du kein gewähltes Mitglied sein. Wenn du dich längerfristig für ein Thema engagieren möchtest, ist auch die Mitarbeit in einer Projektstelle möglich. Sprich uns an, damit wir gemeinsam eine passende Aufgabe finden.</p>
-  <ul class="govuk-list govuk-list--bullet">
-    <li><a class="govuk-link" href="/discussions">Tausche dich im Forum über deine Idee aus</a>.</li>
-    <li><a class="govuk-link" href="/team#team-board">Sprich den Vorstand an</a>.</li>
-    <li><a class="govuk-link" href="/team#team-project">Lerne die bestehenden Projektstellen kennen</a>.</li>
-  </ul>
-</section>
-{{end}}
+    <div class="app-community-event">
+      <img
+        class="app-community-event__image"
+        src="/assets/community/workshop.png"
+        alt="Haftnotizen mit Ideen aus einem Workshop."
+        loading="lazy"
+      />
+      <div>
+        <h3 class="govuk-heading-m">Plane mit uns</h3>
+        <p class="govuk-body">
+          Du hast eine Idee für eine Veranstaltung oder möchtest bei der Vorbereitung helfen? Bring
+          dich ein und entwickle deine Ideen gemeinsam mit uns weiter.
+        </p>
+        <p class="govuk-body">
+          <a class="govuk-link" href="#mitmachen">So kannst du mitmachen</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+  <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible" />
+  <section aria-labelledby="mitmachen">
+    <h2 class="govuk-heading-l" id="mitmachen">Bring deine Ideen ein</h2>
+    <p class="govuk-body">
+      Du möchtest eine Veranstaltung organisieren, ein Angebot für Studierende aufbauen oder ein
+      eigenes Projekt starten? Stell uns deine Idee vor. Gemeinsam können wir überlegen, wie sie
+      sich umsetzen lässt und welche Unterstützung du brauchst.
+    </p>
+    <p class="govuk-body">
+      Dafür musst du kein gewähltes Mitglied sein. Wenn du dich längerfristig für ein Thema
+      engagieren möchtest, ist auch die Mitarbeit in einer Projektstelle möglich. Sprich uns an,
+      damit wir gemeinsam eine passende Aufgabe finden.
+    </p>
+    <ul class="govuk-list govuk-list--bullet">
+      <li>
+        <a class="govuk-link" href="/discussions">Tausche dich im Forum über deine Idee aus</a>.
+      </li>
+      <li><a class="govuk-link" href="/team#team-board">Sprich den Vorstand an</a>.</li>
+      <li>
+        <a class="govuk-link" href="/team#team-project"
+          >Lerne die bestehenden Projektstellen kennen</a
+        >.
+      </li>
+    </ul>
+  </section>
+{{ end }}

@@ -1,13 +1,27 @@
-{{define "sidebar"}}{{end}}
-{{define "content"}}
-<p class="govuk-body-l">Ankündigungen und Neuigkeiten aus der Fachschaft.</p>
-{{if .Forum.CanWrite}}<p class="govuk-body"><a class="govuk-button" href="/community/neuigkeiten/new">Neuigkeit veröffentlichen</a></p>{{end}}
-{{if .Forum.Posts}}<ul class="govuk-list app-forum-posts" role="list">
-{{range .Forum.Posts}}<li>
-  <h2 class="govuk-heading-m govuk-!-margin-bottom-2"><a class="govuk-link" href="{{.URL}}">{{.Title}}</a></h2>
-  <p class="govuk-body govuk-!-margin-bottom-2">{{.Summary}}</p>
-  <p class="govuk-body-s govuk-!-margin-bottom-0"><time datetime="{{.Created}}">{{.DateLabel}}</time></p>
-</li>{{end}}
-</ul>{{else}}<p class="govuk-body">Noch keine Neuigkeiten veröffentlicht.</p>{{end}}
-{{template "list-pagination" .Forum.Pagination}}
-{{end}}
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  <p class="govuk-body-l">Ankündigungen und Neuigkeiten aus der Fachschaft.</p>
+  {{ if .Forum.CanWrite }}
+    <p class="govuk-body">
+      <a class="govuk-button" href="/community/neuigkeiten/new">Neuigkeit veröffentlichen</a>
+    </p>
+  {{ end }}
+  {{ if .Forum.Posts }}
+    <ul class="govuk-list app-forum-posts" role="list">
+      {{ range .Forum.Posts }}
+        <li>
+          <h2 class="govuk-heading-m govuk-!-margin-bottom-2">
+            <a class="govuk-link" href="{{ .URL }}">{{ .Title }}</a>
+          </h2>
+          <p class="govuk-body govuk-!-margin-bottom-2">{{ .Summary }}</p>
+          <p class="govuk-body-s govuk-!-margin-bottom-0">
+            <time datetime="{{ .Created }}">{{ .DateLabel }}</time>
+          </p>
+        </li>
+      {{ end }}
+    </ul>
+  {{ else }}
+    <p class="govuk-body">Noch keine Neuigkeiten veröffentlicht.</p>
+  {{ end }}
+  {{ template "list-pagination" .Forum.Pagination }}
+{{ end }}

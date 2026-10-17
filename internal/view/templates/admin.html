@@ -1,269 +1,983 @@
-{{define "sidebar"}}{{template "admin-navigation" .}}{{end}}
+{{ define "sidebar" }}{{ template "admin-navigation" . }}{{ end }}
 
-{{define "content"}}
-{{$csrf := .CSRF}}
-{{with .Admin}}
-{{if .HasErrors}}
-<div class="govuk-error-summary" data-module="govuk-error-summary"><div role="alert">
-  <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
-  <div class="govuk-error-summary__body"><ul class="govuk-list govuk-error-summary__list">
-    {{if .Message}}<li><a href="#admin-form">{{.Message}}</a></li>{{end}}
-    {{range .Fields}}{{if .Error}}<li><a href="#{{.ErrorAnchor}}">{{.Error}}</a></li>{{end}}{{end}}
-  </ul></div>
-</div></div>
-{{end}}
-{{if .Success}}<div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="admin-success-title" data-module="govuk-notification-banner"><div class="govuk-notification-banner__header"><h2 class="govuk-notification-banner__title" id="admin-success-title">Erfolgreich</h2></div><div class="govuk-notification-banner__content"><p class="govuk-notification-banner__heading">{{.Success}}</p></div></div>{{end}}
-
-{{if eq .View "index"}}
-<p class="govuk-body">Hier organisieren wir die Arbeit der Fachschaft: Mitglieder und Funktionen verwalten, Sitzungsdokumente veröffentlichen und Einreichungen prüfen.</p>
-<hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
-{{if not .ReviewerOnly}}
-<h2 class="govuk-heading-l">Organisation</h2>
-<div class="app-community-cards">
-<div class="app-community-card">
-  <h3 class="govuk-heading-m">Stammdaten</h3>
-  <p class="govuk-body">Name, Kontaktangaben, rechtliche Informationen und Links.</p>
-  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/stammdaten">Zu den Stammdaten</a></p>
-</div>
-<div class="app-community-card">
-  <img class="app-community-card__image" src="/assets/community/catchup-groupshot.png" alt="" width="320" height="180" loading="lazy">
-  <h3 class="govuk-heading-m">Mitglieder</h3>
-  <p class="govuk-body">Lade Mitglieder ein, bearbeite ihre Daten und sieh, welche Funktionen sie übernehmen.</p>
-  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/mitglieder">Zu den Mitgliedern</a></p>
-</div>
-<div class="app-community-card">
-  <img class="app-community-card__image" src="/assets/community/workshop.png" alt="" width="320" height="180" loading="lazy">
-  <h3 class="govuk-heading-m">Funktionen</h3>
-  <p class="govuk-body">Verwalte Vorstand, Referate und Projektstellen und ordne ihnen die zuständigen Mitglieder zu.</p>
-  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/funktionen">Zu den Funktionen</a></p>
-</div>
-<div class="app-community-card">
-  <img class="app-community-card__image" src="/assets/community/propose-a-change-to-pages.svg" alt="" width="320" height="180" loading="lazy">
-  <h3 class="govuk-heading-m">Sitzungen</h3>
-  <p class="govuk-body">Stelle Einladungen zur Sitzung und Sitzungsprotokolle für die Studierenden bereit.</p>
-  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/sitzungen">Zu den Sitzungen</a></p>
-</div>
-</div>
-{{end}}
-<h2 class="govuk-heading-l govuk-!-margin-top-9">Studierende</h2>
-<div class="app-community-cards">
-<div class="app-community-card">
-  <img class="app-community-card__image" src="/assets/community/share-your-examples-and-research.svg" alt="" width="320" height="180" loading="lazy">
-  <h3 class="govuk-heading-m">Einreichungen</h3>
-  <p class="govuk-body">Prüfe eingereichte Rekos und bestätige ihre Veröffentlichung im Archiv oder lehne sie ab.</p>
-  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/einreichungen">Zu den Einreichungen</a></p>
-</div>
-{{if not .ReviewerOnly}}
-<div class="app-community-card">
-  <img class="app-community-card__image" src="/assets/community/discuss-and-give-feedback.svg" alt="" width="320" height="180" loading="lazy">
-  <h3 class="govuk-heading-m">Benutzerkonten</h3>
-  <p class="govuk-body">Suche nach Benutzerkonten, prüfe ihren Status und hilf bei Problemen mit der Anmeldung.</p>
-  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/benutzer">Zu den Benutzerkonten</a></p>
-</div>
-{{end}}
-</div>
-{{end}}
-
-{{if eq .View "users"}}
-<form action="/verwaltung/benutzer" method="get" class="govuk-!-margin-bottom-6">
-  <div class="govuk-form-group"><label class="govuk-label" for="user-search">Name oder E-Mail-Adresse</label><input class="govuk-input" id="user-search" name="q" type="search" value="{{.Query}}"></div>
-  <button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="submit">Suchen</button>
-  {{if .Query}}<a class="govuk-link govuk-!-margin-left-3" href="/verwaltung/benutzer">Suche zurücksetzen</a>{{end}}
-</form>
-<h2 class="govuk-heading-m">{{.Total}} Benutzerkonten gefunden</h2>
-{{if .Users}}
-<table class="govuk-table app-admin-table app-admin-users app-archive-upload-table" role="table">
-  <caption class="govuk-visually-hidden">Benutzerkonten</caption>
-  <colgroup><col class="app-admin-users__name"><col class="app-admin-users__email"><col class="app-admin-users__permission"><col class="app-admin-users__status"></colgroup>
-  <thead class="govuk-table__head" role="rowgroup"><tr class="govuk-table__row" role="row"><th class="govuk-table__header" scope="col" role="columnheader">Name</th><th class="govuk-table__header" scope="col" role="columnheader">E-Mail-Adresse</th><th class="govuk-table__header" scope="col" role="columnheader">Berechtigung</th><th class="govuk-table__header" scope="col" role="columnheader">Status</th></tr></thead>
-  <tbody class="govuk-table__body" role="rowgroup">{{range .Users}}<tr class="govuk-table__row" role="row"><th class="govuk-table__header" scope="row" role="rowheader"><a class="govuk-link" href="/verwaltung/benutzer/{{.ID}}">{{.Name}}</a></th><td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">E-Mail-Adresse</span><span>{{.Email}}</span></td><td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Berechtigung</span><span>{{.Permission}}</span></td><td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Status</span><span>{{template "email-status" .}}{{if eq .Status "Inaktiv"}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">Konto inaktiv</p>{{end}}</span></td></tr>{{end}}</tbody>
-</table>
-{{if gt .Pages 1}}<nav class="govuk-pagination app-user-pagination" aria-label="Benutzerseiten">
-  {{if .PreviousURL}}<div class="govuk-pagination__prev"><a class="govuk-link govuk-pagination__link" href="{{.PreviousURL}}" rel="prev"><svg class="govuk-pagination__icon govuk-pagination__icon--prev" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13"><path d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"></path></svg><span class="govuk-pagination__link-title">Zurück<span class="govuk-visually-hidden"> zur vorherigen Seite</span></span></a></div>{{end}}
-  <ul class="govuk-pagination__list">
-    {{range .Pagination}}{{if .Ellipsis}}<li class="govuk-pagination__item govuk-pagination__item--ellipsis">…</li>{{else}}<li class="govuk-pagination__item {{if .Current}}govuk-pagination__item--current{{end}}"><a class="govuk-link govuk-pagination__link" href="{{.URL}}" aria-label="Seite {{.Number}}" {{if .Current}}aria-current="page"{{end}}>{{.Number}}</a></li>{{end}}{{end}}
-  </ul>
-  {{if .NextURL}}<div class="govuk-pagination__next"><a class="govuk-link govuk-pagination__link" href="{{.NextURL}}" rel="next"><span class="govuk-pagination__link-title">Weiter<span class="govuk-visually-hidden"> zur nächsten Seite</span></span><svg class="govuk-pagination__icon govuk-pagination__icon--next" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13"><path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"></path></svg></a></div>{{end}}
-</nav>{{end}}
-{{else}}<p class="govuk-body">Für diese Suche wurden keine Benutzerkonten gefunden. Versuche einen anderen Namen oder eine E-Mail-Adresse.</p>{{end}}
-{{end}}
-
-{{if eq .View "master-data"}}
-<p class="govuk-body">Änderungen gelten sofort für Website und E-Mails.</p>
-<h2 class="govuk-heading-m">Angaben zur Organisation</h2>
-<ul class="govuk-task-list">
-{{range .MasterData}}
-  <li class="govuk-task-list__item govuk-task-list__item--with-link">
-    <div class="govuk-task-list__name-and-hint">
-      <a class="govuk-link govuk-task-list__link" href="/verwaltung/stammdaten/{{.ID}}" aria-describedby="stammdaten-{{.ID}}-status{{if .Missing}} stammdaten-{{.ID}}-hint{{end}}">{{.Title}}</a>
-      {{if .Missing}}<div class="govuk-task-list__hint" id="stammdaten-{{.ID}}-hint">Fehlend oder ungültig: {{.Missing}}</div>{{end}}
-    </div>
-    <div class="govuk-task-list__status" id="stammdaten-{{.ID}}-status">{{if .Missing}}<strong class="govuk-tag govuk-tag--blue">Unvollständig</strong>{{else}}Vollständig{{end}}</div>
-  </li>
-{{end}}
-</ul>
-{{end}}
-
-{{if eq .View "user"}}
-{{with .User}}
-<dl class="govuk-summary-list">
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Name</dt><dd class="govuk-summary-list__value">{{.Name}}</dd></div>
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">E-Mail-Adresse</dt><dd class="govuk-summary-list__value app-wrap-anywhere">{{.Email}}</dd></div>
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Berechtigung</dt><dd class="govuk-summary-list__value">{{.Permission}}</dd></div>
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Kontostatus</dt><dd class="govuk-summary-list__value">{{.Status}}</dd></div>
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Status</dt><dd class="govuk-summary-list__value">{{template "email-status" .}}</dd></div>
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Studiengang</dt><dd class="govuk-summary-list__value">{{if .Program}}{{.Program}}{{else}}Nicht angegeben{{end}}</dd></div>
-</dl>
-{{with $.Admin.Person}}<p class="govuk-body"><a class="govuk-link" href="/verwaltung/mitglieder/{{.ID}}">Mitglied anzeigen</a></p>{{end}}
-<div class="govuk-button-group">
-<a class="govuk-button govuk-button--secondary" data-module="govuk-button" data-dialog="password-reset-dialog" href="/verwaltung/benutzer/{{.ID}}/passwort-zuruecksetzen">Passwort zurücksetzen</a>
-{{if $.Admin.CanResendConfirmation}}<button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="submit" form="confirmation-form">{{if $.Admin.Person}}Einladung erneut senden{{else}}Bestätigung erneut senden{{end}}</button>{{end}}
-</div>
-{{if $.Admin.CanResendConfirmation}}<form id="confirmation-form" action="/verwaltung/benutzer/{{.ID}}/bestaetigung-senden" method="post"><input type="hidden" name="csrf" value="{{$csrf}}"></form>{{end}}
-<dialog class="app-dialog" id="password-reset-dialog" aria-labelledby="password-reset-title">
-  <h2 class="govuk-heading-m" id="password-reset-title" tabindex="-1">Passwort zurücksetzen</h2>
-  {{template "password-reset-form" $}}
-</dialog>
-{{end}}{{end}}
-
-{{if eq .View "reset"}}{{template "password-reset-form" $}}{{end}}
-
-{{if eq .View "people"}}
-<div class="govuk-button-group">
-  <a class="govuk-button" data-module="govuk-button" href="/verwaltung/mitglieder/neu">Mitglied hinzufügen</a>
-</div>
-<section aria-labelledby="members-heading">
-  <h2 class="govuk-heading-m" id="members-heading">Mitglieder</h2>
-  <table class="govuk-table app-admin-table app-archive-upload-table" role="table">
-    <caption class="govuk-visually-hidden">Mitglieder und ihre Funktionen</caption>
-    <thead class="govuk-table__head" role="rowgroup"><tr class="govuk-table__row" role="row"><th class="govuk-table__header" scope="col" role="columnheader">Name</th><th class="govuk-table__header" scope="col" role="columnheader">Funktionen</th><th class="govuk-table__header" scope="col" role="columnheader">Status</th></tr></thead>
-    <tbody class="govuk-table__body" role="rowgroup">{{range .Members}}<tr class="govuk-table__row" role="row">
-      <th class="govuk-table__header" scope="row" role="rowheader"><a class="govuk-link" href="/verwaltung/mitglieder/{{.ID}}">{{.Name}}<span class="govuk-visually-hidden"> bearbeiten</span></a>{{if .AccountEmail}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0 app-wrap-anywhere"><a class="govuk-link" href="/verwaltung/benutzer/{{.UserID}}">{{.AccountEmail}}</a></p>{{end}}</th>
-      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Funktionen</span><div>{{if .Tasks}}<ul class="govuk-list govuk-!-margin-bottom-0">{{range .Tasks}}<li>{{.}}</li>{{end}}</ul>{{else}}Keine Funktionen zugeordnet{{end}}</div></td>
-      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Status</span><strong class="govuk-tag {{if not .UserID}}govuk-tag--grey{{else if .Confirmed}}govuk-tag--green{{else}}govuk-tag--blue{{end}}">{{.Status}}</strong></td>
-    </tr>{{end}}</tbody>
-  </table>
-</section>
-{{end}}
-{{if eq .View "functions"}}
-<a class="govuk-button" data-module="govuk-button" href="/verwaltung/funktionen/neu">Funktion hinzufügen</a>
-<p class="govuk-body">Verwalte Funktionen im Vorstand, in Referaten und Projektstellen und besetze sie mit Mitgliedern.</p>
-<section aria-labelledby="tasks-heading">
-  <h2 class="govuk-heading-m" id="tasks-heading">Funktionen</h2>
-  <table class="govuk-table app-admin-table">
-    <caption class="govuk-visually-hidden">Vorstand, Referate und Projektstellen mit ihren Mitgliedern</caption>
-    <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Funktion</th><th class="govuk-table__header" scope="col">Mitglieder</th></tr></thead>
-    <tbody class="govuk-table__body">{{range .Tasks}}<tr class="govuk-table__row"><th class="govuk-table__header" scope="row"><a class="govuk-link" href="{{.URL}}">{{.Title}}<span class="govuk-visually-hidden"> bearbeiten</span></a><p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">{{.Kind}}</p></th><td class="govuk-table__cell">{{if .Members}}<ul class="govuk-list govuk-!-margin-bottom-0">{{range .Members}}<li>{{.}}</li>{{end}}</ul>{{else}}Keine Mitglieder zugeordnet{{end}}</td></tr>{{end}}</tbody>
-  </table>
-</section>
-{{end}}
-
-{{if eq .View "requests"}}
-{{template "request-list" .RequestList}}
-{{end}}
-
-{{if eq .View "meetings"}}
-<a class="govuk-button" data-module="govuk-button" href="/verwaltung/sitzungen/neu">Dokument hinzufügen</a>
-<p class="govuk-body">Veröffentliche eine Einladung zur Sitzung oder ein Sitzungsprotokoll.</p>
-<table class="govuk-table app-admin-table"><caption class="govuk-visually-hidden">Sitzungen und veröffentlichte Dokumente</caption>
-  <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Sitzung</th><th class="govuk-table__header" scope="col">Dokumente</th></tr></thead>
-  <tbody class="govuk-table__body">{{range .Meetings}}<tr class="govuk-table__row">
-    <th class="govuk-table__header" scope="row">{{.DateLabel}}<br><span class="govuk-!-font-weight-regular">{{.Number}}. Sitzung</span>{{if .Date}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0"><a class="govuk-link" href="/verwaltung/sitzungen/neu?datum={{.Date}}&amp;nummer={{.Number}}">Dokument hinzufügen<span class="govuk-visually-hidden"> zur {{.Number}}. Sitzung vom {{.DateLabel}}</span></a></p>{{end}}</th>
-    <td class="govuk-table__cell"><ul class="govuk-list govuk-!-margin-bottom-0">{{$meeting := .}}{{range .Documents}}<li><a class="govuk-link" href="{{.URL}}">{{.Label}}<span class="govuk-visually-hidden"> · {{$meeting.Number}}. Sitzung vom {{$meeting.DateLabel}}</span></a> (PDF, {{.Size}})</li>{{end}}</ul></td>
-  </tr>{{end}}</tbody>
-</table>
-{{end}}
-
-{{if eq .View "form"}}
-{{with .Person}}{{if .UserID}}
-<dl class="govuk-summary-list">
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Benutzerkonto</dt><dd class="govuk-summary-list__value app-wrap-anywhere"><a class="govuk-link" href="/verwaltung/benutzer/{{.UserID}}">{{.AccountEmail}}</a></dd></div>
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Status</dt><dd class="govuk-summary-list__value">{{.Status}}</dd></div>
-</dl>
-{{end}}{{end}}
-{{if eq .Action "/verwaltung/stammdaten/verknuepfungen"}}<p class="govuk-body">Die Linktexte erscheinen auf der Website.</p>{{end}}
-<form id="admin-form" action="{{.Action}}" method="post" {{if .Publication}}enctype="multipart/form-data"{{end}} novalidate tabindex="-1">
-  <input type="hidden" name="csrf" value="{{$csrf}}">
-  {{range .Fields}}
-  <div class="govuk-form-group {{if .Error}}govuk-form-group--error{{end}}">
-    {{if or (eq .Kind "checkboxes") (eq .Kind "radios") (eq .Kind "date")}}
-    <fieldset class="govuk-fieldset" {{if eq .Kind "date"}}role="group"{{end}} id="{{.ID}}" tabindex="-1" {{if or .Hint .Error}}aria-describedby="{{if .Hint}}{{.ID}}-hint{{end}}{{if .Error}} {{.ID}}-error{{end}}"{{end}}>
-      <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">{{.Label}}</legend>
-      {{if .Hint}}<div class="govuk-hint" id="{{.ID}}-hint">{{.Hint}}</div>{{end}}
-      {{if .Error}}<p class="govuk-error-message" id="{{.ID}}-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Error}}</p>{{end}}
-      {{if eq .Kind "date"}}
-      <div class="govuk-date-input">
-        <div class="govuk-date-input__item"><div class="govuk-form-group"><label class="govuk-label govuk-date-input__label" for="{{.ID}}-day">Tag</label><input class="govuk-input govuk-date-input__input govuk-input--width-2 {{if .DatePartInvalid "day"}}govuk-input--error{{end}}" id="{{.ID}}-day" name="day" type="text" inputmode="numeric" value="{{.Day}}"></div></div>
-        <div class="govuk-date-input__item"><div class="govuk-form-group"><label class="govuk-label govuk-date-input__label" for="{{.ID}}-month">Monat</label><input class="govuk-input govuk-date-input__input govuk-input--width-2 {{if .DatePartInvalid "month"}}govuk-input--error{{end}}" id="{{.ID}}-month" name="month" type="text" inputmode="numeric" value="{{.Month}}"></div></div>
-        <div class="govuk-date-input__item"><div class="govuk-form-group"><label class="govuk-label govuk-date-input__label" for="{{.ID}}-year">Jahr</label><input class="govuk-input govuk-date-input__input govuk-input--width-4 {{if .DatePartInvalid "year"}}govuk-input--error{{end}}" id="{{.ID}}-year" name="year" type="text" inputmode="numeric" value="{{.Year}}"></div></div>
+{{ define "content" }}
+  {{ $csrf := .CSRF }}
+  {{ with .Admin }}
+    {{ if .HasErrors }}
+      <div class="govuk-error-summary" data-module="govuk-error-summary">
+        <div role="alert">
+          <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
+          <div class="govuk-error-summary__body">
+            <ul class="govuk-list govuk-error-summary__list">
+              {{ if .Message }}<li><a href="#admin-form">{{ .Message }}</a></li>{{ end }}
+              {{ range .Fields }}
+                {{ if .Error }}<li><a href="#{{ .ErrorAnchor }}">{{ .Error }}</a></li>{{ end }}
+              {{ end }}
+            </ul>
+          </div>
+        </div>
       </div>
-      {{else}}
-      {{$field := .}}
-      <div class="{{if eq .Kind "radios"}}govuk-radios{{else}}govuk-checkboxes govuk-checkboxes--small{{end}}" data-module="{{if eq .Kind "radios"}}govuk-radios{{else}}govuk-checkboxes{{end}}">
-        {{range $index,$option := .Options}}<div class="{{if eq $field.Kind "radios"}}govuk-radios__item{{else}}govuk-checkboxes__item{{end}}">
-          <input class="{{if eq $field.Kind "radios"}}govuk-radios__input{{else}}govuk-checkboxes__input{{end}}" id="{{$field.ID}}-{{$index}}" name="{{$field.ID}}" type="{{if eq $field.Kind "radios"}}radio{{else}}checkbox{{end}}" value="{{.Value}}" {{if .Selected}}checked{{end}}>
-          <label class="govuk-label {{if eq $field.Kind "radios"}}govuk-radios__label{{else}}govuk-checkboxes__label{{end}}" for="{{$field.ID}}-{{$index}}">{{.Label}}</label>
-        </div>{{end}}
-      </div>{{end}}
-    </fieldset>
-    {{else}}
-    {{if eq .Kind "links"}}<h2 class="govuk-heading-m" id="{{.ID}}-label">{{.Label}}</h2>{{else}}<label class="govuk-label" for="{{.ID}}">{{.Label}}</label>{{end}}
-    {{if .Hint}}<div class="govuk-hint" id="{{.ID}}-hint">{{.Hint}}</div>{{end}}
-    {{if .Error}}<p class="govuk-error-message" id="{{.ID}}-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Error}}</p>{{end}}
-    {{if eq .Kind "links"}}
-    {{$field := .}}
-    <div id="{{.ID}}" role="group" aria-labelledby="{{.ID}}-label" tabindex="-1" {{if or .Hint .Error}}aria-describedby="{{.ID}}-hint{{if .Error}} {{.ID}}-error{{end}}"{{end}}>
-    {{range $i,$link := .Links}}
-      {{if $field.FixedLinkTitles}}
-      <div class="govuk-form-group"><label class="govuk-label" for="{{$field.ID}}-url-{{$i}}">{{.Title}}</label><input class="govuk-input" id="{{$field.ID}}-url-{{$i}}" name="{{$field.ID}}URL" type="url" value="{{.URL}}"></div>
-      {{else}}
-      <fieldset class="govuk-fieldset govuk-!-margin-bottom-4">
-        <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">{{if .Title}}{{.Title}}{{else}}Neue Verknüpfung{{end}}</legend>
-        {{if not $field.FixedLinkTitles}}<div class="govuk-form-group"><label class="govuk-label" for="{{$field.ID}}-title-{{$i}}">Bezeichnung</label><input class="govuk-input" id="{{$field.ID}}-title-{{$i}}" name="{{$field.ID}}Title" type="text" value="{{.Title}}"></div>{{end}}
-        <div class="govuk-form-group"><label class="govuk-label" for="{{$field.ID}}-url-{{$i}}">Webadresse</label><input class="govuk-input" id="{{$field.ID}}-url-{{$i}}" name="{{$field.ID}}URL" type="url" value="{{.URL}}"></div>
-      </fieldset>
-      {{end}}
-    {{end}}
+    {{ end }}
+    {{ if .Success }}
+      <div
+        class="govuk-notification-banner govuk-notification-banner--success"
+        role="alert"
+        aria-labelledby="admin-success-title"
+        data-module="govuk-notification-banner"
+      >
+        <div class="govuk-notification-banner__header">
+          <h2 class="govuk-notification-banner__title" id="admin-success-title">Erfolgreich</h2>
+        </div>
+        <div class="govuk-notification-banner__content">
+          <p class="govuk-notification-banner__heading">{{ .Success }}</p>
+        </div>
+      </div>
+    {{ end }}
+
+    {{ if eq .View "index" }}
+      <p class="govuk-body">
+        Hier organisieren wir die Arbeit der Fachschaft: Mitglieder und Funktionen verwalten,
+        Sitzungsdokumente veröffentlichen und Einreichungen prüfen.
+      </p>
+      <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible" />
+      {{ if not .ReviewerOnly }}
+        <h2 class="govuk-heading-l">Organisation</h2>
+        <div class="app-community-cards">
+          <div class="app-community-card">
+            <h3 class="govuk-heading-m">Stammdaten</h3>
+            <p class="govuk-body">Name, Kontaktangaben, rechtliche Informationen und Links.</p>
+            <p class="govuk-body">
+              <a class="govuk-link" href="/verwaltung/stammdaten">Zu den Stammdaten</a>
+            </p>
+          </div>
+          <div class="app-community-card">
+            <img
+              class="app-community-card__image"
+              src="/assets/community/catchup-groupshot.png"
+              alt=""
+              width="320"
+              height="180"
+              loading="lazy"
+            />
+            <h3 class="govuk-heading-m">Mitglieder</h3>
+            <p class="govuk-body">
+              Lade Mitglieder ein, bearbeite ihre Daten und sieh, welche Funktionen sie übernehmen.
+            </p>
+            <p class="govuk-body">
+              <a class="govuk-link" href="/verwaltung/mitglieder">Zu den Mitgliedern</a>
+            </p>
+          </div>
+          <div class="app-community-card">
+            <img
+              class="app-community-card__image"
+              src="/assets/community/workshop.png"
+              alt=""
+              width="320"
+              height="180"
+              loading="lazy"
+            />
+            <h3 class="govuk-heading-m">Funktionen</h3>
+            <p class="govuk-body">
+              Verwalte Vorstand, Referate und Projektstellen und ordne ihnen die zuständigen
+              Mitglieder zu.
+            </p>
+            <p class="govuk-body">
+              <a class="govuk-link" href="/verwaltung/funktionen">Zu den Funktionen</a>
+            </p>
+          </div>
+          <div class="app-community-card">
+            <img
+              class="app-community-card__image"
+              src="/assets/community/propose-a-change-to-pages.svg"
+              alt=""
+              width="320"
+              height="180"
+              loading="lazy"
+            />
+            <h3 class="govuk-heading-m">Sitzungen</h3>
+            <p class="govuk-body">
+              Stelle Einladungen zur Sitzung und Sitzungsprotokolle für die Studierenden bereit.
+            </p>
+            <p class="govuk-body">
+              <a class="govuk-link" href="/verwaltung/sitzungen">Zu den Sitzungen</a>
+            </p>
+          </div>
+        </div>
+      {{ end }}
+      <h2 class="govuk-heading-l govuk-!-margin-top-9">Studierende</h2>
+      <div class="app-community-cards">
+        <div class="app-community-card">
+          <img
+            class="app-community-card__image"
+            src="/assets/community/share-your-examples-and-research.svg"
+            alt=""
+            width="320"
+            height="180"
+            loading="lazy"
+          />
+          <h3 class="govuk-heading-m">Einreichungen</h3>
+          <p class="govuk-body">
+            Prüfe eingereichte Rekos und bestätige ihre Veröffentlichung im Archiv oder lehne sie
+            ab.
+          </p>
+          <p class="govuk-body">
+            <a class="govuk-link" href="/verwaltung/einreichungen">Zu den Einreichungen</a>
+          </p>
+        </div>
+        {{ if not .ReviewerOnly }}
+          <div class="app-community-card">
+            <img
+              class="app-community-card__image"
+              src="/assets/community/discuss-and-give-feedback.svg"
+              alt=""
+              width="320"
+              height="180"
+              loading="lazy"
+            />
+            <h3 class="govuk-heading-m">Benutzerkonten</h3>
+            <p class="govuk-body">
+              Suche nach Benutzerkonten, prüfe ihren Status und hilf bei Problemen mit der
+              Anmeldung.
+            </p>
+            <p class="govuk-body">
+              <a class="govuk-link" href="/verwaltung/benutzer">Zu den Benutzerkonten</a>
+            </p>
+          </div>
+        {{ end }}
+      </div>
+    {{ end }}
+
+    {{ if eq .View "users" }}
+      <form action="/verwaltung/benutzer" method="get" class="govuk-!-margin-bottom-6">
+        <div class="govuk-form-group">
+          <label class="govuk-label" for="user-search">Name oder E-Mail-Adresse</label
+          ><input
+            class="govuk-input"
+            id="user-search"
+            name="q"
+            type="search"
+            value="{{ .Query }}"
+          />
+        </div>
+        <button
+          class="govuk-button govuk-button--secondary"
+          data-module="govuk-button"
+          type="submit"
+        >
+          Suchen
+        </button>
+        {{ if .Query }}
+          <a class="govuk-link govuk-!-margin-left-3" href="/verwaltung/benutzer"
+            >Suche zurücksetzen</a
+          >
+        {{ end }}
+      </form>
+      <h2 class="govuk-heading-m">{{ .Total }} Benutzerkonten gefunden</h2>
+      {{ if .Users }}
+        <table
+          class="govuk-table app-admin-table app-admin-users app-archive-upload-table"
+          role="table"
+        >
+          <caption class="govuk-visually-hidden">
+            Benutzerkonten
+          </caption>
+          <colgroup>
+            <col class="app-admin-users__name" />
+            <col class="app-admin-users__email" />
+            <col class="app-admin-users__permission" />
+            <col class="app-admin-users__status" />
+          </colgroup>
+          <thead class="govuk-table__head" role="rowgroup">
+            <tr class="govuk-table__row" role="row">
+              <th class="govuk-table__header" scope="col" role="columnheader">Name</th>
+              <th class="govuk-table__header" scope="col" role="columnheader">E-Mail-Adresse</th>
+              <th class="govuk-table__header" scope="col" role="columnheader">Berechtigung</th>
+              <th class="govuk-table__header" scope="col" role="columnheader">Status</th>
+            </tr>
+          </thead>
+          <tbody class="govuk-table__body" role="rowgroup">
+            {{ range .Users }}
+              <tr class="govuk-table__row" role="row">
+                <th class="govuk-table__header" scope="row" role="rowheader">
+                  <a class="govuk-link" href="/verwaltung/benutzer/{{ .ID }}">{{ .Name }}</a>
+                </th>
+                <td class="govuk-table__cell" role="cell">
+                  <span class="app-archive-upload-label" aria-hidden="true">E-Mail-Adresse</span
+                  ><span>{{ .Email }}</span>
+                </td>
+                <td class="govuk-table__cell" role="cell">
+                  <span class="app-archive-upload-label" aria-hidden="true">Berechtigung</span
+                  ><span>{{ .Permission }}</span>
+                </td>
+                <td class="govuk-table__cell" role="cell">
+                  <span class="app-archive-upload-label" aria-hidden="true">Status</span
+                  ><span
+                    >{{ template "email-status" . }}{{ if eq .Status "Inaktiv" }}
+                      <p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">
+                        Konto inaktiv
+                      </p>
+                    {{ end }}</span
+                  >
+                </td>
+              </tr>
+            {{ end }}
+          </tbody>
+        </table>
+        {{ if gt .Pages 1 }}
+          <nav class="govuk-pagination app-user-pagination" aria-label="Benutzerseiten">
+            {{ if .PreviousURL }}
+              <div class="govuk-pagination__prev">
+                <a class="govuk-link govuk-pagination__link" href="{{ .PreviousURL }}" rel="prev"
+                  ><svg
+                    class="govuk-pagination__icon govuk-pagination__icon--prev"
+                    xmlns="http://www.w3.org/2000/svg"
+                    height="13"
+                    width="15"
+                    aria-hidden="true"
+                    focusable="false"
+                    viewBox="0 0 15 13"
+                  >
+                    <path
+                      d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"
+                    ></path></svg
+                  ><span class="govuk-pagination__link-title"
+                    >Zurück<span class="govuk-visually-hidden"> zur vorherigen Seite</span></span
+                  ></a
+                >
+              </div>
+            {{ end }}
+            <ul class="govuk-pagination__list">
+              {{ range .Pagination }}
+                {{ if .Ellipsis }}
+                  <li class="govuk-pagination__item govuk-pagination__item--ellipsis">…</li>
+                {{ else }}
+                  <li
+                    class="govuk-pagination__item {{ if .Current }}
+                      govuk-pagination__item--current
+                    {{ end }}"
+                  >
+                    <a
+                      class="govuk-link govuk-pagination__link"
+                      href="{{ .URL }}"
+                      aria-label="Seite {{ .Number }}"
+                      {{ if .Current }}aria-current="page"{{ end }}
+                      >{{ .Number }}</a
+                    >
+                  </li>
+                {{ end }}
+              {{ end }}
+            </ul>
+            {{ if .NextURL }}
+              <div class="govuk-pagination__next">
+                <a class="govuk-link govuk-pagination__link" href="{{ .NextURL }}" rel="next"
+                  ><span class="govuk-pagination__link-title"
+                    >Weiter<span class="govuk-visually-hidden"> zur nächsten Seite</span></span
+                  ><svg
+                    class="govuk-pagination__icon govuk-pagination__icon--next"
+                    xmlns="http://www.w3.org/2000/svg"
+                    height="13"
+                    width="15"
+                    aria-hidden="true"
+                    focusable="false"
+                    viewBox="0 0 15 13"
+                  >
+                    <path
+                      d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"
+                    ></path></svg
+                ></a>
+              </div>
+            {{ end }}
+          </nav>
+        {{ end }}
+      {{ else }}
+        <p class="govuk-body">
+          Für diese Suche wurden keine Benutzerkonten gefunden. Versuche einen anderen Namen oder
+          eine E-Mail-Adresse.
+        </p>
+      {{ end }}
+    {{ end }}
+
+    {{ if eq .View "master-data" }}
+      <p class="govuk-body">Änderungen gelten sofort für Website und E-Mails.</p>
+      <h2 class="govuk-heading-m">Angaben zur Organisation</h2>
+      <ul class="govuk-task-list">
+        {{ range .MasterData }}
+          <li class="govuk-task-list__item govuk-task-list__item--with-link">
+            <div class="govuk-task-list__name-and-hint">
+              <a
+                class="govuk-link govuk-task-list__link"
+                href="/verwaltung/stammdaten/{{ .ID }}"
+                aria-describedby="stammdaten-{{ .ID }}-status{{ if .Missing }}
+                  stammdaten-{{ .ID }}-hint
+                {{ end }}"
+                >{{ .Title }}</a
+              >
+              {{ if .Missing }}
+                <div class="govuk-task-list__hint" id="stammdaten-{{ .ID }}-hint">
+                  Fehlend oder ungültig:
+                  {{ .Missing }}
+                </div>
+              {{ end }}
+            </div>
+            <div class="govuk-task-list__status" id="stammdaten-{{ .ID }}-status">
+              {{ if .Missing }}
+                <strong class="govuk-tag govuk-tag--blue">Unvollständig</strong>
+              {{ else }}
+                Vollständig
+              {{ end }}
+            </div>
+          </li>
+        {{ end }}
+      </ul>
+    {{ end }}
+
+    {{ if eq .View "user" }}
+      {{ with .User }}
+        <dl class="govuk-summary-list">
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">Name</dt>
+            <dd class="govuk-summary-list__value">{{ .Name }}</dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">E-Mail-Adresse</dt>
+            <dd class="govuk-summary-list__value app-wrap-anywhere">{{ .Email }}</dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">Berechtigung</dt>
+            <dd class="govuk-summary-list__value">{{ .Permission }}</dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">Kontostatus</dt>
+            <dd class="govuk-summary-list__value">{{ .Status }}</dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">Status</dt>
+            <dd class="govuk-summary-list__value">{{ template "email-status" . }}</dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">Studiengang</dt>
+            <dd class="govuk-summary-list__value">
+              {{ if .Program }}{{ .Program }}{{ else }}Nicht angegeben{{ end }}
+            </dd>
+          </div>
+        </dl>
+        {{ with $.Admin.Person }}
+          <p class="govuk-body">
+            <a class="govuk-link" href="/verwaltung/mitglieder/{{ .ID }}">Mitglied anzeigen</a>
+          </p>
+        {{ end }}
+        <div class="govuk-button-group">
+          <a
+            class="govuk-button govuk-button--secondary"
+            data-module="govuk-button"
+            data-dialog="password-reset-dialog"
+            href="/verwaltung/benutzer/{{ .ID }}/passwort-zuruecksetzen"
+            >Passwort zurücksetzen</a
+          >
+          {{ if $.Admin.CanResendConfirmation }}
+            <button
+              class="govuk-button govuk-button--secondary"
+              data-module="govuk-button"
+              type="submit"
+              form="confirmation-form"
+            >
+              {{ if $.Admin.Person }}
+                Einladung erneut senden
+              {{ else }}
+                Bestätigung erneut senden
+              {{ end }}
+            </button>
+          {{ end }}
+        </div>
+        {{ if $.Admin.CanResendConfirmation }}
+          <form
+            id="confirmation-form"
+            action="/verwaltung/benutzer/{{ .ID }}/bestaetigung-senden"
+            method="post"
+          >
+            <input type="hidden" name="csrf" value="{{ $csrf }}" />
+          </form>
+        {{ end }}
+        <dialog
+          class="app-dialog"
+          id="password-reset-dialog"
+          aria-labelledby="password-reset-title"
+        >
+          <h2 class="govuk-heading-m" id="password-reset-title" tabindex="-1">
+            Passwort zurücksetzen
+          </h2>
+          {{ template "password-reset-form" $ }}
+        </dialog>
+      {{ end }}
+
+    {{ end }}
+
+    {{ if eq .View "reset" }}{{ template "password-reset-form" $ }}{{ end }}
+
+    {{ if eq .View "people" }}
+      <div class="govuk-button-group">
+        <a class="govuk-button" data-module="govuk-button" href="/verwaltung/mitglieder/neu"
+          >Mitglied hinzufügen</a
+        >
+      </div>
+      <section aria-labelledby="members-heading">
+        <h2 class="govuk-heading-m" id="members-heading">Mitglieder</h2>
+        <table class="govuk-table app-admin-table app-archive-upload-table" role="table">
+          <caption class="govuk-visually-hidden">
+            Mitglieder und ihre Funktionen
+          </caption>
+          <thead class="govuk-table__head" role="rowgroup">
+            <tr class="govuk-table__row" role="row">
+              <th class="govuk-table__header" scope="col" role="columnheader">Name</th>
+              <th class="govuk-table__header" scope="col" role="columnheader">Funktionen</th>
+              <th class="govuk-table__header" scope="col" role="columnheader">Status</th>
+            </tr>
+          </thead>
+          <tbody class="govuk-table__body" role="rowgroup">
+            {{ range .Members }}
+              <tr class="govuk-table__row" role="row">
+                <th class="govuk-table__header" scope="row" role="rowheader">
+                  <a class="govuk-link" href="/verwaltung/mitglieder/{{ .ID }}"
+                    >{{ .Name }}<span class="govuk-visually-hidden"> bearbeiten</span></a
+                  >{{ if .AccountEmail }}
+                    <p
+                      class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0 app-wrap-anywhere"
+                    >
+                      <a class="govuk-link" href="/verwaltung/benutzer/{{ .UserID }}"
+                        >{{ .AccountEmail }}</a
+                      >
+                    </p>
+                  {{ end }}
+                </th>
+                <td class="govuk-table__cell" role="cell">
+                  <span class="app-archive-upload-label" aria-hidden="true">Funktionen</span>
+                  <div>
+                    {{ if .Tasks }}
+                      <ul class="govuk-list govuk-!-margin-bottom-0">
+                        {{ range .Tasks }}<li>{{ . }}</li>{{ end }}
+                      </ul>
+                    {{ else }}
+                      Keine Funktionen zugeordnet
+                    {{ end }}
+                  </div>
+                </td>
+                <td class="govuk-table__cell" role="cell">
+                  <span class="app-archive-upload-label" aria-hidden="true">Status</span
+                  ><strong
+                    class="govuk-tag {{ if not .UserID }}
+                      govuk-tag--grey
+                    {{ else if .Confirmed }}
+                      govuk-tag--green
+                    {{ else }}
+                      govuk-tag--blue
+                    {{ end }}"
+                    >{{ .Status }}</strong
+                  >
+                </td>
+              </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </section>
+    {{ end }}
+    {{ if eq .View "functions" }}
+      <a class="govuk-button" data-module="govuk-button" href="/verwaltung/funktionen/neu"
+        >Funktion hinzufügen</a
+      >
+      <p class="govuk-body">
+        Verwalte Funktionen im Vorstand, in Referaten und Projektstellen und besetze sie mit
+        Mitgliedern.
+      </p>
+      <section aria-labelledby="tasks-heading">
+        <h2 class="govuk-heading-m" id="tasks-heading">Funktionen</h2>
+        <table class="govuk-table app-admin-table">
+          <caption class="govuk-visually-hidden">
+            Vorstand, Referate und Projektstellen mit ihren Mitgliedern
+          </caption>
+          <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th class="govuk-table__header" scope="col">Funktion</th>
+              <th class="govuk-table__header" scope="col">Mitglieder</th>
+            </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+            {{ range .Tasks }}
+              <tr class="govuk-table__row">
+                <th class="govuk-table__header" scope="row">
+                  <a class="govuk-link" href="{{ .URL }}"
+                    >{{ .Title }}<span class="govuk-visually-hidden"> bearbeiten</span></a
+                  >
+                  <p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">
+                    {{ .Kind }}
+                  </p>
+                </th>
+                <td class="govuk-table__cell">
+                  {{ if .Members }}
+                    <ul class="govuk-list govuk-!-margin-bottom-0">
+                      {{ range .Members }}<li>{{ . }}</li>{{ end }}
+                    </ul>
+                  {{ else }}
+                    Keine Mitglieder zugeordnet
+                  {{ end }}
+                </td>
+              </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </section>
+    {{ end }}
+
+    {{ if eq .View "requests" }}
+      {{ template "request-list" .RequestList }}
+    {{ end }}
+
+    {{ if eq .View "meetings" }}
+      <a class="govuk-button" data-module="govuk-button" href="/verwaltung/sitzungen/neu"
+        >Dokument hinzufügen</a
+      >
+      <p class="govuk-body">
+        Veröffentliche eine Einladung zur Sitzung oder ein Sitzungsprotokoll.
+      </p>
+      <table class="govuk-table app-admin-table">
+        <caption class="govuk-visually-hidden">
+          Sitzungen und veröffentlichte Dokumente
+        </caption>
+        <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th class="govuk-table__header" scope="col">Sitzung</th>
+            <th class="govuk-table__header" scope="col">Dokumente</th>
+          </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+          {{ range .Meetings }}
+            <tr class="govuk-table__row">
+              <th class="govuk-table__header" scope="row">
+                {{ .DateLabel }}<br /><span class="govuk-!-font-weight-regular"
+                  >{{ .Number }}. Sitzung</span
+                >{{ if .Date }}
+                  <p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">
+                    <a
+                      class="govuk-link"
+                      href="/verwaltung/sitzungen/neu?datum={{ .Date }}&amp;nummer={{ .Number }}"
+                      >Dokument hinzufügen<span class="govuk-visually-hidden">
+                        zur {{ .Number }}. Sitzung vom {{ .DateLabel }}</span
+                      ></a
+                    >
+                  </p>
+                {{ end }}
+              </th>
+              <td class="govuk-table__cell">
+                <ul class="govuk-list govuk-!-margin-bottom-0">
+                  {{ $meeting := . }}{{ range .Documents }}
+                    <li>
+                      <a class="govuk-link" href="{{ .URL }}"
+                        >{{ .Label }}<span class="govuk-visually-hidden">
+                          · {{ $meeting.Number }}. Sitzung vom {{ $meeting.DateLabel }}</span
+                        ></a
+                      >
+                      (PDF, {{ .Size }})
+                    </li>
+                  {{ end }}
+                </ul>
+              </td>
+            </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    {{ end }}
+
+    {{ if eq .View "form" }}
+      {{ with .Person }}
+        {{ if .UserID }}
+          <dl class="govuk-summary-list">
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key">Benutzerkonto</dt>
+              <dd class="govuk-summary-list__value app-wrap-anywhere">
+                <a class="govuk-link" href="/verwaltung/benutzer/{{ .UserID }}"
+                  >{{ .AccountEmail }}</a
+                >
+              </dd>
+            </div>
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key">Status</dt>
+              <dd class="govuk-summary-list__value">{{ .Status }}</dd>
+            </div>
+          </dl>
+        {{ end }}
+      {{ end }}
+      {{ if eq .Action "/verwaltung/stammdaten/verknuepfungen" }}
+        <p class="govuk-body">Die Linktexte erscheinen auf der Website.</p>
+      {{ end }}
+      <form
+        id="admin-form"
+        action="{{ .Action }}"
+        method="post"
+        {{ if .Publication }}enctype="multipart/form-data"{{ end }}
+        novalidate
+        tabindex="-1"
+      >
+        <input type="hidden" name="csrf" value="{{ $csrf }}" />
+        {{ range .Fields }}
+          <div class="govuk-form-group {{ if .Error }}govuk-form-group--error{{ end }}">
+            {{ if or (eq .Kind "checkboxes") (eq .Kind "radios") (eq .Kind "date") }}
+              <fieldset
+                class="govuk-fieldset"
+                {{ if eq .Kind "date" }}role="group"{{ end }}
+                id="{{ .ID }}"
+                tabindex="-1"
+                {{ if or .Hint .Error }}
+                  aria-describedby="{{ if .Hint }}{{ .ID }}-hint{{ end }}{{ if .Error }}
+                    {{ .ID }}-error
+                  {{ end }}"
+                {{ end }}
+              >
+                <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                  {{ .Label }}
+                </legend>
+                {{ if .Hint }}<div class="govuk-hint" id="{{ .ID }}-hint">{{ .Hint }}</div>{{ end }}
+                {{ if .Error }}
+                  <p class="govuk-error-message" id="{{ .ID }}-error">
+                    <span class="govuk-visually-hidden">Fehler:</span> {{ .Error }}
+                  </p>
+                {{ end }}
+                {{ if eq .Kind "date" }}
+                  <div class="govuk-date-input">
+                    <div class="govuk-date-input__item">
+                      <div class="govuk-form-group">
+                        <label class="govuk-label govuk-date-input__label" for="{{ .ID }}-day"
+                          >Tag</label
+                        ><input
+                          class="govuk-input govuk-date-input__input govuk-input--width-2 {{ if .DatePartInvalid "day" }}
+                            govuk-input--error
+                          {{ end }}"
+                          id="{{ .ID }}-day"
+                          name="day"
+                          type="text"
+                          inputmode="numeric"
+                          value="{{ .Day }}"
+                        />
+                      </div>
+                    </div>
+                    <div class="govuk-date-input__item">
+                      <div class="govuk-form-group">
+                        <label class="govuk-label govuk-date-input__label" for="{{ .ID }}-month"
+                          >Monat</label
+                        ><input
+                          class="govuk-input govuk-date-input__input govuk-input--width-2 {{ if .DatePartInvalid "month" }}
+                            govuk-input--error
+                          {{ end }}"
+                          id="{{ .ID }}-month"
+                          name="month"
+                          type="text"
+                          inputmode="numeric"
+                          value="{{ .Month }}"
+                        />
+                      </div>
+                    </div>
+                    <div class="govuk-date-input__item">
+                      <div class="govuk-form-group">
+                        <label class="govuk-label govuk-date-input__label" for="{{ .ID }}-year"
+                          >Jahr</label
+                        ><input
+                          class="govuk-input govuk-date-input__input govuk-input--width-4 {{ if .DatePartInvalid "year" }}
+                            govuk-input--error
+                          {{ end }}"
+                          id="{{ .ID }}-year"
+                          name="year"
+                          type="text"
+                          inputmode="numeric"
+                          value="{{ .Year }}"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                {{ else }}
+                  {{ $field := . }}
+                  <div
+                    class="{{ if eq .Kind "radios" }}
+                      govuk-radios
+                    {{ else }}
+                      govuk-checkboxes govuk-checkboxes--small
+                    {{ end }}"
+                    data-module="{{ if eq .Kind "radios" }}
+                      govuk-radios
+                    {{ else }}
+                      govuk-checkboxes
+                    {{ end }}"
+                  >
+                    {{ range $index,$option := .Options }}
+                      <div
+                        class="{{ if eq $field.Kind "radios" }}
+                          govuk-radios__item
+                        {{ else }}
+                          govuk-checkboxes__item
+                        {{ end }}"
+                      >
+                        <input
+                          class="{{ if eq $field.Kind "radios" }}
+                            govuk-radios__input
+                          {{ else }}
+                            govuk-checkboxes__input
+                          {{ end }}"
+                          id="{{ $field.ID }}-{{ $index }}"
+                          name="{{ $field.ID }}"
+                          type="{{- if eq $field.Kind "radios" -}}
+                            radio
+                          {{- else -}}
+                            checkbox
+                          {{- end -}}"
+                          value="{{ .Value }}"
+                          {{ if .Selected }}checked{{ end }}
+                        />
+                        <label
+                          class="govuk-label {{ if eq $field.Kind "radios" }}
+                            govuk-radios__label
+                          {{ else }}
+                            govuk-checkboxes__label
+                          {{ end }}"
+                          for="{{ $field.ID }}-{{ $index }}"
+                          >{{ .Label }}</label
+                        >
+                      </div>
+                    {{ end }}
+                  </div>
+                {{ end }}
+              </fieldset>
+            {{ else }}
+              {{ if eq .Kind "links" }}
+                <h2 class="govuk-heading-m" id="{{ .ID }}-label">{{ .Label }}</h2>
+              {{ else }}
+                <label class="govuk-label" for="{{ .ID }}">{{ .Label }}</label>
+              {{ end }}
+              {{ if .Hint }}<div class="govuk-hint" id="{{ .ID }}-hint">{{ .Hint }}</div>{{ end }}
+              {{ if .Error }}
+                <p class="govuk-error-message" id="{{ .ID }}-error">
+                  <span class="govuk-visually-hidden">Fehler:</span> {{ .Error }}
+                </p>
+              {{ end }}
+              {{ if eq .Kind "links" }}
+                {{ $field := . }}
+                <div
+                  id="{{ .ID }}"
+                  role="group"
+                  aria-labelledby="{{ .ID }}-label"
+                  tabindex="-1"
+                  {{ if or .Hint .Error }}
+                    aria-describedby="{{ .ID }}-hint{{ if .Error }}{{ .ID }}-error{{ end }}"
+                  {{ end }}
+                >
+                  {{ range $i,$link := .Links }}
+                    {{ if $field.FixedLinkTitles }}
+                      <div class="govuk-form-group">
+                        <label class="govuk-label" for="{{ $field.ID }}-url-{{ $i }}"
+                          >{{ .Title }}</label
+                        ><input
+                          class="govuk-input"
+                          id="{{ $field.ID }}-url-{{ $i }}"
+                          name="{{ $field.ID }}URL"
+                          type="url"
+                          value="{{ .URL }}"
+                        />
+                      </div>
+                    {{ else }}
+                      <fieldset class="govuk-fieldset govuk-!-margin-bottom-4">
+                        <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
+                          {{ if .Title }}{{ .Title }}{{ else }}Neue Verknüpfung{{ end }}
+                        </legend>
+                        {{ if not $field.FixedLinkTitles }}
+                          <div class="govuk-form-group">
+                            <label class="govuk-label" for="{{ $field.ID }}-title-{{ $i }}"
+                              >Bezeichnung</label
+                            ><input
+                              class="govuk-input"
+                              id="{{ $field.ID }}-title-{{ $i }}"
+                              name="{{ $field.ID }}Title"
+                              type="text"
+                              value="{{ .Title }}"
+                            />
+                          </div>
+                        {{ end }}
+                        <div class="govuk-form-group">
+                          <label class="govuk-label" for="{{ $field.ID }}-url-{{ $i }}"
+                            >Webadresse</label
+                          ><input
+                            class="govuk-input"
+                            id="{{ $field.ID }}-url-{{ $i }}"
+                            name="{{ $field.ID }}URL"
+                            type="url"
+                            value="{{ .URL }}"
+                          />
+                        </div>
+                      </fieldset>
+                    {{ end }}
+                  {{ end }}
+                </div>
+              {{ else if eq .Kind "select" }}
+                <select
+                  class="govuk-select {{ if .Error }}govuk-select--error{{ end }}"
+                  id="{{ .ID }}"
+                  name="{{ .ID }}"
+                  {{ if or .Hint .Error }}
+                    aria-describedby="{{ .ID }}-hint{{ if .Error }}{{ .ID }}-error{{ end }}"
+                  {{ end }}
+                >
+                  {{ range .Options }}
+                    <option value="{{ .Value }}" {{ if .Selected }}selected{{ end }}>
+                      {{ .Label }}
+                    </option>
+                  {{ end }}
+                </select>
+              {{ else if eq .Kind "file" }}
+                <div class="govuk-file-upload-wrapper" data-module="govuk-file-upload">
+                  <input
+                    class="govuk-file-upload"
+                    id="{{ .ID }}"
+                    name="{{ .ID }}"
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    aria-describedby="{{ .ID }}-hint{{ if .Error }}{{ .ID }}-error{{ end }}"
+                  />
+                </div>
+              {{ else }}
+                <input
+                  class="govuk-input {{ if .Error }}govuk-input--error{{ end }}"
+                  id="{{ .ID }}"
+                  name="{{ .ID }}"
+                  type="{{ .Kind }}"
+                  value="{{ .Value }}"
+                  {{ if or .Hint .Error }}
+                    aria-describedby="{{ if .Hint }}{{ .ID }}-hint{{ end }}{{ if .Error }}
+                      {{ .ID }}-error
+                    {{ end }}"
+                  {{ end }}
+                  {{ if .Error }}aria-invalid="true"{{ end }}
+                />
+              {{ end }}
+            {{ end }}
+          </div>
+        {{ end }}
+        {{ with .Publication }}
+          {{ if .Data }}
+            <p class="govuk-body app-wrap-anywhere">
+              Ausgewählt:
+              <a class="govuk-link" href="/documents/{{ .ID }}">{{ .Filename }}</a> (PDF,
+              {{ .Size }}). Ohne neue Auswahl wird diese Datei beibehalten.
+            </p>
+          {{ end }}
+        {{ end }}
+        <div class="govuk-button-group">
+          <button class="govuk-button" data-module="govuk-button" type="submit">
+            {{ if .Publication }}
+              Weiter zur Prüfung
+            {{ else if .Inviting }}
+              Einladung senden
+            {{ else }}
+              Änderungen speichern
+            {{ end }}</button
+          ><a class="govuk-link" href="/verwaltung/{{ .Section }}">Abbrechen</a>
+        </div>
+      </form>
+      {{ with .Person }}
+        {{ if and .UserID (not .Confirmed) }}
+          <form action="/verwaltung/mitglieder/{{ .ID }}/einladen" method="post">
+            <input type="hidden" name="csrf" value="{{ $csrf }}" /><button
+              class="govuk-button govuk-button--secondary"
+              data-module="govuk-button"
+              type="submit"
+            >
+              Einladung erneut senden
+            </button>
+          </form>
+        {{ end }}
+      {{ end }}
+    {{ end }}
+
+    {{ if eq .View "review" }}
+      {{ with .Publication }}
+        <p class="govuk-body">
+          Prüfe die Angaben und die Datei. Erst mit „Veröffentlichen“ wird das Dokument auf der
+          Website sichtbar.
+        </p>
+        <dl class="govuk-summary-list">
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">Sitzungsdatum</dt>
+            <dd class="govuk-summary-list__value">{{ .DateLabel }}</dd>
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="/verwaltung/sitzungen/{{ .ID }}#date-day"
+                >Ändern<span class="govuk-visually-hidden">: Sitzungsdatum</span></a
+              >
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">Sitzungsnummer</dt>
+            <dd class="govuk-summary-list__value">{{ .Number }}</dd>
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="/verwaltung/sitzungen/{{ .ID }}#number"
+                >Ändern<span class="govuk-visually-hidden">: Sitzungsnummer</span></a
+              >
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">Dokumentart</dt>
+            <dd class="govuk-summary-list__value">{{ .KindLabel }}</dd>
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="/verwaltung/sitzungen/{{ .ID }}#kind"
+                >Ändern<span class="govuk-visually-hidden">: Dokumentart</span></a
+              >
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">Datei</dt>
+            <dd class="govuk-summary-list__value app-wrap-anywhere">
+              <a class="govuk-link" href="/documents/{{ .ID }}">{{ .Filename }}</a> (PDF,
+              {{ .Size }})
+            </dd>
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="/verwaltung/sitzungen/{{ .ID }}#file"
+                >Ändern<span class="govuk-visually-hidden">: Datei</span></a
+              >
+            </dd>
+          </div>
+        </dl>
+      {{ end }}
+      <form id="admin-form" action="{{ .Action }}" method="post" tabindex="-1">
+        <input type="hidden" name="csrf" value="{{ $csrf }}" />
+        <div class="govuk-button-group">
+          <button class="govuk-button" data-module="govuk-button" type="submit">
+            Veröffentlichen</button
+          ><a class="govuk-link" href="/verwaltung/sitzungen/{{ .Publication.ID }}"
+            >Angaben bearbeiten</a
+          >
+        </div>
+      </form>
+    {{ end }}
+  {{ end }}
+
+{{ end }}
+
+{{ define "password-reset-form" }}
+  <p class="govuk-body app-wrap-anywhere">
+    Soll ein Link zum Zurücksetzen des Passworts an
+    <strong>{{ .Admin.User.Email }}</strong> gesendet werden?
+  </p>
+  <p class="govuk-body">
+    Das bisherige Passwort bleibt gültig, bis die Person ein neues Passwort festlegt.
+  </p>
+  <form action="/verwaltung/benutzer/{{ .Admin.User.ID }}/passwort-zuruecksetzen" method="post">
+    <input type="hidden" name="csrf" value="{{ .CSRF }}" />
+    <div class="govuk-button-group">
+      <button class="govuk-button" data-module="govuk-button" type="submit">
+        Link zum Zurücksetzen senden
+      </button>
+      <a class="govuk-link" data-dialog-cancel href="/verwaltung/benutzer/{{ .Admin.User.ID }}"
+        >Abbrechen</a
+      >
     </div>
-    {{else if eq .Kind "select"}}
-    <select class="govuk-select {{if .Error}}govuk-select--error{{end}}" id="{{.ID}}" name="{{.ID}}" {{if or .Hint .Error}}aria-describedby="{{.ID}}-hint{{if .Error}} {{.ID}}-error{{end}}"{{end}}>{{range .Options}}<option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>{{end}}</select>
-    {{else if eq .Kind "file"}}<div class="govuk-file-upload-wrapper" data-module="govuk-file-upload"><input class="govuk-file-upload" id="{{.ID}}" name="{{.ID}}" type="file" accept="application/pdf,.pdf" aria-describedby="{{.ID}}-hint{{if .Error}} {{.ID}}-error{{end}}"></div>
-    {{else}}<input class="govuk-input {{if .Error}}govuk-input--error{{end}}" id="{{.ID}}" name="{{.ID}}" type="{{.Kind}}" value="{{.Value}}" {{if or .Hint .Error}}aria-describedby="{{if .Hint}}{{.ID}}-hint{{end}}{{if .Error}} {{.ID}}-error{{end}}"{{end}} {{if .Error}}aria-invalid="true"{{end}}>{{end}}
-    {{end}}
-  </div>
-  {{end}}
-  {{with .Publication}}{{if .Data}}<p class="govuk-body app-wrap-anywhere">Ausgewählt: <a class="govuk-link" href="/documents/{{.ID}}">{{.Filename}}</a> (PDF, {{.Size}}). Ohne neue Auswahl wird diese Datei beibehalten.</p>{{end}}{{end}}
-  <div class="govuk-button-group"><button class="govuk-button" data-module="govuk-button" type="submit">{{if .Publication}}Weiter zur Prüfung{{else if .Inviting}}Einladung senden{{else}}Änderungen speichern{{end}}</button><a class="govuk-link" href="/verwaltung/{{.Section}}">Abbrechen</a></div>
-</form>
-{{with .Person}}{{if and .UserID (not .Confirmed)}}<form action="/verwaltung/mitglieder/{{.ID}}/einladen" method="post"><input type="hidden" name="csrf" value="{{$csrf}}"><button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="submit">Einladung erneut senden</button></form>{{end}}{{end}}
-{{end}}
+  </form>
+{{ end }}
 
-{{if eq .View "review"}}
-{{with .Publication}}
-<p class="govuk-body">Prüfe die Angaben und die Datei. Erst mit „Veröffentlichen“ wird das Dokument auf der Website sichtbar.</p>
-<dl class="govuk-summary-list">
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Sitzungsdatum</dt><dd class="govuk-summary-list__value">{{.DateLabel}}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#date-day">Ändern<span class="govuk-visually-hidden">: Sitzungsdatum</span></a></dd></div>
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Sitzungsnummer</dt><dd class="govuk-summary-list__value">{{.Number}}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#number">Ändern<span class="govuk-visually-hidden">: Sitzungsnummer</span></a></dd></div>
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Dokumentart</dt><dd class="govuk-summary-list__value">{{.KindLabel}}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#kind">Ändern<span class="govuk-visually-hidden">: Dokumentart</span></a></dd></div>
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Datei</dt><dd class="govuk-summary-list__value app-wrap-anywhere"><a class="govuk-link" href="/documents/{{.ID}}">{{.Filename}}</a> (PDF, {{.Size}})</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#file">Ändern<span class="govuk-visually-hidden">: Datei</span></a></dd></div>
-</dl>
-{{end}}
-<form id="admin-form" action="{{.Action}}" method="post" tabindex="-1"><input type="hidden" name="csrf" value="{{$csrf}}"><div class="govuk-button-group"><button class="govuk-button" data-module="govuk-button" type="submit">Veröffentlichen</button><a class="govuk-link" href="/verwaltung/sitzungen/{{.Publication.ID}}">Angaben bearbeiten</a></div></form>
-{{end}}
-{{end}}
-
-{{end}}
-
-{{define "password-reset-form"}}
-<p class="govuk-body app-wrap-anywhere">Soll ein Link zum Zurücksetzen des Passworts an <strong>{{.Admin.User.Email}}</strong> gesendet werden?</p>
-<p class="govuk-body">Das bisherige Passwort bleibt gültig, bis die Person ein neues Passwort festlegt.</p>
-<form action="/verwaltung/benutzer/{{.Admin.User.ID}}/passwort-zuruecksetzen" method="post">
-  <input type="hidden" name="csrf" value="{{.CSRF}}">
-  <div class="govuk-button-group">
-    <button class="govuk-button" data-module="govuk-button" type="submit">Link zum Zurücksetzen senden</button>
-    <a class="govuk-link" data-dialog-cancel href="/verwaltung/benutzer/{{.Admin.User.ID}}">Abbrechen</a>
-  </div>
-</form>
-{{end}}
-
-{{define "email-status"}}<strong class="govuk-tag {{if .Verified}}govuk-tag--green{{else}}govuk-tag--grey{{end}}">{{if .Verified}}Bestätigt{{else}}Nicht bestätigt{{end}}</strong>{{end}}
+{{ define "email-status" }}
+  <strong class="govuk-tag {{ if .Verified }}govuk-tag--green{{ else }}govuk-tag--grey{{ end }}"
+    >{{ if .Verified }}Bestätigt{{ else }}Nicht bestätigt{{ end }}</strong
+  >
+{{ end }}

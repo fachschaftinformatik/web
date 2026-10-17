@@ -156,7 +156,7 @@ func TestMasterDataTaskListReflectsSavedEntries(t *testing.T) {
 			t.Fatal("missing task list")
 		}
 		for _, id := range []string{"identitaet"} {
-			if !strings.Contains(body, `id="stammdaten-`+id+`-status">Vollständig`) {
+			if !htmlContains(body, `id="stammdaten-`+id+`-status">Vollständig`) {
 				t.Fatalf("%s should be complete", id)
 			}
 		}
@@ -167,11 +167,11 @@ func TestMasterDataTaskListReflectsSavedEntries(t *testing.T) {
 			} else {
 				marker += "Vollständig"
 			}
-			if !strings.Contains(body, marker) {
+			if !htmlContains(body, marker) {
 				t.Fatalf("incorrect saved completeness for %s", id)
 			}
 		}
-		if incomplete && (!strings.Contains(body, "Fehlend oder ungültig: Funktion für den Vorsitz") || !strings.Contains(body, "Soziale Kanäle, Wahlen und Selbstverwaltung") || !strings.Contains(body, "Fehlend oder ungültig: Satzungen und Ordnungen")) {
+		if incomplete && (!htmlContains(body, "Fehlend oder ungültig: Funktion für den Vorsitz") || !htmlContains(body, "Soziale Kanäle, Wahlen und Selbstverwaltung") || !htmlContains(body, "Fehlend oder ungültig: Satzungen und Ordnungen")) {
 			t.Fatal("missing entries are not identified")
 		}
 	}

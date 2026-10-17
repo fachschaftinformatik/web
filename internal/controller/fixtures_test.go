@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -19,6 +20,14 @@ import (
 	"github.com/fachschaftinformatik/web/internal/model/users"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// htmlContains keeps markup assertions independent of template indentation.
+func htmlContains(body, snippet string) bool {
+	pattern := regexp.QuoteMeta(snippet)
+	pattern = strings.ReplaceAll(pattern, " ", `\s+`)
+	pattern = strings.ReplaceAll(pattern, ">", `\s*>\s*`)
+	return regexp.MustCompile(pattern).MatchString(body)
+}
 
 // testApplication always uses the same migrated SQLite runtime as production.
 func testApplication(t *testing.T, records ...users.User) (*Handler, *sql.DB) {

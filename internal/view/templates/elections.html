@@ -1,7 +1,17 @@
-{{define "sidebar"}}{{end}}
-{{define "content"}}
-<p class="govuk-body">Mit deiner Stimme entscheidest du mit, wer deine Interessen in der Fachschaftsvertretung und im Studierendenparlament vertritt.</p>
-<h2 class="govuk-heading-m">Wählen gehen</h2>
-<p class="govuk-body">Wann und wie du wählen kannst, steht im Wahlausschreiben zur jeweiligen Wahl. Dort findest du auch die Fristen und Informationen zu den Kandidaturen.</p>
-<ul class="govuk-list govuk-list--bullet">{{range .Organization.ElectionLinks}}<li><a class="govuk-link" href="{{.URL}}">{{.Title}}</a></li>{{end}}</ul>
-{{end}}
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  <p class="govuk-body">
+    Mit deiner Stimme entscheidest du mit, wer deine Interessen in der Fachschaftsvertretung und im
+    Studierendenparlament vertritt.
+  </p>
+  <h2 class="govuk-heading-m">Wählen gehen</h2>
+  <p class="govuk-body">
+    Wann und wie du wählen kannst, steht im Wahlausschreiben zur jeweiligen Wahl. Dort findest du
+    auch die Fristen und Informationen zu den Kandidaturen.
+  </p>
+  <ul class="govuk-list govuk-list--bullet">
+    {{ range .Organization.ElectionLinks }}
+      <li><a class="govuk-link" href="{{ .URL }}">{{ .Title }}</a></li>
+    {{ end }}
+  </ul>
+{{ end }}

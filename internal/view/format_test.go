@@ -31,7 +31,7 @@ func TestForumLiteralTextEscaping(t *testing.T) {
 		forumTestElement(t, doc, "li", "id", "comment-2"),
 	} {
 		paragraph := forumTestElement(t, node, "p", "class", "govuk-body")
-		if got := forumTestText(paragraph); got != decoded {
+		if got := strings.Join(strings.Fields(forumTestText(paragraph)), " "); got != decoded {
 			t.Fatalf("legacy text = %q, want %q", got, decoded)
 		}
 		forumTestElement(t, paragraph, "a", "href", "https://example.org/?a=1&b=2")

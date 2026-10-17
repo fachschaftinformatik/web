@@ -1,3 +1,5 @@
-{{define "assignment-summary"}}
-<ul class="govuk-list govuk-!-margin-bottom-0">{{range assignmentSummary .}}<li>{{.}}</li>{{end}}</ul>
-{{end}}
+{{ define "assignment-summary" }}
+  <ul class="govuk-list govuk-!-margin-bottom-0">
+    {{ range assignmentSummary . }}<li>{{ . }}</li>{{ end }}
+  </ul>
+{{ end }}

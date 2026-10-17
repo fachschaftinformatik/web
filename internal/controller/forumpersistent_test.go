@@ -160,7 +160,7 @@ func TestPersistentForumRequests(t *testing.T) {
 			}
 			w := request("POST", path, url.Values{"text": {text}}, 1, c.Comment, postID, id)
 			body := w.Body.String()
-			if w.Code != 422 || !strings.HasPrefix(w.Header().Get("Content-Type"), "text/html") || !strings.Contains(body, "<title>Fehler: Kommentarprüfung") || !strings.Contains(body, `href="#`+anchor+`"`) || strings.Contains(body, "<script>unerlaubt()") {
+			if w.Code != 422 || !strings.HasPrefix(w.Header().Get("Content-Type"), "text/html") || !htmlContains(body, "<title>Fehler: Kommentarprüfung") || !strings.Contains(body, `href="#`+anchor+`"`) || strings.Contains(body, "<script>unerlaubt()") {
 				t.Fatalf("invalid comment recovery: %d %s", w.Code, body)
 			}
 			doc, err := xhtml.Parse(strings.NewReader(body))
@@ -263,7 +263,11 @@ func TestPersistentForumRequests(t *testing.T) {
 			postNode := forumTestElement(t, doc, "article", "aria-label", "Beitrag")
 			shownPost := forumTestElement(t, postNode, "p", "class", "govuk-body")
 			for _, node := range []*xhtml.Node{shownComment, editComment, shownPost} {
-				if got := forumTestText(node); got != text {
+				got := forumTestText(node)
+				if node.Data == "p" {
+					got = strings.Join(strings.Fields(got), " ")
+				}
+				if got != text {
 					t.Fatalf("%s text = %q, want %q", node.Data, got, text)
 				}
 			}
