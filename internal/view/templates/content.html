@@ -3,7 +3,7 @@
 <p class="govuk-body-l">Termine und Protokolle der Fachschaftsvertretung Informatik.</p>
 <h2 class="govuk-heading-m">Nächste Sitzung</h2>
 {{with .Meetings.Next}}<p class="govuk-body">{{.Number}}. Sitzung am {{.DateLabel}}.</p><ul class="govuk-list">{{range .Documents}}<li><a class="govuk-link" href="{{.URL}}">{{.Label}}</a> (PDF, {{.Size}})</li>{{end}}</ul>{{else}}<p class="govuk-body">Noch kein neuer Sitzungstermin hinterlegt.</p>{{end}}
-<p class="govuk-body">Du möchtest ein Thema einbringen? <a class="govuk-link" href="mailto:kontakt@fachschaftinformatik.de">Schreib uns</a>.</p>
+<p class="govuk-body">Du möchtest ein Thema einbringen? <a class="govuk-link" href="mailto:{{.Organization.ContactEmail}}">Schreib uns</a>.</p>
 <h2 class="govuk-heading-m">Sitzungsarchiv</h2>
 <nav aria-label="Sitzungsjahre">
   <ul class="govuk-list app-year-links">

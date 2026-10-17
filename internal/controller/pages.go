@@ -55,9 +55,14 @@ func (c *Handler) Legal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	legal := view.LegalPage{Kind: kind}
+	org, err := c.organization.Read(r.Context())
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
+	legal.Updated = org.LegalUpdated
 	for _, role := range c.people.Responsibilities("board") {
-		switch strings.ToLower(strings.TrimSpace(role.Title)) {
-		case "vorsitz", "vorsitzende", "vorsitzender":
+		if role.ID == org.ChairResponsibility {
 			for _, person := range c.people.People() {
 				if slices.Contains(role.MemberIDs, person.ID) {
 					legal.Chair = append(legal.Chair, person)

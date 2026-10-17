@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/form"
 	"github.com/fachschaftinformatik/web/internal/id"
 	"github.com/fachschaftinformatik/web/internal/model/meetings"
 )
@@ -334,55 +335,8 @@ func (s *Service) SaveDraft(ctx context.Context, userID int64, submission Submis
 	return result, nil
 }
 
-type DateInput struct {
-	Day, Month, Year string
-	Invalid          map[string]bool
-}
+type DateInput form.DateInput
 
 func (d *DateInput) Parse() (string, string) {
-	d.Invalid = map[string]bool{}
-	var missing []string
-	for _, p := range []struct{ id, label, value string }{{"day", "Tag", d.Day}, {"month", "Monat", d.Month}, {"year", "Jahr", d.Year}} {
-		if p.value == "" {
-			missing = append(missing, p.label)
-			d.Invalid[p.id] = true
-		}
-	}
-	if len(missing) == 3 {
-		return "", "Gib das Prüfungsdatum ein."
-	}
-	if len(missing) > 0 {
-		return "", "Ergänze beim Prüfungsdatum: " + strings.Join(missing, " und ") + "."
-	}
-	day, dayErr := strconv.Atoi(d.Day)
-	month, monthErr := strconv.Atoi(d.Month)
-	if monthErr != nil {
-		for i, names := range [][]string{{"januar", "jan"}, {"februar", "feb"}, {"märz", "maerz", "mär", "mrz"}, {"april", "apr"}, {"mai"}, {"juni", "jun"}, {"juli", "jul"}, {"august", "aug"}, {"september", "sep", "sept"}, {"oktober", "okt"}, {"november", "nov"}, {"dezember", "dez"}} {
-			for _, name := range names {
-				if strings.TrimSuffix(strings.ToLower(d.Month), ".") == name {
-					month = i + 1
-					monthErr = nil
-				}
-			}
-		}
-	}
-	year, yearErr := strconv.Atoi(d.Year)
-	if dayErr != nil || day < 1 || day > 31 {
-		d.Invalid["day"] = true
-	}
-	if monthErr != nil || month < 1 || month > 12 {
-		d.Invalid["month"] = true
-	}
-	if yearErr != nil || len(d.Year) != 4 {
-		d.Invalid["year"] = true
-		return "", "Gib beim Prüfungsdatum ein vierstelliges Jahr ein."
-	}
-	if len(d.Invalid) > 0 {
-		return "", "Gib ein gültiges Prüfungsdatum ein."
-	}
-	date, err := time.Parse("2006-01-02", fmt.Sprintf("%04d-%02d-%02d", year, month, day))
-	if err != nil {
-		return "", "Gib ein gültiges Prüfungsdatum ein."
-	}
-	return date.Format("2006-01-02"), ""
+	return (*form.DateInput)(d).Parse("Prüfungsdatum")
 }

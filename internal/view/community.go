@@ -17,13 +17,13 @@ type MeetingsPage struct {
 }
 
 type ContentEditor struct {
-	Draft                      EditorDraft
-	Errors                     []content.FieldError
-	Editing, Unavailable       bool
-	Action, BackURL, SourceURL string
-	RichBody                   string
-	Event, Announcement        bool
-	CoverURL, CoverAlt         string
+	Draft                EditorDraft
+	Errors               []content.FieldError
+	Editing, Unavailable bool
+	Action, BackURL      string
+	RichBody             string
+	Event, Announcement  bool
+	CoverURL, CoverAlt   string
 }
 
 func (e ContentEditor) RichHTML() template.HTML {

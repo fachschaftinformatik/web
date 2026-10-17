@@ -27,18 +27,6 @@ type Group struct {
 	Sections  []TeamSection
 }
 
-func Groups() []Group {
-	sections := Team()
-	return []Group{
-		{ID: "board", Title: "Vorstand", Sections: sections[:1]},
-		{ID: "departments", Title: "Referate", Sections: sections[1:6]},
-		{ID: "project", Title: "Projektstellen", Sections: []TeamSection{
-			{Title: "Öffentlichkeit", Members: sections[6].Members[:1]},
-			{Title: "Infrastruktur", Members: sections[6].Members[1:]},
-		}},
-	}
-}
-
 // SharedEmail avoids repeating a responsibility's shared address for each member.
 func (s TeamSection) SharedEmail() string {
 	if len(s.Members) < 2 || s.Members[0].Email == "" {
@@ -51,42 +39,6 @@ func (s TeamSection) SharedEmail() string {
 		}
 	}
 	return email
-}
-
-// Team supplies the initial assignments when a database is first created.
-func Team() []TeamSection {
-	return []TeamSection{
-		{"Vorstand", "Gewählte Mitglieder", []Member{
-			{"Toni Gudaqi", "TG", "Vorsitz", "vorsitz.informatik@fsv-whs.de"},
-			{"Malte Gaelings", "MG", "Stellvertretender Vorsitz", "stellv.vorsitz.informatik@fsv-whs.de"},
-			{"Leon Pearse", "LP", "Finanzen", "finanzen.informatik@fsv-whs.de"},
-		}},
-		{"Kultur", "Gewählte Mitglieder", []Member{
-			{"Joel Enrico Soriano", "JS", "Kultur", "kultur.informatik@fsv-whs.de"},
-			{"Carlo Niermann", "CN", "Kultur", "kultur.informatik@fsv-whs.de"},
-			{"Leon Weihrauch", "LW", "Kultur", "kultur.informatik@fsv-whs.de"},
-		}},
-		{"Infrastruktur", "Gewählte Mitglieder", []Member{
-			{"Malte Gaelings", "MG", "Infrastruktur", "edv.informatik@fsv-whs.de"},
-			{"Birhat Alessandro Moffa", "BM", "Infrastruktur", "edv.informatik@fsv-whs.de"},
-			{"Zafer Elemen", "ZE", "Infrastruktur", "edv.informatik@fsv-whs.de"},
-		}},
-		{"Öffentlichkeit", "Gewählte Mitglieder", []Member{
-			{"Toni Gudaqi", "TG", "Öffentlichkeit", "oeffentlichkeit.informatik@fsv-whs.de"},
-		}},
-		{"Beschaffung", "Gewählte Mitglieder", []Member{
-			{"Leon Weihrauch", "LW", "Beschaffung", "beschaffung.informatik@fsv-whs.de"},
-			{"Marcel Roith", "MR", "Beschaffung", "beschaffung.informatik@fsv-whs.de"},
-			{"Birhat Alessandro Moffa", "BM", "Beschaffung", "beschaffung.informatik@fsv-whs.de"},
-		}},
-		{"Sport", "Gewählte Mitglieder", []Member{
-			{"Caner Bayram", "CB", "Sport", ""},
-		}},
-		{"Projektstellen", "Nicht gewählte Mitglieder", []Member{
-			{"Kubilay Cakmakkaya", "KC", "Öffentlichkeit", ""},
-			{"Francesco La Camera", "FL", "Infrastruktur", ""},
-		}},
-	}
 }
 
 type Person struct {
@@ -107,36 +59,6 @@ type Store struct {
 	mu               sync.RWMutex
 	people           []Person
 	responsibilities []Responsibility
-}
-
-func initialState() *Store {
-	s := &Store{}
-	ids := map[string]string{}
-	for _, group := range Groups() {
-		sections := group.Sections
-		if group.ID == "board" {
-			sections = nil
-			for _, section := range group.Sections {
-				for _, member := range section.Members {
-					sections = append(sections, TeamSection{Title: member.Role, Members: []Member{member}})
-				}
-			}
-		}
-		for _, section := range sections {
-			r := Responsibility{ID: fmt.Sprint(len(s.responsibilities) + 1), Group: group.ID, Title: section.Title, Email: section.SharedEmail()}
-			for _, member := range section.Members {
-				id, ok := ids[member.Name]
-				if !ok {
-					id = fmt.Sprint(len(s.people) + 1)
-					ids[member.Name] = id
-					s.people = append(s.people, Person{ID: id, Name: member.Name, Email: member.Email})
-				}
-				r.MemberIDs = append(r.MemberIDs, id)
-			}
-			s.responsibilities = append(s.responsibilities, r)
-		}
-	}
-	return s
 }
 
 func (s *Store) People() []Person {

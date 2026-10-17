@@ -74,7 +74,7 @@
 {{end}}
 
 {{define "results"}}
-<section id="archive-results" class="app-archive-results" aria-labelledby="results-heading" data-document-title="{{if .DocumentTitle}}{{.DocumentTitle}}{{else}}Altklausuren{{end}} · fsInformatik">
+<section id="archive-results" class="app-archive-results" aria-labelledby="results-heading" data-document-title="{{if .DocumentTitle}}{{.DocumentTitle}}{{else}}Altklausuren{{end}} · {{.Organization.Name}}">
   <h2 class="govuk-heading-m" id="results-heading" tabindex="-1">{{if eq .Archive.Total 0}}Keine Module gefunden{{else if eq .Archive.Total 1}}1 Modul gefunden{{else}}{{.Archive.Total}} Module gefunden{{end}}</h2>
   {{if gt .Archive.Pages 1}}<p class="govuk-body-s">Seite {{.Archive.Page}} von {{.Archive.Pages}}</p>{{end}}
   {{if .Archive.Modules}}
@@ -96,7 +96,6 @@
       <tr class="govuk-table__row">
         <th class="govuk-table__header" scope="row">
           {{$title}}
-          {{range .Programs}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">{{.}}</p>{{end}}
         </th>
         <td class="govuk-table__cell">
           {{with index .Exams 0}}<a class="govuk-link" href="{{.URL}}">Reko vom {{.Date}}<span class="govuk-visually-hidden"> für {{$title}}</span></a> (PDF, {{.Size}}){{end}}

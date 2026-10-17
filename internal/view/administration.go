@@ -28,6 +28,7 @@ func ResponsibilityKind(group string) string {
 type AdminLink struct{ ID, Label, URL, Group string }
 
 var AdminLinks = []AdminLink{
+	{"stammdaten", "Stammdaten", "/verwaltung/stammdaten", "Organisation"},
 	{"mitglieder", "Mitglieder", "/verwaltung/mitglieder", "Organisation"},
 	{"funktionen", "Funktionen", "/verwaltung/funktionen", "Organisation"},
 	{"sitzungen", "Sitzungen", "/verwaltung/sitzungen", "Organisation"},
@@ -36,6 +37,7 @@ var AdminLinks = []AdminLink{
 }
 
 type AdminPage struct {
+	MasterData                                                   []MasterDataTask
 	CanResendConfirmation                                        bool
 	Person                                                       *Person
 	Inviting                                                     bool

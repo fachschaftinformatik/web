@@ -18,6 +18,7 @@ func TestLegalChairFollowsMemberAssignments(t *testing.T) {
 	person := persons[len(persons)-1]
 	for _, role := range store.Responsibilities("board") {
 		if role.Title == "Vorsitz" {
+			role.Title = "Sprecherkreis"
 			role.MemberIDs = []string{person.ID}
 			if errors := store.SaveResponsibility(role); len(errors) != 0 {
 				t.Fatal(errors)

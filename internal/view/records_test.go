@@ -15,7 +15,7 @@ import (
 
 func TestEventPresentationKeepsDateAndPublicationDistinct(t *testing.T) {
 	e := Event(events.Event{ID: "42", EventDate: "2026-11-27", SourcePublishedAt: "2025-11-07T12:00:00Z", SourceStatus: "cancelled", CoverKey: "calendar/covers/42.jpg"})
-	if e.EventLabel() != "27. November 2026" || e.SourceDateLabel() != "7. November 2025" || e.StatusLabel() != "Abgesagt" {
+	if e.EventLabel() != "27.11.2026" || e.SourceDateLabel() != "07.11.2025" || e.StatusLabel() != "Abgesagt" {
 		t.Fatalf("incorrect event presentation: %s, %s, %s", e.EventLabel(), e.SourceDateLabel(), e.StatusLabel())
 	}
 	if e.CoverURL() != "/community/veranstaltungen/42/cover" || e.FullImageURL() != e.CoverURL() || e.GalleryURL() != "" {

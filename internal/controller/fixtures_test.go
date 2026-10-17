@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/fachschaftinformatik/web/internal/datetime"
 	"html"
 	"io"
 	"log"
@@ -87,6 +88,13 @@ func seedPublicContent(t *testing.T, db *sql.DB) {
 		}
 	}
 	for _, thread := range threads {
+		if len(thread.EventDate) == 16 {
+			var err error
+			thread.EventDate, err = datetime.LocalTimestamp(thread.EventDate)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 		exec(`UPDATE discussion_posts SET event_date=?,location=? WHERE id=?`, thread.EventDate, thread.Location, thread.ID)
 		for _, comment := range thread.Replies {
 			exec(`INSERT INTO discussion_comments(id,post_id,user_id,text,created_at,updated_at) VALUES(?,?,900,?,?,?)`, comment.ID, thread.ID, html.UnescapeString(comment.Text), comment.Created, comment.Updated)
@@ -104,9 +112,9 @@ UPDATE modules SET alias='SQL' WHERE id=11;`)
 		exec(`INSERT INTO archive(id,group_id,user_id,module_id,version,exam_date,access_key,mime_type,nbytes,checksum) VALUES(?,?,900,?,?, '2026-01-01',?, 'application/pdf',5,'test')`, 100+i, 100+i, 10+i, version, fmt.Sprint(i))
 	}
 	album := "140125680309370881"
-	exec(`INSERT INTO events(id,title,created_at) VALUES(?,'LAN Party 2025','2025-01-01')`, album)
+	exec(`INSERT INTO events(id,title,created_at) VALUES(?,'LAN Party 2025','2025-01-01T00:00:00Z')`, album)
 	for _, id := range []string{"140126343856652289", "140126331227602945", "140126318313340929", "140126304396640257", "140126291885031425", "140126279717355521"} {
-		exec(`INSERT INTO media(id,event_id,user_id,title,description,access_key,mime_type,nbytes,created_at) VALUES(?,?,900,'Foto','Teilnehmende',?,'image/jpeg',5,'2025-01-01')`, id, album, id)
+		exec(`INSERT INTO media(id,event_id,user_id,title,description,access_key,mime_type,nbytes,created_at) VALUES(?,?,900,'Foto','Teilnehmende',?,'image/jpeg',5,'2025-01-01T00:00:00Z')`, id, album, id)
 	}
 }
 

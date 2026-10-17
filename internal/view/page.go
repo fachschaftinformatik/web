@@ -1,8 +1,23 @@
 package view
 
 import (
+	"time"
+
+	"github.com/fachschaftinformatik/web/internal/model/organization"
 	"github.com/fachschaftinformatik/web/internal/model/people"
 )
+
+func (p Page) LegalUpdatedLabel() string {
+	value := p.Legal.Updated
+	if value == "" {
+		value = p.Organization.LegalUpdated
+	}
+	d, err := time.Parse(time.DateOnly, value)
+	if err != nil {
+		return ""
+	}
+	return dateLabel(d.Format(time.RFC3339))
+}
 
 type Breadcrumb struct {
 	Title, URL string
@@ -77,39 +92,42 @@ func (p Page) Breadcrumbs() []Breadcrumb {
 const EventsURL = "/community/veranstaltungen"
 
 type LegalPage struct {
-	Kind  string
-	Chair []people.Person
+	Updated string
+	Kind    string
+	Chair   []people.Person
 }
 
 const NewsURL = "/community/neuigkeiten"
 
 type Page struct {
-	Title, Active string
-	DocumentTitle string
-	Message       string
-	Legal         LegalPage
-	Community     bool
-	Fachschaft    bool
-	Team          []people.Group
-	Archive       ArchivePage
-	Images        ImagesPage
-	Home          HomePage
-	Login         LoginPage
-	Register      RegisterPage
-	Forgot        ForgotPage
-	Meetings      MeetingsPage
-	Forum         ForumPage
-	Events        EventsPage
-	Editor        *ContentEditor
-	SignedIn      bool
-	CanAdmin      bool
-	Token         TokenPage
-	Upload        UploadPage
-	Request       *RequestPage
-	RequestList   RequestListPage
-	Invite        InvitationPage
-	UserID        int64
-	Role          string
-	CSRF          string
-	Admin         *AdminPage
+	Organization                                                    organization.Details
+	RegistrationDomains, AccountDomains, ChairEmail, PublicityEmail string
+	Title, Active                                                   string
+	DocumentTitle                                                   string
+	Message                                                         string
+	Legal                                                           LegalPage
+	Community                                                       bool
+	Fachschaft                                                      bool
+	Team                                                            []people.Group
+	Archive                                                         ArchivePage
+	Images                                                          ImagesPage
+	Home                                                            HomePage
+	Login                                                           LoginPage
+	Register                                                        RegisterPage
+	Forgot                                                          ForgotPage
+	Meetings                                                        MeetingsPage
+	Forum                                                           ForumPage
+	Events                                                          EventsPage
+	Editor                                                          *ContentEditor
+	SignedIn                                                        bool
+	CanAdmin                                                        bool
+	Token                                                           TokenPage
+	Upload                                                          UploadPage
+	Request                                                         *RequestPage
+	RequestList                                                     RequestListPage
+	Invite                                                          InvitationPage
+	UserID                                                          int64
+	Role                                                            string
+	CSRF                                                            string
+	Admin                                                           *AdminPage
 }

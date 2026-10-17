@@ -23,7 +23,7 @@ func TestResendAccountConfirmationAndMemberInvitation(t *testing.T) {
 	if _, err := db.Exec(`UPDATE people SET user_id=44 WHERE id='1'`); err != nil {
 		t.Fatal(err)
 	}
-	identity := users.NewService(db, "https://example.org")
+	identity := users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}})
 	session, err := identity.CreateSession(ctx, 42)
 	if err != nil {
 		t.Fatal(err)

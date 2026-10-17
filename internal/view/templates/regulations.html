@@ -1,13 +1,6 @@
 {{define "sidebar"}}{{end}}
 {{define "content"}}
-<p class="govuk-body">Satzungen und Ordnungen legen fest, wie die studentische Selbstverwaltung organisiert ist und wie Entscheidungen getroffen werden.</p>
-<h2 class="govuk-heading-m">Satzung der Studierendenschaft</h2>
-<p class="govuk-body">Die Satzung beschreibt die Aufgaben und die Organisation der Studierendenschaft der Westfälischen Hochschule. Dazu gehören das Studierendenparlament, der AStA und die Fachschaften.</p>
-<p class="govuk-body"><a class="govuk-link" href="https://www.w-hs.de/fileadmin/Oeffentlich/Praesidium/Amtsblatt/Amtliche_Mitteilung_2025/AM_2025_20_vom_27062025.pdf">Satzung der Studierendenschaft vom 23. Mai 2025 (PDF)</a>.</p>
-<h2 class="govuk-heading-m" id="wahlordnung">Wahlordnung</h2>
-<p class="govuk-body">Die Wahlordnung regelt das Verfahren für die Wahlen zum Studierendenparlament und zu den Fachschaftsvertretungen.</p>
-<p class="govuk-body"><a class="govuk-link" href="https://www.w-hs.de/fileadmin/Oeffentlich/Praesidium/Amtsblatt/Amtliche_Mitteilung_2022/Amtsblatt_2022_Nr_29_vom_25-11-2022.pdf">Wahlordnung der Studierendenschaft vom 19. Oktober 2022 (PDF, enthalten in den Amtlichen Mitteilungen Nr. 29/2022)</a>.</p>
-<h2 class="govuk-heading-m">Veröffentlichungen und Rückfragen</h2>
-<p class="govuk-body">Die Dokumente und weitere Veröffentlichungen findest du in den <a class="govuk-link" href="https://www.w-hs.de/amtsblatt/">Amtlichen Mitteilungen der Westfälischen Hochschule</a>.</p>
-<p class="govuk-body">Bei Fragen zu den Satzungen und Ordnungen kannst du dich an den <a class="govuk-link" href="https://www.stupa-wh.de/ausschuesse">Satzungsausschuss des Studierendenparlaments</a> oder an <a class="govuk-link" href="/team#team-board">unseren Vorstand</a> wenden.</p>
+<p class="govuk-body">Hier findest du die Satzung, Wahlordnung und weitere Veröffentlichungen der Studierendenschaft.</p>
+<ul class="govuk-list govuk-list--bullet">{{range .Organization.RegulationLinks}}<li><a class="govuk-link" href="{{.URL}}">{{.Title}}</a></li>{{end}}</ul>
+<p class="govuk-body">Bei Fragen kannst du dich an <a class="govuk-link" href="/team#team-board">unseren Vorstand</a> wenden.</p>
 {{end}}

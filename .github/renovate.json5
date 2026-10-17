@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "enabledManagers": ["bun", "gomod", "dockerfile", "docker-compose", "github-actions", "nodenv"],
+  "enabledManagers": ["bun", "gomod", "dockerfile", "docker-compose", "github-actions"],
   "timezone": "Europe/Berlin",
   "dependencyDashboard": false,
   "automerge": false,

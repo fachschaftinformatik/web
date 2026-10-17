@@ -36,7 +36,7 @@ func eventService(t *testing.T) (*Service, *sql.DB, string) {
 	(1,'admin@fsv-wh.de','Admin','unused','admin',1,1),(2,'editor@fsv-wh.de','Editor','unused','editor',1,1),
 	(3,'user@fsv-wh.de','User','unused','user',1,1),(4,'inactive@fsv-wh.de','Inactive','unused','admin',0,1),
 	(5,'unverified@fsv-wh.de','Unverified','unused','editor',1,0),(6,'deleted@fsv-wh.de','Deleted','unused','editor',1,1);
-	UPDATE users SET deleted_at='deleted' WHERE id=6;`)
+	UPDATE users SET deleted_at='2026-01-01T00:00:00Z' WHERE id=6;`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestStandaloneEventsPersistCoversAndRestrictPublishing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(e.Body, "bad()") || e.EventDate != "2027-01-30T17:00" || e.CoverWidth != 711 || e.CoverHeight != 1600 || e.LegacyPostID.Valid {
+	if strings.Contains(e.Body, "bad()") || e.EventDate != "2027-01-30T16:00:00Z" || e.CoverWidth != 711 || e.CoverHeight != 1600 || e.LegacyPostID.Valid {
 		t.Fatalf("event: %+v", e)
 	}
 	var count int
@@ -123,7 +123,7 @@ func TestStandaloneEventsPersistCoversAndRestrictPublishing(t *testing.T) {
 	if _, err := s.OpenCover(ctx, value); !errors.Is(err, ErrNotFound) {
 		t.Fatal("removed image still public")
 	}
-	if _, err := db.Exec(`UPDATE calendar_events SET deleted_at='deleted' WHERE id=?`, value); err != nil {
+	if _, err := db.Exec(`UPDATE calendar_events SET deleted_at='2026-01-01T00:00:00Z' WHERE id=?`, value); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.Lookup(ctx, value); !errors.Is(err, ErrNotFound) {

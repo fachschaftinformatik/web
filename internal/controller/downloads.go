@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
 	"io"
 	"log"
@@ -15,6 +16,31 @@ import (
 	"github.com/fachschaftinformatik/web/internal/model/gallery"
 	"github.com/fachschaftinformatik/web/internal/storage"
 )
+
+func (c *Handler) HistoricalDocument(w http.ResponseWriter, r *http.Request) {
+	object, err := c.meetings.HistoricalDocument(r.Context(), r.PathValue("file"))
+	if errors.Is(err, sql.ErrNoRows) {
+		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
+	defer object.Close()
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	if seeker, ok := object.ReadCloser.(io.ReadSeeker); ok {
+		http.ServeContent(w, r, r.PathValue("file"), time.Time{}, seeker)
+		return
+	}
+	w.Header().Set("Content-Length", strconv.FormatInt(object.Info.Size, 10))
+	if r.Method != http.MethodHead {
+		if _, err := io.CopyN(w, object, object.Info.Size); err != nil {
+			log.Printf("Historical document: %v", err)
+		}
+	}
+}
 
 func (c *Handler) Document(w http.ResponseWriter, r *http.Request) {
 	p, ok, err := c.meetings.GetWithError(r.PathValue("id"))

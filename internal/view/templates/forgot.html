@@ -20,7 +20,7 @@
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <div class="govuk-form-group {{if .Forgot.EmailError}}govuk-form-group--error{{end}}">
     <label class="govuk-label" for="email">E-Mail-Adresse</label>
-    <div class="govuk-hint" id="email-hint">Nur @studmail.w-hs.de oder @fsv-wh.de.</div>
+    <div class="govuk-hint" id="email-hint">Erlaubte E-Mail-Domains: {{.AccountDomains}}.</div>
     {{if .Forgot.EmailError}}<p class="govuk-error-message" id="email-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Forgot.EmailError}}</p>{{end}}
     <input class="govuk-input {{if .Forgot.EmailError}}govuk-input--error{{end}}" id="email" name="email" type="email" autocomplete="email" spellcheck="false" autocapitalize="none" value="{{.Forgot.Email}}" aria-describedby="email-hint{{if .Forgot.EmailError}} email-error{{end}}" {{if .Forgot.EmailError}}aria-invalid="true"{{end}}>
   </div>

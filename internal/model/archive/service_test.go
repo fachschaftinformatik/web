@@ -77,7 +77,7 @@ func TestPersistentCatalogLatestRevisionsAndFilters(t *testing.T) {
 	if module, ok := catalog.FindModule("12", Filter{}); !ok || len(module.Exams) != 0 {
 		t.Fatal("empty existing module lost its URL")
 	}
-	if _, err := db.Exec(`UPDATE programs SET deleted_at='2026-01-01' WHERE id=1`); err != nil {
+	if _, err := db.Exec(`UPDATE programs SET deleted_at='2026-01-01T00:00:00Z' WHERE id=1`); err != nil {
 		t.Fatal(err)
 	}
 	catalog, err = s.Catalog(context.Background())
@@ -104,7 +104,7 @@ func TestPersistentDownloadsRetainHistoricalKeysAndCheckMetadata(t *testing.T) {
 	if _, err := s.Open(ctx, 1, "101"); !errors.Is(err, ErrStorage) {
 		t.Fatal("mismatching storage metadata accepted")
 	}
-	if _, err := db.Exec(`UPDATE archive SET deleted_at='2026-01-01' WHERE id=100`); err != nil {
+	if _, err := db.Exec(`UPDATE archive SET deleted_at='2026-01-01T00:00:00Z' WHERE id=100`); err != nil {
 		t.Fatal(err)
 	}
 	for _, value := range []string{"100", "999", "../100", "0"} {

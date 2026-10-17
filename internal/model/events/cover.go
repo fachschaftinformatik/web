@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/fachschaftinformatik/web/internal/datetime"
 	"image"
 	"image/color"
 	"image/draw"
@@ -108,4 +109,22 @@ func validCoverKey(key string) bool {
 func parseDate(value string) (string, error) {
 	d, err := time.Parse("2.1.2006", strings.TrimSpace(value))
 	return d.Format("2006-01-02"), err
+}
+
+func schedule(d Draft) (string, error) {
+	if strings.TrimSpace(d.Date) == "" {
+		return "", nil
+	}
+	date, err := parseDate(d.Date)
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(d.Time) == "" {
+		return date, nil
+	}
+	stamp, err := datetime.LocalTimestamp(date + "T" + strings.TrimSpace(d.Time))
+	if err != nil {
+		return "", &ValidationError{Fields: []FieldError{{Field: "time", Message: "Diese Uhrzeit ist wegen der Zeitumstellung nicht eindeutig oder existiert nicht. Wähle eine andere Uhrzeit."}}}
+	}
+	return stamp, nil
 }

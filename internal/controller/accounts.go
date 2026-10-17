@@ -46,7 +46,7 @@ func (c *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		data.Forgot.Email = strings.TrimSpace(r.PostForm.Get("email"))
-		data.Forgot.EmailError = users.EmailError(data.Forgot.Email)
+		data.Forgot.EmailError = c.identity.EmailError(data.Forgot.Email)
 		if data.Forgot.EmailError != "" {
 			data.DocumentTitle = "Fehler: Passwort vergessen"
 			status = http.StatusUnprocessableEntity
@@ -141,7 +141,7 @@ func (c *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		}
 		data.Login.Email = strings.TrimSpace(r.PostForm.Get("email"))
 
-		data.Login.EmailError = users.EmailError(data.Login.Email)
+		data.Login.EmailError = c.identity.EmailError(data.Login.Email)
 		if r.PostForm.Get("password") == "" {
 			data.Login.PasswordError = "Gib dein Passwort ein."
 		}
@@ -212,7 +212,7 @@ func (c *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		if form.ProgramID != "" && !slices.ContainsFunc(form.Programs, func(p users.Program) bool { return p.ID == form.ProgramID }) {
 			form.ProgramError = "Bitte wähle deinen Studiengang aus."
 		}
-		form.NameError, form.EmailError, form.PasswordError = users.RegistrationErrors(form.Name, form.Email, r.PostForm.Get("password"))
+		form.NameError, form.EmailError, form.PasswordError = c.identity.RegistrationErrors(form.Name, form.Email, r.PostForm.Get("password"))
 		if form.NameError != "" || form.EmailError != "" || form.PasswordError != "" || form.ProgramError != "" {
 			data.DocumentTitle = "Fehler: Konto erstellen"
 			status = http.StatusUnprocessableEntity
@@ -251,7 +251,7 @@ func (c *Handler) Token(w http.ResponseWriter, r *http.Request) {
 		page.Token.Value = r.PostForm.Get("token")
 		password := r.PostForm.Get("password")
 		if kind == "reset" {
-			_, _, page.Token.Error = users.RegistrationErrors("Valid Name", "valid@studmail.w-hs.de", password)
+			page.Token.Error = users.PasswordError(password)
 		}
 		if page.Token.Error == "" {
 			err := c.identity.ConsumeToken(r.Context(), page.Token.Value, kind, password)
