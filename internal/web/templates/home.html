@@ -5,51 +5,35 @@
     <div class="app-masthead__layout">
       <div>
         <h1 class="govuk-heading-xl app-masthead__title">Deine Fachschaft Informatik</h1>
-        <p class="govuk-body app-masthead__description">Von Studierenden für Studierende an der Westfälischen Hochschule in Gelsenkirchen. Wir vertreten deine Interessen und unterstützen dich bei Fragen rund ums Informatikstudium.</p>
+        <p class="govuk-body app-masthead__description">Wir vertreten deine Interessen und helfen dir bei Fragen rund ums Informatikstudium.</p>
         <div class="govuk-button-group app-masthead__actions">
           <a class="govuk-button govuk-button--inverse govuk-button--start" href="/discussions" role="button" draggable="false" data-module="govuk-button">Zum Forum<svg class="govuk-button__start-icon" xmlns="http://www.w3.org/2000/svg" width="17.5" height="19" viewBox="0 0 33 40" aria-hidden="true" focusable="false"><path fill="currentColor" d="M0 0h13l20 20-20 20H0l20-20z"/></svg></a>
-          <a class="govuk-link govuk-link--inverse" href="/community/events">Zur Galerie</a>
+          <a class="govuk-link govuk-link--inverse" href="/community/events">Zu den Fotos</a>
         </div>
       </div>
       <div>
-        <section class="app-event-carousel" aria-label="Veranstaltungsalben">
-          <div id="event-slides">
-             {{range $index, $album := .Images.Albums}}
-             {{if .Images}}
-            {{$cover := index .Images 0}}
-            <div class="app-event-slide" data-title="{{.Title}}" {{if $index}}hidden{{end}}>
-              <a class="govuk-link govuk-link--inverse app-event-carousel__link" href="{{.URL}}"><img class="app-event-carousel__image" src="{{$cover.Source}}" width="{{$cover.Width}}" height="{{$cover.Height}}" alt="" {{if $index}}loading="lazy"{{end}}><span>{{.Title}}</span></a>
-             </div>
-             {{end}}
-             {{end}}
-          </div>
+        {{$albums := .Images.CarouselAlbums}}
+        {{if $albums}}<section class="app-event-carousel" aria-label="Veranstaltungsalben">
           <div class="app-event-carousel__controls" hidden>
-            <button class="govuk-button govuk-button--inverse app-event-carousel__button" type="button" aria-controls="event-slides" aria-label="Vorheriges Album" data-direction="-1"><span aria-hidden="true">←</span></button>
-            <span class="govuk-body-s app-event-carousel__position" role="status" aria-atomic="true">Album 1 von {{len .Images.Albums}}</span>
-            <button class="govuk-button govuk-button--inverse app-event-carousel__button" type="button" aria-controls="event-slides" aria-label="Nächstes Album" data-direction="1"><span aria-hidden="true">→</span></button>
+            <button class="app-event-carousel__button app-event-carousel__rotation" type="button" aria-controls="event-slides" aria-label="Diashow starten" data-rotation>Starten</button>
+            <button class="app-event-carousel__button" type="button" aria-controls="event-slides" aria-label="Vorheriges Album" data-direction="-1"><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m12 4-6 6 6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <div class="app-event-carousel__dots" role="group" aria-label="Album auswählen">
+              {{range $index, $album := $albums}}<button class="app-event-carousel__dot" type="button" aria-controls="event-slides" aria-label="{{.Title}} anzeigen" {{if not $index}}aria-disabled="true"{{end}} data-slide="{{$index}}"></button>{{end}}
+            </div>
+            <button class="app-event-carousel__button" type="button" aria-controls="event-slides" aria-label="Nächstes Album" data-direction="1"><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m8 4 6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <span class="govuk-visually-hidden" role="status" aria-atomic="true">1 von {{len $albums}}</span>
           </div>
-        </section>
+          <div id="event-slides">
+             {{range $index, $album := $albums}}
+            {{$cover := .CoverImage}}
+            <div class="app-event-slide" data-title="{{.Title}}" {{if $index}}hidden{{end}}>
+              <a class="govuk-link govuk-link--inverse app-event-carousel__link" href="{{.URL}}"><img class="app-event-carousel__image" src="{{$cover.Source}}" {{if $cover.Width}}width="{{$cover.Width}}" height="{{$cover.Height}}"{{end}} alt="" {{if $index}}loading="lazy"{{else}}fetchpriority="high"{{end}} decoding="async"><span class="govuk-visually-hidden">Album ansehen: {{.Title}}</span></a>
+             </div>
+              {{end}}
+          </div>
+        </section>{{end}}
       </div>
     </div>
-  </div>
-</div>
-<div class="govuk-width-container govuk-main-wrapper">
-  <div class="app-home-services">
-    <section aria-labelledby="home-archive">
-      <h2 class="govuk-heading-l" id="home-archive">Altklausuren</h2>
-      <p class="govuk-body">Finde Klausurrekonstruktionen für deine Prüfungsvorbereitung – passend zu Modul, Studiengang und Prüfungsordnung.</p>
-      <p class="govuk-body"><a class="govuk-link govuk-!-font-weight-bold" href="/archive">Altklausuren finden</a></p>
-    </section>
-    <section aria-labelledby="home-exchange">
-      <h2 class="govuk-heading-l" id="home-exchange">Austausch im Studium</h2>
-      <p class="govuk-body">Fragen zu Prüfungen oder zur Abschlussarbeit? Teile deine Erfahrungen und tausche dich mit anderen Studierenden aus.</p>
-      <p class="govuk-body"><a class="govuk-link govuk-!-font-weight-bold" href="/discussions">Zum Forum</a></p>
-    </section>
-    <section aria-labelledby="home-team">
-      <h2 class="govuk-heading-l" id="home-team">Kontakt zur Fachschaft</h2>
-      <p class="govuk-body">Du hast ein Anliegen an die Fachschaft? Finde heraus, wer sich um welches Thema kümmert und wie du uns erreichst.</p>
-      <p class="govuk-body"><a class="govuk-link govuk-!-font-weight-bold" href="/team">Ansprechperson finden</a></p>
-    </section>
   </div>
 </div>
 <div class="app-home-updates">
@@ -59,40 +43,67 @@
         <h2 class="govuk-heading-l" id="announcements">Neues aus der Fachschaft</h2>
         {{with .Home.News}}{{if .URL}}<h3 class="govuk-heading-m"><time datetime="{{.DateISO}}">{{.Date}}</time>: <a class="govuk-link" href="{{.URL}}">{{.Title}}</a></h3>
         <p class="govuk-body">{{.Summary}}</p>{{else}}<p class="govuk-body">Noch keine Neuigkeiten veröffentlicht.</p>{{end}}{{end}}
-        <p class="govuk-body"><a class="govuk-link" href="/discussions?type=news">Alle Neuigkeiten lesen</a></p>
-        <hr class="govuk-section-break govuk-section-break--l">
+        <p class="govuk-body"><a class="govuk-link" href="/community/neuigkeiten">Alle Neuigkeiten lesen</a></p>
+      </section>
+      <section class="govuk-grid-column-full govuk-!-margin-top-6" aria-labelledby="home-events">
         <h2 class="govuk-heading-l" id="home-events">Veranstaltungen</h2>
-        <p class="govuk-body">Spieleabende, LAN-Partys und mehr: Hier findest du Termine und Infos, um andere Studierende abseits der Vorlesungen kennenzulernen.</p>
-        <p class="govuk-body govuk-!-margin-bottom-0"><a class="govuk-link" href="/discussions?type=event">Veranstaltungen ansehen</a></p>
+        {{if .Home.Events}}{{template "event-list" .Home.Events}}{{else}}<p class="govuk-body">Aktuell sind keine Veranstaltungen angekündigt.</p>{{end}}
+        <p class="govuk-body govuk-!-margin-bottom-0"><a class="govuk-link" href="/community/veranstaltungen">Alle Veranstaltungen ansehen</a></p>
       </section>
     </div>
   </div>
 </div>
 <div class="govuk-width-container govuk-main-wrapper govuk-main-wrapper--l">
+  <div class="app-home-services">
+    <section aria-labelledby="home-archive">
+      <h2 class="govuk-heading-l" id="home-archive">Altklausuren</h2>
+      <p class="govuk-body">Finde Klausurrekonstruktionen für deine Prüfungsvorbereitung – passend zu Modul, Studiengang und Prüfungsordnung.</p>
+      <p class="govuk-body"><a class="govuk-link govuk-!-font-weight-bold" href="/archive">Altklausuren finden</a></p>
+    </section>
+    <section aria-labelledby="home-exchange">
+      <h2 class="govuk-heading-l" id="home-exchange">Forum</h2>
+      <p class="govuk-body">Fragen zu Prüfungen oder zur Abschlussarbeit? Teile deine Erfahrungen und tausche dich mit anderen Studierenden aus.</p>
+      <p class="govuk-body"><a class="govuk-link govuk-!-font-weight-bold" href="/discussions">Zum Forum</a></p>
+    </section>
+    <section aria-labelledby="home-team">
+      <h2 class="govuk-heading-l" id="home-team">Fachschaft</h2>
+      <p class="govuk-body">Erfahre, wer deine Interessen vertritt, was die Fachschaft organisiert und wie du mitmachen kannst.</p>
+      <p class="govuk-body"><a class="govuk-link govuk-!-font-weight-bold" href="/fachschaft">Die Fachschaft kennenlernen</a></p>
+    </section>
+  </div>
+  <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
   <section class="govuk-grid-row" aria-labelledby="home-forum">
     <div class="govuk-grid-column-two-thirds-from-desktop">
-      <h2 class="govuk-heading-l" id="home-forum">Studierende helfen Studierenden</h2>
-      <p class="govuk-body">Im Forum sammeln wir Fragen, Tipps und Erfahrungen aus dem Studienalltag.</p>
-      <ul class="govuk-list">
+      <h2 class="govuk-heading-l" id="home-forum">Aus dem Forum</h2>
+      {{if .Home.Forum}}<ul class="govuk-list app-forum-posts" role="list">
         {{range .Home.Forum}}
-        <li class="govuk-!-margin-bottom-6">
-          <h3 class="govuk-heading-m"><a class="govuk-link" href="{{.URL}}">{{.Title}}</a></h3>
-          <p class="govuk-body-s"><time datetime="{{.DateISO}}">{{.Date}}</time></p>
-          <p class="govuk-body">{{.Summary}}</p>
+        <li>
+          <h3 class="govuk-heading-s govuk-!-margin-bottom-2"><a class="govuk-link" href="{{.URL}}">{{.Title}}</a></h3>
+          {{if .Summary}}<p class="govuk-body govuk-!-margin-bottom-2">{{.Summary}}</p>{{end}}
+          <div class="app-post-meta">
+            {{template "vote" (voteControl $ (printf "%s/vote" .URL) "/#home-forum" .Title .Votes .UserVote)}}
+            <p class="govuk-body-s govuk-!-margin-bottom-0"><span class="govuk-visually-hidden">Veröffentlicht am </span><time datetime="{{.DateISO}}">{{.Date}}</time></p>
+          </div>
         </li>
         {{end}}
-      </ul>
-      <p class="govuk-body"><a class="govuk-link" href="/discussions?type=discussion">Weitere Beiträge lesen</a></p>
+      </ul>{{else}}<p class="govuk-body">Noch keine Themen veröffentlicht.</p>{{end}}
+      <p class="govuk-body"><a class="govuk-link" href="/discussions">Alle Themen im Forum</a></p>
     </div>
   </section>
-  <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
-  <div class="govuk-grid-row">
+  <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+  <section class="govuk-grid-row" aria-labelledby="home-participate">
     <div class="govuk-grid-column-two-thirds-from-desktop">
-      <h2 class="govuk-heading-l">Mitmachen</h2>
+      <h2 class="govuk-heading-l" id="home-participate">Mitmachen</h2>
       <p class="govuk-body">Du möchtest eine Veranstaltung mitorganisieren oder eine Idee fürs Studium einbringen? Sprich uns an. In der Fachschaft kannst du dich auch neben den gewählten Ämtern engagieren.</p>
       <p class="govuk-body"><a class="govuk-link" href="/fachschaft">Mehr über die Fachschaft</a></p>
-      <p class="govuk-body">Fragen oder Anregungen? Schreib uns an <a class="govuk-link" href="mailto:kontakt@fachschaftinformatik.de">kontakt@fachschaftinformatik.de</a>.</p>
     </div>
-  </div>
+  </section>
+  <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+  <section class="govuk-grid-row" aria-labelledby="home-contact">
+    <div class="govuk-grid-column-two-thirds-from-desktop">
+      <h2 class="govuk-heading-l" id="home-contact">Kontakt</h2>
+      <p class="govuk-body">Du hast Fragen oder ein Anliegen? <a class="govuk-link" href="/team">Finde die passende Ansprechperson</a> oder <a class="govuk-link" href="/contact">schreib uns</a>.</p>
+    </div>
+  </section>
 </div>
 {{end}}

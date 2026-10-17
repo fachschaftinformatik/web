@@ -11,14 +11,8 @@
     <p class="govuk-body">Dein Beitrag wurde nicht gespeichert. Deine Eingaben stehen weiterhin im Formular.</p>
   </div>
 </div>{{end}}
-<form action="{{.Action}}" method="post" novalidate>
+<form action="{{.Action}}" method="post" {{if .Event}}enctype="multipart/form-data"{{end}} novalidate>
   <input type="hidden" name="csrf" value="{{$.CSRF}}">
-  {{if .Live}}<div class="govuk-form-group">
-    <label class="govuk-label" for="type">Beitragsart</label>
-    <select class="govuk-select" id="type" name="type"><option value="discussion" {{if eq .Draft.Type "discussion"}}selected{{end}}>Diskussion</option><option value="news" {{if eq .Draft.Type "news"}}selected{{end}}>Neuigkeit</option><option value="event" {{if eq .Draft.Type "event"}}selected{{end}}>Veranstaltung</option></select>
-    {{if .Error "type"}}<p class="govuk-error-message">{{.Error "type"}}</p>{{end}}
-  </div>
-  <div class="govuk-form-group"><label class="govuk-label" for="tags">Schlagwörter, mit Komma getrennt</label><input class="govuk-input" id="tags" name="tags" value="{{.Draft.Tags}}"></div>{{end}}
   <div class="govuk-form-group {{if .Error "title"}}govuk-form-group--error{{end}}">
     <label class="govuk-label govuk-label--s" for="title">Titel</label>
     <div class="govuk-hint" id="title-hint">Fasse kurz zusammen, worum es geht.</div>
@@ -27,7 +21,7 @@
   </div>
   <div class="govuk-form-group {{if .Error "body"}}govuk-form-group--error{{end}}">
     <label class="govuk-label govuk-label--s" for="body">Text</label>
-    <div class="govuk-hint" id="body-hint">Hier ist Platz für deine Fragen und alles, was du mit anderen Studierenden teilen möchtest.</div>
+    <div class="govuk-hint" id="body-hint">{{if .Event}}Beschreibe die Veranstaltung und alles, was Teilnehmende wissen sollten.{{else if .Announcement}}Was gibt es Neues aus der Fachschaft?{{else}}Hier ist Platz für deine Fragen und alles, was du mit anderen Studierenden teilen möchtest.{{end}}</div>
     {{if .Error "body"}}<p class="govuk-error-message" id="body-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Error "body"}}</p>{{end}}
     <textarea class="govuk-textarea {{if .Error "body"}}govuk-textarea--error{{end}}" id="body" name="body" rows="12" aria-describedby="body-hint{{if .Error "body"}} body-error{{end}}" {{if .Error "body"}}aria-invalid="true"{{end}}>{{.Draft.Body}}</textarea>
     <div id="rich-editor" hidden>
@@ -66,9 +60,9 @@
     </div>
     <p class="govuk-hint" id="editor-fallback">Einfache Textversion: Ohne Texteditor bleiben die Inhalte erhalten, Formatierungen werden beim Absenden entfernt.</p>
   </div>
-  {{if or .Live (eq .Draft.Type "event")}}<details class="govuk-details" {{if or (eq .Draft.Type "event") .Draft.Date .Draft.Time .Draft.Location}}open{{end}}>
-    <summary class="govuk-details__summary"><span class="govuk-details__summary-text">Termin und Ort für Veranstaltungen</span></summary>
-    <div class="govuk-details__text">
+  {{if and .Live (not .Event)}}<div class="govuk-form-group"><label class="govuk-label" for="tags">Schlagwörter, mit Komma getrennt</label><input class="govuk-input" id="tags" name="tags" value="{{.Draft.Tags}}"></div>{{end}}
+  {{if .Event}}<fieldset class="govuk-fieldset govuk-!-margin-bottom-6">
+    <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">Termin und Ort</legend>
           <div class="govuk-form-group {{if .Error "date"}}govuk-form-group--error{{end}}">
             <label class="govuk-label" for="date">Datum (optional)</label>
             <div class="govuk-hint" id="date-hint">Zum Beispiel 30.01.2027.</div>
@@ -82,10 +76,18 @@
             <input class="govuk-input govuk-input--width-5 {{if .Error "time"}}govuk-input--error{{end}}" id="time" name="time" value="{{.Draft.Time}}" aria-describedby="time-hint{{if .Error "time"}} time-error{{end}}" {{if .Error "time"}}aria-invalid="true"{{end}}>
           </div>
           <div class="govuk-form-group"><label class="govuk-label" for="location">Ort (optional)</label><input class="govuk-input" id="location" name="location" value="{{.Draft.Location}}"></div>
-    </div>
-  </details>{{end}}
+  </fieldset>
+  <div class="govuk-form-group {{if .Error "cover"}}govuk-form-group--error{{end}}">
+    <label class="govuk-label govuk-label--s" for="cover">Titelbild (optional)</label>
+    <p class="govuk-hint" id="cover-hint">JPEG, PNG oder WebP, höchstens 6 MB. Die Karten zeigen einen 3:2-Ausschnitt, die Detailseite das vollständige Bild. Bei einem Fehler bitte das Bild erneut auswählen.</p>
+    {{if .CoverURL}}<img class="app-event-cover app-event-cover--preview" src="{{.CoverURL}}" alt="{{.CoverAlt}}"><div class="govuk-checkboxes govuk-checkboxes--small govuk-!-margin-bottom-4" data-module="govuk-checkboxes"><div class="govuk-checkboxes__item"><input class="govuk-checkboxes__input" id="remove_cover" name="remove_cover" type="checkbox" value="1"><label class="govuk-label govuk-checkboxes__label" for="remove_cover">Bisheriges Titelbild entfernen</label></div></div>{{end}}
+    {{if .Error "cover"}}<p class="govuk-error-message" id="cover-error">{{.Error "cover"}}</p>{{end}}
+    <input class="govuk-file-upload" id="cover" name="cover" type="file" accept="image/jpeg,image/png,image/webp" data-module="govuk-file-upload" aria-describedby="cover-hint{{if .Error "cover"}} cover-error{{end}}">
+  </div>
+  <div class="govuk-form-group {{if .Error "cover_alt"}}govuk-form-group--error{{end}}"><label class="govuk-label" for="cover_alt">Bildbeschreibung</label><p class="govuk-hint" id="cover-alt-hint">Beschreibe kurz, was auf dem Bild zu sehen ist. Infos auf einem Plakat gehören auch in den Veranstaltungstext.</p>{{if .Error "cover_alt"}}<p class="govuk-error-message" id="cover-alt-error">{{.Error "cover_alt"}}</p>{{end}}<input class="govuk-input" id="cover_alt" name="cover_alt" value="{{.CoverAlt}}" maxlength="500" aria-describedby="cover-alt-hint{{if .Error "cover_alt"}} cover-alt-error{{end}}"></div>
+  {{end}}
   <div class="govuk-button-group">
-    <button class="govuk-button" type="submit" data-module="govuk-button">{{if .Editing}}Änderungen speichern{{else}}Beitrag veröffentlichen{{end}}</button>
+    <button class="govuk-button" type="submit" data-module="govuk-button">{{if .Editing}}Änderungen speichern{{else if .Event}}Veranstaltung veröffentlichen{{else if .Announcement}}Neuigkeit veröffentlichen{{else}}Beitrag veröffentlichen{{end}}</button>
     <a class="govuk-link" href="{{.BackURL}}">Abbrechen</a>
   </div>
 </form>

@@ -14,13 +14,11 @@ func TestForumFiltering(t *testing.T) {
 	for _, tc := range []struct {
 		query, contains, absent string
 	}{
-		{"", "5 Beiträge", "govuk-pagination"},
+		{"", "3 Beiträge", "govuk-pagination"},
 		{"?type=discussion", "3 Beiträge", "Projektvorstellungen, Projektstände"},
-		{"?type=news", "1 Beitrag", "Wie läuft das Bachelor-Kolloquium"},
 		{"?q=Neovim", "LaTeX Template", "Wie läuft das Bachelor-Kolloquium"},
-		{"?q=LaTeX&type=event", "Keine passenden Beiträge gefunden", "LaTeX Template"},
 		{"?q=%3Cscript%3E", "&lt;script&gt;", "<script>LaTeX"},
-		{"?type=unknown", "5 Beiträge", "Keine passenden Beiträge gefunden"},
+		{"?type=unknown", "3 Beiträge", "Keine passenden Beiträge gefunden"},
 	} {
 		t.Run(tc.query, func(t *testing.T) {
 			response := httptest.NewRecorder()
@@ -33,6 +31,13 @@ func TestForumFiltering(t *testing.T) {
 				t.Fatal("forum missing from active Community navigation")
 			}
 		})
+	}
+	for _, tc := range []struct{ kind, path string }{{"news", newsURL}, {"event", eventsURL}} {
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, httptest.NewRequest("GET", "/discussions?type="+tc.kind, nil))
+		if w.Code != 303 || w.Header().Get("Location") != tc.path {
+			t.Fatalf("legacy filter %s: %d %s", tc.kind, w.Code, w.Header().Get("Location"))
+		}
 	}
 }
 
@@ -59,7 +64,14 @@ func TestDiscussion(t *testing.T) {
 			if response.Code != tc.code || !strings.Contains(body, tc.contains) {
 				t.Fatalf("%d: %s", response.Code, body)
 			}
-			if tc.code == 200 && !strings.Contains(body, `href="/discussions" aria-current="true"`) {
+			ancestor := "/discussions"
+			if strings.Contains(tc.path, "140128508453060609") {
+				ancestor = newsURL
+			}
+			if strings.Contains(tc.path, "140127153315381249") {
+				ancestor = eventsURL
+			}
+			if tc.code == 200 && !strings.Contains(body, `href="`+ancestor+`" aria-current="true"`) {
 				t.Fatal("missing active forum ancestor")
 			}
 		})

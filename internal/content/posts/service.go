@@ -6,7 +6,6 @@ import (
 	"errors"
 	"slices"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/fachschaftinformatik/web/internal/id"
@@ -46,11 +45,11 @@ func (s *Service) CanWrite(ctx context.Context, user, owner int64, comments bool
 	return permission(ctx, s.db, user, owner, comments)
 }
 
-const postSelect = `SELECT CAST(p.id AS TEXT),p.title,p.body,p.body_format,p.user_id,CASE WHEN u.private=1 THEN 'Anonym' ELSE u.name END,p.created_at,p.updated_at,p.type,COALESCE(p.event_date,''),COALESCE(p.location,''),(SELECT COUNT(*) FROM discussion_comments c WHERE c.post_id=p.id AND c.deleted_at IS NULL) FROM discussion_posts p JOIN users u ON u.id=p.user_id WHERE p.deleted_at IS NULL`
+const postSelect = `SELECT CAST(p.id AS TEXT),p.title,p.body,p.body_format,p.user_id,CASE WHEN u.private=1 OR u.deleted_at IS NOT NULL THEN 'Anonym' ELSE u.name END,p.created_at,p.updated_at,p.type,COALESCE(p.event_date,''),COALESCE(p.location,''),(SELECT COUNT(*) FROM discussion_comments c WHERE c.post_id=p.id AND c.deleted_at IS NULL),COALESCE((SELECT SUM(vote) FROM discussion_votes WHERE post_id=p.id),0),COALESCE((SELECT vote FROM discussion_votes WHERE post_id=p.id AND user_id=?),0),u.private=0 AND u.deleted_at IS NULL FROM discussion_posts p JOIN users u ON u.id=p.user_id WHERE p.deleted_at IS NULL`
 
 func scanThread(row interface{ Scan(...any) error }) (Thread, error) {
 	var t Thread
-	err := row.Scan(&t.ID, &t.Title, &t.Body, &t.BodyFormat, &t.AuthorID, &t.Author, &t.Created, &t.Updated, &t.Type, &t.EventDate, &t.Location, &t.Comments)
+	err := row.Scan(&t.ID, &t.Title, &t.Body, &t.BodyFormat, &t.AuthorID, &t.Author, &t.Created, &t.Updated, &t.Type, &t.EventDate, &t.Location, &t.Comments, &t.Votes, &t.UserVote, &t.AuthorPublic)
 	if errors.Is(err, sql.ErrNoRows) {
 		return t, ErrNotFound
 	}
@@ -82,8 +81,8 @@ func (s *Service) tags(ctx context.Context, t *Thread) error {
 	return rows.Err()
 }
 
-func (s *Service) Find(ctx context.Context, f Filter) ([]Post, error) {
-	rows, err := s.db.QueryContext(ctx, postSelect+` ORDER BY p.pinned DESC,p.created_at DESC,p.id DESC`)
+func (s *Service) Find(ctx context.Context, f Filter, viewer ...int64) ([]Post, error) {
+	rows, err := s.db.QueryContext(ctx, postSelect+` ORDER BY p.pinned DESC,p.created_at DESC,p.id DESC`, viewerID(viewer))
 	if err != nil {
 		return nil, err
 	}
@@ -103,6 +102,9 @@ func (s *Service) Find(ctx context.Context, f Filter) ([]Post, error) {
 	}
 	var result []Post
 	for _, t := range threads {
+		if f.AuthorID != 0 && (t.AuthorID != f.AuthorID || !t.AuthorPublic) {
+			continue
+		}
 		if err := s.tags(ctx, &t); err != nil {
 			return nil, err
 		}
@@ -118,27 +120,37 @@ func (s *Service) Find(ctx context.Context, f Filter) ([]Post, error) {
 	return result, nil
 }
 
-func (s *Service) Lookup(ctx context.Context, post string) (Thread, error) {
-	t, err := scanThread(s.db.QueryRowContext(ctx, postSelect+` AND p.id=?`, post))
+func (s *Service) Lookup(ctx context.Context, post string, viewer ...int64) (Thread, error) {
+	t, _, err := s.LookupPage(ctx, post, 1, viewer...)
+	return t, err
+}
+
+func (s *Service) LookupPage(ctx context.Context, post string, page int, viewer ...int64) (Thread, int, error) {
+	t, err := scanThread(s.db.QueryRowContext(ctx, postSelect+` AND p.id=?`, viewerID(viewer), post))
 	if err != nil {
-		return t, err
+		return t, 0, err
 	}
 	if err = s.tags(ctx, &t); err != nil {
-		return t, err
+		return t, 0, err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT CAST(c.id AS TEXT),c.user_id,CASE WHEN u.private=1 THEN 'Anonym' ELSE u.name END,c.text,c.created_at,c.updated_at FROM discussion_comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=? AND c.deleted_at IS NULL ORDER BY c.created_at DESC,c.id DESC`, post)
+	var total int
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM discussion_comments WHERE post_id=? AND deleted_at IS NULL`, post).Scan(&total); err != nil {
+		return t, 0, err
+	}
+	page = max(1, min(page, max(1, (total+19)/20)))
+	rows, err := s.db.QueryContext(ctx, `SELECT CAST(c.id AS TEXT),c.user_id,CASE WHEN u.private=1 OR u.deleted_at IS NOT NULL THEN 'Anonym' ELSE u.name END,c.text,c.created_at,c.updated_at,COALESCE((SELECT SUM(vote) FROM discussion_comment_votes WHERE comment_id=c.id),0),COALESCE((SELECT vote FROM discussion_comment_votes WHERE comment_id=c.id AND user_id=?),0),u.private=0 AND u.deleted_at IS NULL FROM discussion_comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=? AND c.deleted_at IS NULL ORDER BY c.created_at DESC,c.id DESC LIMIT 20 OFFSET ?`, viewerID(viewer), post, (page-1)*20)
 	if err != nil {
-		return t, err
+		return t, 0, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var c Comment
-		if err = rows.Scan(&c.ID, &c.AuthorID, &c.Author, &c.Text, &c.Created, &c.Updated); err != nil {
-			return t, err
+		if err = rows.Scan(&c.ID, &c.AuthorID, &c.Author, &c.Text, &c.Created, &c.Updated, &c.Votes, &c.UserVote, &c.AuthorPublic); err != nil {
+			return t, 0, err
 		}
 		t.Replies = append(t.Replies, c)
 	}
-	return t, rows.Err()
+	return t, total, rows.Err()
 }
 
 // Save persists sanitized HTML, event details and tags atomically. An empty post creates a new record.
@@ -149,8 +161,9 @@ func (s *Service) Save(ctx context.Context, user int64, post string, d Draft, ri
 	}
 	defer tx.Rollback()
 	var owner int64
+	var oldType string
 	if post != "" {
-		if err = tx.QueryRowContext(ctx, `SELECT user_id FROM discussion_posts WHERE id=? AND deleted_at IS NULL`, post).Scan(&owner); errors.Is(err, sql.ErrNoRows) {
+		if err = tx.QueryRowContext(ctx, `SELECT user_id,type FROM discussion_posts WHERE id=? AND deleted_at IS NULL`, post).Scan(&owner, &oldType); errors.Is(err, sql.ErrNoRows) {
 			return "", ErrNotFound
 		} else if err != nil {
 			return "", err
@@ -158,6 +171,14 @@ func (s *Service) Save(ctx context.Context, user int64, post string, d Draft, ri
 	}
 	if err = permission(ctx, tx, user, owner, false); err != nil {
 		return "", err
+	}
+	if d.Type == "event" || oldType == "event" {
+		return "", &ValidationError{[]FieldError{{"body", "Veranstaltungen werden im Veranstaltungsbereich verwaltet."}}}
+	}
+	if d.Type == "news" || oldType == "news" {
+		if err := editorialPermission(ctx, tx, user); err != nil {
+			return "", err
+		}
 	}
 	d.Title = strings.TrimSpace(d.Title)
 	body, format := d.Body, "plain"
@@ -170,14 +191,6 @@ func (s *Service) Save(ctx context.Context, user int64, post string, d Draft, ri
 		return "", &ValidationError{fields}
 	}
 	event := ""
-	if d.Type == "event" && strings.TrimSpace(d.Date) != "" {
-		date, _ := time.Parse("2.1.2006", strings.TrimSpace(d.Date))
-		clock := strings.TrimSpace(d.Time)
-		if clock == "" {
-			clock = "00:00"
-		}
-		event = date.Format("2006-01-02") + "T" + clock
-	}
 	if post == "" {
 		post = id.New().String()
 		_, err = tx.ExecContext(ctx, `INSERT INTO discussion_posts(id,title,body,body_format,user_id,type,event_date,location) VALUES(?,?,?,?,?,?,?,?)`, post, d.Title, body, format, user, d.Type, event, strings.TrimSpace(d.Location))

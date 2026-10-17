@@ -83,6 +83,29 @@ type ArchiveRequest struct {
 	ReviewedBy  *int64  `json:"reviewed_by"`
 }
 
+type CalendarEvent struct {
+	ID                int64   `json:"id"`
+	Title             string  `json:"title"`
+	Body              string  `json:"body"`
+	BodyFormat        string  `json:"body_format"`
+	EventDate         string  `json:"event_date"`
+	Location          string  `json:"location"`
+	UserID            int64   `json:"user_id"`
+	CoverKey          string  `json:"cover_key"`
+	CoverAlt          string  `json:"cover_alt"`
+	CoverWidth        int64   `json:"cover_width"`
+	CoverHeight       int64   `json:"cover_height"`
+	LegacyPostID      *int64  `json:"legacy_post_id"`
+	CreatedAt         string  `json:"created_at"`
+	UpdatedAt         string  `json:"updated_at"`
+	DeletedAt         *string `json:"deleted_at"`
+	SourceUrl         string  `json:"source_url"`
+	SourcePublishedAt string  `json:"source_published_at"`
+	SourceStatus      string  `json:"source_status"`
+	GalleryAlbumID    *int64  `json:"gallery_album_id"`
+	GalleryCoverID    *int64  `json:"gallery_cover_id"`
+}
+
 type DiscussionComment struct {
 	ID        int64   `json:"id"`
 	PostID    int64   `json:"post_id"`

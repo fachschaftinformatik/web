@@ -3,14 +3,16 @@ package web
 
 import (
 	"bytes"
-	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/fachschaftinformatik/web/internal/content"
+	"github.com/fachschaftinformatik/web/internal/content/events"
 	"github.com/fachschaftinformatik/web/internal/content/files"
 	"github.com/fachschaftinformatik/web/internal/content/media"
 	"github.com/fachschaftinformatik/web/internal/content/posts"
@@ -29,6 +31,7 @@ type Handler struct {
 	archive       *files.Service
 	posts         *posts.Service
 	media         *media.Service
+	events        *events.Service
 }
 
 type Services struct {
@@ -38,6 +41,7 @@ type Services struct {
 	Meetings *content.Store
 	Posts    *posts.Service
 	Media    *media.Service
+	Events   *events.Service
 }
 
 func New() (http.Handler, error) {
@@ -66,6 +70,7 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 		c.people, c.content = people.NewStore(), content.NewStore()
 	} else {
 		c.identity, c.archive, c.people, c.content, c.posts, c.media = services.Users, services.Archive, services.People, services.Meetings, services.Posts, services.Media
+		c.events = services.Events
 	}
 	router := http.NewServeMux()
 	router.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +78,7 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 		_, _ = w.Write([]byte("ok\n"))
 	})
 	router.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		home, err := c.home(r.Context())
+		home, err := c.home(r.Context(), forumUser(w))
 		if err != nil {
 			c.serverError(w, err)
 			return
@@ -81,7 +86,7 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 		albums := media.Albums()
 		if c.media != nil {
 			var err error
-			albums, err = c.media.Catalog(r.Context())
+			albums, _, err = c.media.AlbumPage(r.Context(), 1, 6)
 			if err != nil {
 				c.serverError(w, err)
 				return
@@ -90,6 +95,7 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 		c.render(w, "home", false, Page{Title: "Startseite", Active: "home", Home: home, Images: ImagesPage{Albums: albums}})
 	})
 	router.HandleFunc("GET /team", c.Team)
+	router.HandleFunc("GET /sitemap", c.Sitemap)
 	router.HandleFunc("GET /contact", func(w http.ResponseWriter, r *http.Request) {
 		c.render(w, "contact", false, Page{Title: "Kontakt", Active: "contact"})
 	})
@@ -123,14 +129,28 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 		http.Redirect(w, r, "/archive/"+r.PathValue("module"), http.StatusSeeOther)
 	})
 	router.HandleFunc("GET /discussions", c.Forum)
+	router.HandleFunc("GET /community/veranstaltungen", c.Events)
+	router.HandleFunc("GET /community/veranstaltungen/new", c.EditEvent)
+	router.HandleFunc("POST /community/veranstaltungen/new", c.EditEvent)
+	router.HandleFunc("GET /community/veranstaltungen/{event}", c.Events)
+	router.HandleFunc("GET /community/veranstaltungen/{event}/edit", c.EditEvent)
+	router.HandleFunc("POST /community/veranstaltungen/{event}/edit", c.EditEvent)
+	router.HandleFunc("GET /community/veranstaltungen/{event}/cover", c.CalendarCover)
+	router.HandleFunc("GET /community/neuigkeiten", c.News)
+	router.HandleFunc("GET /community/neuigkeiten/new", c.EditDiscussion)
+	router.HandleFunc("POST /community/neuigkeiten/new", c.EditDiscussion)
 	router.HandleFunc("GET /d/{post}", c.Discussion)
+	router.HandleFunc("GET /users/{id}", c.PublicProfile)
 	router.HandleFunc("GET /d/new", c.EditDiscussion)
 	router.HandleFunc("POST /d/new", c.EditDiscussion)
 	router.HandleFunc("GET /d/{post}/edit", c.EditDiscussion)
 	router.HandleFunc("POST /d/{post}/edit", c.EditDiscussion)
 	router.HandleFunc("POST /d/{post}/comments", c.Comment)
 	router.HandleFunc("POST /d/{post}/comments/{comment}/edit", c.Comment)
+	router.HandleFunc("POST /d/{post}/vote", c.Vote)
+	router.HandleFunc("POST /d/{post}/comments/{comment}/vote", c.Vote)
 	router.HandleFunc("GET /media/{id}/{size}", c.MediaFile)
+	router.HandleFunc("GET /media/events/{id}/cover/{size}", c.EventCover)
 	router.HandleFunc("GET /login", c.Login)
 	router.HandleFunc("POST /login", c.Login)
 	router.HandleFunc("POST /logout", c.Logout)
@@ -194,12 +214,20 @@ func archiveFilter(r *http.Request) files.Filter {
 }
 
 func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
-	catalog, err := c.archiveCatalog(r.Context())
+	filter, err := c.preferredArchiveFilter(w, r)
 	if err != nil {
 		c.serverError(w, err)
 		return
 	}
-	filter, err := c.preferredArchiveFilter(w, r)
+	var catalog files.Catalog
+	var total int
+	pageNumber, _ := strconv.Atoi(r.URL.Query().Get("seite"))
+	pageNumber = max(1, pageNumber)
+	if c.archive != nil {
+		catalog, total, err = c.archive.CatalogPage(r.Context(), filter, pageNumber, archivePageSize)
+	} else {
+		catalog = files.Examples()
+	}
 	if err != nil {
 		c.serverError(w, err)
 		return
@@ -220,22 +248,45 @@ func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 		Title: "Altklausuren", Active: "archive",
 		Archive: ArchivePage{Filter: filter, Programs: programs, Versions: versions, Degrees: degrees, Modules: catalog.FindModules(filter)},
 	}
+	if c.archive != nil {
+		data.Archive.Total = total
+		data.Archive.Pages = max(1, (total+archivePageSize-1)/archivePageSize)
+		data.Archive.Page = min(pageNumber, data.Archive.Pages)
+	} else {
+		data.Archive.paginate(r.URL.Query().Get("seite"))
+	}
+	if raw := r.URL.Query().Get("seite"); raw != "" && raw != fmt.Sprint(data.Archive.Page) {
+		http.Redirect(w, r, data.Archive.PageURL(1), http.StatusSeeOther)
+		return
+	}
+	if data.Archive.Pages > 1 {
+		data.DocumentTitle = fmt.Sprintf("Altklausuren (Seite %d von %d)", data.Archive.Page, data.Archive.Pages)
+	}
 	w.Header().Set("Vary", "HX-Request, HX-History-Restore-Request")
 	fragment := r.Header.Get("HX-Request") == "true" && r.Header.Get("HX-History-Restore-Request") != "true"
 	c.render(w, "archive", fragment, data)
 }
 
 func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
-	catalog, err := c.archiveCatalog(r.Context())
-	if err != nil {
-		c.serverError(w, err)
-		return
-	}
 	filter, err := c.preferredArchiveFilter(w, r)
 	if err != nil {
 		c.serverError(w, err)
 		return
 	}
+	if c.archive != nil {
+		module, total, err := c.archive.ModulePage(r.Context(), r.PathValue("module"), filter, requestedPage(r), 20)
+		if errors.Is(err, files.ErrNotFound) {
+			http.NotFound(w, r)
+			return
+		}
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
+		c.render(w, "module", false, Page{Title: module.Title, Active: "archive", Archive: ArchivePage{Module: &module, Filter: filter, ListPagination: listPagination(r, total, 20)}})
+		return
+	}
+	catalog := files.Examples()
 	module, ok := catalog.FindModule(r.PathValue("module"), filter)
 	if !ok {
 		http.NotFound(w, r)
@@ -245,13 +296,6 @@ func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
 		Title: module.Title, Active: "archive",
 		Archive: ArchivePage{Module: &module, Filter: filter},
 	})
-}
-
-func (c *Handler) archiveCatalog(ctx context.Context) (files.Catalog, error) {
-	if c.archive == nil {
-		return files.Examples(), nil
-	}
-	return c.archive.Catalog(ctx)
 }
 
 func (c *Handler) render(w http.ResponseWriter, page string, fragment bool, data Page) {
@@ -264,6 +308,7 @@ func (c *Handler) serverError(w http.ResponseWriter, err error) {
 }
 
 func (c *Handler) renderStatus(w http.ResponseWriter, page string, fragment bool, data Page, status int) {
+	data.Voting = c.posts != nil
 	if response, ok := w.(*sessionResponse); ok && response.session != nil {
 		data.SignedIn, data.CSRF = response.session.Authenticated, response.session.CSRF
 		data.CanAdmin = response.session.CanReview()

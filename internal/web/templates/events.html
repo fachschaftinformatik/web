@@ -1,0 +1,34 @@
+{{define "sidebar"}}{{end}}
+{{define "content"}}
+{{if .Events.Detail}}{{with .Events.Detail}}
+<div class="{{if .CoverURL}}app-event-detail{{end}}">
+<div>
+{{if .StatusLabel}}<p class="govuk-body"><strong class="govuk-tag {{if eq .SourceStatus "cancelled"}}govuk-tag--red{{else}}govuk-tag--grey{{end}}">{{.StatusLabel}}</strong></p>{{end}}
+<dl class="govuk-summary-list">
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">{{if or .EventDate (not .SourcePublishedAt)}}Termin{{else}}Veröffentlicht{{end}}</dt><dd class="govuk-summary-list__value">{{if .EventDate}}<time datetime="{{.EventDate}}">{{.EventLabel}}</time>{{else if .SourcePublishedAt}}<time datetime="{{.SourcePublishedAt}}">{{.SourceDateLabel}}</time>{{else}}Termin folgt{{end}}</dd></div>
+  {{if .Location}}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Ort</dt><dd class="govuk-summary-list__value">{{.Location}}</dd></div>{{end}}
+</dl>
+<div class="app-rich-content">{{richHTML .RichBody}}</div>
+{{if .GalleryURL}}<p class="govuk-body"><a class="govuk-link" href="{{.GalleryURL}}">Alle Fotos ansehen</a></p>{{end}}
+{{if .SourceURL}}<p class="govuk-body-s"><a class="govuk-link" href="{{.SourceURL}}">Originalbeitrag auf Instagram</a>{{if .EventDate}} · veröffentlicht am {{.SourceDateLabel}}{{end}}</p>{{end}}
+{{if $.Events.CanCreate}}<p class="govuk-body"><a class="govuk-button govuk-button--secondary" href="{{.URL}}/edit">Veranstaltung bearbeiten</a></p>{{end}}
+{{if .LegacyURL}}<p class="govuk-body"><a class="govuk-link" href="{{.LegacyURL}}#comments-heading">Bisherige Diskussion zur Veranstaltung ansehen</a></p>{{end}}
+</div>
+{{if .CoverURL}}<figure class="app-event-detail__figure">
+  <img class="app-event-cover app-event-cover--detail" src="{{.CoverURL}}" width="{{.CoverWidth}}" height="{{.CoverHeight}}" alt="{{.CoverAlt}}" fetchpriority="high">
+  <figcaption class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0"><a class="govuk-link" href="{{.FullImageURL}}">Bild in voller Größe ansehen</a></figcaption>
+</figure>{{end}}
+</div>
+{{end}}{{else}}
+{{if .Events.CanCreate}}<p class="govuk-body"><a class="govuk-button" href="/community/veranstaltungen/new">Veranstaltung erstellen</a></p>{{end}}
+{{if or .Events.Upcoming (le .Events.Pagination.Page 1)}}<section aria-labelledby="upcoming-events">
+  <h2 class="govuk-visually-hidden" id="upcoming-events">Nächste Veranstaltungen</h2>
+  {{if .Events.Upcoming}}{{template "event-list" .Events.Upcoming}}{{else}}<p class="govuk-body">Aktuell sind keine Veranstaltungen angekündigt. Neue Termine findest du hier, sobald sie feststehen.</p>{{end}}
+</section>{{end}}
+{{if .Events.Past}}<hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+<section aria-labelledby="past-events"><h2 class="govuk-heading-l" id="past-events">Vergangene Veranstaltungen</h2>{{template "event-list" .Events.Past}}</section>{{end}}
+{{template "list-pagination" .Events.Pagination}}
+<hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+<p class="govuk-body"><a class="govuk-link" href="/community/events">Fotos von unseren Veranstaltungen ansehen</a></p>
+{{end}}
+{{end}}

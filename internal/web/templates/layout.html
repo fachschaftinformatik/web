@@ -68,7 +68,7 @@
         {{if or .Upload.Action .Request}}</div></div>{{end}}
      </main>
    </div>
-   {{else if eq .Active "contact"}}
+   {{else if or (eq .Active "contact") (eq .Active "sitemap")}}
    <div class="govuk-width-container">
      <div class="govuk-grid-row">
        <div class="govuk-grid-column-two-thirds">
@@ -98,7 +98,7 @@
     </aside>
      <div class="app-main-column">
        {{template "breadcrumbs" .}}
-       <main id="main-content" tabindex="-1">
+       <main id="main-content" class="{{if eq .Active "events"}}app-gallery{{end}}" tabindex="-1">
          <div class="app-page-heading"><h1 class="govuk-heading-xl">{{.Title}}</h1></div>
          <div class="app-content">{{template "content" .}}</div>
        </main>
@@ -112,8 +112,7 @@
           <h2 class="govuk-visually-hidden">Weiterführende Links</h2>
           <ul class="govuk-footer__inline-list">
             <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="https://design-system.service.gov.uk/accessibility-statement/">Erklärung zur Barrierefreiheit</a></li>
-            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="https://design-system.service.gov.uk/sitemap/">Seitenübersicht</a></li>
-            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="https://design-system.service.gov.uk/cookies/">Cookies</a></li>
+            <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="/sitemap">Seitenübersicht</a></li>
             <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="https://design-system.service.gov.uk/privacy-policy/">Datenschutz</a></li>
             <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="/contact">Fachschaft kontaktieren</a></li>
           </ul>
@@ -137,16 +136,17 @@
 
 {{define "community-navigation"}}
 <nav class="app-section-nav" aria-label="Seiten in Community">
-  <h2 class="govuk-visually-hidden">Seiten in Community</h2>
-  <h3 class="app-subnav-theme">Austausch</h3>
-  <ul class="govuk-list app-subnav">
+   <h2 class="app-subnav-theme">Forum</h2>
+    <ul class="govuk-list app-subnav">
      <li>
-       <a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/discussions" {{if eq .Active "forum"}}aria-current="{{if or .Forum.Thread .Editor}}true{{else}}page{{end}}"{{end}}>Forum</a>
+       <a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/discussions" {{if eq .Active "forum"}}aria-current="{{if or .Forum.Thread .Editor}}true{{else}}page{{end}}"{{end}}>Beiträge</a>
      </li>
-  </ul>
-  <h3 class="app-subnav-theme">Veranstaltungen</h3>
-  <ul class="govuk-list app-subnav">
-    <li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/community/events" {{if eq .Active "events"}}aria-current="{{if .Images.Detail}}true{{else}}page{{end}}"{{end}}>Galerie</a></li>
+     <li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/community/neuigkeiten" {{if eq .Active "news"}}aria-current="{{if or .Forum.Thread .Editor}}true{{else}}page{{end}}"{{end}}>Neuigkeiten</a></li>
+   </ul>
+   <h2 class="app-subnav-theme">Fachschaftsleben</h2>
+   <ul class="govuk-list app-subnav">
+     <li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/community/veranstaltungen" {{if eq .Active "calendar"}}aria-current="{{if or .Events.Detail .Forum.Thread .Editor}}true{{else}}page{{end}}"{{end}}>Termine</a></li>
+     <li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/community/events" {{if eq .Active "events"}}aria-current="{{if .Images.Detail}}true{{else}}page{{end}}"{{end}}>Fotos</a></li>
   </ul>
 </nav>
 {{end}}

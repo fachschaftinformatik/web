@@ -46,8 +46,20 @@ func (p Page) Breadcrumbs() []Breadcrumb {
 			items = append(items, Breadcrumb{p.Editor.Draft.Title, p.Editor.BackURL})
 		}
 	}
+	if p.Active == "calendar" && (p.Forum.Thread != nil || p.Editor != nil) {
+		items = append(items, Breadcrumb{"Veranstaltungen", eventsURL})
+		if p.Editor != nil && p.Editor.Editing {
+			items = append(items, Breadcrumb{p.Editor.Draft.Title, p.Editor.BackURL})
+		}
+	}
+	if p.Active == "calendar" && p.Events.Detail != nil {
+		items = append(items, Breadcrumb{"Veranstaltungen", eventsURL})
+	}
+	if p.Active == "news" && (p.Forum.Thread != nil || p.Editor != nil) {
+		items = append(items, Breadcrumb{"Neuigkeiten", newsURL})
+	}
 	if p.Images.Detail {
-		items = append(items, Breadcrumb{"Galerie", "/community/events"})
+		items = append(items, Breadcrumb{"Fotos", "/community/events"})
 		if p.Images.Viewer {
 			items = append(items, Breadcrumb{p.Images.Album.Title, p.Images.Return})
 		}
