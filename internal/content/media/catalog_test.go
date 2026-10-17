@@ -62,7 +62,7 @@ INSERT INTO media (id,event_id,user_id,title,description,access_key,mime_type,nb
 func TestCatalogCompleteAndFiltered(t *testing.T) {
 	s, db := galleryService(t)
 	// Exceed several pages: every eligible row must reach the catalog.
-	for id := 200; id < 217; id++ {
+	for id := 200; id < 273; id++ {
 		_, err := db.Exec(`INSERT INTO media (id,event_id,user_id,access_key,mime_type,nbytes,created_at) VALUES (?,20,1,?,'image/png',5,'2026-01-01')`, id, strconv.Itoa(id))
 		if err != nil {
 			t.Fatal(err)
@@ -75,11 +75,11 @@ func TestCatalogCompleteAndFiltered(t *testing.T) {
 	if len(albums) != 3 || albums[0].ID != "20" || albums[1].ID != "10" || albums[2].ID != "40" {
 		t.Fatalf("albums: %+v", albums)
 	}
-	if len(albums[0].Images) != 18 || albums[0].OriginalCount != 18 || len(albums[1].Images) != 2 || len(albums[2].Images) != 0 {
+	if len(albums[0].Images) != 74 || albums[0].OriginalCount != 74 || len(albums[1].Images) != 2 || len(albums[2].Images) != 0 {
 		t.Fatalf("unexpected image counts: %+v", albums)
 	}
 	for i, image := range albums[0].Images {
-		if i > 0 && image.ID != strconv.Itoa(217-i) {
+		if i > 0 && image.ID != strconv.Itoa(273-i) {
 			t.Errorf("image order at %d: %s", i, image.ID)
 		}
 		if image.Title == "" || image.Description == "" || image.Source != "/media/"+image.ID+"/1200" || image.Thumbnail() != "/media/"+image.ID+"/400" {
@@ -93,7 +93,7 @@ func TestCatalogCompleteAndFiltered(t *testing.T) {
 	if fallback := albums[1].Images[0]; fallback.Title != "Sommerfest – Bild 1" || fallback.Description != fallback.Title {
 		t.Errorf("fallback: %+v", fallback)
 	}
-	if got := albums[0].ReturnURL(5); got != "/community/events/20?page=2#image-212" {
+	if got := albums[0].ReturnURL(25); got != "/community/events/20?page=2#image-248" {
 		t.Errorf("return to page: %s", got)
 	}
 }

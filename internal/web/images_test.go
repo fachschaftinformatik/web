@@ -26,9 +26,9 @@ func TestImagesNavigation(t *testing.T) {
 		contains string
 	}{
 		{"/events", 200, "LAN Party 2025"},
-		{"/events/140125680309370881", 200, "Nächste Seite"},
-		{"/events/140125680309370881?page=2", 200, "Gemeinsam spielen"},
-		{"/events/140125680309370881/140126279717355521", 200, "/community/events/140125680309370881?page=2#image-140126279717355521"},
+		{"/events/140125680309370881", 200, "image-140126291885031425"},
+		{"/events/140125680309370881?page=2", 303, "/events/140125680309370881"},
+		{"/events/140125680309370881/140126279717355521", 200, "/community/events/140125680309370881?page=1#image-140126279717355521"},
 		{"/events/unknown", 404, "404"},
 		{"/events/140125680309370881/unknown", 404, "404"},
 		{"/events/140117348945231873/140126279717355521", 404, "404"},
@@ -47,7 +47,6 @@ func TestImagesNavigation(t *testing.T) {
 	for _, tc := range []struct{ path, absent string }{
 		{"/events/140125680309370881/140126343856652289", "Vorheriges Bild"},
 		{"/events/140125680309370881/140126279717355521", "Nächstes Bild"},
-		{"/events/140125680309370881?page=2", "Zusammen auf der LAN Party"},
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest("GET", "/community"+tc.path, nil))
@@ -106,7 +105,7 @@ INSERT INTO media VALUES (101,10,'Live Title','Real alt','image/jpeg',11,'2026',
 	if err != nil {
 		t.Fatal(err)
 	}
-	for id := 110; id < 119; id++ {
+	for id := 110; id < 180; id++ {
 		if _, err := db.Exec(`INSERT INTO media VALUES (?,10,?,NULL,'image/jpeg',11,'2025',NULL)`, id, "Bild "+strconv.Itoa(id)); err != nil {
 			t.Fatal(err)
 		}
@@ -133,7 +132,7 @@ func TestLiveGalleryPaginationAndViewer(t *testing.T) {
 		{"/community/events/10", 200, "/media/101/400"},
 		{"/community/events/10?page=3", 200, "Bild 110"},
 		{"/community/events/10?page=4", 303, "/community/events/10"},
-		{"/community/events/10/115", 200, "/community/events/10?page=2#image-115"},
+		{"/community/events/10/115", 200, "/community/events/10?page=3#image-115"},
 		{"/community/events/10/101", 200, `alt="Real alt"`},
 		{"/community/events/20/101", 404, "404"},
 		{"/community/events/10/102", 404, "404"},

@@ -283,8 +283,9 @@
 }
 
 .app-event-carousel {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  max-width: 400px;
 }
 
 .app-event-carousel__link {
@@ -299,53 +300,125 @@
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 3 / 2;
-  object-fit: contain;
-  margin-bottom: 10px;
+  aspect-ratio: 1.618 / 1;
+  object-fit: cover;
+  object-position: 50% 40%;
+  box-sizing: border-box;
+  border: 4px solid #fff;
+  outline: 1px solid #b1b4b6;
+}
+
+.app-event-carousel__link:focus {
+  outline: 3px solid #ffdd00;
+  outline-offset: 3px;
 }
 
 .app-event-carousel__controls:not([hidden]) {
   display: flex;
+  order: 1;
   align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  margin-top: 15px;
+  justify-content: center;
+  gap: 6px;
+  margin: 12px 0 0;
 }
 
 .app-event-carousel__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 44px;
   width: 44px;
-  min-width: 44px;
-  min-height: 44px;
+  height: 44px;
   margin: 0;
-}
-
-.app-event-carousel__position {
-  flex: 1;
-  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
   color: #fff;
-  text-align: center;
 }
 
-@media (max-width: 40.0524em) {
-  .app-event-carousel {
-    max-width: 320px;
-    margin-inline: auto;
+.app-event-carousel__button:hover { background: rgb(255 255 255 / 15%); }
+.app-event-carousel__rotation {
+  flex-basis: auto;
+  width: auto;
+  padding: 0 10px;
+  font: 700 16px / 1.25 "GDS Transport", Arial, sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.app-event-carousel__button:focus-visible,
+.app-event-carousel__dot:focus-visible {
+  color: #0b0c0c;
+  background: #ffdd00;
+  outline: 3px solid #0b0c0c;
+  outline-offset: 2px;
+}
+
+.app-event-carousel__dots {
+  display: flex;
+}
+
+.app-event-carousel__dot {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.app-event-carousel__dot::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.app-event-carousel__dot[aria-disabled="true"]::after { background: currentColor; }
+.app-event-carousel__dot:hover::after { transform: scale(1.25); }
+
+.app-event-carousel--enhanced #event-slides { overflow: hidden; outline: 1px solid #b1b4b6; }
+.app-event-carousel__track {
+  display: flex;
+  transition: transform 350ms ease-in-out;
+  touch-action: pan-y pinch-zoom;
+}
+.app-event-carousel__track > .app-event-slide { flex: 0 0 100%; min-width: 0; }
+.app-event-carousel__track--instant { transition: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-event-carousel__track { transition: none; }
+}
+
+@media (min-width: 75em) {
+  .app-masthead {
+    background: linear-gradient(to bottom, #1d70b8 calc(100% - 140px), #f4f8fb calc(100% - 140px));
   }
+
+  .app-masthead__layout { align-items: start; }
+  .app-event-carousel__image,
+  .app-event-carousel--enhanced #event-slides { box-shadow: 0 10px 24px rgb(11 12 12 / 16%); }
+  .app-event-carousel__button,
+  .app-event-carousel__dot { color: #1d70b8; }
+  .app-event-carousel__button:hover { background: #f3f2f1; }
+  .app-event-carousel__button:focus-visible,
+  .app-event-carousel__dot:focus-visible { color: #0b0c0c; background: #ffdd00; }
 }
 
-@media (min-width: 40.0625em) {
+@media (min-width: 48.0625em) {
   .app-masthead__layout {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr);
     gap: 40px;
   }
 }
 
 @media (min-width: 48.0625em) {
-  .app-masthead__layout {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  }
-
   .app-home-services {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     column-gap: 30px;
@@ -573,10 +646,13 @@
   }
 }
 
+.app-gallery .app-page-heading h1 { margin-bottom: 20px; }
+
 .app-gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
 .app-gallery-grid > li {
@@ -588,6 +664,11 @@
   display: block;
 }
 
+.app-gallery-link:focus .app-gallery-thumbnail {
+  outline: 3px solid #0b0c0c;
+  box-shadow: 0 0 0 6px #ffdd00;
+}
+
 .app-gallery-thumbnail {
   display: block;
   width: 100%;
@@ -595,11 +676,20 @@
   aspect-ratio: 3 / 2;
   object-fit: contain;
   background: #f3f2f1;
-  margin-bottom: 10px;
 }
 
+.app-gallery-albums .app-gallery-thumbnail { margin-bottom: 15px; }
+.app-gallery-albums h2 { margin-bottom: 10px; }
+
 .app-gallery-figure {
-  margin: 0 0 30px;
+  margin: 0 0 20px;
+}
+
+.app-gallery-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f2f1;
 }
 
 .app-gallery-image {
@@ -607,7 +697,49 @@
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: 75vh;
+  max-height: clamp(240px, calc(100svh - 360px), 720px);
+  object-fit: contain;
+}
+
+.app-gallery-controls {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.app-gallery-controls > :last-child { text-align: right; }
+.app-gallery-position { margin: 0; }
+
+.app-gallery-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.app-gallery-step .govuk-pagination__icon { margin: 0; }
+.app-gallery-pagination .govuk-pagination__item { display: block; }
+
+@media (max-width: 48.0524em) {
+  .app-gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 40.0524em) {
+  .app-gallery-grid { gap: 15px; }
+  .app-gallery-albums { grid-template-columns: 1fr; }
+  .app-gallery-controls { gap: 10px; }
+  .app-gallery-step { gap: 5px; }
+  .app-gallery-pagination .govuk-pagination__item {
+    min-width: 40px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+}
+
+@media (max-width: 22.5em) {
+  .app-gallery-grid { grid-template-columns: 1fr; }
 }
 
 .app-search-progress {

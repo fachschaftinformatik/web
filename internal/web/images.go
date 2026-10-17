@@ -22,6 +22,16 @@ type ImagesPage struct {
 	Previous, Next, Return     string
 }
 
+func (g ImagesPage) CarouselAlbums() []media.Album {
+	var albums []media.Album
+	for _, album := range g.Albums {
+		if len(album.Images) > 0 {
+			albums = append(albums, album)
+		}
+	}
+	return albums
+}
+
 func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 	g := ImagesPage{Albums: media.Albums()}
 	if c.media != nil {
@@ -68,12 +78,9 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 			if index+1 < len(album.Images) {
 				g.Next = album.ImageURL(album.Images[index+1])
 			}
-			data.Title = g.Image.Title
+			data.DocumentTitle = album.Title + " – Bild " + strconv.Itoa(g.Number) + " von " + strconv.Itoa(g.Total)
 		} else {
 			g.Pages = max(1, (g.Total+media.PageSize-1)/media.PageSize)
-			for number := 1; number <= g.Pages; number++ {
-				g.PageNumbers = append(g.PageNumbers, number)
-			}
 			g.Page = 1
 			if value := r.URL.Query().Get("page"); value != "" {
 				page, err := strconv.Atoi(value)
@@ -83,6 +90,7 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 				}
 				g.Page = page
 			}
+			g.PageNumbers = galleryPageNumbers(g.Page, g.Pages)
 			start := (g.Page - 1) * media.PageSize
 			g.Images = album.Images[start:min(start+media.PageSize, g.Total)]
 			if g.Pages > 1 {
@@ -98,6 +106,20 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 	}
 	data.Images = g
 	c.render(w, "images", false, data)
+}
+
+// Zero marks an ellipsis between the current neighbourhood and an end page.
+func galleryPageNumbers(page, pages int) []int {
+	var numbers []int
+	for number := 1; number <= pages; number++ {
+		if pages <= 7 || number == 1 || number == pages || (number >= page-1 && number <= page+1) || (page <= 4 && number < page) || (page >= pages-3 && number > page) {
+			if len(numbers) > 0 && number-numbers[len(numbers)-1] > 1 {
+				numbers = append(numbers, 0)
+			}
+			numbers = append(numbers, number)
+		}
+	}
+	return numbers
 }
 
 // MediaFile serves only database-backed gallery images, never raw storage keys.

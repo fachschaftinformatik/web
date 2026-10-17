@@ -2,7 +2,7 @@ package media
 
 import "fmt"
 
-const PageSize = 4
+const PageSize = 24
 
 type Image struct {
 	ID, Title, Description, Source string
@@ -54,6 +54,13 @@ func (i Image) Thumbnail() string {
 		return i.thumbnail
 	}
 	return "/assets/images/" + i.ID + "-400.jpg"
+}
+
+func (i Image) ThumbnailSources() string {
+	if i.thumbnail != "" {
+		return fmt.Sprintf("%s 1x, /media/%s/800 2x, %s 3x", i.Thumbnail(), i.ID, i.Source)
+	}
+	return fmt.Sprintf("%s 1x, %s 3x", i.Thumbnail(), i.Source)
 }
 
 func Find(id string) (Album, bool) {
