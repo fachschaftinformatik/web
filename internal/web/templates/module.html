@@ -1,7 +1,7 @@
 {{define "sidebar"}}{{end}}
 {{define "content"}}
 {{with .Archive.Module}}
-<h2 class="govuk-heading-m">{{if eq (len .Exams) 0}}Keine Rekos gefunden{{else if eq (len .Exams) 1}}1 Reko{{else}}{{len .Exams}} Rekos{{end}}</h2>
+<h2 class="govuk-heading-m">{{if gt $.Archive.ListPagination.Pages 0}}{{$.Archive.ListPagination.Total}} {{if eq $.Archive.ListPagination.Total 1}}Reko{{else}}Rekos{{end}}{{else}}{{if eq (len .Exams) 0}}Keine Rekos gefunden{{else if eq (len .Exams) 1}}1 Reko{{else}}{{len .Exams}} Rekos{{end}}{{end}}</h2>
 {{if .Exams}}
 <table class="govuk-table app-archive-table app-archive-upload-table" role="table">
   <caption class="govuk-visually-hidden">Klausurrekonstruktionen für {{.Title}}</caption>
@@ -29,4 +29,5 @@
 {{end}}
 {{end}}
 {{if .Archive.Filtered}}<p class="govuk-body"><a class="govuk-link" href="/archive/{{.Archive.Module.ID}}?applied=1">Alle Rekos für dieses Modul anzeigen</a>.</p>{{end}}
+{{template "list-pagination" .Archive.ListPagination}}
 {{end}}

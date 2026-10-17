@@ -40,7 +40,7 @@ func TestPersistentForum(t *testing.T) {
 	if err != nil || old.ID != "203823111852785665" {
 		t.Fatalf("compatible ID: %+v %v", old, err)
 	}
-	d := Draft{Title: "Neues Treffen", Body: "Ein langer Beitrag.", Type: "event", Date: "30.01.2027", Time: "17:00", Location: "Raum A4", Tags: "Studium, Treffen, Studium"}
+	d := Draft{Title: "Neues Treffen", Body: "Ein langer Beitrag.", Type: "discussion", Tags: "Studium, Treffen, Studium"}
 	rich := `<p><strong>Ein langer Beitrag.</strong></p><script>alert(1)</script><a href="javascript:alert(2)">Link</a>`
 	post, err := s.Save(ctx, 1, "", d, rich)
 	if err != nil {
@@ -60,7 +60,6 @@ func TestPersistentForum(t *testing.T) {
 		}
 	}
 	d.Title = "Geändertes Treffen"
-	d.Location = "Raum A5"
 	if _, err = s.Save(ctx, 1, post, d, rich); err != nil {
 		t.Fatal(err)
 	}
@@ -73,9 +72,23 @@ func TestPersistentForum(t *testing.T) {
 		t.Fatal("accepted short visible body")
 	}
 	bad = d
-	bad.Date = "31.02.2027"
+	bad.Type = "event"
 	if _, err = s.Save(ctx, 1, post, bad, rich); err == nil {
-		t.Fatal("accepted invalid event date")
+		t.Fatal("converted discussion to event")
+	}
+	if _, err = s.Save(ctx, 1, "", bad, rich); err == nil {
+		t.Fatal("created event as a forum post")
+	}
+	bad.Type = "news"
+	if _, err = s.Save(ctx, 1, "", bad, rich); !errors.Is(err, ErrForbidden) {
+		t.Fatal("ordinary member published announcement")
+	}
+	news, err := s.Save(ctx, 3, "", bad, rich)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.Save(ctx, 1, news, d, rich); !errors.Is(err, ErrForbidden) {
+		t.Fatal("ordinary member changed announcement")
 	}
 	comment, err := s.SaveComment(ctx, 7, post, "", "Kommentar mit <script>Text</script>.")
 	if err != nil {
@@ -117,13 +130,13 @@ func TestPersistentForum(t *testing.T) {
 	if thread.Author != "Autor" || thread.AuthorID != 1 || thread.BodyFormat != "html" || !strings.Contains(thread.Body, "<strong>") || strings.Contains(thread.Body, "script") || strings.Contains(thread.Body, "alert") {
 		t.Fatalf("persisted body and author: %+v", thread)
 	}
-	if thread.Title != "Geändertes Treffen" || thread.EventDate != "2027-01-30T17:00" || thread.Location != "Raum A5" || len(thread.Tags) != 2 {
-		t.Fatalf("persisted event: %+v", thread)
+	if thread.Title != "Geändertes Treffen" || thread.Type != "discussion" || len(thread.Tags) != 2 {
+		t.Fatalf("persisted discussion: %+v", thread)
 	}
 	if len(thread.Replies) != 1 || thread.Comments != 1 || thread.Replies[0].ID != comment || thread.Replies[0].Author != "Anonym" || thread.Replies[0].Text != "Bearbeiteter Kommentar." {
 		t.Fatalf("persisted comments: %+v", thread.Replies)
 	}
-	list, err := s.Find(ctx, Filter{Query: "Treffen Studium", Type: "event"})
+	list, err := s.Find(ctx, Filter{Query: "Treffen Studium", Type: "discussion"})
 	if err != nil || len(list) != 1 || list[0].ID != post {
 		t.Fatalf("filtered posts: %+v %v", list, err)
 	}

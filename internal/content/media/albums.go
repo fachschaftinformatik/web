@@ -1,8 +1,11 @@
 package media
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
-const PageSize = 4
+const PageSize = 24
 
 type Image struct {
 	ID, Title, Description, Source string
@@ -14,6 +17,7 @@ type Album struct {
 	ID, Title     string
 	OriginalCount int
 	Images        []Image
+	Cover         Image
 }
 
 func Albums() []Album {
@@ -54,6 +58,23 @@ func (i Image) Thumbnail() string {
 		return i.thumbnail
 	}
 	return "/assets/images/" + i.ID + "-400.jpg"
+}
+
+func (i Image) ThumbnailSources() string {
+	if i.thumbnail != "" {
+		return fmt.Sprintf("%s 1x, %s/800 2x, %s 3x", i.Thumbnail(), strings.TrimSuffix(i.Source, "/1200"), i.Source)
+	}
+	return fmt.Sprintf("%s 1x, %s 3x", i.Thumbnail(), i.Source)
+}
+
+func (a Album) CoverImage() Image {
+	if a.Cover.Source != "" {
+		return a.Cover
+	}
+	if len(a.Images) > 0 {
+		return a.Images[0]
+	}
+	return Image{}
 }
 
 func Find(id string) (Album, bool) {

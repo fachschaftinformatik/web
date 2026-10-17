@@ -26,9 +26,9 @@ func TestImagesNavigation(t *testing.T) {
 		contains string
 	}{
 		{"/events", 200, "LAN Party 2025"},
-		{"/events/140125680309370881", 200, "Nächste Seite"},
-		{"/events/140125680309370881?page=2", 200, "Gemeinsam spielen"},
-		{"/events/140125680309370881/140126279717355521", 200, "/community/events/140125680309370881?page=2#image-140126279717355521"},
+		{"/events/140125680309370881", 200, "image-140126291885031425"},
+		{"/events/140125680309370881?page=2", 303, "/events/140125680309370881"},
+		{"/events/140125680309370881/140126279717355521", 200, "/community/events/140125680309370881?page=1#image-140126279717355521"},
 		{"/events/unknown", 404, "404"},
 		{"/events/140125680309370881/unknown", 404, "404"},
 		{"/events/140117348945231873/140126279717355521", 404, "404"},
@@ -47,7 +47,6 @@ func TestImagesNavigation(t *testing.T) {
 	for _, tc := range []struct{ path, absent string }{
 		{"/events/140125680309370881/140126343856652289", "Vorheriges Bild"},
 		{"/events/140125680309370881/140126279717355521", "Nächstes Bild"},
-		{"/events/140125680309370881?page=2", "Zusammen auf der LAN Party"},
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest("GET", "/community"+tc.path, nil))
@@ -81,7 +80,7 @@ func (seekablePhoto) Close() error { return nil }
 
 func (s *galleryBlob) GetObject(ctx context.Context, key string) (*blob.Object, error) {
 	s.keys = append(s.keys, key)
-	if key != "media/101/p/400.jpg" && key != "media/101/source" {
+	if key != "media/101/p/400.jpg" && key != "media/101/source" && key != "events/10/cover/p/400.jpg" {
 		return nil, errors.New("missing")
 	}
 	var reader io.ReadCloser = seekablePhoto{strings.NewReader("image bytes")}
@@ -99,14 +98,15 @@ func liveGalleryHandler(t *testing.T, storage blob.Provider) *Handler {
 	}
 	db.SetMaxOpenConns(1)
 	t.Cleanup(func() { db.Close() })
-	_, err = db.Exec(`CREATE TABLE events (id INTEGER PRIMARY KEY,title TEXT,created_at TEXT,deleted_at TEXT);
+	_, err = db.Exec(`CREATE TABLE events (id INTEGER PRIMARY KEY,title TEXT,created_at TEXT,deleted_at TEXT,cover_path TEXT);
 CREATE TABLE media (id INTEGER PRIMARY KEY,event_id INTEGER,title TEXT,description TEXT,mime_type TEXT,nbytes INTEGER,created_at TEXT,deleted_at TEXT);
-INSERT INTO events VALUES (10,'Live Album','2026',NULL),(20,'Other Album','2025',NULL),(30,'Deleted Album','2027','deleted');
-INSERT INTO media VALUES (101,10,'Live Title','Real alt','image/jpeg',11,'2026',NULL),(102,10,'Hidden','Hidden','image/jpeg',11,'2026','deleted'),(103,30,'Hidden','Hidden','image/jpeg',11,'2026',NULL),(104,10,'Unsafe','Unsafe','image/svg+xml',11,'2026',NULL);`)
+INSERT INTO events (id,title,created_at,deleted_at) VALUES (10,'Live Album','2026',NULL),(20,'Other Album','2025',NULL),(30,'Deleted Album','2027','deleted');
+INSERT INTO media VALUES (101,10,'Live Title','Real alt','image/jpeg',11,'2026',NULL),(102,10,'Hidden','Hidden','image/jpeg',11,'2026','deleted'),(103,30,'Hidden','Hidden','image/jpeg',11,'2026',NULL),(104,10,'Unsafe','Unsafe','image/svg+xml',11,'2026',NULL);
+UPDATE events SET cover_path='events/' || id || '/cover/source' WHERE id IN (10,30);`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for id := 110; id < 119; id++ {
+	for id := 110; id < 180; id++ {
 		if _, err := db.Exec(`INSERT INTO media VALUES (?,10,?,NULL,'image/jpeg',11,'2025',NULL)`, id, "Bild "+strconv.Itoa(id)); err != nil {
 			t.Fatal(err)
 		}
@@ -133,7 +133,7 @@ func TestLiveGalleryPaginationAndViewer(t *testing.T) {
 		{"/community/events/10", 200, "/media/101/400"},
 		{"/community/events/10?page=3", 200, "Bild 110"},
 		{"/community/events/10?page=4", 303, "/community/events/10"},
-		{"/community/events/10/115", 200, "/community/events/10?page=2#image-115"},
+		{"/community/events/10/115", 200, "/community/events/10?page=3#image-115"},
 		{"/community/events/10/101", 200, `alt="Real alt"`},
 		{"/community/events/20/101", 404, "404"},
 		{"/community/events/10/102", 404, "404"},
@@ -201,5 +201,34 @@ func TestMediaHTTPRangesAndPathProtections(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestEventCoverHTTPRangesAndVisibility(t *testing.T) {
+	for _, stream := range []bool{false, true} {
+		storage := &galleryBlob{stream: stream}
+		c := liveGalleryHandler(t, storage)
+		router := http.NewServeMux()
+		router.HandleFunc("GET /media/events/{id}/cover/{size}", c.EventCover)
+		for _, tc := range []struct {
+			method, path string
+			code         int
+		}{{"GET", "/media/events/10/cover/400", 206}, {"HEAD", "/media/events/10/cover/400", 206}, {"GET", "/media/events/20/cover/400", 404}, {"GET", "/media/events/30/cover/400", 404}, {"GET", "/media/events/999/cover/400", 404}, {"GET", "/media/events/10/cover/original", 404}} {
+			response := httptest.NewRecorder()
+			request := httptest.NewRequest(tc.method, tc.path, nil)
+			request.Header.Set("Range", "bytes=2-5")
+			router.ServeHTTP(response, request)
+			if response.Code != tc.code {
+				t.Fatalf("%s %s: %d", tc.method, tc.path, response.Code)
+			}
+			if tc.code == 206 && (response.Header().Get("Content-Type") != "image/jpeg" || response.Header().Get("Content-Range") != "bytes 2-5/11" || (tc.method == "GET" && response.Body.String() != "age ")) {
+				t.Fatalf("cover bytes or headers: %v %q", response.Header(), response.Body.String())
+			}
+		}
+		for _, key := range storage.keys {
+			if key != "events/10/cover/p/400.jpg" {
+				t.Fatalf("unexpected storage access: %s", key)
+			}
+		}
 	}
 }
