@@ -59,7 +59,7 @@ func (s RequestStatus) Label() string {
 
 func (r Request) DateLabel() string {
 	if date, err := parseDate(r.Date); err == nil {
-		return date.Format("02.01.2006")
+		return dateLabel(date.Format(time.DateOnly))
 	}
 	return r.Date
 }
@@ -69,8 +69,8 @@ func (r Request) SubmittedLabel() string {
 	if r.SubmittedAt != nil {
 		value = *r.SubmittedAt
 	}
-	if date, err := time.Parse(time.RFC3339, value); err == nil {
-		return date.Format("02.01.2006")
+	if label := dateLabel(value); label != "" {
+		return label
 	}
 	return value
 }
@@ -92,9 +92,6 @@ func (e Event) LegacyURL() string {
 }
 
 func (e Event) EventLabel() string {
-	if len(e.EventDate) == 10 {
-		return dateLabel(e.EventDate + "T00:00:00Z")
-	}
 	return eventLabel(e.EventDate)
 }
 
@@ -157,17 +154,8 @@ func authorURL(id int64, public bool) string {
 func (p Post) PostedLabel() string { return postedLabel(p.Created) }
 
 func postedLabel(value string) string {
-	date, err := time.Parse(time.RFC3339, value)
-	if err != nil {
-		return dateLabel(value)
-	}
-	if location, err := time.LoadLocation("Europe/Berlin"); err == nil {
-		date = date.In(location)
-	}
-	return date.Format("15:04") + " Uhr am " + dateLabel(date.Format(time.RFC3339))
+	return formatDate(value, displayLocale, dateStylePosted)
 }
-
-func (p Post) SourceURL() string { return "https://ik.fsv-wh.de/d/" + p.ID }
 
 func (p Post) DateISO() string {
 	if len(p.Created) < 10 {
@@ -181,12 +169,7 @@ func (p Post) DateLabel() string {
 }
 
 func dateLabel(value string) string {
-	date, err := time.Parse(time.RFC3339, value)
-	if err != nil {
-		return ""
-	}
-	months := [...]string{"Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"}
-	return date.Format("2.") + " " + months[date.Month()-1] + " " + date.Format("2006")
+	return formatDate(value, displayLocale, dateStyleDate)
 }
 
 func (p Post) TypeLabel() string {
@@ -212,11 +195,7 @@ func (t Thread) UpdatedLabel() string { return dateLabel(t.Updated) }
 
 func (t Thread) EventLabel() string { return eventLabel(t.EventDate) }
 func eventLabel(value string) string {
-	date, err := time.Parse("2006-01-02T15:04", value)
-	if err != nil {
-		return ""
-	}
-	return dateLabel(date.Format(time.RFC3339)) + ", " + date.Format("15:04") + " Uhr"
+	return formatDate(value, displayLocale, dateStyleEvent)
 }
 
 func (p Post) RelativeTime() string { return relativeTime(p.Created, time.Now()) }
@@ -289,8 +268,6 @@ func (a Album) CoverImage() Image {
 
 func (a Album) URL() string { return "/community/events/" + a.ID }
 
-func (a Album) OriginalURL() string { return "https://ik.fsv-wh.de/events/" + a.ID }
-
 func (a Album) ImageURL(image Image) string { return a.URL() + "/" + image.ID }
 
 func (a Album) PageURL(page int) string { return fmt.Sprintf("%s?page=%d", a.URL(), page) }
@@ -325,8 +302,7 @@ func (m Meeting) DateLabel() string {
 	if err != nil {
 		return "Datum uneindeutig"
 	}
-	months := [...]string{"Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"}
-	return fmt.Sprintf("%d. %s %d", date.Day(), months[date.Month()-1], date.Year())
+	return dateLabel(date.Format(time.DateOnly))
 }
 
 func (p Publication) Size() string { return fmt.Sprintf("%d kB", (len(p.Data)+999)/1000) }
@@ -429,7 +405,7 @@ func summary(body, format string) string {
 }
 func (e Exam) Date() string {
 	if date, err := parseDate(e.Exam.Date); err == nil {
-		return date.Format("02.01.2006")
+		return dateLabel(date.Format(time.DateOnly))
 	}
 	return e.Exam.Date
 }

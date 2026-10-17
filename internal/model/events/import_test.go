@@ -93,14 +93,14 @@ func TestImportPreservesCaptionsFullImagesAndEditorialEdits(t *testing.T) {
 	if _, _, err := s.Import(ctx, 1, input); err == nil {
 		t.Fatal("accepted untrusted source URL")
 	}
-	if _, err := db.Exec(`UPDATE media SET deleted_at='deleted' WHERE id=(SELECT MAX(id) FROM media WHERE event_id=?)`, e.GalleryAlbumID.Int64); err != nil {
+	if _, err := db.Exec(`UPDATE media SET deleted_at='2026-01-01T00:00:00Z' WHERE id=(SELECT MAX(id) FROM media WHERE event_id=?)`, e.GalleryAlbumID.Int64); err != nil {
 		t.Fatal(err)
 	}
 	e, err = s.Lookup(ctx, event)
 	if err != nil || e.GalleryAlbumID.Valid || e.CoverKey == "" {
 		t.Fatalf("two-image album linked or event cover lost: %+v %v", e, err)
 	}
-	if _, err := db.Exec(`UPDATE calendar_events SET deleted_at='deleted' WHERE id=?`, event); err != nil {
+	if _, err := db.Exec(`UPDATE calendar_events SET deleted_at='2026-01-01T00:00:00Z' WHERE id=?`, event); err != nil {
 		t.Fatal(err)
 	}
 	object, err = gallery.Open(ctx, photo.ID, "original")

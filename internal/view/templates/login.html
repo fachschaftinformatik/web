@@ -18,7 +18,7 @@
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <div class="govuk-form-group {{if .Login.EmailError}}govuk-form-group--error{{end}}">
     <label class="govuk-label" for="email">E-Mail-Adresse</label>
-    <div class="govuk-hint" id="email-hint">Nutze deine E-Mail-Adresse mit @studmail.w-hs.de oder @fsv-wh.de.</div>
+    <div class="govuk-hint" id="email-hint">Nutze deine E-Mail-Adresse mit {{.AccountDomains}}.</div>
     {{if .Login.EmailError}}<p class="govuk-error-message" id="email-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Login.EmailError}}</p>{{end}}
     <input class="govuk-input {{if .Login.EmailError}}govuk-input--error{{end}}" id="email" name="email" type="text" autocomplete="username" spellcheck="false" autocapitalize="none" value="{{.Login.Email}}" aria-describedby="email-hint{{if .Login.EmailError}} email-error{{end}}" {{if .Login.EmailError}}aria-invalid="true"{{end}}>
   </div>

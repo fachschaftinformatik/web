@@ -22,6 +22,12 @@ func Migrate(dsn string, logger *log.Logger) error {
 		return fmt.Errorf("goose: failed to open DB: %w", err)
 	}
 	defer db.Close()
+	// Table rebuilds must preserve references to the original table names. This
+	// connection is only used for migrations; runtime connections enforce FKs.
+	db.SetMaxOpenConns(1)
+	if _, err := db.Exec("PRAGMA foreign_keys=OFF"); err != nil {
+		return err
+	}
 
 	if err := db.Ping(); err != nil {
 		return fmt.Errorf("goose: failed to ping DB: %w", err)
@@ -31,7 +37,7 @@ func Migrate(dsn string, logger *log.Logger) error {
 	if err != nil {
 		return fmt.Errorf("goose: embedded migrations: %w", err)
 	}
-	provider, err := goose.NewProvider(goose.DialectSQLite3, db, files)
+	provider, err := goose.NewProvider(goose.DialectSQLite3, db, files, goose.WithGoMigrations(utcEventMigration(), utcEnforcementMigration()))
 	if err != nil {
 		return fmt.Errorf("goose: create migration provider: %w", err)
 	}

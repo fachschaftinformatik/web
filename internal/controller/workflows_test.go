@@ -19,7 +19,7 @@ func TestLiveForumRoutingCSRFAndRestart(t *testing.T) {
 	if status, _, headers := b.get("/d/new"); status != 303 || headers.Get("Location") != "/login" {
 		t.Fatal("anonymous forum writes are not protected")
 	}
-	identity := users.NewService(db, "https://example.org")
+	identity := users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}})
 	session, err := identity.CreateSession(context.Background(), 42)
 	if err != nil {
 		t.Fatal(err)

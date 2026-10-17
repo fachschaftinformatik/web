@@ -46,7 +46,7 @@ func TestEventPublicationWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := &Handler{views: views, identity: users.NewService(db, "http://example.test"), events: events.NewService(db, storage), forum: forum.NewService(db)}
+	c := &Handler{views: views, identity: users.NewService(db, "http://example.test", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}), events: events.NewService(db, storage), forum: forum.NewService(db)}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/community/veranstaltungen/new", c.EditEvent)
 	mux.HandleFunc("/community/veranstaltungen/{event}/edit", c.EditEvent)

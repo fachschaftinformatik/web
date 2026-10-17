@@ -39,3 +39,26 @@ func TestEventPagesOrderHistoryAndExcludeCancelledFromHome(t *testing.T) {
 		t.Fatal("calendar grouping and the bounded upcoming query disagree")
 	}
 }
+
+func TestUpcomingUTCTimestampsAtLocalMidnight(t *testing.T) {
+	s, db, _ := eventService(t)
+	if _, err := db.Exec(`INSERT INTO calendar_events(id,title,body,user_id,event_date) VALUES
+	(20,'Today after midnight','Text',1,'2026-07-17T22:30:00Z'),
+	(21,'Yesterday before midnight','Text',1,'2026-07-17T21:30:00Z'),
+	(22,'All day today','Text',1,'2026-07-18')`); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 7, 17, 23, 0, 0, 0, time.UTC)
+	home, total, err := s.FindPage(context.Background(), now, 1, 6, true)
+	if err != nil || total != 2 {
+		t.Fatal("UTC timestamps were classified by UTC day instead of local day", home, total, err)
+	}
+	all, _, err := s.FindPage(context.Background(), now, 1, 100, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	upcoming, past := Group(all, now)
+	if len(upcoming) != 2 || len(past) != 1 || past[0].ID != "21" {
+		t.Fatal("UTC calendar grouping disagrees", upcoming, past)
+	}
+}

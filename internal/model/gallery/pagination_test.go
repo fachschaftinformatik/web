@@ -48,7 +48,7 @@ func TestAlbumVisibilityCountsOnlyPublicPhotosBeforePagination(t *testing.T) {
 	if _, err := s.PhotoPosition(ctx, a.ID, "102"); !errors.Is(err, ErrNotFound) {
 		t.Fatal("photo from another album resolved")
 	}
-	if _, err := db.Exec(`UPDATE media SET deleted_at='deleted' WHERE id=108`); err != nil {
+	if _, err := db.Exec(`UPDATE media SET deleted_at='2026-01-01T00:00:00Z' WHERE id=108`); err != nil {
 		t.Fatal(err)
 	}
 	_, total, err = s.AlbumPage(ctx, 1, 12)

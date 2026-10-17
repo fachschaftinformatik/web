@@ -30,7 +30,7 @@
   </div>
   <div class="govuk-form-group {{if .Register.EmailError}}govuk-form-group--error{{end}}">
     <label class="govuk-label" for="email">E-Mail-Adresse</label>
-    <div class="govuk-hint" id="email-hint">Nutze deine Hochschul-E-Mail-Adresse (@studmail.w-hs.de) und bestätige sie über den Link in unserer E-Mail. So prüfen wir, ob du eingeschrieben bist.</div>
+    <div class="govuk-hint" id="email-hint">Nutze deine Hochschul-E-Mail-Adresse ({{.RegistrationDomains}}) und bestätige sie über den Link in unserer E-Mail. So prüfen wir, ob du eingeschrieben bist.</div>
     {{if .Register.EmailError}}<p class="govuk-error-message" id="email-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Register.EmailError}}</p>{{end}}
     <input class="govuk-input {{if .Register.EmailError}}govuk-input--error{{end}}" id="email" name="email" type="email" autocomplete="email" spellcheck="false" autocapitalize="none" value="{{.Register.Email}}" aria-describedby="email-hint{{if .Register.EmailError}} email-error{{end}}" {{if .Register.EmailError}}aria-invalid="true"{{end}}>
   </div>

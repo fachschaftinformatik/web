@@ -11,12 +11,15 @@ import (
 	"strings"
 	"testing"
 
+	"os"
+
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/model/archive"
 	"github.com/fachschaftinformatik/web/internal/model/events"
 	"github.com/fachschaftinformatik/web/internal/model/forum"
 	"github.com/fachschaftinformatik/web/internal/model/gallery"
 	"github.com/fachschaftinformatik/web/internal/model/meetings"
+	"github.com/fachschaftinformatik/web/internal/model/organization"
 	"github.com/fachschaftinformatik/web/internal/model/people"
 	"github.com/fachschaftinformatik/web/internal/model/users"
 	objectstore "github.com/fachschaftinformatik/web/internal/storage"
@@ -50,6 +53,21 @@ func identityBrowserWithStorage(t *testing.T, storage archive.Storage) (*adminBr
 
 func persistentServices(t *testing.T, db *sql.DB, storage archive.Storage) Services {
 	t.Helper()
+
+	content, err := os.ReadFile("../../tools/import-site-data/content.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(string(content)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(`INSERT OR IGNORE INTO people(id,name,email,position) VALUES('1','Example Chair','chair@example.org',0); INSERT OR IGNORE INTO responsibilities(id,group_name,title,email,position) VALUES('1','board','Vorsitz','chair@example.org',0),('6','departments','Öffentlichkeit','public@example.org',1); INSERT OR IGNORE INTO responsibility_members(responsibility_id,person_id,position) VALUES('1','1',0)`); err != nil {
+		t.Fatal(err)
+	}
+	org, err := organization.NewStore(context.Background(), db)
+	if err != nil {
+		t.Fatal(err)
+	}
 	team, err := people.Open(context.Background(), db)
 	if err != nil {
 		t.Fatal(err)
@@ -64,11 +82,11 @@ func persistentServices(t *testing.T, db *sql.DB, storage archive.Storage) Servi
 		provider = local
 		storage = local
 	}
-	meetings, err := meetings.NewStore(db, provider)
+	meetingStore, err := meetings.NewStore(db, provider)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return Services{Users: users.NewService(db, "https://example.org"), Archive: archive.NewService(db, storage), People: team, Meetings: meetings, Forum: forum.NewService(db), Gallery: gallery.NewService(db, provider), Events: events.NewService(db, provider)}
+	return Services{Organization: org, Users: users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}), Archive: archive.NewService(db, storage), People: team, Meetings: meetingStore, Forum: forum.NewService(db), Gallery: gallery.NewService(db, provider), Events: events.NewService(db, provider)}
 }
 
 func TestPersistentLoginAuthorizationAndLogout(t *testing.T) {
@@ -179,7 +197,7 @@ func TestPersistentRegistrationAndRecoveryJourney(t *testing.T) {
 	if status, _, _ := b.post("/reset", reset); status != 422 {
 		t.Fatal("reset token reused")
 	}
-	s := users.NewService(db, "https://example.org")
+	s := users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}})
 	if _, err := s.Login(context.Background(), "kim@studmail.w-hs.de", "replacement 🔐"); err != nil {
 		t.Fatal(err)
 	}

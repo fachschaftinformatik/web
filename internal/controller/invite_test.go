@@ -16,7 +16,7 @@ func TestMemberInvitationRegistrationJourney(t *testing.T) {
 	if _, err := db.Exec(`INSERT INTO users(id,email,name,password,role,active,verified) VALUES (42,'admin@fsv-wh.de','Admin','unused','admin',1,1)`); err != nil {
 		t.Fatal(err)
 	}
-	session, err := users.NewService(db, "http://example.org").CreateSession(context.Background(), 42)
+	session, err := users.NewService(db, "http://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}).CreateSession(context.Background(), 42)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestExistingMemberInvitationAndAccountEditing(t *testing.T) {
 	if _, err := db.Exec(`INSERT INTO users(id,email,name,password,role,active,verified) VALUES (42,'admin@fsv-wh.de','Admin','unused','admin',1,1)`); err != nil {
 		t.Fatal(err)
 	}
-	session, err := users.NewService(db, "http://example.org").CreateSession(context.Background(), 42)
+	session, err := users.NewService(db, "http://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}).CreateSession(context.Background(), 42)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -20,6 +20,7 @@ import (
 	"github.com/fachschaftinformatik/web/internal/model/forum"
 	"github.com/fachschaftinformatik/web/internal/model/gallery"
 	"github.com/fachschaftinformatik/web/internal/model/meetings"
+	"github.com/fachschaftinformatik/web/internal/model/organization"
 	"github.com/fachschaftinformatik/web/internal/model/people"
 	"github.com/fachschaftinformatik/web/internal/model/users"
 	"github.com/fachschaftinformatik/web/internal/storage"
@@ -37,6 +38,9 @@ type application struct {
 
 func newApplication(ctx context.Context, databasePath, blobPath string) (_ *application, err error) {
 	cfg := config.New()
+	if err := cfg.ValidateDomains(); err != nil {
+		return nil, err
+	}
 	origin, err := url.Parse(cfg.Domain)
 	if err != nil || origin.Host == "" || (origin.Scheme != "http" && origin.Scheme != "https") || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" {
 		return nil, errors.New("DOMAIN must be an absolute HTTP or HTTPS URL")
@@ -81,10 +85,14 @@ func newApplication(ctx context.Context, databasePath, blobPath string) (_ *appl
 	if err != nil {
 		return nil, err
 	}
-	identity := users.NewService(db, cfg.Domain)
+	org, err := organization.NewStore(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	identity := users.NewService(db, cfg.Domain, users.DomainPolicy{Registration: cfg.RegistrationDomains, Accounts: cfg.AccountDomains})
 	files := archive.NewService(db, objects)
 	app.handler, err = controller.New(controller.Services{
-		Users: identity, Archive: files, People: team, Meetings: publications,
+		Users: identity, Archive: files, People: team, Meetings: publications, Organization: org,
 		Forum: forum.NewService(db), Gallery: gallery.NewService(db, objects), Events: events.NewService(db, objects),
 	}, origin.Scheme == "https")
 	if err != nil {
@@ -96,7 +104,7 @@ func newApplication(ctx context.Context, databasePath, blobPath string) (_ *appl
 		defer close(app.done)
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
-		sender := email.NewSender(cfg)
+		sender := email.NewSender(cfg, org)
 		for {
 			if err := files.CleanupBlobs(maintenanceCtx); err != nil && maintenanceCtx.Err() == nil {
 				log.Printf("Archive file maintenance: %v", err)

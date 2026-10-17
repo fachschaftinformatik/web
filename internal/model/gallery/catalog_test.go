@@ -32,16 +32,16 @@ func galleryService(t *testing.T) (*Service, *sql.DB) {
 	}
 	t.Cleanup(func() { db.Close() })
 	_, err = db.Exec(`INSERT INTO users (id,email,name,password,private) VALUES (1,'gallery@fsv-wh.de','Private uploader','unused',1);
-INSERT INTO events (id,title,created_at,deleted_at) VALUES (10,'Sommerfest','2025-01-01',NULL),(20,'LAN','2026-01-01',NULL),(30,'Deleted','2027-01-01','2027-01-02'),(40,'Empty','2024-01-01',NULL);
+INSERT INTO events (id,title,created_at,deleted_at) VALUES (10,'Sommerfest','2025-01-01T00:00:00Z',NULL),(20,'LAN','2026-01-01T00:00:00Z',NULL),(30,'Deleted','2027-01-01T00:00:00Z','2027-01-02T00:00:00Z'),(40,'Empty','2024-01-01T00:00:00Z',NULL);
 INSERT INTO media (id,event_id,user_id,title,description,access_key,mime_type,nbytes,created_at,deleted_at) VALUES
-(99,10,1,'Older','Older photograph','older','image/jpeg',5,'2025-01-01',NULL),
-(100,10,1,'Echter Titel','Echter Alternativtext','not-a-blob-path','image/jpeg',5,'2026-01-01',NULL),
-(101,10,1,NULL,NULL,'fallback','image/jpeg',5,'2026-01-01',NULL),
-(102,20,1,'New','Description','new','image/jpeg',5,'2026-01-02',NULL),
-(103,20,1,'Deleted','Hidden','deleted','image/jpeg',5,'2026-01-03','2026-01-04'),
-(104,30,1,'Deleted album','Hidden','deleted-album','image/jpeg',5,'2026-01-01',NULL),
-(105,20,1,'SVG','Hidden','svg','image/svg+xml',5,'2026-01-01',NULL),
-(106,20,1,'HTML','Hidden','html','text/html',5,'2026-01-01',NULL);`)
+(99,10,1,'Older','Older photograph','older','image/jpeg',5,'2025-01-01T00:00:00Z',NULL),
+(100,10,1,'Echter Titel','Echter Alternativtext','not-a-blob-path','image/jpeg',5,'2026-01-01T00:00:00Z',NULL),
+(101,10,1,NULL,NULL,'fallback','image/jpeg',5,'2026-01-01T00:00:00Z',NULL),
+(102,20,1,'New','Description','new','image/jpeg',5,'2026-01-02T00:00:00Z',NULL),
+(103,20,1,'Deleted','Hidden','deleted','image/jpeg',5,'2026-01-03T00:00:00Z','2026-01-04T00:00:00Z'),
+(104,30,1,'Deleted album','Hidden','deleted-album','image/jpeg',5,'2026-01-01T00:00:00Z',NULL),
+(105,20,1,'SVG','Hidden','svg','image/svg+xml',5,'2026-01-01T00:00:00Z',NULL),
+(106,20,1,'HTML','Hidden','html','text/html',5,'2026-01-01T00:00:00Z',NULL);`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,7 @@ func TestCatalogCompleteAndFiltered(t *testing.T) {
 	s, db := galleryService(t)
 	// Exceed several pages: every eligible row must reach the catalog.
 	for id := 200; id < 273; id++ {
-		_, err := db.Exec(`INSERT INTO media (id,event_id,user_id,access_key,mime_type,nbytes,created_at) VALUES (?,20,1,?,'image/png',5,'2026-01-01')`, id, strconv.Itoa(id))
+		_, err := db.Exec(`INSERT INTO media (id,event_id,user_id,access_key,mime_type,nbytes,created_at) VALUES (?,20,1,?,'image/png',5,'2026-01-01T00:00:00Z')`, id, strconv.Itoa(id))
 		if err != nil {
 			t.Fatal(err)
 		}

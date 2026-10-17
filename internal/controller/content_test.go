@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -10,12 +11,14 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync/atomic"
 	"testing"
 
+	"github.com/fachschaftinformatik/web/internal/storage/disk"
 	"github.com/fachschaftinformatik/web/internal/view"
 
 	"github.com/fachschaftinformatik/web/internal/database"
@@ -99,12 +102,22 @@ func TestMeetingInitialSaveFailureCanRetry(t *testing.T) {
 }
 
 func TestMeetingDocuments(t *testing.T) {
-	handler, err := testHandler(t)
+	handler, db := testApplication(t)
+	objects, err := disk.New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer objects.Close()
+	handler.meetings, err = meetings.NewStore(db, objects)
 	if err != nil {
 		t.Fatal(err)
 	}
 	files, sources := map[string]bool{}, map[string]bool{}
-	for _, meeting := range meetings.All() {
+	records, err := handler.meetings.AllWithError()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, meeting := range records {
 		for _, document := range meeting.Documents {
 			if files[document.File] {
 				t.Fatalf("duplicate document URL: %s", document.File)
@@ -115,6 +128,13 @@ func TestMeetingDocuments(t *testing.T) {
 					t.Fatalf("duplicate source mapping: %s", source)
 				}
 				sources[source] = true
+			}
+			data, err := os.ReadFile("../../tools/import-site-data/documents/" + document.File)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = objects.Upload(context.Background(), "meetings/historical/"+document.SHA256, bytes.NewReader(data), int64(len(data)), "application/pdf"); err != nil {
+				t.Fatal(err)
 			}
 			response := httptest.NewRecorder()
 			handler.ServeHTTP(response, httptest.NewRequest("GET", view.Document(document).URL(), nil))
@@ -188,13 +208,13 @@ func TestMeetingYears(t *testing.T) {
 		query, want string
 		status      int
 	}{
-		{"", "24. September 2026", 200},
-		{"?jahr=2024", "10. Dezember 2024", 200},
+		{"", "24.09.2026", 200},
+		{"?jahr=2024", "10.12.2024", 200},
 		{"?jahr=2025", "Datum uneindeutig", 200},
 		{"?jahr=2022", "2022", 200},
-		{"?jahr=2020", "6. März 2020", 200},
-		{"?jahr=2021", "22. Januar 2021", 200},
-		{"?jahr=2023", "18. Januar 2023", 200},
+		{"?jahr=2020", "06.03.2020", 200},
+		{"?jahr=2021", "22.01.2021", 200},
+		{"?jahr=2023", "18.01.2023", 200},
 		{"?jahr=1999", "Seite nicht gefunden", 404},
 		{"?jahr=invalid", "Seite nicht gefunden", 404},
 	} {

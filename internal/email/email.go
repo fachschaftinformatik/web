@@ -16,29 +16,32 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/config"
+	"github.com/fachschaftinformatik/web/internal/model/organization"
 )
 
 //go:embed templates/*.html
 var templateFS embed.FS
 
 type Sender struct {
-	cfg *config.Config
-	tpl *template.Template
+	cfg          *config.Config
+	organization *organization.Store
+	tpl          *template.Template
 }
 
-func NewSender(cfg *config.Config) *Sender {
+func NewSender(cfg *config.Config, org *organization.Store) *Sender {
 	tpl, err := template.ParseFS(templateFS, "templates/*.html")
 	if err != nil {
 		panic(fmt.Errorf("failed to parse email templates: %w", err))
 	}
 
 	return &Sender{
-		cfg: cfg,
+		cfg: cfg, organization: org,
 		tpl: tpl,
 	}
 }
 
 type notification struct {
+	Organization                                             organization.Details
 	Name, Domain, Title, Intro, Action, Link, Validity, Note string
 }
 
@@ -46,13 +49,13 @@ func (s *Sender) SendVerificationEmail(toEmail, name, link string) error {
 	n := notification{
 		Name: name, Link: link,
 		Title:    "E-Mail-Adresse bestätigen",
-		Intro:    "Bestätige deine E-Mail-Adresse, um dein Benutzerkonto bei der Fachschaft Informatik zu nutzen.",
+		Intro:    "Bestätige deine E-Mail-Adresse, um dein Benutzerkonto bei " + s.organization.Current().ShortName + " zu nutzen.",
 		Action:   "E-Mail-Adresse bestätigen",
 		Validity: "Der Link ist 24 Stunden gültig.",
 		Note:     "Wenn du dich nicht registriert hast, kannst du diese E-Mail ignorieren.",
 	}
 	if target, err := url.Parse(link); err == nil && target.Path == "/invite" {
-		n.Title = "Einladung zur Fachschaft Informatik"
+		n.Title = "Einladung: " + s.organization.Current().ShortName
 		n.Intro = "Du wurdest als Mitglied der Fachschaft eingeladen. Lege dein Passwort fest und bestätige deine E-Mail-Adresse, um dein Benutzerkonto zu nutzen."
 		n.Action = "Einladung annehmen"
 		n.Note = "Bei Fragen zu deiner Einladung wende dich an die Fachschaft."
@@ -89,6 +92,9 @@ func (s *Sender) notify(to string, n notification) error {
 }
 
 func (s *Sender) message(to string, n notification) ([]byte, error) {
+	if s.organization != nil {
+		n.Organization = s.organization.Current()
+	}
 	var body bytes.Buffer
 	if err := s.tpl.ExecuteTemplate(&body, "notification.html", n); err != nil {
 		return nil, fmt.Errorf("failed to execute email template: %w", err)
@@ -96,7 +102,7 @@ func (s *Sender) message(to string, n notification) ([]byte, error) {
 	var message bytes.Buffer
 	parts := multipart.NewWriter(&message)
 	fmt.Fprintf(&message, "From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=%q\r\n\r\n", s.cfg.SMTPFrom, to, mime.QEncoding.Encode("utf-8", n.Title), parts.Boundary())
-	plain := fmt.Sprintf("fsInformatik\n\n%s\n\nHallo %s,\n\n%s\n\n%s:\n%s\n\n%s\n\n%s\n\nDeine Fachschaft Informatik\n\nFachschaft Informatik · Westfälische Hochschule\nFachschaft kontaktieren: %s/contact\n", n.Title, n.Name, n.Intro, n.Action, n.Link, n.Validity, n.Note, n.Domain)
+	plain := fmt.Sprintf("%s\n\n%s\n\nHallo %s,\n\n%s\n\n%s:\n%s\n\n%s\n\n%s\n\nDeine %s\n\n%s · %s\nFachschaft kontaktieren: %s/contact\n", n.Organization.Name, n.Title, n.Name, n.Intro, n.Action, n.Link, n.Validity, n.Note, n.Organization.ShortName, n.Organization.ShortName, n.Organization.Institution, n.Domain)
 	for _, part := range []struct{ kind, body string }{{"text/plain", plain}, {"text/html", body.String()}} {
 		header := textproto.MIMEHeader{"Content-Type": {part.kind + "; charset=UTF-8"}, "Content-Transfer-Encoding": {"quoted-printable"}}
 		out, err := parts.CreatePart(header)

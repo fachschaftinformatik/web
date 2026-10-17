@@ -26,9 +26,9 @@ func TestVotesPersistWithoutChangingOtherUsersAndRespectVisibility(t *testing.T)
 	(1,'one@fsv-wh.de','One','unused',1,1),(2,'two@fsv-wh.de','Two','unused',1,1),
 	(3,'inactive@fsv-wh.de','Inactive','unused',0,1),(4,'unverified@fsv-wh.de','Unverified','unused',1,0);
 	INSERT INTO discussion_posts(id,title,body,user_id,type,deleted_at) VALUES
-	(10,'Public post','Body',1,'discussion',NULL),(20,'Other post','Body',1,'discussion',NULL),(30,'Deleted post','Body',1,'discussion','deleted');
+	(10,'Public post','Body',1,'discussion',NULL),(20,'Other post','Body',1,'discussion',NULL),(30,'Deleted post','Body',1,'discussion','2026-01-01T00:00:00Z');
 	INSERT INTO discussion_comments(id,post_id,user_id,text,deleted_at) VALUES
-	(100,10,1,'Public',NULL),(200,20,1,'Other post',NULL),(300,10,1,'Deleted','deleted');
+	(100,10,1,'Public',NULL),(200,20,1,'Other post',NULL),(300,10,1,'Deleted','2026-01-01T00:00:00Z');
 	INSERT INTO discussion_votes VALUES(10,2,1);
 	INSERT INTO discussion_comment_votes VALUES(100,2,-1);`)
 	if err != nil {
@@ -73,7 +73,7 @@ func TestVotesPersistWithoutChangingOtherUsersAndRespectVisibility(t *testing.T)
 	if err := s.Vote(ctx, 1, "10", "", 2); err == nil {
 		t.Fatal("invalid value accepted")
 	}
-	if _, err := db.Exec(`UPDATE users SET deleted_at='deleted' WHERE id=1`); err != nil {
+	if _, err := db.Exec(`UPDATE users SET deleted_at='2026-01-01T00:00:00Z' WHERE id=1`); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.Vote(ctx, 1, "10", "", 1); !errors.Is(err, ErrForbidden) {

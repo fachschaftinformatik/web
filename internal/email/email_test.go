@@ -10,12 +10,14 @@ import (
 	"testing"
 
 	"github.com/fachschaftinformatik/web/internal/config"
+	"github.com/fachschaftinformatik/web/internal/model/organization"
 )
 
 func TestNotificationMIMEPreservesUnicodeAndActionLinks(t *testing.T) {
-	sender := NewSender(&config.Config{SMTPFrom: "web@example.org"})
+	sender := NewSender(&config.Config{SMTPFrom: "web@example.org"}, nil)
 	n := notification{
-		Name: "Jörg <script>alert(1)</script>", Domain: "https://example.org",
+		Organization: organization.Details{Name: "Example", ShortName: "Example Council", Institution: "Example University"},
+		Name:         "Jörg <script>alert(1)</script>", Domain: "https://example.org",
 		Title: "E-Mail-Adresse bestätigen", Intro: "Bestätige dein Konto.",
 		Action: "E-Mail-Adresse bestätigen", Link: "https://example.org/verify?token=" + strings.Repeat("a", 64) + "&source=email",
 		Validity: "Der Link ist 24 Stunden gültig.", Note: "Deine Fachschaft.",

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="htmx-config" content='{"historyCacheSize":0,"refreshOnHistoryMiss":true}'>
-  <title>{{if .DocumentTitle}}{{.DocumentTitle}}{{else}}{{.Title}}{{end}} · fsInformatik</title>
+  <title>{{if .DocumentTitle}}{{.DocumentTitle}}{{else}}{{.Title}}{{end}} · {{.Organization.Name}}</title>
   <link rel="stylesheet" href="/assets/govuk.css">
   <link rel="stylesheet" href="/assets/site.css">
   <script src="/assets/htmx.js" defer></script>
@@ -17,7 +17,7 @@
   <header class="govuk-generic-header app-header">
     <div class="govuk-generic-header__container govuk-width-container app-header-container {{if .SignedIn}}app-header-container--signed-in{{end}}">
       <div class="govuk-generic-header__logo">
-        <a class="govuk-generic-header__homepage-link" href="/"><strong>fsInformatik</strong></a>
+        <a class="govuk-generic-header__homepage-link" href="/"><strong>{{.Organization.Name}}</strong></a>
       </div>
       {{if not (or (eq .Active "login") (eq .Active "forgot"))}}<div class="app-header-tools">
        <div class="app-account-actions">{{if .SignedIn}}
@@ -112,7 +112,7 @@
             <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="/datenschutz">Datenschutz</a></li>
             <li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="/contact">Fachschaft kontaktieren</a></li>
           </ul>
-          <div class="govuk-footer__meta-custom">Fachschaft Informatik · Westfälische Hochschule</div>
+          <div class="govuk-footer__meta-custom">{{.Organization.ShortName}} · {{.Organization.Institution}}</div>
         </div>
       </div>
     </div>

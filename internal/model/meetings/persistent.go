@@ -165,7 +165,11 @@ func (s *Store) Publish(id, owner string) error {
 	}
 	date, _ := time.Parse("2006-01-02", p.Date)
 	conflict := errors.New("Datum und Sitzungsnummer stimmen nicht mit der vorhandenen Sitzung überein.")
-	for _, m := range All() {
+	historical, err := s.historical(ctx, tx)
+	if err != nil {
+		return err
+	}
+	for _, m := range historical {
 		if m.Year == date.Year() && (m.Date == p.Date && m.Number != p.Number || m.Number == p.Number && m.Date != p.Date) {
 			return conflict
 		}
@@ -196,12 +200,15 @@ func (s *Store) Publish(id, owner string) error {
 }
 
 func (s *Store) AllWithError() ([]Meeting, error) {
+	records, err := s.historical(context.Background(), s.db)
+	if err != nil {
+		return nil, err
+	}
 	rows, err := s.db.Query("SELECT id,date,number,kind,bytes FROM meeting_publications WHERE published=1 ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	records := All()
 	for rows.Next() {
 		var p Publication
 		var size int

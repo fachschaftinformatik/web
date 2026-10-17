@@ -27,9 +27,14 @@ Make sure you have the required Go version by running:
 go version
 ```
 
-Start the application from the repository root:
+Use a writable copy of the production database and object storage for development.
+The application does not seed members or organization content. See the README's
+site-data section for the one-time migration of pre-existing compiled-in content.
+Start the application from the repository root with explicit account-domain policy:
 ```bash
-go run .
+export ACCOUNT_DOMAINS=studmail.w-hs.de,fsv-wh.de
+export REGISTRATION_DOMAINS=studmail.w-hs.de
+go run . -database .dev-data/local/sqlite.db -blobs .dev-data/local/blobs
 ```
 
 Open <http://127.0.0.1:8090/>. Alternatively, use `docker compose up --build`.

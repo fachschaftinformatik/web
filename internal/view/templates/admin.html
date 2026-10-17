@@ -8,7 +8,7 @@
   <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
   <div class="govuk-error-summary__body"><ul class="govuk-list govuk-error-summary__list">
     {{if .Message}}<li><a href="#admin-form">{{.Message}}</a></li>{{end}}
-    {{range .Fields}}{{if .Error}}<li><a href="#{{.ID}}{{if eq .Kind "date"}}-day{{end}}">{{.Error}}</a></li>{{end}}{{end}}
+    {{range .Fields}}{{if .Error}}<li><a href="#{{.ErrorAnchor}}">{{.Error}}</a></li>{{end}}{{end}}
   </ul></div>
 </div></div>
 {{end}}
@@ -20,6 +20,11 @@
 {{if not .ReviewerOnly}}
 <h2 class="govuk-heading-l">Organisation</h2>
 <div class="app-community-cards">
+<div class="app-community-card">
+  <h3 class="govuk-heading-m">Stammdaten</h3>
+  <p class="govuk-body">Name, Kontaktangaben, rechtliche Informationen und Links.</p>
+  <p class="govuk-body"><a class="govuk-link" href="/verwaltung/stammdaten">Zu den Stammdaten</a></p>
+</div>
 <div class="app-community-card">
   <img class="app-community-card__image" src="/assets/community/catchup-groupshot.png" alt="" width="320" height="180" loading="lazy">
   <h3 class="govuk-heading-m">Mitglieder</h3>
@@ -81,6 +86,22 @@
   {{if .NextURL}}<div class="govuk-pagination__next"><a class="govuk-link govuk-pagination__link" href="{{.NextURL}}" rel="next"><span class="govuk-pagination__link-title">Weiter<span class="govuk-visually-hidden"> zur nächsten Seite</span></span><svg class="govuk-pagination__icon govuk-pagination__icon--next" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13"><path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"></path></svg></a></div>{{end}}
 </nav>{{end}}
 {{else}}<p class="govuk-body">Für diese Suche wurden keine Benutzerkonten gefunden. Versuche einen anderen Namen oder eine E-Mail-Adresse.</p>{{end}}
+{{end}}
+
+{{if eq .View "master-data"}}
+<p class="govuk-body">Änderungen gelten sofort für Website und E-Mails.</p>
+<h2 class="govuk-heading-m">Angaben zur Organisation</h2>
+<ul class="govuk-task-list">
+{{range .MasterData}}
+  <li class="govuk-task-list__item govuk-task-list__item--with-link">
+    <div class="govuk-task-list__name-and-hint">
+      <a class="govuk-link govuk-task-list__link" href="/verwaltung/stammdaten/{{.ID}}" aria-describedby="stammdaten-{{.ID}}-status{{if .Missing}} stammdaten-{{.ID}}-hint{{end}}">{{.Title}}</a>
+      {{if .Missing}}<div class="govuk-task-list__hint" id="stammdaten-{{.ID}}-hint">Fehlend oder ungültig: {{.Missing}}</div>{{end}}
+    </div>
+    <div class="govuk-task-list__status" id="stammdaten-{{.ID}}-status">{{if .Missing}}<strong class="govuk-tag govuk-tag--blue">Unvollständig</strong>{{else}}Vollständig{{end}}</div>
+  </li>
+{{end}}
+</ul>
 {{end}}
 
 {{if eq .View "user"}}
@@ -160,20 +181,21 @@
   <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Status</dt><dd class="govuk-summary-list__value">{{.Status}}</dd></div>
 </dl>
 {{end}}{{end}}
+{{if eq .Action "/verwaltung/stammdaten/verknuepfungen"}}<p class="govuk-body">Die Linktexte erscheinen auf der Website.</p>{{end}}
 <form id="admin-form" action="{{.Action}}" method="post" {{if .Publication}}enctype="multipart/form-data"{{end}} novalidate tabindex="-1">
   <input type="hidden" name="csrf" value="{{$csrf}}">
   {{range .Fields}}
   <div class="govuk-form-group {{if .Error}}govuk-form-group--error{{end}}">
     {{if or (eq .Kind "checkboxes") (eq .Kind "radios") (eq .Kind "date")}}
-    <fieldset class="govuk-fieldset" id="{{.ID}}" tabindex="-1" {{if or .Hint .Error}}aria-describedby="{{if .Hint}}{{.ID}}-hint{{end}}{{if .Error}} {{.ID}}-error{{end}}"{{end}}>
+    <fieldset class="govuk-fieldset" {{if eq .Kind "date"}}role="group"{{end}} id="{{.ID}}" tabindex="-1" {{if or .Hint .Error}}aria-describedby="{{if .Hint}}{{.ID}}-hint{{end}}{{if .Error}} {{.ID}}-error{{end}}"{{end}}>
       <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">{{.Label}}</legend>
       {{if .Hint}}<div class="govuk-hint" id="{{.ID}}-hint">{{.Hint}}</div>{{end}}
       {{if .Error}}<p class="govuk-error-message" id="{{.ID}}-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Error}}</p>{{end}}
       {{if eq .Kind "date"}}
       <div class="govuk-date-input">
-        <div class="govuk-date-input__item"><div class="govuk-form-group"><label class="govuk-label govuk-date-input__label" for="date-day">Tag</label><input class="govuk-input govuk-date-input__input govuk-input--width-2 {{if .Error}}govuk-input--error{{end}}" id="date-day" name="day" type="text" inputmode="numeric" value="{{.Day}}"></div></div>
-        <div class="govuk-date-input__item"><div class="govuk-form-group"><label class="govuk-label govuk-date-input__label" for="date-month">Monat</label><input class="govuk-input govuk-date-input__input govuk-input--width-2 {{if .Error}}govuk-input--error{{end}}" id="date-month" name="month" type="text" inputmode="numeric" value="{{.Month}}"></div></div>
-        <div class="govuk-date-input__item"><div class="govuk-form-group"><label class="govuk-label govuk-date-input__label" for="date-year">Jahr</label><input class="govuk-input govuk-date-input__input govuk-input--width-4 {{if .Error}}govuk-input--error{{end}}" id="date-year" name="year" type="text" inputmode="numeric" value="{{.Year}}"></div></div>
+        <div class="govuk-date-input__item"><div class="govuk-form-group"><label class="govuk-label govuk-date-input__label" for="{{.ID}}-day">Tag</label><input class="govuk-input govuk-date-input__input govuk-input--width-2 {{if .DatePartInvalid "day"}}govuk-input--error{{end}}" id="{{.ID}}-day" name="day" type="text" inputmode="numeric" value="{{.Day}}"></div></div>
+        <div class="govuk-date-input__item"><div class="govuk-form-group"><label class="govuk-label govuk-date-input__label" for="{{.ID}}-month">Monat</label><input class="govuk-input govuk-date-input__input govuk-input--width-2 {{if .DatePartInvalid "month"}}govuk-input--error{{end}}" id="{{.ID}}-month" name="month" type="text" inputmode="numeric" value="{{.Month}}"></div></div>
+        <div class="govuk-date-input__item"><div class="govuk-form-group"><label class="govuk-label govuk-date-input__label" for="{{.ID}}-year">Jahr</label><input class="govuk-input govuk-date-input__input govuk-input--width-4 {{if .DatePartInvalid "year"}}govuk-input--error{{end}}" id="{{.ID}}-year" name="year" type="text" inputmode="numeric" value="{{.Year}}"></div></div>
       </div>
       {{else}}
       {{$field := .}}
@@ -185,10 +207,27 @@
       </div>{{end}}
     </fieldset>
     {{else}}
-    <label class="govuk-label" for="{{.ID}}">{{.Label}}</label>
+    {{if eq .Kind "links"}}<h2 class="govuk-heading-m" id="{{.ID}}-label">{{.Label}}</h2>{{else}}<label class="govuk-label" for="{{.ID}}">{{.Label}}</label>{{end}}
     {{if .Hint}}<div class="govuk-hint" id="{{.ID}}-hint">{{.Hint}}</div>{{end}}
     {{if .Error}}<p class="govuk-error-message" id="{{.ID}}-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Error}}</p>{{end}}
-    {{if eq .Kind "file"}}<div class="govuk-file-upload-wrapper" data-module="govuk-file-upload"><input class="govuk-file-upload" id="{{.ID}}" name="{{.ID}}" type="file" accept="application/pdf,.pdf" aria-describedby="{{.ID}}-hint{{if .Error}} {{.ID}}-error{{end}}"></div>
+    {{if eq .Kind "links"}}
+    {{$field := .}}
+    <div id="{{.ID}}" role="group" aria-labelledby="{{.ID}}-label" tabindex="-1" {{if or .Hint .Error}}aria-describedby="{{.ID}}-hint{{if .Error}} {{.ID}}-error{{end}}"{{end}}>
+    {{range $i,$link := .Links}}
+      {{if $field.FixedLinkTitles}}
+      <div class="govuk-form-group"><label class="govuk-label" for="{{$field.ID}}-url-{{$i}}">{{.Title}}</label><input class="govuk-input" id="{{$field.ID}}-url-{{$i}}" name="{{$field.ID}}URL" type="url" value="{{.URL}}"></div>
+      {{else}}
+      <fieldset class="govuk-fieldset govuk-!-margin-bottom-4">
+        <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">{{if .Title}}{{.Title}}{{else}}Neue Verknüpfung{{end}}</legend>
+        {{if not $field.FixedLinkTitles}}<div class="govuk-form-group"><label class="govuk-label" for="{{$field.ID}}-title-{{$i}}">Bezeichnung</label><input class="govuk-input" id="{{$field.ID}}-title-{{$i}}" name="{{$field.ID}}Title" type="text" value="{{.Title}}"></div>{{end}}
+        <div class="govuk-form-group"><label class="govuk-label" for="{{$field.ID}}-url-{{$i}}">Webadresse</label><input class="govuk-input" id="{{$field.ID}}-url-{{$i}}" name="{{$field.ID}}URL" type="url" value="{{.URL}}"></div>
+      </fieldset>
+      {{end}}
+    {{end}}
+    </div>
+    {{else if eq .Kind "select"}}
+    <select class="govuk-select {{if .Error}}govuk-select--error{{end}}" id="{{.ID}}" name="{{.ID}}" {{if or .Hint .Error}}aria-describedby="{{.ID}}-hint{{if .Error}} {{.ID}}-error{{end}}"{{end}}>{{range .Options}}<option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>{{end}}</select>
+    {{else if eq .Kind "file"}}<div class="govuk-file-upload-wrapper" data-module="govuk-file-upload"><input class="govuk-file-upload" id="{{.ID}}" name="{{.ID}}" type="file" accept="application/pdf,.pdf" aria-describedby="{{.ID}}-hint{{if .Error}} {{.ID}}-error{{end}}"></div>
     {{else}}<input class="govuk-input {{if .Error}}govuk-input--error{{end}}" id="{{.ID}}" name="{{.ID}}" type="{{.Kind}}" value="{{.Value}}" {{if or .Hint .Error}}aria-describedby="{{if .Hint}}{{.ID}}-hint{{end}}{{if .Error}} {{.ID}}-error{{end}}"{{end}} {{if .Error}}aria-invalid="true"{{end}}>{{end}}
     {{end}}
   </div>

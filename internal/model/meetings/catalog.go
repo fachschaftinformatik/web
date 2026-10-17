@@ -4,15 +4,11 @@ import (
 	"bytes"
 	"database/sql"
 	_ "embed"
-	"encoding/json"
 	"slices"
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/storage"
 )
-
-//go:embed catalog.json
-var catalog []byte
 
 type Document struct {
 	Kind, File, Note, SHA256 string
@@ -25,35 +21,6 @@ type Meeting struct {
 	Year, Number int
 	Date         string
 	Documents    []Document
-}
-
-// All returns a fresh copy of the curated, newest-first document index.
-func All() []Meeting {
-	var records []Meeting
-	if err := json.Unmarshal(catalog, &records); err != nil {
-		panic("invalid embedded meeting catalog: " + err.Error())
-	}
-	return records
-}
-
-func Years() []int {
-	var years []int
-	for _, meeting := range All() {
-		if len(years) == 0 || years[len(years)-1] != meeting.Year {
-			years = append(years, meeting.Year)
-		}
-	}
-	return years
-}
-
-func ForYear(year int) []Meeting {
-	var result []Meeting
-	for _, meeting := range All() {
-		if meeting.Year == year {
-			result = append(result, meeting)
-		}
-	}
-	return result
 }
 
 const MaxPDFBytes = 8 << 20
