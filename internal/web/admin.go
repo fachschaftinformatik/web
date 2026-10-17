@@ -461,7 +461,6 @@ func (c *Handler) EditResponsibility(w http.ResponseWriter, r *http.Request, a *
 	a.View, a.Action = "form", r.URL.Path
 	a.Fields = []AdminField{field("title", "Bezeichnung", responsibility.Title, "text"), field("group", "Art", responsibility.Group, "radios"), field("email", "Öffentliche E-Mail-Adresse (optional)", responsibility.Email, "email"), field("members", "Mitglieder", "", "checkboxes")}
 	a.Fields[1].Options = []AdminOption{{Value: "board", Label: "Vorstand", Selected: responsibility.Group == "board"}, {Value: "departments", Label: "Referat", Selected: responsibility.Group == "departments"}, {Value: "project", Label: "Projektstelle", Selected: responsibility.Group == "project"}}
-	a.Fields[3].Hint = "Wähle die zuständigen Personen aus. Entferne ein Häkchen, um eine Zuordnung aufzuheben."
 	for _, p := range c.people.People() {
 		a.Fields[3].Options = append(a.Fields[3].Options, AdminOption{p.ID, p.Name, slices.Contains(responsibility.MemberIDs, p.ID)})
 	}
