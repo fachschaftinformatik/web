@@ -2,29 +2,49 @@ package web
 
 import (
 	"context"
+	"github.com/fachschaftinformatik/web/internal/content/events"
 	"github.com/fachschaftinformatik/web/internal/content/posts"
+	"time"
 )
 
 type HomePost struct {
 	Title, Summary, URL, Date, DateISO string
+	Votes, UserVote                    int
 }
 
 type HomePage struct {
-	News  HomePost
-	Forum []HomePost
+	News   HomePost
+	Forum  []HomePost
+	Events []events.Event
 }
 
-func (c *Handler) home(ctx context.Context) (HomePage, error) {
-	if c.posts == nil {
-		return homeContent(), nil
+func (c *Handler) home(ctx context.Context, viewer ...int64) (HomePage, error) {
+	var upcoming []events.Event
+	if c.events != nil {
+		records, _, err := c.events.FindPage(ctx, time.Now(), 1, 3, true)
+		if err != nil {
+			return HomePage{}, err
+		}
+		upcoming, _ = groupEvents(records, time.Now())
+		upcoming = upcoming[:min(3, len(upcoming))]
 	}
-	records, err := c.posts.Find(ctx, posts.Filter{})
+	if c.posts == nil {
+		page := homeContent()
+		page.Events = upcoming
+		return page, nil
+	}
+	records, _, err := c.posts.FindPage(ctx, posts.Filter{Type: "discussion"}, 1, 2, viewer...)
 	if err != nil {
 		return HomePage{}, err
 	}
-	var page HomePage
+	page := HomePage{Events: upcoming}
+	news, _, err := c.posts.FindPage(ctx, posts.Filter{Type: "news"}, 1, 1, viewer...)
+	if err != nil {
+		return HomePage{}, err
+	}
+	records = append(records, news...)
 	for _, post := range records {
-		item := HomePost{Title: post.Title, Summary: post.Summary, URL: post.URL(), Date: post.DateLabel(), DateISO: post.DateISO()}
+		item := HomePost{Title: post.Title, Summary: post.Summary, URL: post.URL(), Date: post.DateLabel(), DateISO: post.DateISO(), Votes: post.Votes, UserVote: post.UserVote}
 		if post.Type == "news" && page.News.URL == "" {
 			page.News = item
 		}

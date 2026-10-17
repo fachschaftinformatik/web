@@ -74,8 +74,9 @@
 {{end}}
 
 {{define "results"}}
-<section id="archive-results" class="app-archive-results" aria-labelledby="results-heading">
-  <h2 class="govuk-heading-m" id="results-heading" tabindex="-1">{{if eq (len .Archive.Modules) 0}}Keine Module gefunden{{else if eq (len .Archive.Modules) 1}}1 Modul gefunden{{else}}{{len .Archive.Modules}} Module gefunden{{end}}</h2>
+<section id="archive-results" class="app-archive-results" aria-labelledby="results-heading" data-document-title="{{if .DocumentTitle}}{{.DocumentTitle}}{{else}}Altklausuren{{end}} · fsInformatik">
+  <h2 class="govuk-heading-m" id="results-heading" tabindex="-1">{{if eq .Archive.Total 0}}Keine Module gefunden{{else if eq .Archive.Total 1}}1 Modul gefunden{{else}}{{.Archive.Total}} Module gefunden{{end}}</h2>
+  {{if gt .Archive.Pages 1}}<p class="govuk-body-s">Seite {{.Archive.Page}} von {{.Archive.Pages}}</p>{{end}}
   {{if .Archive.Modules}}
   <table class="govuk-table app-archive-table">
     <caption class="govuk-visually-hidden">Klausurrekonstruktionen nach Modul</caption>
@@ -105,6 +106,15 @@
       {{end}}
     </tbody>
   </table>
+  {{if gt .Archive.Pages 1}}
+  <nav class="govuk-pagination" aria-label="Ergebnisseiten" hx-target="#archive-results" hx-swap="outerHTML" hx-push-url="true" hx-params="none" hx-trigger="click">
+    {{with .Archive.PreviousURL}}<div class="govuk-pagination__prev"><a class="govuk-link govuk-pagination__link" href="{{.}}" hx-get="{{.}}" rel="prev"><svg class="govuk-pagination__icon govuk-pagination__icon--prev" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13"><path d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"/></svg><span class="govuk-pagination__link-title">Zurück<span class="govuk-visually-hidden"> zur vorherigen Seite</span></span></a></div>{{end}}
+    <ul class="govuk-pagination__list">
+      {{range .Archive.Pagination}}{{if .Ellipsis}}<li class="govuk-pagination__item govuk-pagination__item--ellipsis">⋯</li>{{else}}<li class="govuk-pagination__item {{if .Current}}govuk-pagination__item--current{{end}}"><a class="govuk-link govuk-pagination__link" href="{{.URL}}" hx-get="{{.URL}}" aria-label="Seite {{.Number}}" {{if .Current}}aria-current="page"{{end}}>{{.Number}}</a></li>{{end}}{{end}}
+    </ul>
+    {{with .Archive.NextURL}}<div class="govuk-pagination__next"><a class="govuk-link govuk-pagination__link" href="{{.}}" hx-get="{{.}}" rel="next"><span class="govuk-pagination__link-title">Weiter<span class="govuk-visually-hidden"> zur nächsten Seite</span></span><svg class="govuk-pagination__icon govuk-pagination__icon--next" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13"><path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"/></svg></a></div>{{end}}
+  </nav>
+  {{end}}
   {{else}}
   <p class="govuk-body">Versuche einen anderen Suchbegriff oder wähle weniger Filter aus.</p>
   <p class="govuk-body"><a class="govuk-link" href="/archive">Alle Module anzeigen</a>.</p>

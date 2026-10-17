@@ -109,19 +109,23 @@ func (a AdminPage) UserPageURL(page int) string {
 }
 
 func (a AdminPage) Pagination() []PaginationItem {
+	return paginationItems(a.Page, a.Pages, a.UserPageURL)
+}
+
+func paginationItems(page, pages int, pageURL func(int) string) []PaginationItem {
 	var result []PaginationItem
 	var previous int
-	for number := 1; number <= a.Pages; number++ {
-		if number != 1 && number != a.Pages && (number < a.Page-1 || number > a.Page+1) {
+	for number := 1; number <= pages; number++ {
+		if number != 1 && number != pages && (number < page-1 || number > page+1) {
 			continue
 		}
 		if number-previous == 2 {
 			skipped := previous + 1
-			result = append(result, PaginationItem{Number: skipped, URL: a.UserPageURL(skipped)})
+			result = append(result, PaginationItem{Number: skipped, URL: pageURL(skipped)})
 		} else if number-previous > 2 {
 			result = append(result, PaginationItem{Ellipsis: true})
 		}
-		result = append(result, PaginationItem{Number: number, URL: a.UserPageURL(number), Current: number == a.Page})
+		result = append(result, PaginationItem{Number: number, URL: pageURL(number), Current: number == page})
 		previous = number
 	}
 	return result

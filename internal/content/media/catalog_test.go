@@ -34,6 +34,7 @@ func galleryService(t *testing.T) (*Service, *sql.DB) {
 	_, err = db.Exec(`INSERT INTO users (id,email,name,password,private) VALUES (1,'gallery@fsv-wh.de','Private uploader','unused',1);
 INSERT INTO events (id,title,created_at,deleted_at) VALUES (10,'Sommerfest','2025-01-01',NULL),(20,'LAN','2026-01-01',NULL),(30,'Deleted','2027-01-01','2027-01-02'),(40,'Empty','2024-01-01',NULL);
 INSERT INTO media (id,event_id,user_id,title,description,access_key,mime_type,nbytes,created_at,deleted_at) VALUES
+(99,10,1,'Older','Older photograph','older','image/jpeg',5,'2025-01-01',NULL),
 (100,10,1,'Echter Titel','Echter Alternativtext','not-a-blob-path','image/jpeg',5,'2026-01-01',NULL),
 (101,10,1,NULL,NULL,'fallback','image/jpeg',5,'2026-01-01',NULL),
 (102,20,1,'New','Description','new','image/jpeg',5,'2026-01-02',NULL),
@@ -62,7 +63,7 @@ INSERT INTO media (id,event_id,user_id,title,description,access_key,mime_type,nb
 func TestCatalogCompleteAndFiltered(t *testing.T) {
 	s, db := galleryService(t)
 	// Exceed several pages: every eligible row must reach the catalog.
-	for id := 200; id < 217; id++ {
+	for id := 200; id < 273; id++ {
 		_, err := db.Exec(`INSERT INTO media (id,event_id,user_id,access_key,mime_type,nbytes,created_at) VALUES (?,20,1,?,'image/png',5,'2026-01-01')`, id, strconv.Itoa(id))
 		if err != nil {
 			t.Fatal(err)
@@ -72,14 +73,14 @@ func TestCatalogCompleteAndFiltered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(albums) != 3 || albums[0].ID != "20" || albums[1].ID != "10" || albums[2].ID != "40" {
+	if len(albums) != 2 || albums[0].ID != "20" || albums[1].ID != "10" {
 		t.Fatalf("albums: %+v", albums)
 	}
-	if len(albums[0].Images) != 18 || albums[0].OriginalCount != 18 || len(albums[1].Images) != 2 || len(albums[2].Images) != 0 {
+	if len(albums[0].Images) != 74 || albums[0].OriginalCount != 74 || len(albums[1].Images) != 3 {
 		t.Fatalf("unexpected image counts: %+v", albums)
 	}
 	for i, image := range albums[0].Images {
-		if i > 0 && image.ID != strconv.Itoa(217-i) {
+		if i > 0 && image.ID != strconv.Itoa(273-i) {
 			t.Errorf("image order at %d: %s", i, image.ID)
 		}
 		if image.Title == "" || image.Description == "" || image.Source != "/media/"+image.ID+"/1200" || image.Thumbnail() != "/media/"+image.ID+"/400" {
@@ -93,8 +94,44 @@ func TestCatalogCompleteAndFiltered(t *testing.T) {
 	if fallback := albums[1].Images[0]; fallback.Title != "Sommerfest – Bild 1" || fallback.Description != fallback.Title {
 		t.Errorf("fallback: %+v", fallback)
 	}
-	if got := albums[0].ReturnURL(5); got != "/community/events/20?page=2#image-212" {
+	if got := albums[0].ReturnURL(25); got != "/community/events/20?page=2#image-248" {
 		t.Errorf("return to page: %s", got)
+	}
+}
+
+func TestEventCoversUseOnlyTheirOwnRegisteredPreview(t *testing.T) {
+	s, db := galleryService(t)
+	_, err := db.Exec(`UPDATE events SET cover_path=CASE id WHEN 10 THEN 'events/10/cover/source' WHEN 20 THEN 'avatars/1/source' WHEN 30 THEN 'events/30/cover/source' WHEN 40 THEN 'events/40/cover/source' END`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	key := blob.EventCoverPreviewKey("10", 400)
+	if err := s.storage.Upload(context.Background(), key, strings.NewReader("cover"), 5, "application/octet-stream"); err != nil {
+		t.Fatal(err)
+	}
+	object, err := s.OpenCover(context.Background(), "10", "400")
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := io.ReadAll(object)
+	object.Close()
+	if err != nil || string(value) != "cover" || object.Info.ContentType != "image/jpeg" {
+		t.Fatalf("cover bytes or type: %q, %v", value, err)
+	}
+	for _, tc := range []struct{ id, size string }{{"20", "400"}, {"30", "400"}, {"999", "400"}, {"010", "400"}, {"../10", "400"}, {"10", "original"}, {"10", "../source"}} {
+		if _, err := s.OpenCover(context.Background(), tc.id, tc.size); !errors.Is(err, ErrNotFound) {
+			t.Errorf("unregistered cover %s/%s: %v", tc.id, tc.size, err)
+		}
+	}
+	albums, err := s.Catalog(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(albums) != 1 || albums[0].CoverImage().Source != "/media/events/10/cover/1200" {
+		t.Fatalf("configured covers and fallback: %+v", albums)
+	}
+	if !strings.Contains(albums[0].CoverImage().ThumbnailSources(), "/media/events/10/cover/800 2x") {
+		t.Fatal("cover srcset uses media photo paths")
 	}
 }
 

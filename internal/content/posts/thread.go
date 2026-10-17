@@ -12,16 +12,21 @@ import (
 var threads []byte
 
 type Comment struct {
-	AuthorID int64
-	CanEdit  bool
-	ID       string
-	Author   string `json:"user_name"`
-	Text     string
-	Created  string `json:"created_at"`
-	Updated  string `json:"updated_at"`
+	AuthorPublic    bool
+	Votes, UserVote int
+	AuthorID        int64
+	CanEdit         bool
+	ID              string
+	Author          string `json:"user_name"`
+	Text            string
+	Created         string `json:"created_at"`
+	Updated         string `json:"updated_at"`
 }
 
-func (c Comment) DateLabel() string    { return dateLabel(c.Created) }
+func (c Comment) DateLabel() string { return dateLabel(c.Created) }
+func (c Comment) AuthorURL() string {
+	return (Post{AuthorID: c.AuthorID, AuthorPublic: c.AuthorPublic}).AuthorURL()
+}
 func (c Comment) Edited() bool         { return c.Updated != "" && c.Updated != c.Created }
 func (c Comment) UpdatedLabel() string { return dateLabel(c.Updated) }
 

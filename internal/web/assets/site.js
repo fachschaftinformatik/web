@@ -25,6 +25,49 @@ const frontendOptions = {
 };
 initAll(frontendOptions);
 
+// Voting remains a normal POST form without JavaScript. Enhance it in place
+// so keyboard focus and the reader's position in the discussion are retained.
+document.querySelectorAll("form.app-vote").forEach((form) => {
+  form.addEventListener("submit", async (event) => {
+    const button = event.submitter;
+    if (!button) return;
+    event.preventDefault();
+    if (form.dataset.pending) return;
+    form.dataset.pending = "true";
+    const buttons = [...form.querySelectorAll("button")];
+    const feedback = form.parentElement.querySelector("[data-vote-feedback]");
+    feedback.className = "govuk-body-s govuk-!-margin-top-1 govuk-!-margin-bottom-0";
+    feedback.textContent = "Wird gespeichert …";
+    buttons.forEach((item) => item.setAttribute("aria-disabled", "true"));
+    try {
+      const body = new URLSearchParams(new FormData(form));
+      body.set("vote", button.value);
+      const response = await fetch(form.action, {
+        method: "POST", body, headers: { Accept: "application/json" },
+      });
+      if (response.redirected) { window.location.assign(response.url); return; }
+      if (!response.ok) throw new Error("vote failed");
+      const result = await response.json();
+      form.querySelector("[data-vote-score]").textContent = result.score;
+      for (const item of buttons) {
+        const up = item.classList.contains("app-vote__button--up");
+        const selected = result.selected === (up ? 1 : -1);
+        item.setAttribute("aria-pressed", String(selected));
+        item.value = selected ? "0" : (up ? "1" : "-1");
+      }
+      feedback.className = "govuk-visually-hidden";
+      const state = result.selected === 0 ? "Bewertung zurückgenommen" : (result.selected === 1 ? "Positiv bewertet" : "Negativ bewertet");
+      feedback.textContent = `${form.dataset.voteLabel}: ${state}. Punktestand: ${result.score}.`;
+    } catch {
+      feedback.className = "govuk-error-message govuk-!-margin-top-1 govuk-!-margin-bottom-0";
+      feedback.textContent = "Die Bewertung konnte nicht gespeichert werden. Bitte versuche es erneut.";
+    } finally {
+      delete form.dataset.pending;
+      buttons.forEach((item) => item.removeAttribute("aria-disabled"));
+    }
+  });
+});
+
 // Keep the upload's accessible name in the same order as its visible text.
 // GOV.UK 6.6.0 inserts a hidden comma into the middle of the button contents
 // but references it before those contents, breaking label-in-name checks.
@@ -224,27 +267,123 @@ if (carousel) {
   const controls = carousel.querySelector(".app-event-carousel__controls");
   if (slides.length > 1) {
     let current = 0;
+    let playing = false;
+    let timer;
+    let moving = false;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const viewport = carousel.querySelector("#event-slides");
+    const track = document.createElement("div");
+    track.className = "app-event-carousel__track app-event-carousel__track--instant";
+    const rotation = controls.querySelector("[data-rotation]");
+    const dots = [...controls.querySelectorAll("[data-slide]")];
+    const status = controls.querySelector('[role="status"]');
     carousel.setAttribute("aria-roledescription", "Karussell");
     slides.forEach((slide, index) => {
+      slide.hidden = false;
       slide.setAttribute("role", "group");
       slide.setAttribute("aria-roledescription", "Folie");
       slide.setAttribute(
         "aria-label",
         `${index + 1} von ${slides.length}: ${slide.dataset.title}`,
       );
+      track.append(slide);
     });
-    controls.hidden = false;
-    controls.querySelectorAll("button").forEach((button) => {
+    // Visual bookends let the track wrap in either direction without exposing
+    // duplicate links to keyboards or assistive technology.
+    const bookend = (slide) => {
+      const clone = slide.cloneNode(true);
+      clone.setAttribute("aria-hidden", "true");
+      clone.inert = true;
+      clone.dataset.clone = "true";
+      return clone;
+    };
+    track.prepend(bookend(slides.at(-1)));
+    track.append(bookend(slides[0]));
+    viewport.append(track);
+    carousel.classList.add("app-event-carousel--enhanced");
+    const position = (index) => {
+      track.style.transform = `translateX(-${index * 100}%)`;
+    };
+    const settle = () => {
+      track.classList.add("app-event-carousel__track--instant");
+      position(current + 1);
+      moving = false;
+    };
+    const update = () => {
+      slides.forEach((slide, index) => {
+        slide.inert = index !== current;
+        slide.setAttribute("aria-hidden", String(index !== current));
+        dots[index].setAttribute("aria-disabled", String(index === current));
+      });
+      status.textContent = `${current + 1} von ${slides.length}`;
+      const activeDot = dots[current];
+      const dotList = activeDot.parentElement;
+      dotList.scrollLeft += activeDot.getBoundingClientRect().left -
+        dotList.getBoundingClientRect().left - (dotList.clientWidth - activeDot.offsetWidth) / 2;
+    };
+    const show = (index) => {
+      if (moving || index === current) return;
+      const target = index + 1;
+      current = (index + slides.length) % slides.length;
+      update();
+      if (motion.matches) {
+        settle();
+      } else {
+        moving = true;
+        // Commit the resting position before enabling the next transition.
+        void track.offsetWidth;
+        track.classList.remove("app-event-carousel__track--instant");
+        position(target);
+      }
+    };
+    track.addEventListener("transitionend", (event) => {
+      if (event.target === track && event.propertyName === "transform") settle();
+    });
+    track.addEventListener("transitioncancel", settle);
+    const setPlaying = (value) => {
+      playing = value;
+      window.clearInterval(timer);
+      rotation.setAttribute("aria-label", playing ? "Diashow pausieren" : "Diashow starten");
+      rotation.textContent = playing ? "Pausieren" : "Starten";
+      status.setAttribute("aria-live", playing ? "off" : "polite");
+      if (playing) timer = window.setInterval(() => show(current + 1), 7000);
+    };
+    controls.querySelectorAll("[data-direction]").forEach((button) => {
       button.addEventListener("click", () => {
-        slides[current].hidden = true;
-        current =
-          (current + Number(button.dataset.direction) + slides.length) %
-          slides.length;
-        slides[current].hidden = false;
-        carousel.querySelector('[role="status"]').textContent =
-          `Album ${current + 1} von ${slides.length}`;
+        setPlaying(false);
+        show(current + Number(button.dataset.direction));
       });
     });
+    dots.forEach((button, index) => {
+      button.addEventListener("click", () => {
+        setPlaying(false);
+        show(index);
+      });
+    });
+    rotation.addEventListener("click", () => setPlaying(!playing));
+    carousel.addEventListener("mouseenter", () => setPlaying(false));
+    carousel.addEventListener("focusin", () => setPlaying(false));
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) setPlaying(false);
+    });
+    motion.addEventListener("change", () => { setPlaying(false); settle(); });
+    let touch;
+    viewport.addEventListener("touchstart", (event) => {
+      setPlaying(false);
+      touch = event.touches.length === 1 ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null;
+    }, { passive: true });
+    viewport.addEventListener("touchend", (event) => {
+      if (!touch || event.touches.length) { touch = null; return; }
+      const dx = event.changedTouches[0].clientX - touch.x;
+      const dy = event.changedTouches[0].clientY - touch.y;
+      touch = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) show(current + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+    viewport.addEventListener("touchcancel", () => { touch = null; });
+    update();
+    settle();
+    controls.hidden = false;
+    setPlaying(!motion.matches && !document.hidden && !carousel.matches(":hover") && !carousel.contains(document.activeElement));
   }
 }
 
@@ -252,6 +391,22 @@ if (carousel) {
 const returnThumbnail = document.getElementById(window.location.hash.slice(1));
 if (returnThumbnail?.matches(".app-gallery-link")) {
   returnThumbnail.focus({ preventScroll: true });
+}
+
+// Keep the image pages as ordinary links, including without JavaScript.
+// Shortcuts are scoped to the viewer and never intercept text entry.
+const galleryViewer = document.querySelector(".app-gallery-viewer");
+if (galleryViewer) {
+  document.addEventListener("keydown", (event) => {
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
+        event.target.closest("input, textarea, select, [contenteditable], [role='textbox']")) return;
+    const selector = { ArrowLeft: '[rel="prev"]', ArrowRight: '[rel="next"]', Escape: '.app-gallery-return' }[event.key];
+    const link = selector && galleryViewer.querySelector(selector);
+    if (link) {
+      event.preventDefault();
+      window.location.assign(link.href);
+    }
+  });
 }
 
 const archiveForm = document.querySelector("#archive-search");
@@ -291,4 +446,6 @@ document.addEventListener("htmx:afterSwap", (event) => {
   if (event.detail.target?.id !== "archive-results") return;
   // An explicit search submission moves focus to the new result heading.
   document.querySelector("#results-heading")?.focus();
+  const resultsTitle = document.querySelector("#archive-results")?.dataset.documentTitle;
+  if (resultsTitle) document.title = resultsTitle;
 });

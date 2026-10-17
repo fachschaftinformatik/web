@@ -18,6 +18,8 @@ type ForumEditor struct {
 	Editing, Unavailable       bool
 	Action, BackURL, SourceURL string
 	RichBody                   string
+	Event, Announcement        bool
+	CoverURL, CoverAlt         string
 }
 
 func (e ForumEditor) RichHTML() template.HTML {
@@ -49,6 +51,13 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 	editor := ForumEditor{Action: "/d/new", BackURL: "/discussions", SourceURL: "https://ik.fsv-wh.de/d/new", Draft: posts.Draft{Type: "discussion"}}
 	editor.Live = c.posts != nil
 	title := "Beitrag verfassen"
+	if r.URL.Path == newsURL+"/new" {
+		editor.Announcement = true
+		editor.Draft.Type = "news"
+		editor.Action = newsURL + "/new"
+		editor.BackURL = newsURL
+		title = "Neuigkeit veröffentlichen"
+	}
 	if id := r.PathValue("post"); id != "" {
 		var thread posts.Thread
 		var ok bool
@@ -72,6 +81,14 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		editor.Editing = true
+		if c.events != nil && thread.Type == "event" {
+			if event, err := c.events.Lookup(r.Context(), id); err == nil {
+				http.Redirect(w, r, event.URL()+"/edit", http.StatusSeeOther)
+				return
+			}
+		}
+		editor.Announcement = thread.Type == "news"
+		editor.Event = thread.Type == "event"
 		editor.Action, editor.BackURL, editor.SourceURL = thread.URL()+"/edit", thread.URL(), thread.SourceURL()+"/edit"
 		body := thread.Body
 		if c.posts == nil {
@@ -86,6 +103,18 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 			editor.Draft.Date, editor.Draft.Time = date.Format("02.01.2006"), date.Format("15:04")
 		}
 		title = "Beitrag bearbeiten"
+		if editor.Event {
+			title = "Veranstaltung bearbeiten"
+		}
+		if editor.Announcement {
+			title = "Neuigkeit bearbeiten"
+		}
+	}
+	if c.posts != nil && (editor.Event || editor.Announcement) {
+		if err := c.posts.CanPublish(r.Context(), user); err != nil {
+			c.forumError(w, r, err)
+			return
+		}
 	}
 	status := http.StatusOK
 	if editor.RichBody == "" {
@@ -99,13 +128,13 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.Method == http.MethodPost {
 		r.Body = http.MaxBytesReader(w, r.Body, 128<<10)
-		if err := r.ParseForm(); err != nil {
+		parseErr := r.ParseForm()
+		if parseErr != nil {
 			http.Error(w, "Das Formular konnte nicht gelesen werden. Versuche es mit einem kürzeren Beitrag erneut.", http.StatusBadRequest)
 			return
 		}
 		kind, tags := editor.Draft.Type, editor.Draft.Tags
 		if c.posts != nil {
-			kind = r.PostForm.Get("type")
 			tags = r.PostForm.Get("tags")
 		}
 		editor.Draft = posts.Draft{Title: r.PostForm.Get("title"), Body: r.PostForm.Get("body"), Type: kind, Tags: tags, Date: r.PostForm.Get("date"), Time: r.PostForm.Get("time"), Location: r.PostForm.Get("location")}
@@ -142,6 +171,12 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	data := Page{Title: title, Active: "forum", Community: true, Editor: &editor}
+	if editor.Event {
+		data.Active = "calendar"
+	}
+	if editor.Announcement {
+		data.Active = "news"
+	}
 	if len(editor.Errors) > 0 {
 		data.DocumentTitle = "Fehler: " + title
 	}

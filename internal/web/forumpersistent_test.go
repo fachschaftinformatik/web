@@ -13,6 +13,7 @@ import (
 
 	"github.com/fachschaftinformatik/web/internal/content/posts"
 	"github.com/fachschaftinformatik/web/internal/data"
+	"github.com/fachschaftinformatik/web/internal/users"
 	xhtml "golang.org/x/net/html"
 )
 
@@ -90,6 +91,101 @@ func TestPersistentForumRequests(t *testing.T) {
 	if err != nil || len(list) != 1 || list[0].Comments != 1 {
 		t.Fatalf("%+v %v", list, err)
 	}
+	t.Run("public author profiles protect private identities", func(t *testing.T) {
+		profileHandler := &Handler{views: c.views, posts: c.posts, identity: users.NewService(db, "http://example.test")}
+		if _, err := db.Exec(`UPDATE users SET private=0 WHERE id=1; UPDATE users SET private=1 WHERE id=2;
+		INSERT INTO discussion_posts(id,title,body,user_id,type,deleted_at) VALUES(999001,'Nicht veröffentlichter Beitrag','Hidden body',1,'discussion','deleted');`); err != nil {
+			t.Fatal(err)
+		}
+		defer db.Exec(`UPDATE users SET private=0 WHERE id=2; DELETE FROM discussion_posts WHERE id=999001`)
+		for _, tc := range []struct {
+			id   string
+			code int
+		}{{"1", 200}, {"2", 404}, {"999", 404}, {"01", 404}} {
+			r := httptest.NewRequest("GET", "/users/"+tc.id, nil)
+			r.SetPathValue("id", tc.id)
+			w := httptest.NewRecorder()
+			profileHandler.PublicProfile(w, r)
+			if w.Code != tc.code {
+				t.Fatalf("profile %s: %d", tc.id, w.Code)
+			}
+			if strings.Contains(w.Body.String(), "@fsv-wh.de") || strings.Contains(w.Body.String(), "Nicht veröffentlichter Beitrag") {
+				t.Fatal("profile leaked non-public data")
+			}
+			if tc.code == 200 && (!strings.Contains(w.Body.String(), "Echter Autor") || !strings.Contains(w.Body.String(), "Ein echter Beitrag")) {
+				t.Fatal("public profile missing author or posts")
+			}
+		}
+		thread, err := c.posts.Lookup(context.Background(), post)
+		if err != nil || thread.AuthorURL() != "/users/1" || thread.Replies[0].AuthorURL() != "" || thread.Replies[0].Author != "Anonym" {
+			t.Fatalf("author visibility: %+v %v", thread, err)
+		}
+		w := request("GET", "/d/"+post, nil, 0, c.Discussion, post, "")
+		if strings.Contains(w.Body.String(), `href="/users/2"`) || !strings.Contains(w.Body.String(), `href="/users/1"`) {
+			t.Fatal("private author linked or public author unlinked")
+		}
+		if _, err := db.Exec(`UPDATE users SET deleted_at='deleted' WHERE id=1`); err != nil {
+			t.Fatal(err)
+		}
+		defer db.Exec(`UPDATE users SET deleted_at=NULL WHERE id=1`)
+		r := httptest.NewRequest("GET", "/users/1", nil)
+		r.SetPathValue("id", "1")
+		w = httptest.NewRecorder()
+		profileHandler.PublicProfile(w, r)
+		if w.Code != 404 {
+			t.Fatal("deleted profile is public")
+		}
+	})
+	t.Run("voting authentication csrf and local return", func(t *testing.T) {
+		c.sessions = newSessionStore()
+		session := c.sessions.create(true)
+		session.UserID = 1
+		c.sessions.items[session.ID] = *session
+		router := http.NewServeMux()
+		router.HandleFunc("POST /d/{post}/vote", c.Vote)
+		router.HandleFunc("POST /d/{post}/comments/{comment}/vote", c.Vote)
+		handler := c.withSession(router)
+		for _, tc := range []struct {
+			cookie, token, value, back string
+			code                       int
+			location                   string
+		}{
+			{"", session.CSRF, "1", "/", 303, "/login"},
+			{session.ID, "wrong", "1", "/", 403, ""},
+			{session.ID, session.CSRF, "2", "/", 422, ""},
+			{session.ID, session.CSRF, "1", "https://example.org/", 303, "/d/" + post},
+			{session.ID, session.CSRF, "-1", "//example.org/", 303, "/d/" + post},
+			{session.ID, session.CSRF, "0", "/#home-forum", 303, "/#home-forum"},
+		} {
+			form := url.Values{"csrf": {tc.token}, "vote": {tc.value}, "return": {tc.back}}
+			r := httptest.NewRequest("POST", "/d/"+post+"/vote", strings.NewReader(form.Encode()))
+			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			if tc.cookie != "" {
+				r.AddCookie(&http.Cookie{Name: sessionCookie, Value: tc.cookie})
+			}
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, r)
+			if w.Code != tc.code || w.Header().Get("Location") != tc.location {
+				t.Fatalf("%+v: %d %s", tc, w.Code, w.Header().Get("Location"))
+			}
+		}
+		current, err := c.posts.Lookup(context.Background(), post)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, suffix := range []string{"/vote", "/comments/" + current.Replies[0].ID + "/vote"} {
+			form := url.Values{"csrf": {session.CSRF}, "vote": {"1"}}
+			r := httptest.NewRequest("POST", "/d/"+post+suffix, strings.NewReader(form.Encode()))
+			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			r.Header.Set("Accept", "application/json")
+			r.AddCookie(&http.Cookie{Name: sessionCookie, Value: session.ID})
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, r)
+			if w.Code != 200 || strings.TrimSpace(w.Body.String()) != `{"score":1,"selected":1}` {
+				t.Fatalf("JSON vote: %d %s", w.Code, w.Body.String())
+			}
+		}
+	})
 	for _, text := range []string{
 		"Literal &lt;script&gt; und &amp; bleiben erhalten.",
 		"https://example.org/?value=&lt;script&gt;&amp;next=1",

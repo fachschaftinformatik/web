@@ -90,7 +90,7 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 		}
 		account := r.URL.Path == "/login" || r.URL.Path == "/register" || r.URL.Path == "/forgot" || r.URL.Path == "/reset" || r.URL.Path == "/verify" || r.URL.Path == "/invite"
 		archiveWrite := r.URL.Path == "/archive/new" || r.URL.Path == "/archive/preferences" || strings.HasPrefix(r.URL.Path, "/archive/requests") || strings.HasPrefix(r.URL.Path, "/archive/files/") && strings.HasSuffix(r.URL.Path, "/revision")
-		forumWrite := c.posts != nil && (r.URL.Path == "/d/new" || strings.HasPrefix(r.URL.Path, "/d/") && (strings.HasSuffix(r.URL.Path, "/edit") || r.Method == http.MethodPost))
+		forumWrite := (c.posts != nil && (r.URL.Path == "/community/neuigkeiten/new" || r.URL.Path == "/d/new" || strings.HasPrefix(r.URL.Path, "/d/") && (strings.HasSuffix(r.URL.Path, "/edit") || r.Method == http.MethodPost))) || (c.events != nil && strings.HasPrefix(r.URL.Path, "/community/veranstaltungen/") && (strings.HasSuffix(r.URL.Path, "/new") || strings.HasSuffix(r.URL.Path, "/edit")))
 		if s == nil && (r.URL.Path == "/login" || c.identity != nil && account) && r.Method == http.MethodGet {
 			if c.identity != nil {
 				var err error
@@ -128,7 +128,7 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 				limit = files.MaxUploadBytes + 1<<20
 			}
 			if forumWrite {
-				limit = 128 << 10
+				limit = 8 << 20
 			}
 			r.Body = http.MaxBytesReader(w, r.Body, limit)
 			if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
