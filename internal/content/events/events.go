@@ -145,8 +145,6 @@ func (e Event) StatusLabel() string {
 	switch e.SourceStatus {
 	case "cancelled":
 		return "Abgesagt"
-	case "recap":
-		return "Rückblick"
 	case "rescheduled":
 		return "Termin geändert"
 	}

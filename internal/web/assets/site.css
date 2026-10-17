@@ -759,7 +759,7 @@
 .app-image-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .app-image-card { position: relative; display: flex; flex-direction: column; margin: 0; border: 1px solid var(--govuk-border-colour); border-bottom: 4px solid var(--govuk-link-colour); background: #fff; overflow-wrap: anywhere; }
 .app-image-card__image { position: relative; flex: none; aspect-ratio: 3 / 2; background: #f4f8fb; }
-.app-image-card__image img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+.app-image-card__image img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 15%; }
 .app-image-card__content { display: flex; flex: 1; flex-direction: column; padding: 15px; }
 .app-image-card__summary { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .app-image-card__link::after { content: ""; position: absolute; inset: 0; }

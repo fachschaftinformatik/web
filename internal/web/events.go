@@ -13,6 +13,7 @@ import (
 )
 
 const eventsURL = "/community/veranstaltungen"
+const eventsPageSize = 6
 
 type EventsPage struct {
 	Pagination     ListPagination
@@ -35,13 +36,13 @@ func (c *Handler) Events(w http.ResponseWriter, r *http.Request) {
 			c.render(w, "events", false, Page{Title: event.Title, Active: "calendar", Community: true, Events: page})
 			return
 		}
-		records, total, err := c.events.FindPage(r.Context(), time.Now(), requestedPage(r), 12, false)
+		records, total, err := c.events.FindPage(r.Context(), time.Now(), requestedPage(r), eventsPageSize, false)
 		if err != nil {
 			c.serverError(w, err)
 			return
 		}
 		page.Upcoming, page.Past = groupEvents(records, time.Now())
-		page.Pagination = listPagination(r, total, 12)
+		page.Pagination = listPagination(r, total, eventsPageSize)
 	} else if r.PathValue("event") != "" {
 		http.NotFound(w, r)
 		return
