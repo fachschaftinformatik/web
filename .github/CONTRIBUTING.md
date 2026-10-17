@@ -150,7 +150,7 @@ Example workflow:
 (4) git diff main.go
  [...]
 (5) git add main.go
-(5) git commit -m "feat(api): add user registration endpoint"
+(5) git commit -m "feat(auth): add user registration"
 (5) git push -u origin api/registration
 ```
 Once you have pushed the branch, GitHub will ask if you want to create a PR.
@@ -170,35 +170,39 @@ If you need to make any changes to the PR you can just keep committing and pushi
 Follow Go’s official [Code Review Comments][1]. Prefer clarity over cleverness.
 
 ### Commits and Pull Requests
-Use the [Conventional Commits][2] spec when writing commit messages and titles:
+Use [Conventional Commits 1.0.0][2] for commit messages and PR titles:
 ```
 <type>[optional scope][optional !]: <description>
 ```
-Common types are `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`, `chore`, and `style`.
-Please keep the description short and meaningful.
+Common types are `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`,
+`chore`, `style`, and `revert`. Choose the type that describes the actual change.
 
-When a commit or PR directly relates to an existing issue or pull request, append
-its number in parentheses where useful: `fix(api): correct password reset logging (#123)`.
-Use real, relevant issue or PR numbers; omit the suffix when there is no useful
-reference. Commit messages are title-only; PR and release descriptions are empty.
-
-Mark breaking changes with `!` in the title:
-```
-feat!: replace the application runtime
-```
+- Keep the description to **42 characters maximum**, excluding the type, scope,
+  breaking marker, colon and following space.
+- Use lowercase only. Descriptions contain only letters `a`–`z`, digits and spaces:
+  no punctuation or special characters such as commas, semicolons or periods.
+  The Conventional Commit prefix may contain `(`, `)`, `!` and `:`.
+- Use an optional scope only for an affected code area, such as `web`, `db`,
+  `auth`, `storage`, `deps`, `ci` or `release`. Keep scopes lowercase and
+  alphanumeric. Omit the scope for cross-cutting changes; versions such as `v2`
+  are not scopes.
+- Prefer simple, human-readable wording over jargon, cleverness or compressed
+  phrases. Say clearly what changed.
+- Mark incompatible changes with `!` immediately before the colon. Describe what
+  breaks, rather than marking an internal refactor as breaking by default.
+- Commit messages are title-only. Do not append issue or PR numbers; use GitHub
+  links for references. PR and release descriptions are empty.
 
 Examples:
 ```
-feat(api): add user registration endpoint
+feat(auth): add user registration
 fix(db): enforce unique email constraint
-fix(api): correct password reset logging (#123)
+fix(auth): correct password reset logging
+feat(auth)!: require token based sessions
 ```
 
-PR titles should follow the same format. See the [full spec][2] for details.
-
-Pull requests use lowercase Conventional Commit titles, checked by CI. Squash
-merging uses the PR title as the final commit title, with the merged PR number
-appended as `(#123)` where appropriate. Avoid duplicating the same reference.
+PR titles follow the same rules. When squash merging, use the PR title verbatim
+as the commit title and remove any automatically appended PR number.
 `feat` releases a minor version; `fix`, `perf`, and `chore(deps)` release a patch; breaking changes release
 a major version. Other changes do not release by themselves.
 
