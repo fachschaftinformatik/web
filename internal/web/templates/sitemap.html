@@ -15,9 +15,9 @@
   <ul class="govuk-list govuk-list--spaced">
     <li><a class="govuk-link" href="/community">Community im Überblick</a></li>
     <li><a class="govuk-link" href="/discussions">Forum</a></li>
-    <li><a class="govuk-link" href="/discussions?type=news">Neuigkeiten</a></li>
-    <li><a class="govuk-link" href="/discussions?type=event">Veranstaltungen</a></li>
-    <li><a class="govuk-link" href="/community/events">Galerie</a>
+    <li><a class="govuk-link" href="/community/neuigkeiten">Neuigkeiten</a></li>
+    <li><a class="govuk-link" href="/community/veranstaltungen">Veranstaltungen</a></li>
+    <li><a class="govuk-link" href="/community/events">Fotos</a>
       {{if .Images.Albums}}<ul class="govuk-list govuk-list--bullet govuk-!-margin-top-2">
         {{range .Images.Albums}}<li><a class="govuk-link" href="{{.URL}}">{{.Title}}</a></li>{{end}}
       </ul>{{end}}

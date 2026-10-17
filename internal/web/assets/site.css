@@ -741,12 +741,30 @@
   .app-vote__button[aria-pressed="true"] { outline: 2px solid Highlight; }
 }
 
-@media (min-width: 60em) {
-  .app-forum-controls {
-    display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    gap: 20px;
-  }
+.app-forum-search { display: flex; align-items: flex-start; gap: 10px; }
+.app-forum-search .govuk-input { flex: 1; min-width: 0; }
+.app-forum-search .govuk-button { flex: none; width: auto; margin: 0; }
+.app-event-cover { display: block; width: 100%; height: auto; max-height: 650px; object-fit: contain; background: #f4f8fb; }
+.app-event-cover--detail { width: auto; max-width: min(100%, 360px); max-height: 320px; }
+.app-event-cover--preview { max-width: 320px; max-height: 320px; margin-bottom: 20px; }
+.app-image-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.app-image-card { position: relative; display: flex; flex-direction: column; margin: 0; border: 1px solid var(--govuk-border-colour); border-bottom: 4px solid var(--govuk-link-colour); background: #fff; overflow-wrap: anywhere; }
+.app-image-card__image { position: relative; flex: none; aspect-ratio: 3 / 2; background: #f4f8fb; }
+.app-image-card__image img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+.app-image-card__content { display: flex; flex: 1; flex-direction: column; padding: 15px; }
+.app-image-card__summary { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.app-image-card__link::after { content: ""; position: absolute; inset: 0; }
+.app-image-card:hover { border-color: var(--govuk-link-colour); }
+.app-image-card:hover .app-image-card__link { text-decoration-thickness: max(3px, .1875rem); }
+.app-image-card:focus-within { outline: 3px solid var(--govuk-focus-colour); }
+.app-image-card__meta { margin: auto 0 0; color: #505a5f; }
+.app-image-card__meta dd { margin: 0; }
+.app-image-card__meta > div + div { margin-top: 5px; }
+@media (max-width: 64em) {
+  .app-image-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 40.0524em) {
+  .app-image-cards { grid-template-columns: minmax(0, 1fr); }
 }
 
 .app-gallery .app-page-heading h1 { margin-bottom: 20px; }
@@ -781,8 +799,6 @@
   background: #f3f2f1;
 }
 
-.app-gallery-albums .app-gallery-thumbnail { margin-bottom: 15px; }
-.app-gallery-albums h2 { margin-bottom: 10px; }
 
 .app-gallery-figure {
   margin: 0 0 20px;
@@ -831,7 +847,6 @@
 
 @media (max-width: 40.0524em) {
   .app-gallery-grid { gap: 15px; }
-  .app-gallery-albums { grid-template-columns: 1fr; }
   .app-gallery-controls { gap: 10px; }
   .app-gallery-step { gap: 5px; }
   .app-gallery-pagination .govuk-pagination__item {

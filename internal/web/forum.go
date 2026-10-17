@@ -57,17 +57,29 @@ func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	c.render(w, "thread", false, Page{Title: thread.Title, Active: "forum", Community: true, Forum: forum})
+	active := "forum"
+	if thread.Type == "event" {
+		active = "calendar"
+		forum.BackURL = eventsURL
+	}
+	if thread.Type == "news" {
+		active = "news"
+		forum.BackURL = newsURL
+	}
+	c.render(w, "thread", false, Page{Title: thread.Title, Active: active, Community: true, Forum: forum})
 }
 
 func (c *Handler) Forum(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	filter := posts.Filter{Query: strings.TrimSpace(query.Get("q")), Type: query.Get("type")}
-	switch filter.Type {
-	case "discussion", "news", "event":
-	default:
-		filter.Type = ""
+	if query.Get("type") == "news" {
+		http.Redirect(w, r, newsURL, http.StatusSeeOther)
+		return
 	}
+	if query.Get("type") == "event" {
+		http.Redirect(w, r, eventsURL, http.StatusSeeOther)
+		return
+	}
+	filter := posts.Filter{Query: strings.TrimSpace(query.Get("q")), Type: "discussion"}
 	data := Page{
 		Title: "Forum", Active: "forum", Community: true,
 		Forum: ForumPage{Filter: filter},
@@ -83,7 +95,7 @@ func (c *Handler) Forum(w http.ResponseWriter, r *http.Request) {
 	} else {
 		data.Forum.Posts = posts.Find(filter)
 	}
-	if filter.Query != "" || filter.Type != "" {
+	if filter.Query != "" {
 		data.DocumentTitle = "Forum – Suchergebnisse"
 	}
 	c.render(w, "forum", false, data)

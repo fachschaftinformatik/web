@@ -6,7 +6,6 @@ import (
 	"errors"
 	"slices"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/fachschaftinformatik/web/internal/id"
@@ -152,8 +151,9 @@ func (s *Service) Save(ctx context.Context, user int64, post string, d Draft, ri
 	}
 	defer tx.Rollback()
 	var owner int64
+	var oldType string
 	if post != "" {
-		if err = tx.QueryRowContext(ctx, `SELECT user_id FROM discussion_posts WHERE id=? AND deleted_at IS NULL`, post).Scan(&owner); errors.Is(err, sql.ErrNoRows) {
+		if err = tx.QueryRowContext(ctx, `SELECT user_id,type FROM discussion_posts WHERE id=? AND deleted_at IS NULL`, post).Scan(&owner, &oldType); errors.Is(err, sql.ErrNoRows) {
 			return "", ErrNotFound
 		} else if err != nil {
 			return "", err
@@ -161,6 +161,14 @@ func (s *Service) Save(ctx context.Context, user int64, post string, d Draft, ri
 	}
 	if err = permission(ctx, tx, user, owner, false); err != nil {
 		return "", err
+	}
+	if d.Type == "event" || oldType == "event" {
+		return "", &ValidationError{[]FieldError{{"body", "Veranstaltungen werden im Veranstaltungsbereich verwaltet."}}}
+	}
+	if d.Type == "news" || oldType == "news" {
+		if err := editorialPermission(ctx, tx, user); err != nil {
+			return "", err
+		}
 	}
 	d.Title = strings.TrimSpace(d.Title)
 	body, format := d.Body, "plain"
@@ -173,14 +181,6 @@ func (s *Service) Save(ctx context.Context, user int64, post string, d Draft, ri
 		return "", &ValidationError{fields}
 	}
 	event := ""
-	if d.Type == "event" && strings.TrimSpace(d.Date) != "" {
-		date, _ := time.Parse("2.1.2006", strings.TrimSpace(d.Date))
-		clock := strings.TrimSpace(d.Time)
-		if clock == "" {
-			clock = "00:00"
-		}
-		event = date.Format("2006-01-02") + "T" + clock
-	}
 	if post == "" {
 		post = id.New().String()
 		_, err = tx.ExecContext(ctx, `INSERT INTO discussion_posts(id,title,body,body_format,user_id,type,event_date,location) VALUES(?,?,?,?,?,?,?,?)`, post, d.Title, body, format, user, d.Type, event, strings.TrimSpace(d.Location))

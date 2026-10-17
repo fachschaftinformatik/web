@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/content/media"
+	"github.com/fachschaftinformatik/web/internal/data/blob"
 )
 
 type ImagesPage struct {
@@ -42,7 +43,7 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 		}
 		g.Albums = albums
 	}
-	data := Page{Title: "Galerie", Active: "events", Community: true}
+	data := Page{Title: "Fotos", Active: "events", Community: true}
 	if id := r.PathValue("album"); id != "" {
 		var album media.Album
 		found := false
@@ -154,6 +155,10 @@ func (c *Handler) galleryImageFile(w http.ResponseWriter, r *http.Request, cover
 		c.serverError(w, err)
 		return
 	}
+	c.serveGalleryObject(w, r, object)
+}
+
+func (c *Handler) serveGalleryObject(w http.ResponseWriter, r *http.Request, object *blob.Object) {
 	defer object.Close()
 	seeker, ok := object.ReadCloser.(io.ReadSeeker)
 	if !ok {

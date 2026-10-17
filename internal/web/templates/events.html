@@ -1,0 +1,37 @@
+{{define "sidebar"}}{{end}}
+{{define "content"}}
+{{if .Events.Detail}}{{with .Events.Detail}}
+{{if .CoverURL}}<img class="app-event-cover app-event-cover--detail govuk-!-margin-bottom-6" src="{{.CoverURL}}" width="{{.CoverWidth}}" height="{{.CoverHeight}}" alt="{{.CoverAlt}}" fetchpriority="high">{{end}}
+<dl class="govuk-summary-list">
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Termin</dt><dd class="govuk-summary-list__value">{{if .EventDate}}<time datetime="{{.EventDate}}">{{.EventLabel}}</time>{{else}}Termin folgt{{end}}</dd></div>
+  {{if .Location}}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Ort</dt><dd class="govuk-summary-list__value">{{.Location}}</dd></div>{{end}}
+</dl>
+<div class="app-rich-content">{{richHTML .RichBody}}</div>
+{{if $.Events.CanCreate}}<p class="govuk-body"><a class="govuk-button govuk-button--secondary" href="{{.URL}}/edit">Veranstaltung bearbeiten</a></p>{{end}}
+{{if .LegacyURL}}<p class="govuk-body"><a class="govuk-link" href="{{.LegacyURL}}#comments-heading">Bisherige Diskussion zur Veranstaltung ansehen</a></p>{{end}}
+{{end}}{{else}}
+<p class="govuk-body-l">Partys, Grillabende und gemeinsame Aktionen der Fachschaft.</p>
+{{if .Events.CanCreate}}<p class="govuk-body"><a class="govuk-button" href="/community/veranstaltungen/new">Veranstaltung erstellen</a></p>{{end}}
+<section aria-labelledby="upcoming-events">
+  <h2 class="govuk-heading-l" id="upcoming-events">Nächste Veranstaltungen</h2>
+  {{if .Events.Upcoming}}{{template "event-list" .Events.Upcoming}}{{else}}<p class="govuk-body">Aktuell sind keine Veranstaltungen angekündigt. Neue Termine findest du hier, sobald sie feststehen.</p>{{end}}
+</section>
+{{if .Events.Past}}<hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+<section aria-labelledby="past-events"><h2 class="govuk-heading-l" id="past-events">Vergangene Veranstaltungen</h2>{{template "event-list" .Events.Past}}</section>{{end}}
+<hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible">
+<p class="govuk-body"><a class="govuk-link" href="/community/events">Fotos von unseren Veranstaltungen ansehen</a></p>
+{{end}}
+{{end}}
+{{define "event-list"}}<ul class="govuk-list app-image-cards" role="list">
+{{range .}}<li class="app-image-card">
+  <div class="app-image-card__image">{{if .CoverURL}}<img src="{{.CoverURL}}" width="{{.CoverWidth}}" height="{{.CoverHeight}}" alt="" loading="lazy" decoding="async">{{else}}<img src="/assets/community/event-placeholder.svg" width="800" height="450" alt="" loading="lazy" decoding="async">{{end}}</div>
+  <div class="app-image-card__content">
+    <h3 class="govuk-heading-s govuk-!-margin-bottom-2"><a class="govuk-link app-image-card__link" href="{{.URL}}">{{.Title}}</a></h3>
+    <p class="govuk-body-s app-image-card__summary govuk-!-margin-bottom-3">{{.Summary}}</p>
+    <dl class="app-image-card__meta govuk-body-s">
+      <div><dt class="govuk-visually-hidden">Termin</dt><dd>{{if .EventDate}}<time datetime="{{.EventDate}}">{{.EventLabel}}</time>{{else}}Termin folgt{{end}}</dd></div>
+      {{if .Location}}<div><dt class="govuk-visually-hidden">Ort</dt><dd>{{.Location}}</dd></div>{{end}}
+    </dl>
+  </div>
+</li>{{end}}
+</ul>{{end}}

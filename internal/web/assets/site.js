@@ -442,4 +442,6 @@ document.addEventListener("htmx:afterSwap", (event) => {
   if (event.detail.target?.id !== "archive-results") return;
   // An explicit search submission moves focus to the new result heading.
   document.querySelector("#results-heading")?.focus();
+  const resultsTitle = document.querySelector("#archive-results")?.dataset.documentTitle;
+  if (resultsTitle) document.title = resultsTitle;
 });

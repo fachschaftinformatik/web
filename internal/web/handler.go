@@ -5,12 +5,14 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"slices"
 	"strings"
 
 	"github.com/fachschaftinformatik/web/internal/content"
+	"github.com/fachschaftinformatik/web/internal/content/events"
 	"github.com/fachschaftinformatik/web/internal/content/files"
 	"github.com/fachschaftinformatik/web/internal/content/media"
 	"github.com/fachschaftinformatik/web/internal/content/posts"
@@ -29,6 +31,7 @@ type Handler struct {
 	archive       *files.Service
 	posts         *posts.Service
 	media         *media.Service
+	events        *events.Service
 }
 
 type Services struct {
@@ -38,6 +41,7 @@ type Services struct {
 	Meetings *content.Store
 	Posts    *posts.Service
 	Media    *media.Service
+	Events   *events.Service
 }
 
 func New() (http.Handler, error) {
@@ -66,6 +70,7 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 		c.people, c.content = people.NewStore(), content.NewStore()
 	} else {
 		c.identity, c.archive, c.people, c.content, c.posts, c.media = services.Users, services.Archive, services.People, services.Meetings, services.Posts, services.Media
+		c.events = services.Events
 	}
 	router := http.NewServeMux()
 	router.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -124,6 +129,16 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 		http.Redirect(w, r, "/archive/"+r.PathValue("module"), http.StatusSeeOther)
 	})
 	router.HandleFunc("GET /discussions", c.Forum)
+	router.HandleFunc("GET /community/veranstaltungen", c.Events)
+	router.HandleFunc("GET /community/veranstaltungen/new", c.EditEvent)
+	router.HandleFunc("POST /community/veranstaltungen/new", c.EditEvent)
+	router.HandleFunc("GET /community/veranstaltungen/{event}", c.Events)
+	router.HandleFunc("GET /community/veranstaltungen/{event}/edit", c.EditEvent)
+	router.HandleFunc("POST /community/veranstaltungen/{event}/edit", c.EditEvent)
+	router.HandleFunc("GET /community/veranstaltungen/{event}/cover", c.CalendarCover)
+	router.HandleFunc("GET /community/neuigkeiten", c.News)
+	router.HandleFunc("GET /community/neuigkeiten/new", c.EditDiscussion)
+	router.HandleFunc("POST /community/neuigkeiten/new", c.EditDiscussion)
 	router.HandleFunc("GET /d/{post}", c.Discussion)
 	router.HandleFunc("GET /users/{id}", c.PublicProfile)
 	router.HandleFunc("GET /d/new", c.EditDiscussion)
@@ -224,6 +239,14 @@ func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 	data := Page{
 		Title: "Altklausuren", Active: "archive",
 		Archive: ArchivePage{Filter: filter, Programs: programs, Versions: versions, Degrees: degrees, Modules: catalog.FindModules(filter)},
+	}
+	data.Archive.paginate(r.URL.Query().Get("seite"))
+	if raw := r.URL.Query().Get("seite"); raw != "" && raw != fmt.Sprint(data.Archive.Page) {
+		http.Redirect(w, r, data.Archive.PageURL(1), http.StatusSeeOther)
+		return
+	}
+	if data.Archive.Pages > 1 {
+		data.DocumentTitle = fmt.Sprintf("Altklausuren (Seite %d von %d)", data.Archive.Page, data.Archive.Pages)
 	}
 	w.Header().Set("Vary", "HX-Request, HX-History-Restore-Request")
 	fragment := r.Header.Get("HX-Request") == "true" && r.Header.Get("HX-History-Restore-Request") != "true"

@@ -91,3 +91,51 @@ func TestArchiveMigrationPreservesAliasesHistoriesAndQualifications(t *testing.T
 		t.Fatal(err)
 	}
 }
+
+func TestCalendarMigrationPreservesLegacyDiscussions(t *testing.T) {
+	db, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "calendar.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	source, err := fs.Sub(migrations, "migrations")
+	if err != nil {
+		t.Fatal(err)
+	}
+	provider, err := goose.NewProvider(goose.DialectSQLite3, db, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := provider.UpTo(context.Background(), 9); err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.Exec(`INSERT INTO users(id,email,name,password) VALUES(1,'calendar@fsv-wh.de','Name','unchanged');
+	INSERT INTO discussion_posts(id,title,body,user_id,type,event_date,location,deleted_at) VALUES
+	(10,'Grillabend','Original body',1,'event','2026-06-09T17:00','Innenhof',NULL),
+	(20,'Diskussion','Original discussion',1,'discussion',NULL,NULL,NULL),
+	(30,'Gelöscht','Deleted',1,'event',NULL,NULL,'deleted');
+	INSERT INTO discussion_comments(id,post_id,user_id,text) VALUES(100,10,1,'Original comment');
+	INSERT INTO discussion_votes(post_id,user_id,vote) VALUES(10,1,1);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := provider.Up(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	for query, want := range map[string]int{
+		`SELECT COUNT(*) FROM calendar_events`:                          2,
+		`SELECT COUNT(*) FROM calendar_events WHERE deleted_at IS NULL`: 1,
+		`SELECT COUNT(*) FROM calendar_events WHERE id=10 AND legacy_post_id=10 AND body='Original body' AND event_date='2026-06-09T17:00' AND location='Innenhof'`: 1,
+		`SELECT COUNT(*) FROM discussion_posts`:                                                 3,
+		`SELECT COUNT(*) FROM discussion_comments WHERE post_id=10 AND text='Original comment'`: 1,
+		`SELECT COUNT(*) FROM discussion_votes WHERE post_id=10 AND vote=1`:                     1,
+	} {
+		var count int
+		if err := db.QueryRow(query).Scan(&count); err != nil || count != want {
+			t.Fatalf("%s: %d %v", query, count, err)
+		}
+	}
+	if _, err := provider.Up(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}

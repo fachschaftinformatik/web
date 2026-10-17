@@ -18,6 +18,7 @@ import (
 
 	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/internal/content"
+	"github.com/fachschaftinformatik/web/internal/content/events"
 	"github.com/fachschaftinformatik/web/internal/content/files"
 	"github.com/fachschaftinformatik/web/internal/content/media"
 	"github.com/fachschaftinformatik/web/internal/content/posts"
@@ -135,7 +136,7 @@ func run(ctx context.Context, args []string) error {
 			return meetingErr
 		}
 		archive := files.NewService(db, storage)
-		handler, err = web.NewPersistent(web.Services{Users: identity, Archive: archive, People: team, Meetings: meetings, Posts: posts.NewService(db), Media: media.NewService(db, storage)}, origin.Scheme == "https")
+		handler, err = web.NewPersistent(web.Services{Users: identity, Archive: archive, People: team, Meetings: meetings, Posts: posts.NewService(db), Media: media.NewService(db, storage), Events: events.NewService(db, storage)}, origin.Scheme == "https")
 		if err == nil {
 			mailCtx, cancel := context.WithCancel(ctx)
 			done := make(chan struct{})

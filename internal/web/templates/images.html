@@ -3,11 +3,14 @@
 {{$g := .Images}}
 {{if not $g.Detail}}
 <p class="govuk-body">Einblicke in unsere LAN-Partys und das Fachschaftsleben.</p>
-<ul class="govuk-list app-gallery-grid app-gallery-albums">
+<ul class="govuk-list app-image-cards" role="list">
   {{range $g.Albums}}
-  <li>
-    <h2 class="govuk-heading-m"><a class="govuk-link app-gallery-link" href="{{.URL}}">{{with .CoverImage}}{{if .Source}}<img class="app-gallery-thumbnail" src="{{.Thumbnail}}" srcset="{{.ThumbnailSources}}" {{if .Width}}width="{{.Width}}" height="{{.Height}}"{{end}} alt="" loading="lazy" decoding="async">{{end}}{{end}}<span>{{.Title}}</span></a></h2>
-    <p class="govuk-body-s">{{len .Images}} {{if eq (len .Images) 1}}Bild{{else}}Bilder{{end}}</p>
+  <li class="app-image-card">
+    <div class="app-image-card__image">{{with .CoverImage}}{{if .Source}}<img src="{{.Thumbnail}}" srcset="{{.ThumbnailSources}}" sizes="(max-width: 768px) calc(100vw - 60px), (max-width: 1200px) 35vw, 390px" {{if .Width}}width="{{.Width}}" height="{{.Height}}"{{end}} alt="" loading="lazy" decoding="async">{{end}}{{else}}<img src="/assets/community/event-placeholder.svg" width="800" height="450" alt="" loading="lazy" decoding="async">{{end}}</div>
+    <div class="app-image-card__content">
+      <h2 class="govuk-heading-s govuk-!-margin-bottom-2"><a class="govuk-link app-image-card__link" href="{{.URL}}">{{.Title}}</a></h2>
+      <p class="govuk-body-s app-image-card__meta">{{len .Images}} {{if eq (len .Images) 1}}Bild{{else}}Bilder{{end}}</p>
+    </div>
   </li>
   {{end}}
 </ul>
