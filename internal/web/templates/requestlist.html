@@ -3,11 +3,11 @@
 {{if .Requests}}
 <table class="govuk-table app-admin-table">
   <caption class="govuk-visually-hidden">Einreichungen von Altklausuren</caption>
-  <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Modul</th><th class="govuk-table__header" scope="col">Status</th>{{if .Reviewing}}<th class="govuk-table__header" scope="col">Eingereicht von</th>{{end}}</tr></thead>
+  <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Modul</th>{{if .Reviewing}}<th class="govuk-table__header" scope="col">Eingereicht von</th>{{end}}<th class="govuk-table__header" scope="col">Status</th></tr></thead>
   <tbody class="govuk-table__body">{{range .Requests}}<tr class="govuk-table__row">
-    <th class="govuk-table__header" scope="row"><a class="govuk-link" href="{{if $.Reviewing}}/verwaltung/einreichungen/{{else}}/archive/requests/{{end}}{{.ID}}">{{.Title}}</a><p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">{{.SubmittedLabel}} · {{.Count}} {{if eq .Count 1}}PDF{{else}}PDFs{{end}}</p></th>
+    <th class="govuk-table__header" scope="row"><a class="govuk-link" href="{{if $.Reviewing}}/verwaltung/einreichungen/{{else}}/archive/requests/{{end}}{{.ID}}">{{.Title}}</a></th>
+    {{if $.Reviewing}}<td class="govuk-table__cell">{{if $.CanViewUsers}}<a class="govuk-link" href="/verwaltung/benutzer/{{.UserID}}">{{.Name}}</a>{{else}}{{.Name}}{{end}}</td>{{end}}
     <td class="govuk-table__cell">{{template "request-status" .Status}}</td>
-    {{if $.Reviewing}}<td class="govuk-table__cell">{{.Name}}</td>{{end}}
   </tr>{{end}}</tbody>
 </table>
 {{else}}<p class="govuk-body">Es liegen keine Einreichungen vor.</p>{{end}}

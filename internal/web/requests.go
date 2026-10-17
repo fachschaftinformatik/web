@@ -9,8 +9,9 @@ import (
 )
 
 type RequestListPage struct {
-	Requests  []files.Request
-	Reviewing bool
+	Requests     []files.Request
+	Reviewing    bool
+	CanViewUsers bool
 }
 
 type RequestPage struct {

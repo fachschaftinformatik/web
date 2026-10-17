@@ -90,7 +90,7 @@ func (a AdminPage) Groups() []AdminGroup {
 }
 
 func (a AdminPage) RequestList() RequestListPage {
-	return RequestListPage{Requests: a.Requests, Reviewing: true}
+	return RequestListPage{Requests: a.Requests, Reviewing: true, CanViewUsers: !a.ReviewerOnly}
 }
 
 func (a AdminPage) UserPageURL(page int) string {
