@@ -8,16 +8,16 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/fachschaftinformatik/web/internal/content"
+
 	"github.com/fachschaftinformatik/web/internal/id"
 )
 
-var ErrForbidden = errors.New("forum access denied")
+var ErrForbidden = content.ErrForbidden
 
 var ErrNotFound = errors.New("forum record not found")
 
-type ValidationError struct{ Fields []FieldError }
-
-func (e *ValidationError) Error() string { return "invalid forum input" }
+type ValidationError = content.ValidationError
 
 type Service struct{ db *sql.DB }
 
@@ -56,8 +56,8 @@ func scanThread(row interface{ Scan(...any) error }) (Thread, error) {
 	}
 	text := t.Body
 	if t.BodyFormat == "html" {
-		t.Body = SanitizeRichText(t.Body)
-		text = RichTextVisible(t.Body)
+		t.Body = content.SanitizeRichText(t.Body)
+		text = content.RichTextVisible(t.Body)
 	}
 	t.Summary = text
 	if r := []rune(text); len(r) > 240 {
@@ -184,9 +184,9 @@ func (s *Service) Save(ctx context.Context, user int64, post string, d Draft, ri
 	d.Title = strings.TrimSpace(d.Title)
 	body, format := d.Body, "plain"
 	if rich != "" {
-		body = SanitizeRichText(rich)
+		body = content.SanitizeRichText(rich)
 		format = "html"
-		d.Body = RichTextVisible(body)
+		d.Body = content.RichTextVisible(body)
 	}
 	if fields := d.Validate(); len(fields) > 0 {
 		return "", &ValidationError{fields}

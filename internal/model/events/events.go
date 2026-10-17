@@ -5,10 +5,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/fachschaftinformatik/web/internal/content"
 
 	"github.com/fachschaftinformatik/web/internal/id"
 	"github.com/fachschaftinformatik/web/internal/model/forum"
@@ -17,11 +20,11 @@ import (
 
 var ErrNotFound = errors.New("event not found")
 
-var ErrForbidden = forum.ErrForbidden
+var ErrForbidden = content.ErrForbidden
 
-type ValidationError = forum.ValidationError
+type ValidationError = content.ValidationError
 
-type FieldError = forum.FieldError
+type FieldError = content.FieldError
 
 type querier interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
@@ -70,15 +73,15 @@ func (e Event) EventLabel() string {
 
 func (e Event) RichBody() string {
 	if e.BodyFormat == "html" {
-		return forum.SanitizeRichText(e.Body)
+		return content.SanitizeRichText(e.Body)
 	}
-	return forum.PlainRichText(e.Body)
+	return content.PlainRichText(e.Body)
 }
 
 func (e Event) Summary() string {
 	text := e.Body
 	if e.BodyFormat == "html" {
-		text = forum.RichTextVisible(text)
+		text = content.RichTextVisible(text)
 	}
 	if r := []rune(text); len(r) > 240 {
 		return string(r[:240]) + "…"
@@ -89,7 +92,7 @@ func (e Event) Summary() string {
 type Draft struct{ Title, Body, Date, Time, Location string }
 
 func (d Draft) Validate() []FieldError {
-	return (forum.Draft{Title: d.Title, Body: d.Body, Date: d.Date, Time: d.Time, Location: d.Location, Type: "event"}).Validate()
+	return append(content.ValidateText(d.Title, d.Body), content.ValidateSchedule(d.Date, d.Time)...)
 }
 
 const selectEvent = `SELECT CAST(id AS TEXT),title,body,body_format,event_date,location,created_at,updated_at,cover_key,cover_alt,cover_width,cover_height,legacy_post_id,source_url,source_published_at,source_status,
@@ -104,7 +107,7 @@ func scan(row interface{ Scan(...any) error }) (Event, error) {
 		return e, ErrNotFound
 	}
 	if e.BodyFormat == "html" {
-		e.Body = forum.SanitizeRichText(e.Body)
+		e.Body = content.SanitizeRichText(e.Body)
 	}
 	return e, err
 }
@@ -187,8 +190,8 @@ func (s *Service) Save(ctx context.Context, user int64, event string, d Draft, r
 	}
 	body, format := d.Body, "plain"
 	if rich != "" {
-		body, format = forum.SanitizeRichText(rich), "html"
-		d.Body = forum.RichTextVisible(body)
+		body, format = content.SanitizeRichText(rich), "html"
+		d.Body = content.RichTextVisible(body)
 	}
 	if fields := d.Validate(); len(fields) > 0 {
 		return "", &ValidationError{Fields: fields}
@@ -302,4 +305,31 @@ func (s *Service) FindPage(ctx context.Context, now time.Time, page, size int, u
 		result = append(result, e)
 	}
 	return result, total, rows.Err()
+}
+
+// Group classifies and orders events for the calendar and upcoming lists.
+func Group(records []Event, now time.Time) (upcoming, past []Event) {
+	if zone, err := time.LoadLocation("Europe/Berlin"); err == nil {
+		now = now.In(zone)
+	}
+	for _, event := range records {
+		date := event.SortDate()
+		if event.SourceStatus == "cancelled" || len(date) >= 10 && date[:10] < now.Format("2006-01-02") {
+			past = append(past, event)
+		} else {
+			upcoming = append(upcoming, event)
+		}
+	}
+	sort.SliceStable(upcoming, func(i, j int) bool {
+		a, b := upcoming[i].SortDate(), upcoming[j].SortDate()
+		if a == "" {
+			return false
+		}
+		if b == "" {
+			return true
+		}
+		return a < b
+	})
+	sort.SliceStable(past, func(i, j int) bool { return past[i].SortDate() > past[j].SortDate() })
+	return upcoming, past
 }

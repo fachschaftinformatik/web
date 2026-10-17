@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/content"
+
 	"github.com/fachschaftinformatik/web/internal/model/forum"
 	"github.com/fachschaftinformatik/web/internal/view"
 )
@@ -26,7 +28,7 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	editor := view.ForumEditor{Action: "/d/new", BackURL: "/discussions", SourceURL: "https://ik.fsv-wh.de/d/new", Draft: forum.Draft{Type: "discussion"}}
+	editor := view.ContentEditor{Action: "/d/new", BackURL: "/discussions", SourceURL: "https://ik.fsv-wh.de/d/new", Draft: view.EditorDraft{Type: "discussion"}}
 
 	title := "Beitrag verfassen"
 	if r.URL.Path == view.NewsURL+"/new" {
@@ -57,10 +59,10 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 		editor.Announcement = thread.Type == "news"
 		editor.Event = thread.Type == "event"
 		editor.Action, editor.BackURL, editor.SourceURL = thread.URL()+"/edit", thread.URL(), thread.SourceURL()+"/edit"
-		editor.Draft = forum.Draft{Title: thread.Title, Body: thread.Body, Type: thread.Type, Tags: strings.Join(thread.Tags, ", "), Location: thread.Location}
+		editor.Draft = view.EditorDraft{Title: thread.Title, Body: thread.Body, Type: thread.Type, Tags: strings.Join(thread.Tags, ", "), Location: thread.Location}
 		if thread.BodyFormat == "html" {
-			editor.RichBody = forum.SanitizeRichText(thread.Body)
-			editor.Draft.Body = forum.RichTextPlain(editor.RichBody)
+			editor.RichBody = content.SanitizeRichText(thread.Body)
+			editor.Draft.Body = content.RichTextPlain(editor.RichBody)
 		}
 		if date, err := time.Parse("2006-01-02T15:04", thread.EventDate); err == nil {
 			editor.Draft.Date, editor.Draft.Time = date.Format("02.01.2006"), date.Format("15:04")
@@ -81,7 +83,7 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 	}
 	status := http.StatusOK
 	if editor.RichBody == "" {
-		editor.RichBody = forum.PlainRichText(editor.Draft.Body)
+		editor.RichBody = content.PlainRichText(editor.Draft.Body)
 	}
 	if r.Method == http.MethodPost {
 		r.Body = http.MaxBytesReader(w, r.Body, 128<<10)
@@ -90,22 +92,22 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 			c.pageError(w, "Das Formular konnte nicht gelesen werden. Versuche es mit einem kürzeren Beitrag erneut.", http.StatusBadRequest)
 			return
 		}
-		editor.Draft = forum.Draft{Title: r.PostForm.Get("title"), Body: r.PostForm.Get("body"), Type: editor.Draft.Type, Tags: r.PostForm.Get("tags"), Date: r.PostForm.Get("date"), Time: r.PostForm.Get("time"), Location: r.PostForm.Get("location")}
+		editor.Draft = view.EditorDraft{Title: r.PostForm.Get("title"), Body: r.PostForm.Get("body"), Type: editor.Draft.Type, Tags: r.PostForm.Get("tags"), Date: r.PostForm.Get("date"), Time: r.PostForm.Get("time"), Location: r.PostForm.Get("location")}
 		if r.PostForm.Has("rich_body") {
-			editor.RichBody = forum.SanitizeRichText(r.PostForm.Get("rich_body"))
-			editor.Draft.Body = forum.RichTextPlain(editor.RichBody)
+			editor.RichBody = content.SanitizeRichText(r.PostForm.Get("rich_body"))
+			editor.Draft.Body = content.RichTextPlain(editor.RichBody)
 		} else {
-			editor.RichBody = forum.PlainRichText(editor.Draft.Body)
+			editor.RichBody = content.PlainRichText(editor.Draft.Body)
 		}
-		validation := editor.Draft
+		validation := forum.Draft(editor.Draft)
 		if r.PostForm.Has("rich_body") {
-			validation.Body = forum.RichTextVisible(editor.RichBody)
+			validation.Body = content.RichTextVisible(editor.RichBody)
 		}
 		editor.Errors = validation.Validate()
 		if len(editor.Errors) > 0 {
 			status = http.StatusUnprocessableEntity
 		} else {
-			post, err := c.forum.Save(r.Context(), user, r.PathValue("post"), editor.Draft, editor.RichBody)
+			post, err := c.forum.Save(r.Context(), user, r.PathValue("post"), forum.Draft(editor.Draft), editor.RichBody)
 			if err == nil {
 				http.Redirect(w, r, "/d/"+post, http.StatusSeeOther)
 				return

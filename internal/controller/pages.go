@@ -22,7 +22,7 @@ func (c *Handler) home(ctx context.Context, viewer ...int64) (view.HomePage, err
 	if err != nil {
 		return view.HomePage{}, err
 	}
-	upcoming, _ = groupEvents(calendar, time.Now())
+	upcoming, _ = events.Group(calendar, time.Now())
 	upcoming = upcoming[:min(3, len(upcoming))]
 
 	records, _, err := c.forum.FindPage(ctx, forum.Filter{Type: "discussion"}, 1, 2, viewer...)

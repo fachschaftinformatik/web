@@ -3,6 +3,8 @@ package view
 import (
 	"html/template"
 
+	"github.com/fachschaftinformatik/web/internal/content"
+
 	"github.com/fachschaftinformatik/web/internal/model/events"
 	"github.com/fachschaftinformatik/web/internal/model/forum"
 	"github.com/fachschaftinformatik/web/internal/model/gallery"
@@ -16,9 +18,9 @@ type MeetingsPage struct {
 	Next     *meetings.Meeting
 }
 
-type ForumEditor struct {
-	Draft                      forum.Draft
-	Errors                     []forum.FieldError
+type ContentEditor struct {
+	Draft                      EditorDraft
+	Errors                     []content.FieldError
 	Editing, Unavailable       bool
 	Action, BackURL, SourceURL string
 	RichBody                   string
@@ -26,11 +28,11 @@ type ForumEditor struct {
 	CoverURL, CoverAlt         string
 }
 
-func (e ForumEditor) RichHTML() template.HTML {
-	return template.HTML(forum.SanitizeRichText(e.RichBody))
+func (e ContentEditor) RichHTML() template.HTML {
+	return template.HTML(content.SanitizeRichText(e.RichBody))
 }
 
-func (e ForumEditor) Error(Field string) string {
+func (e ContentEditor) Error(Field string) string {
 	for _, err := range e.Errors {
 		if err.Field == Field {
 			return err.Message
@@ -129,3 +131,5 @@ func voteControl(page Page, action, back, label string, score, selected int) Vot
 	}
 	return v
 }
+
+type EditorDraft struct{ Title, Body, Type, Tags, Date, Time, Location string }

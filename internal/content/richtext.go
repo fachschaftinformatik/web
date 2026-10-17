@@ -1,4 +1,4 @@
-package forum
+package content
 
 import (
 	"html"

@@ -100,7 +100,7 @@ type Page struct {
 	Meetings      MeetingsPage
 	Forum         ForumPage
 	Events        EventsPage
-	Editor        *ForumEditor
+	Editor        *ContentEditor
 	SignedIn      bool
 	CanAdmin      bool
 	Token         TokenPage

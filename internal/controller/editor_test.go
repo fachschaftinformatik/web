@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestForumEditor(t *testing.T) {
+func TestContentEditor(t *testing.T) {
 	handler, db := testApplication(t)
 	server := httptest.NewServer(handler)
 	defer server.Close()
