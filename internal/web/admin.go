@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/content"
+	"github.com/fachschaftinformatik/web/internal/content/files"
 	"github.com/fachschaftinformatik/web/internal/people"
 	"github.com/fachschaftinformatik/web/internal/users"
 )
@@ -32,7 +33,10 @@ type AdminMemberRow struct {
 	people.Person
 	Tasks []string
 }
-type AdminTaskRow struct{ Title, Kind, Members, URL string }
+type AdminTaskRow struct {
+	Title, Kind, URL string
+	Members          []string
+}
 type PaginationItem struct {
 	Number            int
 	URL               string
@@ -41,12 +45,15 @@ type PaginationItem struct {
 type AdminLink struct{ ID, Label, URL string }
 
 var adminLinks = []AdminLink{
+	{"antraege", "Anträge", "/verwaltung/antraege"},
 	{"benutzer", "Benutzer", "/verwaltung/benutzer"},
 	{"mitglieder", "Mitglieder und Aufgaben", "/verwaltung/mitglieder"},
 	{"sitzungen", "Sitzungen und Protokolle", "/verwaltung/sitzungen"},
 }
 
 type AdminPage struct {
+	ReviewerOnly                                                 bool
+	Requests                                                     []files.Request
 	Section, SectionTitle, View, Action, Query, Message, Success string
 	Fields                                                       []AdminField
 	Members                                                      []AdminMemberRow
@@ -59,7 +66,16 @@ type AdminPage struct {
 	PreviousURL, NextURL                                         string
 }
 
-func (a AdminPage) Links() []AdminLink { return adminLinks }
+func (a AdminPage) Links() []AdminLink {
+	if a.ReviewerOnly {
+		return adminLinks[:1]
+	}
+	return adminLinks
+}
+
+func (a AdminPage) RequestList() RequestListPage {
+	return RequestListPage{Requests: a.Requests, Reviewing: true}
+}
 
 func (a AdminPage) UserPageURL(page int) string {
 	q := url.Values{}
@@ -106,6 +122,7 @@ func (a AdminPage) HasErrors() bool {
 }
 
 func (c *Handler) adminRender(w http.ResponseWriter, title string, a *AdminPage, status int) {
+	a.ReviewerOnly = !w.(*sessionResponse).session.CanAdmin()
 	p := Page{Title: title, Active: "admin", Admin: a}
 	if a.View == "users" && a.Pages > 1 {
 		p.DocumentTitle = fmt.Sprintf("Benutzer – Seite %d von %d", a.Page, a.Pages)
@@ -149,6 +166,17 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 		a.Success = "Die Änderungen wurden gespeichert."
 	}
 	switch section {
+	case "antraege":
+		if c.archive == nil {
+			http.NotFound(w, r)
+			return
+		}
+		requests, err := c.archive.Requests(r.Context(), w.(*sessionResponse).session.UserID, true)
+		if err != nil {
+			c.archiveWriteError(w, r, err)
+			return
+		}
+		a.View, a.Requests = "requests", requests
 	case "benutzer":
 		directory := c.users
 		if c.identity != nil {
@@ -225,7 +253,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 					names = append(names, person.Name)
 				}
 			}
-			a.Tasks = append(a.Tasks, AdminTaskRow{Title: task.Title, Kind: responsibilityKind(task.Group), Members: strings.Join(names, ", "), URL: "/verwaltung/aufgaben/" + task.ID})
+			a.Tasks = append(a.Tasks, AdminTaskRow{Title: task.Title, Kind: responsibilityKind(task.Group), Members: names, URL: "/verwaltung/aufgaben/" + task.ID})
 		}
 	case "sitzungen":
 		if id != "" {
@@ -284,7 +312,7 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPag
 	}
 	errors := map[string]string{}
 	if r.Method == http.MethodPost {
-		p.Name, p.Email, p.Role = r.PostForm.Get("name"), r.PostForm.Get("email"), r.PostForm.Get("role")
+		p.Name, p.Email = r.PostForm.Get("name"), r.PostForm.Get("email")
 		errors = c.people.SavePerson(p)
 		if len(errors) == 0 {
 			http.Redirect(w, r, "/verwaltung/mitglieder?gespeichert=1", http.StatusSeeOther)
@@ -292,8 +320,7 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPag
 		}
 	}
 	a.View, a.Action = "form", r.URL.Path
-	a.Fields = []AdminField{field("name", "Name", p.Name, "text"), field("email", "Öffentliche E-Mail-Adresse (optional)", p.Email, "email"), field("role", "Aufgabe im Vorstand (optional)", p.Role, "text")}
-	a.Fields[2].Hint = "Wird bei Mitgliedern des Vorstands angezeigt."
+	a.Fields = []AdminField{field("name", "Name", p.Name, "text"), field("email", "E-Mail-Adresse", p.Email, "email")}
 	attachErrors(a.Fields, errors)
 	status := http.StatusOK
 	if len(errors) != 0 {
@@ -420,9 +447,9 @@ func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *Adm
 	}
 	a.View, a.Action, a.Publication = "form", "/verwaltung/sitzungen/"+p.ID, &p
 	a.Fields = []AdminField{
-		{ID: "date", Label: "Sitzungsdatum", Kind: "date", Hint: "Zum Beispiel 27 10 2026.", Day: day, Month: month, Year: year},
+		{ID: "date", Label: "Sitzungsdatum", Kind: "date", Day: day, Month: month, Year: year},
 		field("number", "Sitzungsnummer", number, "text"),
-		{ID: "kind", Label: "Dokumentart", Kind: "radios", Options: []AdminOption{{"Einladung", "Einladung", p.Kind == "Einladung"}, {"Protokoll", "Protokoll", p.Kind == "Protokoll"}}},
+		{ID: "kind", Label: "Dokumentart", Kind: "radios", Options: []AdminOption{{"Einladung", "Einladung zur Sitzung", p.Kind == "Einladung"}, {"Protokoll", "Sitzungsprotokoll", p.Kind == "Protokoll"}}},
 		{ID: "file", Label: "PDF-Datei", Kind: "file", Hint: "Wähle eine PDF-Datei mit höchstens 8 MB aus."},
 	}
 	attachErrors(a.Fields, errors)

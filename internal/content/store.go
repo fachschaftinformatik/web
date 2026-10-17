@@ -35,7 +35,7 @@ func ValidatePublication(p Publication) map[string]string {
 		errors["number"] = "Gib eine Sitzungsnummer zwischen 1 und 999 ein."
 	}
 	if p.Kind != "Einladung" && p.Kind != "Protokoll" {
-		errors["kind"] = "Wähle Einladung oder Protokoll aus."
+		errors["kind"] = "Wähle Einladung zur Sitzung oder Sitzungsprotokoll aus."
 	}
 	if message := PDFError(p.Data); message != "" {
 		errors["file"] = message
@@ -144,4 +144,5 @@ func (s *Store) allLocked() []Meeting {
 func (s *Store) All() []Meeting { s.mu.RLock(); defer s.mu.RUnlock(); return s.allLocked() }
 
 func (p Publication) Size() string      { return fmt.Sprintf("%d kB", (len(p.Data)+999)/1000) }
+func (p Publication) KindLabel() string { return kindLabel(p.Kind) }
 func (p Publication) DateLabel() string { return (Meeting{Date: p.Date}).DateLabel() }

@@ -16,6 +16,7 @@ type Exam struct {
 	ID                                         string
 	Bytes                                      int64
 	OwnerID                                    int64
+	Number                                     int
 	alias                                      string
 }
 

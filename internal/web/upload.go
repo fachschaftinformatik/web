@@ -12,6 +12,8 @@ import (
 )
 
 type UploadPage struct {
+	RequestID                                string
+	Existing                                 []files.Exam
 	ModuleID, Version, Date, Comment, Action string
 	Revision                                 bool
 	Modules                                  []files.Module
@@ -34,7 +36,23 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 	form := &page.Upload
 	userID := w.(*sessionResponse).session.UserID
 	revisionOf := r.PathValue("id")
-	if revisionOf != "" {
+	requestID := r.PathValue("request")
+	if requestID != "" {
+		request, err := c.archive.Request(r.Context(), userID, requestID, false)
+		if err != nil {
+			c.archiveWriteError(w, r, err)
+			return
+		}
+		if request.Status != files.Draft {
+			c.archiveWriteError(w, r, files.ErrConflict)
+			return
+		}
+		form.RequestID, form.Existing = request.ID, request.Documents
+		form.ModuleID, form.Version, form.Comment, form.Date = request.ModuleID, request.Version, request.Comment, request.DateLabel()
+		revisionOf = request.RevisionOf
+		form.Revision = revisionOf != ""
+	}
+	if revisionOf != "" && requestID == "" {
 		base, err := c.archive.Revision(r.Context(), userID, revisionOf)
 		if err != nil {
 			c.archiveWriteError(w, r, err)
@@ -52,7 +70,7 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 		form.Version = strings.TrimSpace(r.PostForm.Get("version"))
 		form.Date = strings.TrimSpace(r.PostForm.Get("date"))
 		form.Comment = strings.TrimSpace(r.PostForm.Get("comment"))
-		submission := files.Submission{ModuleID: form.ModuleID, Version: form.Version, Comment: form.Comment, RevisionOf: revisionOf}
+		submission := files.Submission{ModuleID: form.ModuleID, Version: form.Version, Comment: form.Comment, RevisionOf: revisionOf, RequestID: requestID}
 		if date, err := time.Parse("02.01.2006", form.Date); err == nil {
 			submission.Date = date.Format("2006-01-02")
 		}
@@ -84,7 +102,7 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if len(form.Errors) == 0 {
-			result, err := c.archive.Submit(r.Context(), userID, submission)
+			result, err := c.archive.SaveDraft(r.Context(), userID, submission)
 			var fields files.ValidationErrors
 			if errors.As(err, &fields) {
 				form.Errors = fields
@@ -92,7 +110,7 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 				c.archiveWriteError(w, r, err)
 				return
 			} else {
-				http.Redirect(w, r, "/archive/"+result.ModuleID+"?eingereicht=1", http.StatusSeeOther)
+				http.Redirect(w, r, "/archive/requests/"+result.RequestID+"/review", http.StatusSeeOther)
 				return
 			}
 		}
@@ -102,6 +120,10 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Handler) archiveWriteError(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, files.ErrConflict) {
+		http.Error(w, files.ErrConflict.Error(), http.StatusConflict)
+		return
+	}
 	if errors.Is(err, files.ErrNotFound) {
 		http.NotFound(w, r)
 		return

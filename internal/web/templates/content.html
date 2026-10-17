@@ -2,7 +2,7 @@
 {{define "content"}}
 <p class="govuk-body-l">Termine und Protokolle der Fachschaftsvertretung Informatik.</p>
 <h2 class="govuk-heading-m">Nächste Sitzung</h2>
-{{with .Meetings.Next}}<p class="govuk-body">{{.Number}}. Sitzung am {{.DateLabel}}.</p><ul class="govuk-list">{{range .Documents}}<li><a class="govuk-link" href="{{.URL}}">{{.Kind}}</a> (PDF, {{.Size}})</li>{{end}}</ul>{{else}}<p class="govuk-body">Noch kein neuer Sitzungstermin hinterlegt.</p>{{end}}
+{{with .Meetings.Next}}<p class="govuk-body">{{.Number}}. Sitzung am {{.DateLabel}}.</p><ul class="govuk-list">{{range .Documents}}<li><a class="govuk-link" href="{{.URL}}">{{.Label}}</a> (PDF, {{.Size}})</li>{{end}}</ul>{{else}}<p class="govuk-body">Noch kein neuer Sitzungstermin hinterlegt.</p>{{end}}
 <p class="govuk-body">Du möchtest ein Thema einbringen? <a class="govuk-link" href="mailto:kontakt@fachschaftinformatik.de">Schreib uns</a>.</p>
 <h2 class="govuk-heading-m">Sitzungsarchiv</h2>
 <nav aria-label="Sitzungsjahre">
@@ -24,7 +24,7 @@
     <th class="govuk-table__header" scope="row">{{if .Date}}<time datetime="{{.Date}}">{{.DateLabel}}</time>{{else}}{{.DateLabel}}{{end}}<br><span class="govuk-!-font-weight-regular">{{.Number}}. Sitzung</span></th>
     <td class="govuk-table__cell">
       <ul class="govuk-list govuk-!-margin-bottom-0">
-        {{range .Documents}}<li><a class="govuk-link" href="{{.URL}}">{{.Kind}}<span class="govuk-visually-hidden"> zur {{$meeting.Number}}. Sitzung{{if $meeting.Date}} vom {{$meeting.DateLabel}}{{else}} · {{$meeting.Year}}{{end}}</span></a> (PDF, {{.Size}})</li>{{end}}
+        {{range .Documents}}<li><a class="govuk-link" href="{{.URL}}">{{.Label}}<span class="govuk-visually-hidden"> · {{$meeting.Number}}. Sitzung{{if $meeting.Date}} vom {{$meeting.DateLabel}}{{else}} · {{$meeting.Year}}{{end}}</span></a> (PDF, {{.Size}})</li>{{end}}
       </ul>
     </td>
   </tr>

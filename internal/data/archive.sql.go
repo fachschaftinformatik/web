@@ -27,7 +27,7 @@ INSERT INTO archive (
   ?1, ?2, ?3, ?4, ?5, ?6,
   ?7, ?8, ?9, ?10,
   ?11, ?12, ?13
-) RETURNING id, group_id, user_id, module_id, version, exam_date, comment, edit_version, is_latest, access_key, mime_type, nbytes, checksum, created_at, updated_at, deleted_at
+) RETURNING id, group_id, user_id, module_id, version, exam_date, comment, edit_version, is_latest, access_key, mime_type, nbytes, checksum, created_at, updated_at, deleted_at, request_id
 `
 
 type CreateArchiveEntryParams struct {
@@ -80,6 +80,7 @@ func (q *Queries) CreateArchiveEntry(ctx context.Context, arg CreateArchiveEntry
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.RequestID,
 	)
 	return i, err
 }
@@ -94,7 +95,7 @@ func (q *Queries) DeleteArchiveEntry(ctx context.Context, id int64) error {
 }
 
 const getArchiveEntry = `-- name: GetArchiveEntry :one
-SELECT id, group_id, user_id, module_id, version, exam_date, comment, edit_version, is_latest, access_key, mime_type, nbytes, checksum, created_at, updated_at, deleted_at FROM archive WHERE id = ?1 AND deleted_at IS NULL LIMIT 1
+SELECT id, group_id, user_id, module_id, version, exam_date, comment, edit_version, is_latest, access_key, mime_type, nbytes, checksum, created_at, updated_at, deleted_at, request_id FROM archive WHERE id = ?1 AND deleted_at IS NULL LIMIT 1
 `
 
 func (q *Queries) GetArchiveEntry(ctx context.Context, id int64) (Archive, error) {
@@ -117,12 +118,13 @@ func (q *Queries) GetArchiveEntry(ctx context.Context, id int64) (Archive, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.RequestID,
 	)
 	return i, err
 }
 
 const getArchiveEntryByMetadata = `-- name: GetArchiveEntryByMetadata :one
-SELECT id, group_id, user_id, module_id, version, exam_date, comment, edit_version, is_latest, access_key, mime_type, nbytes, checksum, created_at, updated_at, deleted_at FROM archive 
+SELECT id, group_id, user_id, module_id, version, exam_date, comment, edit_version, is_latest, access_key, mime_type, nbytes, checksum, created_at, updated_at, deleted_at, request_id FROM archive 
 WHERE module_id = ?1 
   AND version = ?2 
   AND exam_date = ?3 
@@ -156,12 +158,13 @@ func (q *Queries) GetArchiveEntryByMetadata(ctx context.Context, arg GetArchiveE
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.RequestID,
 	)
 	return i, err
 }
 
 const getArchiveEntryDetails = `-- name: GetArchiveEntryDetails :one
-SELECT a.id, a.group_id, a.user_id, a.module_id, a.version, a.exam_date, a.comment, a.edit_version, a.is_latest, a.access_key, a.mime_type, a.nbytes, a.checksum, a.created_at, a.updated_at, a.deleted_at,
+SELECT a.id, a.group_id, a.user_id, a.module_id, a.version, a.exam_date, a.comment, a.edit_version, a.is_latest, a.access_key, a.mime_type, a.nbytes, a.checksum, a.created_at, a.updated_at, a.deleted_at, a.request_id,
        m.name as module_name, m.program_id,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name
 FROM archive a
@@ -187,6 +190,7 @@ type GetArchiveEntryDetailsRow struct {
 	CreatedAt    string  `json:"created_at"`
 	UpdatedAt    string  `json:"updated_at"`
 	DeletedAt    *string `json:"deleted_at"`
+	RequestID    *string `json:"request_id"`
 	ModuleName   string  `json:"module_name"`
 	ProgramID    int64   `json:"program_id"`
 	UploaderName string  `json:"uploader_name"`
@@ -212,6 +216,7 @@ func (q *Queries) GetArchiveEntryDetails(ctx context.Context, id int64) (GetArch
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.RequestID,
 		&i.ModuleName,
 		&i.ProgramID,
 		&i.UploaderName,
@@ -220,7 +225,7 @@ func (q *Queries) GetArchiveEntryDetails(ctx context.Context, id int64) (GetArch
 }
 
 const getLatestByGroupId = `-- name: GetLatestByGroupId :one
-SELECT id, group_id, user_id, module_id, version, exam_date, comment, edit_version, is_latest, access_key, mime_type, nbytes, checksum, created_at, updated_at, deleted_at FROM archive WHERE group_id = ?1 AND is_latest = 1 AND deleted_at IS NULL LIMIT 1
+SELECT id, group_id, user_id, module_id, version, exam_date, comment, edit_version, is_latest, access_key, mime_type, nbytes, checksum, created_at, updated_at, deleted_at, request_id FROM archive WHERE group_id = ?1 AND is_latest = 1 AND deleted_at IS NULL LIMIT 1
 `
 
 func (q *Queries) GetLatestByGroupId(ctx context.Context, groupID int64) (Archive, error) {
@@ -243,6 +248,7 @@ func (q *Queries) GetLatestByGroupId(ctx context.Context, groupID int64) (Archiv
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.RequestID,
 	)
 	return i, err
 }
@@ -255,6 +261,7 @@ FROM archive a
 JOIN modules m ON m.id = a.module_id AND m.deleted_at IS NULL
 JOIN programs p ON p.id = m.program_id AND p.deleted_at IS NULL
 WHERE a.is_latest = 1 AND a.deleted_at IS NULL AND a.mime_type = 'application/pdf'
+  AND (a.request_id IS NULL OR EXISTS (SELECT 1 FROM archive_requests r WHERE r.id=a.request_id AND r.status='approved'))
 ORDER BY a.exam_date DESC, a.created_at DESC, a.id DESC
 `
 
@@ -306,7 +313,7 @@ func (q *Queries) ListArchiveCatalog(ctx context.Context) ([]ListArchiveCatalogR
 }
 
 const listArchiveEntries = `-- name: ListArchiveEntries :many
-SELECT a.id, a.group_id, a.user_id, a.module_id, a.version, a.exam_date, a.comment, a.edit_version, a.is_latest, a.access_key, a.mime_type, a.nbytes, a.checksum, a.created_at, a.updated_at, a.deleted_at,
+SELECT a.id, a.group_id, a.user_id, a.module_id, a.version, a.exam_date, a.comment, a.edit_version, a.is_latest, a.access_key, a.mime_type, a.nbytes, a.checksum, a.created_at, a.updated_at, a.deleted_at, a.request_id,
        m.name as module_name, m.program_id,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name
 FROM archive a
@@ -343,6 +350,7 @@ type ListArchiveEntriesRow struct {
 	CreatedAt    string  `json:"created_at"`
 	UpdatedAt    string  `json:"updated_at"`
 	DeletedAt    *string `json:"deleted_at"`
+	RequestID    *string `json:"request_id"`
 	ModuleName   string  `json:"module_name"`
 	ProgramID    int64   `json:"program_id"`
 	UploaderName string  `json:"uploader_name"`
@@ -374,6 +382,7 @@ func (q *Queries) ListArchiveEntries(ctx context.Context, arg ListArchiveEntries
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.RequestID,
 			&i.ModuleName,
 			&i.ProgramID,
 			&i.UploaderName,
@@ -435,7 +444,7 @@ func (q *Queries) ListArchiveModules(ctx context.Context) ([]ListArchiveModulesR
 }
 
 const listArchiveVersions = `-- name: ListArchiveVersions :many
-SELECT a.id, a.group_id, a.user_id, a.module_id, a.version, a.exam_date, a.comment, a.edit_version, a.is_latest, a.access_key, a.mime_type, a.nbytes, a.checksum, a.created_at, a.updated_at, a.deleted_at,
+SELECT a.id, a.group_id, a.user_id, a.module_id, a.version, a.exam_date, a.comment, a.edit_version, a.is_latest, a.access_key, a.mime_type, a.nbytes, a.checksum, a.created_at, a.updated_at, a.deleted_at, a.request_id,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name
 FROM archive a
 JOIN users u ON a.user_id = u.id
@@ -460,6 +469,7 @@ type ListArchiveVersionsRow struct {
 	CreatedAt    string  `json:"created_at"`
 	UpdatedAt    string  `json:"updated_at"`
 	DeletedAt    *string `json:"deleted_at"`
+	RequestID    *string `json:"request_id"`
 	UploaderName string  `json:"uploader_name"`
 }
 
@@ -489,6 +499,7 @@ func (q *Queries) ListArchiveVersions(ctx context.Context, groupID int64) ([]Lis
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.RequestID,
 			&i.UploaderName,
 		); err != nil {
 			return nil, err
@@ -519,7 +530,7 @@ func (q *Queries) PromoteLatestInGroup(ctx context.Context, groupID int64) error
 }
 
 const searchArchive = `-- name: SearchArchive :many
-SELECT a.id, a.group_id, a.user_id, a.module_id, a.version, a.exam_date, a.comment, a.edit_version, a.is_latest, a.access_key, a.mime_type, a.nbytes, a.checksum, a.created_at, a.updated_at, a.deleted_at,
+SELECT a.id, a.group_id, a.user_id, a.module_id, a.version, a.exam_date, a.comment, a.edit_version, a.is_latest, a.access_key, a.mime_type, a.nbytes, a.checksum, a.created_at, a.updated_at, a.deleted_at, a.request_id,
        m.name as module_name, m.program_id,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name
 FROM archive a
@@ -550,6 +561,7 @@ type SearchArchiveRow struct {
 	CreatedAt    string  `json:"created_at"`
 	UpdatedAt    string  `json:"updated_at"`
 	DeletedAt    *string `json:"deleted_at"`
+	RequestID    *string `json:"request_id"`
 	ModuleName   string  `json:"module_name"`
 	ProgramID    int64   `json:"program_id"`
 	UploaderName string  `json:"uploader_name"`
@@ -581,6 +593,7 @@ func (q *Queries) SearchArchive(ctx context.Context, query *string) ([]SearchArc
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.RequestID,
 			&i.ModuleName,
 			&i.ProgramID,
 			&i.UploaderName,

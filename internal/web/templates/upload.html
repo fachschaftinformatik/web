@@ -34,13 +34,14 @@
     <textarea class="govuk-textarea" id="comment" name="comment" rows="3">{{.Comment}}</textarea>
   </div>
   <div class="govuk-form-group {{if index .Errors "files"}}govuk-form-group--error{{end}}">
+    {{if .Existing}}<p class="govuk-body">Ohne neue Auswahl bleiben die bisherigen Dateien erhalten.</p><ul class="govuk-list">{{range .Existing}}<li><a class="govuk-link" href="{{.URL}}">Reko</a> (PDF, {{.Size}})</li>{{end}}</ul>{{end}}
     <label class="govuk-label" for="files">{{if .Revision}}PDF-Datei{{else}}PDF-Dateien{{end}}</label>
     <div class="govuk-hint" id="files-hint">{{if .Revision}}Höchstens 8 MB.{{else}}Du kannst mehrere PDFs auswählen. Pro Datei sind höchstens 8 MB möglich, insgesamt höchstens 32 MB.{{end}}</div>
     {{if index .Errors "files"}}<p class="govuk-error-message" id="files-error">{{index .Errors "files"}}</p>{{end}}
     <input class="govuk-file-upload" id="files" name="files" type="file" accept="application/pdf,.pdf" {{if not .Revision}}multiple{{end}} aria-describedby="files-hint{{if index .Errors "files"}} files-error{{end}}" {{if index .Errors "files"}}aria-invalid="true"{{end}}>
   </div>
   <div class="govuk-button-group">
-    <button class="govuk-button" type="submit" data-module="govuk-button">{{if .Revision}}Revision einreichen{{else}}Rekos einreichen{{end}}</button>
+    <button class="govuk-button" type="submit" data-module="govuk-button">Weiter zur Prüfung</button>
     <a class="govuk-link" href="/archive">Abbrechen</a>
   </div>
 </form>

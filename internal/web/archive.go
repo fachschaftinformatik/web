@@ -22,9 +22,13 @@ func (c *Handler) ArchiveFile(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	object, err := c.archive.Open(r.Context(), r.PathValue("id"))
+	object, err := c.archive.Open(r.Context(), response.session.UserID, r.PathValue("id"))
 	if errors.Is(err, files.ErrNotFound) {
 		http.NotFound(w, r)
+		return
+	}
+	if errors.Is(err, files.ErrForbidden) {
+		http.Error(w, "Melde dich mit einem aktiven, bestätigten Konto an.", http.StatusForbidden)
 		return
 	}
 	if errors.Is(err, files.ErrStorage) {

@@ -1,0 +1,27 @@
+{{define "sidebar"}}{{if .Admin}}{{template "admin-navigation" .}}{{end}}{{end}}
+{{define "content"}}
+{{with .Request}}
+{{if .Error}}<div class="govuk-error-summary" data-module="govuk-error-summary"><div role="alert"><h2 class="govuk-error-summary__title">Es gibt ein Problem</h2><div class="govuk-error-summary__body"><p class="govuk-body">{{.Error}}</p></div></div></div>{{end}}
+<p class="govuk-body">{{template "request-status" .Entry.Status}}</p>
+{{if and (not .Reviewing) (eq .Entry.Status "pending")}}<p class="govuk-body">Deine Einreichung wird von der Fachschaft geprüft. Nach der Bestätigung sind die PDFs im Archiv verfügbar.</p>{{end}}
+{{if and (not .Reviewing) (eq .Entry.Status "approved")}}<p class="govuk-body">Deine Einreichung wurde bestätigt. Die PDFs sind im Archiv verfügbar.</p>{{end}}
+{{if and (not .Reviewing) (eq .Entry.Status "rejected")}}<p class="govuk-body">Deine Einreichung wurde abgelehnt.</p>{{end}}
+{{$editable := and (not .Reviewing) (eq .Entry.Status "draft")}}
+{{with .Entry}}
+<dl class="govuk-summary-list">
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Modul</dt><dd class="govuk-summary-list__value">{{.Title}}</dd>{{if $editable}}<dd class="govuk-summary-list__actions"><a class="govuk-link" href="/archive/requests/{{.ID}}/edit#module_id">Ändern<span class="govuk-visually-hidden">: Modul</span></a></dd>{{end}}</div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Studiengang</dt><dd class="govuk-summary-list__value">{{.Program}}</dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Prüfungsordnung</dt><dd class="govuk-summary-list__value">{{.Version}}</dd>{{if $editable}}<dd class="govuk-summary-list__actions"><a class="govuk-link" href="/archive/requests/{{.ID}}/edit#version">Ändern<span class="govuk-visually-hidden">: Prüfungsordnung</span></a></dd>{{end}}</div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Prüfungsdatum</dt><dd class="govuk-summary-list__value">{{.DateLabel}}</dd>{{if $editable}}<dd class="govuk-summary-list__actions"><a class="govuk-link" href="/archive/requests/{{.ID}}/edit#date">Ändern<span class="govuk-visually-hidden">: Prüfungsdatum</span></a></dd>{{end}}</div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Anmerkung</dt><dd class="govuk-summary-list__value">{{if .Comment}}{{.Comment}}{{else}}Keine Anmerkung{{end}}</dd>{{if $editable}}<dd class="govuk-summary-list__actions"><a class="govuk-link" href="/archive/requests/{{.ID}}/edit#comment">Ändern<span class="govuk-visually-hidden">: Anmerkung</span></a></dd>{{end}}</div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">PDF-Dateien</dt><dd class="govuk-summary-list__value"><ul class="govuk-list govuk-!-margin-bottom-0">{{range .Documents}}<li><a class="govuk-link" href="{{.URL}}">Reko {{.Number}}</a> (PDF, {{.Size}})</li>{{end}}</ul></dd>{{if $editable}}<dd class="govuk-summary-list__actions"><a class="govuk-link" href="/archive/requests/{{.ID}}/edit#files">Ändern<span class="govuk-visually-hidden">: PDF-Dateien</span></a></dd>{{end}}</div>
+</dl>
+{{end}}
+{{if $editable}}
+<form action="/archive/requests/{{.Entry.ID}}/review" method="post"><input type="hidden" name="csrf" value="{{$.CSRF}}"><div class="govuk-button-group"><button class="govuk-button" type="submit" data-module="govuk-button">Rekos einreichen</button><a class="govuk-link" href="/archive/requests">Später fortsetzen</a></div></form>
+{{else if and .Reviewing (eq .Entry.Status "pending")}}
+<form action="/verwaltung/antraege/{{.Entry.ID}}" method="post"><input type="hidden" name="csrf" value="{{$.CSRF}}"><div class="govuk-button-group"><button class="govuk-button" type="submit" name="decision" value="approve" data-module="govuk-button">Einreichung bestätigen</button><button class="govuk-button govuk-button--secondary" type="submit" name="decision" value="reject" data-module="govuk-button">Ablehnen</button></div></form>
+{{end}}
+<p class="govuk-body"><a class="govuk-link" href="{{if .Reviewing}}/verwaltung/antraege{{else}}/archive/requests{{end}}">Zur Übersicht</a></p>
+{{end}}
+{{end}}

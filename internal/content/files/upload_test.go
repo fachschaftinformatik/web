@@ -14,21 +14,27 @@ func submission() Submission {
 
 func TestMultiplePersistentUploadsAndAuthorizedRevision(t *testing.T) {
 	s, db := archiveService(t)
-	if _, err := db.Exec(`UPDATE users SET active=1,verified=1 WHERE id=1; INSERT INTO users(id,email,name,password,active,verified) VALUES (2,'other@fsv-wh.de','Other','unused',1,1);`); err != nil {
+	if _, err := db.Exec(`UPDATE users SET active=1,verified=1,role='admin' WHERE id=1; INSERT INTO users(id,email,name,password,active,verified) VALUES (2,'other@fsv-wh.de','Other','unused',1,1);`); err != nil {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	result, err := s.Submit(ctx, 1, submission())
+	result, err := s.SaveDraft(ctx, 1, submission())
 	if err != nil || len(result.IDs) != 2 {
 		t.Fatalf("multiple upload: %+v %v", result, err)
 	}
 	var groups int
+	if err := s.SendRequest(ctx, 1, result.RequestID); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Review(ctx, 1, result.RequestID, true); err != nil {
+		t.Fatal(err)
+	}
 	if err := db.QueryRow(`SELECT COUNT(DISTINCT group_id) FROM archive WHERE exam_date='2026-02-12' AND is_latest=1`).Scan(&groups); err != nil || groups != 2 {
 		t.Fatal("independent PDFs were treated as revisions of one another")
 	}
 	restarted := NewService(db, s.storage)
 	for _, id := range result.IDs {
-		object, err := restarted.Open(ctx, id)
+		object, err := restarted.Open(ctx, 1, id)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -37,17 +43,23 @@ func TestMultiplePersistentUploadsAndAuthorizedRevision(t *testing.T) {
 	revision := submission()
 	revision.Documents = revision.Documents[:1]
 	revision.RevisionOf = result.IDs[0]
-	if _, err := s.Submit(ctx, 2, revision); !errors.Is(err, ErrForbidden) {
+	if _, err := s.SaveDraft(ctx, 2, revision); !errors.Is(err, ErrForbidden) {
 		t.Fatal("another user revised a reconstruction")
 	}
 	if _, err := db.Exec(`UPDATE users SET role='editor' WHERE id=2`); err != nil {
 		t.Fatal(err)
 	}
-	updated, err := s.Submit(ctx, 2, revision)
+	updated, err := s.SaveDraft(ctx, 2, revision)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var latest, version int
+	if err := s.SendRequest(ctx, 2, updated.RequestID); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Review(ctx, 1, updated.RequestID, true); err != nil {
+		t.Fatal(err)
+	}
 	if err := db.QueryRow(`SELECT is_latest FROM archive WHERE id=?`, result.IDs[0]).Scan(&latest); err != nil || latest != 0 {
 		t.Fatal("old revision remained current")
 	}
@@ -97,7 +109,7 @@ func TestFailedUploadOrCommitRetainsPreviousRevision(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if _, err := s.Submit(context.Background(), 1, input); err == nil {
+			if _, err := s.SaveDraft(context.Background(), 1, input); err == nil {
 				t.Fatal("failure not reported")
 			}
 			var count, latest int
@@ -136,7 +148,7 @@ func TestUploadValidationDoesNotWriteObjects(t *testing.T) {
 	} {
 		input := submission()
 		change(&input)
-		_, err := s.Submit(context.Background(), 1, input)
+		_, err := s.SaveDraft(context.Background(), 1, input)
 		var fields ValidationErrors
 		if !errors.As(err, &fields) || storage.calls != 0 {
 			t.Fatalf("invalid input %s wrote storage: %v", strconv.Itoa(index), err)

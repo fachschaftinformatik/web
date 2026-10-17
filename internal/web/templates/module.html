@@ -1,6 +1,5 @@
 {{define "sidebar"}}{{end}}
 {{define "content"}}
-{{if .Archive.Submitted}}<div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="archive-success-title" data-module="govuk-notification-banner"><div class="govuk-notification-banner__header"><h2 class="govuk-notification-banner__title" id="archive-success-title">Erfolgreich</h2></div><div class="govuk-notification-banner__content"><p class="govuk-notification-banner__heading">Die Rekos wurden eingereicht.</p></div></div>{{end}}
 {{with .Archive.Module}}
 <h2 class="govuk-heading-m">{{if eq (len .Exams) 0}}Keine Rekos gefunden{{else if eq (len .Exams) 1}}1 Reko{{else}}{{len .Exams}} Rekos{{end}}</h2>
 {{if .Exams}}

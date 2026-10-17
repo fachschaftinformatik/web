@@ -122,18 +122,27 @@ func parseDate(value string) (time.Time, error) {
 }
 
 // Open retains the V1 key scheme and allows explicitly linked older revisions.
-func (s *Service) Open(ctx context.Context, value string) (*blob.Object, error) {
+func (s *Service) Open(ctx context.Context, userID int64, value string) (*blob.Object, error) {
+	role, err := accountRole(ctx, s.db, userID)
+	if err != nil {
+		return nil, err
+	}
 	id, err := strconv.ParseInt(value, 10, 64)
 	if err != nil || id <= 0 {
 		return nil, ErrNotFound
 	}
 	var size int64
-	err = s.db.QueryRowContext(ctx, `SELECT a.nbytes FROM archive a JOIN modules m ON m.id=a.module_id AND m.deleted_at IS NULL JOIN programs p ON p.id=m.program_id AND p.deleted_at IS NULL WHERE a.id=? AND a.deleted_at IS NULL AND a.mime_type='application/pdf'`, id).Scan(&size)
+	var ownerID int64
+	var status Status
+	err = s.db.QueryRowContext(ctx, `SELECT a.nbytes,a.user_id,COALESCE(r.status,'approved') FROM archive a JOIN modules m ON m.id=a.module_id AND m.deleted_at IS NULL JOIN programs p ON p.id=m.program_id AND p.deleted_at IS NULL LEFT JOIN archive_requests r ON r.id=a.request_id WHERE a.id=? AND a.deleted_at IS NULL AND a.mime_type='application/pdf'`, id).Scan(&size, &ownerID, &status)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
 	if err != nil {
 		return nil, err
+	}
+	if status != Approved && ownerID != userID && !(status != Draft && canReview(role)) {
+		return nil, ErrNotFound
 	}
 	if s.storage == nil {
 		return nil, ErrStorage

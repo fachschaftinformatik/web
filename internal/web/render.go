@@ -35,6 +35,8 @@ type Page struct {
 	CanAdmin      bool
 	Token         TokenPage
 	Upload        UploadPage
+	Request       *RequestPage
+	RequestList   RequestListPage
 	UserID        int64
 	Role          string
 	CSRF          string
@@ -42,13 +44,12 @@ type Page struct {
 }
 
 type ArchivePage struct {
-	Submitted bool
-	Module    *files.Module
-	Filter    files.Filter
-	Programs  []FilterOption
-	Versions  []FilterOption
-	Degrees   []FilterOption
-	Modules   []files.Module
+	Module   *files.Module
+	Filter   files.Filter
+	Programs []FilterOption
+	Versions []FilterOption
+	Degrees  []FilterOption
+	Modules  []files.Module
 }
 
 func (p ArchivePage) querySuffix() string {
@@ -106,8 +107,8 @@ type Renderer struct {
 
 func newRenderer() (*Renderer, error) {
 	r := &Renderer{pages: make(map[string]*template.Template)}
-	for _, name := range []string{"home", "team", "contact", "archive", "module", "upload", "images", "community", "fachschaft", "content", "elections", "regulations", "login", "register", "forgot", "token", "forum", "thread", "editor", "admin"} {
-		t, err := template.New("layout").Funcs(template.FuncMap{"forumText": forumText, "richHTML": func(source string) template.HTML { return template.HTML(posts.SanitizeRichText(source)) }}).ParseFS(resources, "templates/layout.html", "templates/"+name+".html")
+	for _, name := range []string{"home", "team", "contact", "archive", "module", "upload", "request", "requests", "images", "community", "fachschaft", "content", "elections", "regulations", "login", "register", "forgot", "token", "forum", "thread", "editor", "admin"} {
+		t, err := template.New("layout").Funcs(template.FuncMap{"forumText": forumText, "richHTML": func(source string) template.HTML { return template.HTML(posts.SanitizeRichText(source)) }}).ParseFS(resources, "templates/layout.html", "templates/requestlist.html", "templates/adminnav.html", "templates/"+name+".html")
 		if err != nil {
 			return nil, err
 		}

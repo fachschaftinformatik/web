@@ -45,6 +45,10 @@ type Session struct {
 
 func (s Session) CanAdmin() bool { return s.Authenticated && s.Role == "admin" }
 
+func (s Session) CanReview() bool {
+	return s.Authenticated && (s.Role == "admin" || s.Role == "editor")
+}
+
 func token() (string, error) {
 	var value [32]byte
 	if _, err := rand.Read(value[:]); err != nil {

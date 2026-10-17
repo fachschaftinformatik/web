@@ -74,6 +74,8 @@ func (c *Handler) Login(w http.ResponseWriter, r *http.Request) {
 				target := "/"
 				if s.CanAdmin() {
 					target = "/verwaltung"
+				} else if s.CanReview() {
+					target = "/verwaltung/antraege"
 				}
 				http.Redirect(w, r, target, http.StatusSeeOther)
 				return

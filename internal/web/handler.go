@@ -77,6 +77,12 @@ func newHandler(records []users.User, identity *users.Service, archive *files.Se
 	router.HandleFunc("POST /archive/new", c.UploadArchive)
 	router.HandleFunc("GET /archive/files/{id}/revision", c.UploadArchive)
 	router.HandleFunc("POST /archive/files/{id}/revision", c.UploadArchive)
+	router.HandleFunc("GET /archive/requests", c.ArchiveRequests)
+	router.HandleFunc("GET /archive/requests/{request}", c.ArchiveRequest)
+	router.HandleFunc("GET /archive/requests/{request}/review", c.ArchiveRequest)
+	router.HandleFunc("POST /archive/requests/{request}/review", c.ArchiveRequest)
+	router.HandleFunc("GET /archive/requests/{request}/edit", c.UploadArchive)
+	router.HandleFunc("POST /archive/requests/{request}/edit", c.UploadArchive)
 	router.HandleFunc("GET /archive/files/{id}", c.ArchiveFile)
 	router.HandleFunc("GET /api/v1/archive/{id}/file", c.ArchiveFile)
 	router.HandleFunc("GET /archive/{module}/{entry}", func(w http.ResponseWriter, r *http.Request) {
@@ -95,6 +101,8 @@ func newHandler(records []users.User, identity *users.Service, archive *files.Se
 	router.HandleFunc("GET /verwaltung/{section}", c.Admin)
 	router.HandleFunc("GET /verwaltung/{section}/{id}", c.Admin)
 	router.HandleFunc("POST /verwaltung/{section}/{id}", c.Admin)
+	router.HandleFunc("GET /verwaltung/antraege/{request}", c.ReviewArchiveRequest)
+	router.HandleFunc("POST /verwaltung/antraege/{request}", c.ReviewArchiveRequest)
 	router.HandleFunc("GET /verwaltung/sitzungen/{id}/pruefen", c.ReviewPublication)
 	router.HandleFunc("POST /verwaltung/sitzungen/{id}/pruefen", c.ReviewPublication)
 	router.HandleFunc("GET /verwaltung/benutzer/{id}/passwort-zuruecksetzen", c.ResetUserPassword)
@@ -178,7 +186,7 @@ func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
 	}
 	c.render(w, "module", false, Page{
 		Title: module.Title, Active: "archive",
-		Archive: ArchivePage{Module: &module, Filter: filter, Submitted: r.URL.Query().Get("eingereicht") == "1"},
+		Archive: ArchivePage{Module: &module, Filter: filter},
 	})
 }
 
@@ -201,7 +209,7 @@ func (c *Handler) serverError(w http.ResponseWriter, err error) {
 func (c *Handler) renderStatus(w http.ResponseWriter, page string, fragment bool, data Page, status int) {
 	if response, ok := w.(*sessionResponse); ok && response.session != nil {
 		data.SignedIn, data.CSRF = response.session.Authenticated, response.session.CSRF
-		data.CanAdmin = response.session.CanAdmin()
+		data.CanAdmin = response.session.CanReview()
 		data.UserID, data.Role = response.session.UserID, response.session.Role
 	}
 	var html bytes.Buffer

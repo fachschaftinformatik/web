@@ -1,0 +1,14 @@
+{{define "request-status"}}<strong class="govuk-tag {{if eq . "approved"}}govuk-tag--green{{else if eq . "rejected"}}govuk-tag--red{{else if eq . "draft"}}govuk-tag--grey{{else}}govuk-tag--blue{{end}}">{{.Label}}</strong>{{end}}
+{{define "request-list"}}
+{{if .Requests}}
+<table class="govuk-table app-admin-table">
+  <caption class="govuk-visually-hidden">Einreichungen von Altklausuren</caption>
+  <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Modul</th><th class="govuk-table__header" scope="col">Status</th>{{if .Reviewing}}<th class="govuk-table__header" scope="col">Eingereicht von</th>{{end}}</tr></thead>
+  <tbody class="govuk-table__body">{{range .Requests}}<tr class="govuk-table__row">
+    <th class="govuk-table__header" scope="row"><a class="govuk-link" href="{{if $.Reviewing}}/verwaltung/antraege/{{else}}/archive/requests/{{end}}{{.ID}}">{{.Title}}</a><p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">{{.SubmittedLabel}} · {{.Count}} {{if eq .Count 1}}PDF{{else}}PDFs{{end}}</p></th>
+    <td class="govuk-table__cell">{{template "request-status" .Status}}</td>
+    {{if $.Reviewing}}<td class="govuk-table__cell">{{.Name}}</td>{{end}}
+  </tr>{{end}}</tbody>
+</table>
+{{else}}<p class="govuk-body">Es liegen keine Einreichungen vor.</p>{{end}}
+{{end}}

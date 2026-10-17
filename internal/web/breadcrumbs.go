@@ -11,7 +11,7 @@ func (p Page) Breadcrumbs() []Breadcrumb {
 	}
 	items := []Breadcrumb{{"Startseite", "/"}}
 	if p.Admin != nil {
-		if p.Admin.Section != "" {
+		if p.Admin.Section != "" && !p.Admin.ReviewerOnly {
 			items = append(items, Breadcrumb{"Verwaltung", "/verwaltung"})
 		}
 		if p.Admin.View == "form" || p.Admin.View == "user" || p.Admin.View == "review" || p.Admin.View == "reset" {
@@ -23,6 +23,12 @@ func (p Page) Breadcrumbs() []Breadcrumb {
 	}
 	if p.Archive.Module != nil {
 		items = append(items, Breadcrumb{"Altklausuren", p.Archive.SearchURL()})
+	}
+	if p.Active == "archive" && (p.Upload.Action != "" || p.Request != nil || p.RequestList.Requests != nil) {
+		items = append(items, Breadcrumb{"Altklausuren", "/archive"})
+		if p.Request != nil {
+			items = append(items, Breadcrumb{"Meine Einreichungen", "/archive/requests"})
+		}
 	}
 	if p.Fachschaft && p.Active != "fachschaft" {
 		items = append(items, Breadcrumb{"Fachschaft", "/fachschaft"})

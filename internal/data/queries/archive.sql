@@ -34,6 +34,7 @@ FROM archive a
 JOIN modules m ON m.id = a.module_id AND m.deleted_at IS NULL
 JOIN programs p ON p.id = m.program_id AND p.deleted_at IS NULL
 WHERE a.is_latest = 1 AND a.deleted_at IS NULL AND a.mime_type = 'application/pdf'
+  AND (a.request_id IS NULL OR EXISTS (SELECT 1 FROM archive_requests r WHERE r.id=a.request_id AND r.status='approved'))
 ORDER BY a.exam_date DESC, a.created_at DESC, a.id DESC;
 
 -- name: ListArchiveModules :many

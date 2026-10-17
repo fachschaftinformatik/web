@@ -1,12 +1,4 @@
-{{define "sidebar"}}
-<nav class="app-section-nav" aria-label="Seiten der Verwaltung">
-  <h2 class="app-subnav-theme">Verwaltung</h2>
-  <ul class="govuk-list app-subnav">
-    <li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="/verwaltung" {{if eq .Admin.Section ""}}aria-current="page"{{end}}>Übersicht</a></li>
-    {{range .Admin.Links}}<li><a class="govuk-link govuk-link--no-visited-state govuk-link--no-underline" href="{{.URL}}" {{if eq $.Admin.Section .ID}}aria-current="{{if or (eq $.Admin.View "form") (eq $.Admin.View "user") (eq $.Admin.View "review") (eq $.Admin.View "reset")}}true{{else}}page{{end}}"{{end}}>{{.Label}}</a></li>{{end}}
-  </ul>
-</nav>
-{{end}}
+{{define "sidebar"}}{{template "admin-navigation" .}}{{end}}
 
 {{define "content"}}
 {{$csrf := .CSRF}}
@@ -92,20 +84,24 @@
   <h2 class="govuk-heading-m" id="tasks-heading">Aufgaben</h2>
   <table class="govuk-table app-admin-table">
     <caption class="govuk-visually-hidden">Referate und Projektstellen mit ihren Mitgliedern</caption>
-    <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Bezeichnung</th><th class="govuk-table__header" scope="col">Art</th><th class="govuk-table__header" scope="col">Mitglieder</th></tr></thead>
-    <tbody class="govuk-table__body">{{range .Tasks}}<tr class="govuk-table__row"><th class="govuk-table__header" scope="row"><a class="govuk-link" href="{{.URL}}">{{.Title}}<span class="govuk-visually-hidden"> bearbeiten</span></a></th><td class="govuk-table__cell">{{.Kind}}</td><td class="govuk-table__cell">{{if .Members}}{{.Members}}{{else}}Keine Mitglieder zugeordnet{{end}}</td></tr>{{end}}</tbody>
+    <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Aufgabe</th><th class="govuk-table__header" scope="col">Mitglieder</th></tr></thead>
+    <tbody class="govuk-table__body">{{range .Tasks}}<tr class="govuk-table__row"><th class="govuk-table__header" scope="row"><a class="govuk-link" href="{{.URL}}">{{.Title}}<span class="govuk-visually-hidden"> bearbeiten</span></a><p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">{{.Kind}}</p></th><td class="govuk-table__cell">{{if .Members}}<ul class="govuk-list govuk-!-margin-bottom-0">{{range .Members}}<li>{{.}}</li>{{end}}</ul>{{else}}Keine Mitglieder zugeordnet{{end}}</td></tr>{{end}}</tbody>
   </table>
 </section>
 {{end}}
 
+{{if eq .View "requests"}}
+{{template "request-list" .RequestList}}
+{{end}}
+
 {{if eq .View "meetings"}}
 <a class="govuk-button" data-module="govuk-button" href="/verwaltung/sitzungen/neu">Dokument hinzufügen</a>
-<p class="govuk-body">Veröffentliche eine Einladung oder ein Protokoll für eine neue oder vorhandene Sitzung.</p>
+<p class="govuk-body">Veröffentliche eine Einladung zur Sitzung oder ein Sitzungsprotokoll.</p>
 <table class="govuk-table app-admin-table"><caption class="govuk-visually-hidden">Sitzungen und veröffentlichte Dokumente</caption>
   <thead class="govuk-table__head"><tr class="govuk-table__row"><th class="govuk-table__header" scope="col">Sitzung</th><th class="govuk-table__header" scope="col">Dokumente</th></tr></thead>
   <tbody class="govuk-table__body">{{range .Meetings}}<tr class="govuk-table__row">
     <th class="govuk-table__header" scope="row">{{.DateLabel}}<br><span class="govuk-!-font-weight-regular">{{.Number}}. Sitzung</span>{{if .Date}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0"><a class="govuk-link" href="/verwaltung/sitzungen/neu?datum={{.Date}}&amp;nummer={{.Number}}">Dokument hinzufügen<span class="govuk-visually-hidden"> zur {{.Number}}. Sitzung vom {{.DateLabel}}</span></a></p>{{end}}</th>
-    <td class="govuk-table__cell"><ul class="govuk-list govuk-!-margin-bottom-0">{{$meeting := .}}{{range .Documents}}<li><a class="govuk-link" href="{{.URL}}">{{.Kind}}<span class="govuk-visually-hidden"> zur {{$meeting.Number}}. Sitzung vom {{$meeting.DateLabel}}</span></a> (PDF, {{.Size}})</li>{{end}}</ul></td>
+    <td class="govuk-table__cell"><ul class="govuk-list govuk-!-margin-bottom-0">{{$meeting := .}}{{range .Documents}}<li><a class="govuk-link" href="{{.URL}}">{{.Label}}<span class="govuk-visually-hidden"> · {{$meeting.Number}}. Sitzung vom {{$meeting.DateLabel}}</span></a> (PDF, {{.Size}})</li>{{end}}</ul></td>
   </tr>{{end}}</tbody>
 </table>
 {{end}}
@@ -155,7 +151,7 @@
 <dl class="govuk-summary-list">
   <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Sitzungsdatum</dt><dd class="govuk-summary-list__value">{{.DateLabel}}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#date-day">Ändern<span class="govuk-visually-hidden">: Sitzungsdatum</span></a></dd></div>
   <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Sitzungsnummer</dt><dd class="govuk-summary-list__value">{{.Number}}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#number">Ändern<span class="govuk-visually-hidden">: Sitzungsnummer</span></a></dd></div>
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Dokumentart</dt><dd class="govuk-summary-list__value">{{.Kind}}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#kind">Ändern<span class="govuk-visually-hidden">: Dokumentart</span></a></dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Dokumentart</dt><dd class="govuk-summary-list__value">{{.KindLabel}}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#kind">Ändern<span class="govuk-visually-hidden">: Dokumentart</span></a></dd></div>
   <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">PDF-Datei</dt><dd class="govuk-summary-list__value app-wrap-anywhere"><a class="govuk-link" href="/documents/{{.ID}}">{{.Filename}}</a> (PDF, {{.Size}})</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#file">Ändern<span class="govuk-visually-hidden">: PDF-Datei</span></a></dd></div>
 </dl>
 {{end}}

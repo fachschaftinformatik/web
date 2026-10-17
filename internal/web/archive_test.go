@@ -97,6 +97,7 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 		t.Fatal("upload form unavailable")
 	}
 	csrf := csrfFrom(t, body)
+	var reviewPath string
 	for _, value := range []string{"", csrf} {
 		var buffer bytes.Buffer
 		form := multipart.NewWriter(&buffer)
@@ -122,13 +123,45 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 			if status != 403 {
 				t.Fatal("upload accepted without CSRF")
 			}
-		} else if status != 303 || headers.Get("Location") != "/archive/10?eingereicht=1" {
-			t.Fatalf("multiple upload: %d %s", status, body)
+		} else {
+			reviewPath = headers.Get("Location")
+			if status != 303 || !strings.HasPrefix(reviewPath, "/archive/requests/") || !strings.HasSuffix(reviewPath, "/review") {
+				t.Fatalf("multiple upload: %d %s", status, body)
+			}
 		}
 	}
 	var count int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM archive WHERE is_latest=1`).Scan(&count); err != nil || count != 0 {
+		t.Fatal("draft PDFs were immediately published")
+	}
+	if status, body, _ := b.get(reviewPath); status != 200 || !strings.Contains(body, "Prüfe deine Angaben") || !strings.Contains(body, "Reko 2") {
+		t.Fatal("check-answers review missing")
+	}
+	if status, _, _ := b.post(reviewPath, url.Values{"csrf": {csrf}}); status != 303 {
+		t.Fatal("user confirmation failed")
+	}
+	requestID := strings.TrimSuffix(strings.TrimPrefix(reviewPath, "/archive/requests/"), "/review")
+	adminPath := "/verwaltung/antraege/" + requestID
+	if status, _, _ := b.get(adminPath); status != 403 {
+		t.Fatal("ordinary user accessed administration review")
+	}
+	if _, err := db.Exec(`UPDATE users SET role='editor' WHERE id=1`); err != nil {
+		t.Fatal(err)
+	}
+	if status, body, _ := b.get("/verwaltung/antraege"); status != 200 || !strings.Contains(body, requestID) {
+		t.Fatal("editor cannot find submitted request")
+	}
+	if status, _, _ := b.get("/verwaltung/benutzer"); status != 403 {
+		t.Fatal("review permission granted user administration")
+	}
+	if status, _, _ := b.post(adminPath, url.Values{"decision": {"approve"}}); status != 403 {
+		t.Fatal("approval accepted without CSRF")
+	}
+	if status, _, _ := b.post(adminPath, url.Values{"csrf": {csrf}, "decision": {"approve"}}); status != 303 {
+		t.Fatal("editor approval failed")
+	}
 	if err := db.QueryRow(`SELECT COUNT(*) FROM archive WHERE is_latest=1`).Scan(&count); err != nil || count != 2 {
-		t.Fatal("multiple PDFs were not independently persisted")
+		t.Fatal("confirmed PDFs were not published")
 	}
 	if status, body, _ := b.get("/archive/10"); status != 200 || !strings.Contains(body, "2 Rekos") || !strings.Contains(body, "Neue Revision einreichen") {
 		t.Fatal("uploaded PDFs not available in module view")

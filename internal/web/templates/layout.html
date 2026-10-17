@@ -26,7 +26,7 @@
         <input class="govuk-input app-site-search__input" id="site-search" type="search" placeholder="Website durchsuchen">
        </div>
        <div class="app-account-actions">{{if .SignedIn}}
-       {{if .CanAdmin}}<a class="govuk-button govuk-button--inverse app-login" href="/verwaltung">Verwaltung</a>{{end}}
+       {{if .CanAdmin}}<a class="govuk-button govuk-button--inverse app-login" href="{{if eq .Role "editor"}}/verwaltung/antraege{{else}}/verwaltung{{end}}">Verwaltung</a>{{end}}
        <form action="/logout" method="post" class="app-logout"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="govuk-button govuk-button--inverse app-login" type="submit">Abmelden</button></form>
        {{else}}<a class="govuk-button govuk-button--inverse app-login" href="/login" {{if eq .Active "login"}}aria-current="page"{{end}}>Anmelden</a>{{end}}</div>
        </div>{{end}}

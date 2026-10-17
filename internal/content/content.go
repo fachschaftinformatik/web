@@ -26,6 +26,18 @@ func (d Document) URL() string {
 }
 func (d Document) Size() string { return fmt.Sprintf("%d kB", (d.Bytes+999)/1000) }
 
+func kindLabel(kind string) string {
+	if kind == "Einladung" {
+		return "Einladung zur Sitzung"
+	}
+	if kind == "Protokoll" {
+		return "Sitzungsprotokoll"
+	}
+	return kind
+}
+
+func (d Document) Label() string { return kindLabel(d.Kind) }
+
 type Meeting struct {
 	Year, Number int
 	Date         string

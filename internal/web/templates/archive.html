@@ -3,6 +3,7 @@
 <div class="app-archive-intro">
   <p class="govuk-body">Bereite dich mit Klausurrekonstruktionen auf deine Prüfungen vor. Wir nennen sie kurz Rekos. Du kannst auch eigene Rekos einreichen und anderen beim Lernen helfen.</p>
   <a class="govuk-button" data-module="govuk-button" href="/archive/new">Reko einreichen</a>
+  {{if .SignedIn}}<p class="govuk-body"><a class="govuk-link" href="/archive/requests">Meine Einreichungen</a></p>{{end}}
 </div>
 <form id="archive-search" class="app-archive-layout" method="get" action="/archive" novalidate
   hx-get="/archive" hx-target="#archive-results" hx-swap="outerHTML" hx-push-url="true"

@@ -1,0 +1,266 @@
+package files
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"strconv"
+	"time"
+
+	"github.com/fachschaftinformatik/web/internal/data"
+)
+
+type Status string
+
+const (
+	Draft    Status = "draft"
+	Pending  Status = "pending"
+	Approved Status = "approved"
+	Rejected Status = "rejected"
+)
+
+func (s Status) Label() string {
+	switch s {
+	case Draft:
+		return "Entwurf"
+	case Pending:
+		return "Eingereicht"
+	case Approved:
+		return "Bestätigt"
+	case Rejected:
+		return "Abgelehnt"
+	}
+	return ""
+}
+
+var ErrConflict = errors.New("Der Antrag wurde bereits geändert. Lade die Seite neu und prüfe den aktuellen Stand.")
+
+type Request struct {
+	ID, Name, Title, Program, ModuleID, Version, Date, Comment, RevisionOf string
+	UserID                                                                 int64
+	Status                                                                 Status
+	CreatedAt                                                              string
+	SubmittedAt, ReviewedAt                                                *string
+	Documents                                                              []Exam
+	Count                                                                  int
+}
+
+func (r Request) DateLabel() string {
+	if date, err := parseDate(r.Date); err == nil {
+		return date.Format("02.01.2006")
+	}
+	return r.Date
+}
+
+func (r Request) SubmittedLabel() string {
+	value := r.CreatedAt
+	if r.SubmittedAt != nil {
+		value = *r.SubmittedAt
+	}
+	if date, err := time.Parse(time.RFC3339, value); err == nil {
+		return date.Format("02.01.2006")
+	}
+	return value
+}
+
+func accountRole(ctx context.Context, db data.DBTX, userID int64) (string, error) {
+	var role string
+	err := db.QueryRowContext(ctx, `SELECT role FROM users WHERE id=? AND active=1 AND verified=1 AND deleted_at IS NULL`, userID).Scan(&role)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrForbidden
+	}
+	return role, err
+}
+
+func canReview(role string) bool { return role == "admin" || role == "editor" }
+
+func (s *Service) Request(ctx context.Context, userID int64, value string, reviewer bool) (Request, error) {
+	role, err := accountRole(ctx, s.db, userID)
+	if err != nil {
+		return Request{}, err
+	}
+	if reviewer && !canReview(role) {
+		return Request{}, ErrForbidden
+	}
+	var result Request
+	var base *int64
+	err = s.db.QueryRowContext(ctx, `SELECT r.id,r.user_id,r.status,r.revision_of,r.created_at,r.submitted_at,r.reviewed_at,u.name FROM archive_requests r JOIN users u ON u.id=r.user_id WHERE r.id=?`, value).Scan(&result.ID, &result.UserID, &result.Status, &base, &result.CreatedAt, &result.SubmittedAt, &result.ReviewedAt, &result.Name)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Request{}, ErrNotFound
+	}
+	if err != nil {
+		return Request{}, err
+	}
+	if (reviewer && result.Status == Draft) || (!reviewer && result.UserID != userID) {
+		return Request{}, ErrNotFound
+	}
+	if base != nil {
+		result.RevisionOf = strconv.FormatInt(*base, 10)
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT a.id,a.module_id,m.name,p.name,a.version,a.exam_date,COALESCE(a.comment,''),a.nbytes FROM archive a JOIN modules m ON m.id=a.module_id JOIN programs p ON p.id=m.program_id WHERE a.request_id=? AND a.deleted_at IS NULL ORDER BY a.id`, value)
+	if err != nil {
+		return Request{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id, moduleID int64
+		var size int64
+		if err := rows.Scan(&id, &moduleID, &result.Title, &result.Program, &result.Version, &result.Date, &result.Comment, &size); err != nil {
+			return Request{}, err
+		}
+		result.ModuleID = strconv.FormatInt(moduleID, 10)
+		result.Documents = append(result.Documents, Exam{ID: strconv.FormatInt(id, 10), ModuleID: result.ModuleID, Title: result.Title, Date: result.DateLabel(), Bytes: size, Number: len(result.Documents) + 1})
+	}
+	if err := rows.Err(); err != nil {
+		return Request{}, err
+	}
+	if len(result.Documents) == 0 {
+		return Request{}, ErrNotFound
+	}
+	result.Count = len(result.Documents)
+	return result, nil
+}
+
+func (s *Service) Requests(ctx context.Context, userID int64, reviewer bool) ([]Request, error) {
+	role, err := accountRole(ctx, s.db, userID)
+	if err != nil {
+		return nil, err
+	}
+	if reviewer && !canReview(role) {
+		return nil, ErrForbidden
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT r.id,r.user_id,r.status,r.created_at,r.submitted_at,u.name,MIN(m.name),COUNT(a.id) FROM archive_requests r JOIN users u ON u.id=r.user_id JOIN archive a ON a.request_id=r.id AND a.deleted_at IS NULL JOIN modules m ON m.id=a.module_id WHERE (? AND r.status!='draft') OR (NOT ? AND r.user_id=?) GROUP BY r.id ORDER BY CASE r.status WHEN 'pending' THEN 0 ELSE 1 END,r.created_at DESC,r.id DESC`, reviewer, reviewer, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []Request
+	for rows.Next() {
+		var request Request
+		if err := rows.Scan(&request.ID, &request.UserID, &request.Status, &request.CreatedAt, &request.SubmittedAt, &request.Name, &request.Title, &request.Count); err != nil {
+			return nil, err
+		}
+		result = append(result, request)
+	}
+	return result, rows.Err()
+}
+
+func (s *Service) SendRequest(ctx context.Context, userID int64, value string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := accountRole(ctx, tx, userID); err != nil {
+		return err
+	}
+	var status Status
+	err = tx.QueryRowContext(ctx, `SELECT status FROM archive_requests WHERE id=? AND user_id=?`, value, userID).Scan(&status)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	if status == Pending {
+		return nil
+	}
+	if status != Draft {
+		return ErrConflict
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE archive_requests SET status='pending',submitted_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id=?`, value); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// Review updates the request and public revision flags in one transaction.
+func (s *Service) Review(ctx context.Context, userID int64, value string, approve bool) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	role, err := accountRole(ctx, tx, userID)
+	if err != nil {
+		return err
+	}
+	if !canReview(role) {
+		return ErrForbidden
+	}
+	var status Status
+	var base *int64
+	err = tx.QueryRowContext(ctx, `SELECT status,revision_of FROM archive_requests WHERE id=?`, value).Scan(&status, &base)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	target := Rejected
+	if approve {
+		target = Approved
+	}
+	if status == target {
+		return nil
+	}
+	if status != Pending {
+		return ErrConflict
+	}
+	rows, err := tx.QueryContext(ctx, `SELECT id FROM archive WHERE request_id=? AND deleted_at IS NULL ORDER BY id`, value)
+	if err != nil {
+		return err
+	}
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+		ids = append(ids, id)
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return err
+	}
+	if len(ids) == 0 {
+		return ErrNotFound
+	}
+	if approve {
+		for _, id := range ids {
+			entry, err := data.New(tx).GetArchiveEntry(ctx, id)
+			if err != nil {
+				return err
+			}
+			if base != nil {
+				latest, err := data.New(tx).GetLatestByGroupId(ctx, entry.GroupID)
+				if errors.Is(err, sql.ErrNoRows) || err == nil && latest.ID != *base {
+					return ErrConflict
+				}
+				if err != nil {
+					return err
+				}
+			}
+			var exists int
+			err = tx.QueryRowContext(ctx, `SELECT 1 FROM modules m JOIN programs p ON p.id=m.program_id WHERE m.id=? AND m.deleted_at IS NULL AND p.deleted_at IS NULL`, entry.ModuleID).Scan(&exists)
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrConflict
+			}
+			if err != nil {
+				return err
+			}
+			if err := data.New(tx).ClearLatestFlagByGroupId(ctx, entry.GroupID); err != nil {
+				return err
+			}
+			if _, err := tx.ExecContext(ctx, `UPDATE archive SET is_latest=1 WHERE id=?`, id); err != nil {
+				return err
+			}
+		}
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE archive_requests SET status=?,reviewed_at=strftime('%Y-%m-%dT%H:%M:%SZ','now'),reviewed_by=? WHERE id=?`, target, userID, value); err != nil {
+		return err
+	}
+	return tx.Commit()
+}

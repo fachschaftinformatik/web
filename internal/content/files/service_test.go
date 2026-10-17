@@ -29,7 +29,7 @@ func archiveService(t *testing.T) (*Service, *sql.DB) {
 INSERT INTO programs (id,name) VALUES (1,'Informatik (B. Sc.)'),(2,'Informatik (M. Sc.)');
 INSERT INTO program_versions (program_id,name) VALUES (1,'2017'),(1,'2023'),(2,'2023');
 INSERT INTO modules (id,program_id,name,alias) VALUES (10,1,'Datenbanken','SQL'),(11,2,'Datenbanken II',NULL),(12,1,'Ohne Upload',NULL);
-INSERT INTO users (id,email,name,password) VALUES (1,'archive@fsv-wh.de','Person','unused');
+INSERT INTO users (id,email,name,password,active,verified) VALUES (1,'archive@fsv-wh.de','Person','unused',1,1);
 INSERT INTO archive (id,group_id,user_id,module_id,version,exam_date,is_latest,access_key,mime_type,nbytes,checksum) VALUES
 (100,100,1,10,'2017','2024-01-01',0,'old','application/pdf',5,'checksum'),
 (101,100,1,10,'2017','2024-01-01',1,'latest','application/pdf',5,'checksum'),
@@ -89,7 +89,7 @@ func TestPersistentCatalogLatestRevisionsAndFilters(t *testing.T) {
 func TestPersistentDownloadsRetainHistoricalKeysAndCheckMetadata(t *testing.T) {
 	s, db := archiveService(t)
 	ctx := context.Background()
-	object, err := s.Open(ctx, "100")
+	object, err := s.Open(ctx, 1, "100")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,14 +101,14 @@ func TestPersistentDownloadsRetainHistoricalKeysAndCheckMetadata(t *testing.T) {
 	if _, err := db.Exec(`UPDATE archive SET nbytes=100 WHERE id=101`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.Open(ctx, "101"); !errors.Is(err, ErrStorage) {
+	if _, err := s.Open(ctx, 1, "101"); !errors.Is(err, ErrStorage) {
 		t.Fatal("mismatching storage metadata accepted")
 	}
 	if _, err := db.Exec(`UPDATE archive SET deleted_at='2026-01-01' WHERE id=100`); err != nil {
 		t.Fatal(err)
 	}
 	for _, value := range []string{"100", "999", "../100", "0"} {
-		if _, err := s.Open(ctx, value); !errors.Is(err, ErrNotFound) {
+		if _, err := s.Open(ctx, 1, value); !errors.Is(err, ErrNotFound) {
 			t.Fatalf("download %q: %v", value, err)
 		}
 	}

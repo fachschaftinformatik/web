@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +27,7 @@ var ErrForbidden = errors.New("Du hast keine Berechtigung, diese Reko zu ändern
 
 type Submission struct {
 	ModuleID, Version, Date, Comment, RevisionOf string
+	RequestID                                    string
 	Documents                                    [][]byte
 }
 
@@ -45,7 +47,7 @@ func (s Submission) Validate() ValidationErrors {
 	if err != nil || date.Year() < 1900 || date.Year() > 2100 {
 		result["date"] = "Gib ein gültiges Prüfungsdatum zwischen 1900 und 2100 ein."
 	}
-	if len(s.Documents) == 0 {
+	if len(s.Documents) == 0 && s.RequestID == "" {
 		result["files"] = "Wähle mindestens eine PDF-Datei aus."
 	}
 	total := 0
@@ -59,7 +61,7 @@ func (s Submission) Validate() ValidationErrors {
 	if total > MaxUploadBytes {
 		result["files"] = "Die PDF-Dateien dürfen zusammen höchstens 32 MB groß sein."
 	}
-	if s.RevisionOf != "" && len(s.Documents) != 1 {
+	if s.RevisionOf != "" && len(s.Documents) != 1 && !(s.RequestID != "" && len(s.Documents) == 0) {
 		result["files"] = "Wähle genau eine PDF-Datei für die neue Revision aus."
 	}
 	return result
@@ -72,12 +74,14 @@ type writableStorage interface {
 }
 
 type UploadResult struct {
-	ModuleID string
-	IDs      []string
+	ModuleID  string
+	RequestID string
+	IDs       []string
 }
 
 type prepared struct {
 	moduleID, groupID, editVersion int64
+	baseID                         int64
 }
 
 // prepare rechecks account policy and revision ownership inside the write
@@ -129,6 +133,14 @@ func prepare(ctx context.Context, db data.DBTX, userID int64, submission Submiss
 	if parent.ModuleID != moduleID {
 		return prepared{}, ValidationErrors{"module_id": "Eine Revision muss zum bisherigen Modul gehören."}
 	}
+	var status string
+	err = db.QueryRowContext(ctx, `SELECT COALESCE(r.status,'approved') FROM archive a LEFT JOIN archive_requests r ON r.id=a.request_id WHERE a.id=?`, parent.ID).Scan(&status)
+	if err != nil {
+		return prepared{}, err
+	}
+	if status != "approved" {
+		return prepared{}, ErrNotFound
+	}
 	var ownerID, latestVersion int64
 	err = db.QueryRowContext(ctx, `SELECT user_id FROM archive WHERE group_id=? ORDER BY edit_version,id LIMIT 1`, parent.GroupID).Scan(&ownerID)
 	if err != nil {
@@ -142,17 +154,33 @@ func prepare(ctx context.Context, db data.DBTX, userID int64, submission Submiss
 		return prepared{}, err
 	}
 	result.groupID, result.editVersion = parent.GroupID, latestVersion+1
+	latest, err := data.New(db).GetLatestByGroupId(ctx, parent.GroupID)
+	if err != nil {
+		return prepared{}, err
+	}
+	result.baseID = latest.ID
 	return result, nil
 }
 
-// Submit publishes independent uploads or one explicit revision. Old revision
-// flags are changed only after every object has been stored successfully.
-func (s *Service) Submit(ctx context.Context, userID int64, submission Submission) (result UploadResult, err error) {
+// SaveDraft stores the uploads without changing the public archive.
+func (s *Service) SaveDraft(ctx context.Context, userID int64, submission Submission) (result UploadResult, err error) {
 	if fields := submission.Validate(); len(fields) != 0 {
 		return result, fields
 	}
 	if _, err := prepare(ctx, s.db, userID, submission); err != nil {
 		return result, err
+	}
+	if submission.RequestID != "" {
+		request, err := s.Request(ctx, userID, submission.RequestID, false)
+		if err != nil {
+			return result, err
+		}
+		if request.Status != Draft {
+			return result, ErrConflict
+		}
+		if request.RevisionOf != submission.RevisionOf {
+			return result, ErrConflict
+		}
 	}
 	storage, ok := s.storage.(writableStorage)
 	if !ok {
@@ -190,14 +218,57 @@ func (s *Service) Submit(ctx context.Context, userID int64, submission Submissio
 	if err != nil {
 		return result, err
 	}
-	if metadata.groupID != 0 {
-		if err := data.New(tx).ClearLatestFlagByGroupId(ctx, metadata.groupID); err != nil {
+	requestID := submission.RequestID
+	var obsolete []string
+	if requestID == "" {
+		requestID = rand.Text()
+		var base any
+		if metadata.baseID != 0 {
+			base = metadata.baseID
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT INTO archive_requests (id,user_id,revision_of) VALUES (?,?,?)`, requestID, userID, base); err != nil {
 			return result, err
+		}
+	} else {
+		var owner int64
+		var status string
+		if err := tx.QueryRowContext(ctx, `SELECT user_id,status FROM archive_requests WHERE id=?`, requestID).Scan(&owner, &status); err != nil {
+			return result, err
+		}
+		if owner != userID || status != "draft" {
+			return result, ErrConflict
+		}
+		if len(submission.Documents) != 0 {
+			rows, err := tx.QueryContext(ctx, `SELECT id FROM archive WHERE request_id=?`, requestID)
+			if err != nil {
+				return result, err
+			}
+			for rows.Next() {
+				var value int64
+				if err := rows.Scan(&value); err != nil {
+					rows.Close()
+					return result, err
+				}
+				obsolete = append(obsolete, blob.ArchiveSourceKey(strconv.FormatInt(value, 10)))
+			}
+			err = rows.Err()
+			rows.Close()
+			if err != nil {
+				return result, err
+			}
+			if _, err := tx.ExecContext(ctx, `DELETE FROM archive WHERE request_id=?`, requestID); err != nil {
+				return result, err
+			}
 		}
 	}
 	var comment *string
 	if value := strings.TrimSpace(submission.Comment); value != "" {
 		comment = &value
+	}
+	if len(submission.Documents) == 0 {
+		if _, err := tx.ExecContext(ctx, `UPDATE archive SET module_id=?,version=?,exam_date=?,comment=? WHERE request_id=?`, metadata.moduleID, submission.Version, submission.Date, comment, requestID); err != nil {
+			return result, err
+		}
 	}
 	for i, document := range submission.Documents {
 		groupID := metadata.groupID
@@ -208,10 +279,13 @@ func (s *Service) Submit(ctx context.Context, userID int64, submission Submissio
 		_, err := data.New(tx).CreateArchiveEntry(ctx, data.CreateArchiveEntryParams{
 			ID: ids[i], GroupID: groupID, UserID: userID, ModuleID: metadata.moduleID,
 			Version: submission.Version, ExamDate: submission.Date, Comment: comment,
-			EditVersion: metadata.editVersion, IsLatest: 1, AccessKey: rand.Text(),
+			EditVersion: metadata.editVersion, IsLatest: 0, AccessKey: rand.Text(),
 			MimeType: "application/pdf", Nbytes: int64(len(document)), Checksum: hex.EncodeToString(checksum[:]),
 		})
 		if err != nil {
+			return result, err
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE archive SET request_id=? WHERE id=?`, requestID, ids[i]); err != nil {
 			return result, err
 		}
 		result.IDs = append(result.IDs, strconv.FormatInt(ids[i], 10))
@@ -221,5 +295,14 @@ func (s *Service) Submit(ctx context.Context, userID int64, submission Submissio
 	}
 	committed = true
 	result.ModuleID = submission.ModuleID
+	result.RequestID = requestID
+	for _, key := range obsolete {
+		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+		cleanupErr := storage.Delete(cleanup, key)
+		cancel()
+		if cleanupErr != nil {
+			log.Printf("Remove replaced draft object: %v", cleanupErr)
+		}
+	}
 	return result, nil
 }

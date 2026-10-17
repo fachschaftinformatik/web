@@ -89,7 +89,7 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 			}
 		}
 		account := r.URL.Path == "/login" || r.URL.Path == "/register" || r.URL.Path == "/forgot" || r.URL.Path == "/reset" || r.URL.Path == "/verify"
-		archiveWrite := r.URL.Path == "/archive/new" || strings.HasPrefix(r.URL.Path, "/archive/files/") && strings.HasSuffix(r.URL.Path, "/revision")
+		archiveWrite := r.URL.Path == "/archive/new" || strings.HasPrefix(r.URL.Path, "/archive/requests") || strings.HasPrefix(r.URL.Path, "/archive/files/") && strings.HasSuffix(r.URL.Path, "/revision")
 		if s == nil && (r.URL.Path == "/login" || c.identity != nil && account) && r.Method == http.MethodGet {
 			if c.identity != nil {
 				var err error
@@ -105,6 +105,7 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 		}
 		response := &sessionResponse{ResponseWriter: w, session: s}
 		admin := r.URL.Path == "/verwaltung" || strings.HasPrefix(r.URL.Path, "/verwaltung/")
+		review := r.URL.Path == "/verwaltung/antraege" || strings.HasPrefix(r.URL.Path, "/verwaltung/antraege/")
 		if admin || r.URL.Path == "/login" || r.URL.Path == "/logout" || s != nil {
 			w.Header().Set("Cache-Control", "no-store")
 		}
@@ -113,7 +114,7 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
-		if admin && !s.CanAdmin() {
+		if admin && !(s.CanAdmin() || review && s.CanReview()) {
 			http.Error(w, "Du hast keine Berechtigung für die Verwaltung.", http.StatusForbidden)
 			return
 		}

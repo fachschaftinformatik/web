@@ -32,6 +32,18 @@ type Archive struct {
 	CreatedAt   string  `json:"created_at"`
 	UpdatedAt   string  `json:"updated_at"`
 	DeletedAt   *string `json:"deleted_at"`
+	RequestID   *string `json:"request_id"`
+}
+
+type ArchiveRequest struct {
+	ID          string  `json:"id"`
+	UserID      int64   `json:"user_id"`
+	Status      string  `json:"status"`
+	RevisionOf  *int64  `json:"revision_of"`
+	CreatedAt   string  `json:"created_at"`
+	SubmittedAt *string `json:"submitted_at"`
+	ReviewedAt  *string `json:"reviewed_at"`
+	ReviewedBy  *int64  `json:"reviewed_by"`
 }
 
 type DiscussionComment struct {
