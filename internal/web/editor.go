@@ -87,7 +87,7 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 		data.DocumentTitle = "Fehler: " + title
 	}
 	if editor.Unavailable {
-		data.DocumentTitle = "Speichern derzeit nicht verfügbar – " + title
+		data.DocumentTitle = "Fehler: " + title
 	}
 	c.renderStatus(w, "editor", false, data, status)
 }

@@ -6,10 +6,9 @@
   <div class="govuk-error-summary__body"><ul class="govuk-list govuk-error-summary__list">{{range .Errors}}<li><a href="#{{.Field}}">{{.Message}}</a></li>{{end}}</ul></div>
 </div></div>{{end}}
 {{if .Unavailable}}<div class="govuk-notification-banner" role="alert" aria-labelledby="save-title" data-module="govuk-notification-banner" tabindex="-1">
-  <div class="govuk-notification-banner__header"><h2 class="govuk-notification-banner__title" id="save-title">Speichern derzeit nicht verfügbar</h2></div>
+  <div class="govuk-notification-banner__header"><h2 class="govuk-notification-banner__title" id="save-title">Der Beitrag konnte nicht gespeichert werden</h2></div>
   <div class="govuk-notification-banner__content">
     <p class="govuk-body">Dein Beitrag wurde nicht gespeichert. Deine Eingaben stehen weiterhin im Formular.</p>
-    <p class="govuk-body"><a class="govuk-notification-banner__link" href="{{.SourceURL}}">Beitrag auf der bestehenden Website {{if .Editing}}bearbeiten{{else}}verfassen{{end}}</a>. Kopiere deinen Text dorthin, um ihn zu veröffentlichen.</p>
   </div>
 </div>{{end}}
 <form action="{{.Action}}" method="post" novalidate>
@@ -85,6 +84,6 @@
     <a class="govuk-link" href="{{.BackURL}}">Abbrechen</a>
   </div>
 </form>
-{{if .Unavailable}}<section class="app-rich-content" aria-labelledby="post-preview-heading"><h2 class="govuk-heading-m" id="post-preview-heading">Vorschau deines Beitrags</h2>{{.RichHTML}}</section>{{end}}
+{{if .Unavailable}}<section class="app-rich-content" aria-labelledby="post-content-heading"><h2 class="govuk-heading-m" id="post-content-heading">Dein Beitrag</h2>{{.RichHTML}}</section>{{end}}
 {{end}}
 {{end}}
