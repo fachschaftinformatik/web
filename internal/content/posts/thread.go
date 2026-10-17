@@ -12,11 +12,13 @@ import (
 var threads []byte
 
 type Comment struct {
-	ID      string
-	Author  string `json:"user_name"`
-	Text    string
-	Created string `json:"created_at"`
-	Updated string `json:"updated_at"`
+	AuthorID int64
+	CanEdit  bool
+	ID       string
+	Author   string `json:"user_name"`
+	Text     string
+	Created  string `json:"created_at"`
+	Updated  string `json:"updated_at"`
 }
 
 func (c Comment) DateLabel() string    { return dateLabel(c.Created) }

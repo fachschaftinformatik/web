@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/binary"
 	"fmt"
 	"image/color"
@@ -14,11 +15,13 @@ import (
 )
 
 type Service struct {
+	db      *sql.DB
 	storage blob.Provider
 }
 
-func NewService(storage blob.Provider) *Service {
+func NewService(db *sql.DB, storage blob.Provider) *Service {
 	return &Service{
+		db:      db,
 		storage: storage,
 	}
 }

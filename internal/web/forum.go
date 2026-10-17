@@ -1,6 +1,7 @@
 package web
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -9,14 +10,27 @@ import (
 )
 
 type ForumPage struct {
-	Filter  posts.Filter
-	Posts   []posts.Post
-	Thread  *posts.Thread
-	BackURL string
+	Live, CanWrite, CanEdit bool
+	Filter                  posts.Filter
+	Posts                   []posts.Post
+	Thread                  *posts.Thread
+	BackURL                 string
 }
 
 func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
-	thread, ok := posts.Lookup(r.PathValue("post"))
+	var thread posts.Thread
+	var ok bool
+	if c.posts != nil {
+		var err error
+		thread, err = c.posts.Lookup(r.Context(), r.PathValue("post"))
+		if err != nil {
+			c.forumError(w, r, err)
+			return
+		}
+		ok = true
+	} else {
+		thread, ok = posts.Lookup(r.PathValue("post"))
+	}
 	if !ok {
 		http.NotFound(w, r)
 		return
@@ -33,7 +47,17 @@ func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
 	if len(values) > 0 {
 		back += "?" + values.Encode()
 	}
-	c.render(w, "thread", false, Page{Title: thread.Title, Active: "forum", Community: true, Forum: ForumPage{Thread: &thread, BackURL: back}})
+	forum := ForumPage{Thread: &thread, BackURL: back, Live: c.posts != nil}
+	if c.posts != nil {
+		if user := forumUser(w); user != 0 {
+			forum.CanWrite = c.posts.CanWrite(r.Context(), user, 0, false) == nil
+			forum.CanEdit = c.posts.CanWrite(r.Context(), user, thread.AuthorID, false) == nil
+			for i := range thread.Replies {
+				thread.Replies[i].CanEdit = c.posts.CanWrite(r.Context(), user, thread.Replies[i].AuthorID, true) == nil
+			}
+		}
+	}
+	c.render(w, "thread", false, Page{Title: thread.Title, Active: "forum", Community: true, Forum: forum})
 }
 
 func (c *Handler) Forum(w http.ResponseWriter, r *http.Request) {
@@ -46,10 +70,67 @@ func (c *Handler) Forum(w http.ResponseWriter, r *http.Request) {
 	}
 	data := Page{
 		Title: "Forum", Active: "forum", Community: true,
-		Forum: ForumPage{Filter: filter, Posts: posts.Find(filter)},
+		Forum: ForumPage{Filter: filter},
+	}
+	if c.posts != nil {
+		var err error
+		data.Forum.Posts, err = c.posts.Find(r.Context(), filter)
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
+		data.Forum.Live = true
+	} else {
+		data.Forum.Posts = posts.Find(filter)
 	}
 	if filter.Query != "" || filter.Type != "" {
 		data.DocumentTitle = "Forum – Suchergebnisse"
 	}
 	c.render(w, "forum", false, data)
+}
+
+func forumUser(w http.ResponseWriter) int64 {
+	if response, ok := w.(*sessionResponse); ok && response.session != nil && response.session.Authenticated {
+		return response.session.UserID
+	}
+	return 0
+}
+
+func (c *Handler) forumError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case errors.Is(err, posts.ErrNotFound):
+		http.NotFound(w, r)
+	case errors.Is(err, posts.ErrForbidden):
+		http.Error(w, "Du hast keine Berechtigung für diese Aktion.", http.StatusForbidden)
+	default:
+		c.serverError(w, err)
+	}
+}
+
+func (c *Handler) Comment(w http.ResponseWriter, r *http.Request) {
+	if c.posts == nil {
+		http.NotFound(w, r)
+		return
+	}
+	user := forumUser(w)
+	if user == 0 {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 128<<10)
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Das Formular konnte nicht gelesen werden.", http.StatusBadRequest)
+		return
+	}
+	comment, err := c.posts.SaveComment(r.Context(), user, r.PathValue("post"), r.PathValue("comment"), r.PostForm.Get("text"))
+	if err != nil {
+		var validation *posts.ValidationError
+		if errors.As(err, &validation) {
+			http.Error(w, validation.Fields[0].Message, http.StatusUnprocessableEntity)
+			return
+		}
+		c.forumError(w, r, err)
+		return
+	}
+	http.Redirect(w, r, "/d/"+r.PathValue("post")+"#comment-"+comment, http.StatusSeeOther)
 }

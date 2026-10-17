@@ -4,6 +4,7 @@ package web
 import (
 	"bytes"
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"slices"
@@ -12,6 +13,7 @@ import (
 	"github.com/fachschaftinformatik/web/internal/content"
 	"github.com/fachschaftinformatik/web/internal/content/files"
 	"github.com/fachschaftinformatik/web/internal/content/media"
+	"github.com/fachschaftinformatik/web/internal/content/posts"
 	"github.com/fachschaftinformatik/web/internal/people"
 	"github.com/fachschaftinformatik/web/internal/users"
 )
@@ -25,6 +27,17 @@ type Handler struct {
 	identity      *users.Service
 	secureCookies bool
 	archive       *files.Service
+	posts         *posts.Service
+	media         *media.Service
+}
+
+type Services struct {
+	Users    *users.Service
+	Archive  *files.Service
+	People   *people.Store
+	Meetings *content.Store
+	Posts    *posts.Service
+	Media    *media.Service
 }
 
 func New() (http.Handler, error) {
@@ -32,25 +45,27 @@ func New() (http.Handler, error) {
 }
 
 func NewWithUsers(records []users.User) (http.Handler, error) {
-	return newHandler(records, nil, nil, nil, false)
+	return newHandler(records, nil, false)
 }
 
 // NewPersistent uses database-backed identities instead of demo credentials.
-func NewPersistent(identity *users.Service, archive *files.Service, team *people.Store, secureCookies bool) (http.Handler, error) {
-	return newHandler(nil, identity, archive, team, secureCookies)
+func NewPersistent(services Services, secureCookies bool) (http.Handler, error) {
+	if services.Users == nil || services.Archive == nil || services.People == nil || services.Meetings == nil || services.Posts == nil || services.Media == nil {
+		return nil, errors.New("persistent web services are incomplete")
+	}
+	return newHandler(nil, &services, secureCookies)
 }
 
-func newHandler(records []users.User, identity *users.Service, archive *files.Service, team *people.Store, secureCookies bool) (http.Handler, error) {
+func newHandler(records []users.User, services *Services, secureCookies bool) (http.Handler, error) {
 	views, err := newRenderer()
 	if err != nil {
 		return nil, err
 	}
-	c := &Handler{views: views, people: people.NewStore(), content: content.NewStore(), users: users.NewDirectory(records), sessions: newSessionStore()}
-	c.identity = identity
-	c.secureCookies = secureCookies
-	c.archive = archive
-	if team != nil {
-		c.people = team
+	c := &Handler{views: views, users: users.NewDirectory(records), sessions: newSessionStore(), secureCookies: secureCookies}
+	if services == nil {
+		c.people, c.content = people.NewStore(), content.NewStore()
+	} else {
+		c.identity, c.archive, c.people, c.content, c.posts, c.media = services.Users, services.Archive, services.People, services.Meetings, services.Posts, services.Media
 	}
 	router := http.NewServeMux()
 	router.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +73,21 @@ func newHandler(records []users.User, identity *users.Service, archive *files.Se
 		_, _ = w.Write([]byte("ok\n"))
 	})
 	router.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		c.render(w, "home", false, Page{Title: "Startseite", Active: "home", Home: homeContent(), Images: ImagesPage{Albums: media.Albums()}})
+		home, err := c.home(r.Context())
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
+		albums := media.Albums()
+		if c.media != nil {
+			var err error
+			albums, err = c.media.Catalog(r.Context())
+			if err != nil {
+				c.serverError(w, err)
+				return
+			}
+		}
+		c.render(w, "home", false, Page{Title: "Startseite", Active: "home", Home: home, Images: ImagesPage{Albums: albums}})
 	})
 	router.HandleFunc("GET /team", c.Team)
 	router.HandleFunc("GET /contact", func(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +126,9 @@ func newHandler(records []users.User, identity *users.Service, archive *files.Se
 	router.HandleFunc("POST /d/new", c.EditDiscussion)
 	router.HandleFunc("GET /d/{post}/edit", c.EditDiscussion)
 	router.HandleFunc("POST /d/{post}/edit", c.EditDiscussion)
+	router.HandleFunc("POST /d/{post}/comments", c.Comment)
+	router.HandleFunc("POST /d/{post}/comments/{comment}/edit", c.Comment)
+	router.HandleFunc("GET /media/{id}/{size}", c.MediaFile)
 	router.HandleFunc("GET /login", c.Login)
 	router.HandleFunc("POST /login", c.Login)
 	router.HandleFunc("POST /logout", c.Logout)

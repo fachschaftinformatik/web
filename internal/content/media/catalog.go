@@ -1,0 +1,109 @@
+package media
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/fachschaftinformatik/web/internal/data/blob"
+)
+
+var ErrNotFound = errors.New("Das Bild wurde nicht gefunden.")
+var ErrStorage = errors.New("Der Bildspeicher ist nicht erreichbar.")
+
+// Only passive raster formats are public gallery images. In particular this
+// excludes uploaded SVG/HTML and never exposes avatars or arbitrary bucket keys.
+const galleryTypes = `('image/jpeg','image/png','image/gif','image/webp','image/bmp')`
+
+// Catalog uses one snapshot for albums and their complete image lists. The
+// historical newest-first order is made deterministic with the stable IDs.
+func (s *Service) Catalog(ctx context.Context) ([]Album, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT e.id,e.title,m.id,COALESCE(m.title,''),COALESCE(m.description,'')
+FROM events e LEFT JOIN media m ON m.event_id=e.id AND m.deleted_at IS NULL AND m.mime_type IN `+galleryTypes+`
+WHERE e.deleted_at IS NULL ORDER BY e.created_at DESC,e.id DESC,m.created_at DESC,m.id DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	albums := []Album{}
+	for rows.Next() {
+		var eventID int64
+		var title, imageTitle, description string
+		var imageID sql.NullInt64
+		if err := rows.Scan(&eventID, &title, &imageID, &imageTitle, &description); err != nil {
+			return nil, err
+		}
+		id := strconv.FormatInt(eventID, 10)
+		if len(albums) == 0 || albums[len(albums)-1].ID != id {
+			if strings.TrimSpace(title) == "" {
+				title = "Fotoalbum"
+			}
+			albums = append(albums, Album{ID: id, Title: title})
+		}
+		if !imageID.Valid {
+			continue
+		}
+		album := &albums[len(albums)-1]
+		if strings.TrimSpace(imageTitle) == "" {
+			imageTitle = fmt.Sprintf("%s – Bild %d", album.Title, len(album.Images)+1)
+		}
+		if strings.TrimSpace(description) == "" {
+			description = imageTitle
+		}
+		imageIDString := strconv.FormatInt(imageID.Int64, 10)
+		album.Images = append(album.Images, Image{ID: imageIDString, Title: imageTitle, Description: description,
+			Source: "/media/" + imageIDString + "/1200", thumbnail: "/media/" + imageIDString + "/400"})
+		album.OriginalCount = len(album.Images)
+	}
+	return albums, rows.Err()
+}
+
+// Open resolves a database image before constructing its V1 object key. The
+// source size is checked against the catalog, and preview MIME is always JPEG.
+func (s *Service) Open(ctx context.Context, value, size string) (*blob.Object, error) {
+	id, err := strconv.ParseInt(value, 10, 64)
+	if err != nil || id <= 0 || strconv.FormatInt(id, 10) != value {
+		return nil, ErrNotFound
+	}
+	key := blob.MediaSourceKey(value)
+	if size != "original" {
+		switch size {
+		case "200", "400", "600", "800", "1200", "1600":
+			pixels, _ := strconv.Atoi(size)
+			key = blob.MediaPreviewKey(value, pixels)
+		default:
+			return nil, ErrNotFound
+		}
+	}
+	var mimeType string
+	var nbytes int64
+	err = s.db.QueryRowContext(ctx, `SELECT m.mime_type,m.nbytes FROM media m JOIN events e ON e.id=m.event_id
+WHERE m.id=? AND m.deleted_at IS NULL AND e.deleted_at IS NULL AND m.mime_type IN `+galleryTypes, id).Scan(&mimeType, &nbytes)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if s.storage == nil {
+		return nil, ErrStorage
+	}
+	object, err := s.storage.GetObject(ctx, key)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrStorage, err)
+	}
+	if object.Info.Size <= 0 || (size == "original" && object.Info.Size != nbytes) {
+		object.Close()
+		return nil, fmt.Errorf("%w: invalid stored size for media %s", ErrStorage, value)
+	}
+	// Disk objects named 'source' do not carry a MIME extension. Use the
+	// allowlisted database MIME rather than trusting bucket metadata.
+	object.Info.ContentType = mimeType
+	if size != "original" {
+		object.Info.ContentType = "image/jpeg"
+	}
+	return object, nil
+}

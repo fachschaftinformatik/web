@@ -64,18 +64,19 @@ type DiscussionCommentVote struct {
 }
 
 type DiscussionPost struct {
-	ID        int64   `json:"id"`
-	Title     string  `json:"title"`
-	Body      string  `json:"body"`
-	UserID    int64   `json:"user_id"`
-	Pinned    int64   `json:"pinned"`
-	Type      string  `json:"type"`
-	EventDate *string `json:"event_date"`
-	Location  *string `json:"location"`
-	ImageUrl  *string `json:"image_url"`
-	CreatedAt string  `json:"created_at"`
-	UpdatedAt string  `json:"updated_at"`
-	DeletedAt *string `json:"deleted_at"`
+	ID         int64   `json:"id"`
+	Title      string  `json:"title"`
+	Body       string  `json:"body"`
+	UserID     int64   `json:"user_id"`
+	Pinned     int64   `json:"pinned"`
+	Type       string  `json:"type"`
+	EventDate  *string `json:"event_date"`
+	Location   *string `json:"location"`
+	ImageUrl   *string `json:"image_url"`
+	CreatedAt  string  `json:"created_at"`
+	UpdatedAt  string  `json:"updated_at"`
+	DeletedAt  *string `json:"deleted_at"`
+	BodyFormat string  `json:"body_format"`
 }
 
 type DiscussionPostLink struct {
@@ -140,6 +141,24 @@ type Medium struct {
 	DeletedAt   *string `json:"deleted_at"`
 }
 
+type MeetingBlobCleanup struct {
+	BlobKey  string `json:"blob_key"`
+	Attempts int64  `json:"attempts"`
+}
+
+type MeetingPublication struct {
+	ID        string `json:"id"`
+	Owner     string `json:"owner"`
+	Date      string `json:"date"`
+	Number    int64  `json:"number"`
+	Kind      string `json:"kind"`
+	Filename  string `json:"filename"`
+	BlobKey   string `json:"blob_key"`
+	Bytes     int64  `json:"bytes"`
+	Sha256    string `json:"sha256"`
+	Published int64  `json:"published"`
+}
+
 type Module struct {
 	ID        int64   `json:"id"`
 	ProgramID int64   `json:"program_id"`
@@ -186,6 +205,12 @@ type Program struct {
 type ProgramVersion struct {
 	ProgramID int64  `json:"program_id"`
 	Name      string `json:"name"`
+}
+
+type PublishedMeeting struct {
+	Year   int64  `json:"year"`
+	Number int64  `json:"number"`
+	Date   string `json:"date"`
 }
 
 type RefActivityType struct {

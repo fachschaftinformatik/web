@@ -1,9 +1,18 @@
 package web
 
 import (
+	"context"
+	"database/sql"
+	"errors"
+	"io"
+	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/fachschaftinformatik/web/internal/content/media"
+	"github.com/fachschaftinformatik/web/internal/data/blob"
 )
 
 func TestImagesNavigation(t *testing.T) {
@@ -57,5 +66,140 @@ func TestLegacyAlbumRedirect(t *testing.T) {
 	handler.ServeHTTP(response, httptest.NewRequest("GET", "/events/140125680309370881?page=2", nil))
 	if response.Code != 303 || response.Header().Get("Location") != "/community/events/140125680309370881?page=2" {
 		t.Fatal("legacy album URL lost its path or page")
+	}
+}
+
+type galleryBlob struct {
+	blob.Provider
+	stream bool
+	keys   []string
+}
+
+type seekablePhoto struct{ *strings.Reader }
+
+func (seekablePhoto) Close() error { return nil }
+
+func (s *galleryBlob) GetObject(ctx context.Context, key string) (*blob.Object, error) {
+	s.keys = append(s.keys, key)
+	if key != "media/101/p/400.jpg" && key != "media/101/source" {
+		return nil, errors.New("missing")
+	}
+	var reader io.ReadCloser = seekablePhoto{strings.NewReader("image bytes")}
+	if s.stream {
+		reader = io.NopCloser(strings.NewReader("image bytes"))
+	}
+	return &blob.Object{ReadCloser: reader, Info: blob.ObjectInfo{Size: 11, ContentType: "application/octet-stream"}}, nil
+}
+
+func liveGalleryHandler(t *testing.T, storage blob.Provider) *Handler {
+	t.Helper()
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.SetMaxOpenConns(1)
+	t.Cleanup(func() { db.Close() })
+	_, err = db.Exec(`CREATE TABLE events (id INTEGER PRIMARY KEY,title TEXT,created_at TEXT,deleted_at TEXT);
+CREATE TABLE media (id INTEGER PRIMARY KEY,event_id INTEGER,title TEXT,description TEXT,mime_type TEXT,nbytes INTEGER,created_at TEXT,deleted_at TEXT);
+INSERT INTO events VALUES (10,'Live Album','2026',NULL),(20,'Other Album','2025',NULL),(30,'Deleted Album','2027','deleted');
+INSERT INTO media VALUES (101,10,'Live Title','Real alt','image/jpeg',11,'2026',NULL),(102,10,'Hidden','Hidden','image/jpeg',11,'2026','deleted'),(103,30,'Hidden','Hidden','image/jpeg',11,'2026',NULL),(104,10,'Unsafe','Unsafe','image/svg+xml',11,'2026',NULL);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for id := 110; id < 119; id++ {
+		if _, err := db.Exec(`INSERT INTO media VALUES (?,10,?,NULL,'image/jpeg',11,'2025',NULL)`, id, "Bild "+strconv.Itoa(id)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	views, err := newRenderer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &Handler{views: views, media: media.NewService(db, storage)}
+}
+
+func TestLiveGalleryPaginationAndViewer(t *testing.T) {
+	c := liveGalleryHandler(t, nil)
+	router := http.NewServeMux()
+	router.HandleFunc("GET /community/events", c.Images)
+	router.HandleFunc("GET /community/events/{album}", c.Images)
+	router.HandleFunc("GET /community/events/{album}/{image}", c.Images)
+	for _, tc := range []struct {
+		path string
+		code int
+		want string
+	}{
+		{"/community/events", 200, "Live Album"},
+		{"/community/events/10", 200, "/media/101/400"},
+		{"/community/events/10?page=3", 200, "Bild 110"},
+		{"/community/events/10?page=4", 303, "/community/events/10"},
+		{"/community/events/10/115", 200, "/community/events/10?page=2#image-115"},
+		{"/community/events/10/101", 200, `alt="Real alt"`},
+		{"/community/events/20/101", 404, "404"},
+		{"/community/events/10/102", 404, "404"},
+		{"/community/events/30", 404, "404"},
+	} {
+		r := httptest.NewRecorder()
+		router.ServeHTTP(r, httptest.NewRequest("GET", tc.path, nil))
+		if r.Code != tc.code || !strings.Contains(r.Body.String(), tc.want) {
+			t.Errorf("%s: status %d, body %s", tc.path, r.Code, r.Body.String())
+		}
+	}
+}
+
+func TestMediaHTTPRangesAndPathProtections(t *testing.T) {
+	for _, stream := range []bool{false, true} {
+		t.Run(strconv.FormatBool(stream), func(t *testing.T) {
+			storage := &galleryBlob{stream: stream}
+			c := liveGalleryHandler(t, storage)
+			router := http.NewServeMux()
+			router.HandleFunc("GET /media/{id}/{size}", c.MediaFile)
+			for _, tc := range []struct {
+				method, path, byteRange string
+				code                    int
+				body                    string
+			}{
+				{"GET", "/media/101/400", "", 200, "image bytes"},
+				{"GET", "/media/101/original", "bytes=2-5", 206, "age "},
+				{"HEAD", "/media/101/original", "", 200, ""},
+				{"GET", "/media/101/400", "bytes=100-", 416, ""},
+				{"GET", "/media/102/400", "", 404, ""},
+				{"GET", "/media/103/original", "", 404, ""},
+				{"GET", "/media/104/original", "", 404, ""},
+				{"GET", "/media/999/original", "", 404, ""},
+				{"GET", "/media/avatars/source", "", 404, ""},
+				{"GET", "/media/101/%2e%2e%2fsource", "", 404, ""},
+				{"GET", "/media/%2e%2e%2favatars%2f1/source", "", 404, ""},
+				{"GET", "/media/101/800", "", 503, ""},
+			} {
+				r := httptest.NewRecorder()
+				req := httptest.NewRequest(tc.method, tc.path, nil)
+				req.Header.Set("Range", tc.byteRange)
+				router.ServeHTTP(r, req)
+				if r.Code != tc.code || ((tc.code == 200 || tc.code == 206) && r.Body.String() != tc.body) {
+					t.Errorf("%s %s range %s: status %d, body %q", tc.method, tc.path, tc.byteRange, r.Code, r.Body.String())
+				}
+				if tc.code == 200 || tc.code == 206 {
+					if r.Header().Get("Content-Type") != "image/jpeg" || r.Header().Get("Cache-Control") != "public, no-cache" || r.Header().Get("Content-Length") == "" || r.Header().Get("Accept-Ranges") != "bytes" {
+						t.Errorf("missing image headers: %v", r.Header())
+					}
+					length := "11"
+					if tc.code == 206 {
+						length = "4"
+						if got := r.Header().Get("Content-Range"); got != "bytes 2-5/11" {
+							t.Errorf("Content-Range: %s", got)
+						}
+					}
+					if got := r.Header().Get("Content-Length"); got != length {
+						t.Errorf("Content-Length: %s, want %s", got, length)
+					}
+				}
+			}
+			for _, key := range storage.keys {
+				if !strings.HasPrefix(key, "media/101/") {
+					t.Errorf("unauthorized storage access: %s", key)
+				}
+			}
+		})
 	}
 }

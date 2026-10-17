@@ -314,7 +314,12 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		a.View = "meetings"
-		a.Meetings = c.content.All()
+		var err error
+		a.Meetings, err = c.content.AllWithError()
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
 		if r.URL.Query().Get("veroeffentlicht") == "1" {
 			a.Success = "Das Dokument wurde veröffentlicht."
 		}
@@ -473,14 +478,19 @@ func (c *Handler) EditResponsibility(w http.ResponseWriter, r *http.Request, a *
 }
 
 func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *AdminPage) {
-	s := w.(*sessionResponse).session
+	owner := c.publicationOwner(w)
 	id := r.PathValue("id")
-	p := content.Publication{ID: id, Owner: s.ID, Date: r.URL.Query().Get("datum")}
+	p := content.Publication{ID: id, Owner: owner, Date: r.URL.Query().Get("datum")}
 	p.Number, _ = strconv.Atoi(r.URL.Query().Get("nummer"))
 	if id != "neu" {
 		var ok bool
-		p, ok = c.content.Get(id)
-		if !ok || p.Owner != s.ID || p.Published {
+		var err error
+		p, ok, err = c.content.GetWithError(id)
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
+		if !ok || p.Owner != owner || p.Published {
 			http.NotFound(w, r)
 			return
 		}
@@ -529,6 +539,13 @@ func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *Adm
 		}
 		if err := c.content.Save(p); err != nil {
 			a.Message = err.Error()
+			if id == "neu" {
+				p.ID = "neu"
+				p.Data = nil
+				if errors["file"] == "" {
+					errors["file"] = "Die Datei wurde nicht gespeichert. Wähle sie erneut aus."
+				}
+			}
 		} else if len(errors) == 0 {
 			http.Redirect(w, r, "/verwaltung/sitzungen/"+p.ID+"/pruefen", http.StatusSeeOther)
 			return
@@ -550,16 +567,20 @@ func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *Adm
 }
 
 func (c *Handler) ReviewPublication(w http.ResponseWriter, r *http.Request) {
-	s := w.(*sessionResponse).session
-	p, ok := c.content.Get(r.PathValue("id"))
-	if !ok || p.Owner != s.ID {
+	owner := c.publicationOwner(w)
+	p, ok, err := c.content.GetWithError(r.PathValue("id"))
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
+	if !ok || p.Owner != owner {
 		http.NotFound(w, r)
 		return
 	}
 	a := &AdminPage{Section: "sitzungen", SectionTitle: "Sitzungen und Protokolle", View: "review", Publication: &p, Action: r.URL.Path}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
-		if err := c.content.Publish(p.ID, s.ID); err != nil {
+		if err := c.content.Publish(p.ID, owner); err != nil {
 			a.Message = err.Error()
 			status = http.StatusUnprocessableEntity
 		} else {
@@ -575,9 +596,13 @@ func (c *Handler) ReviewPublication(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Handler) Document(w http.ResponseWriter, r *http.Request) {
-	p, ok := c.content.Get(r.PathValue("id"))
+	p, ok, err := c.content.GetWithError(r.PathValue("id"))
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
 	s := w.(*sessionResponse).session
-	if !ok || !p.Published && (s == nil || !s.Authenticated || s.ID != p.Owner) {
+	if !ok || !p.Published && (s == nil || !s.Authenticated || c.publicationOwner(w) != p.Owner) {
 		http.NotFound(w, r)
 		return
 	}
@@ -586,6 +611,20 @@ func (c *Handler) Document(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Cache-Control", "no-store")
 	http.ServeContent(w, r, "dokument.pdf", time.Time{}, bytes.NewReader(p.Data))
+}
+
+func (c *Handler) publicationOwner(w http.ResponseWriter) string {
+	s := w.(*sessionResponse).session
+	if s == nil || !s.Authenticated {
+		return ""
+	}
+	if c.identity != nil {
+		if s.UserID <= 0 {
+			return ""
+		}
+		return strconv.FormatInt(s.UserID, 10)
+	}
+	return s.ID
 }
 
 // ResetUserPassword confirms the destination before queuing a reset email.

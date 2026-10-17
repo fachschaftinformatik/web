@@ -7,6 +7,7 @@ const PageSize = 4
 type Image struct {
 	ID, Title, Description, Source string
 	Width, Height                  int
+	thumbnail                      string
 }
 
 type Album struct {
@@ -48,7 +49,12 @@ func photo(id, title, description string, width, height int) Image {
 	return Image{ID: id, Title: title, Description: description, Source: "/assets/images/" + id + "-1200.jpg", Width: width, Height: height}
 }
 
-func (i Image) Thumbnail() string { return "/assets/images/" + i.ID + "-400.jpg" }
+func (i Image) Thumbnail() string {
+	if i.thumbnail != "" {
+		return i.thumbnail
+	}
+	return "/assets/images/" + i.ID + "-400.jpg"
+}
 
 func Find(id string) (Album, bool) {
 	for _, album := range Albums() {

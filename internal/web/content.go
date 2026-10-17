@@ -16,7 +16,11 @@ type MeetingsPage struct {
 }
 
 func (c *Handler) Meetings(w http.ResponseWriter, r *http.Request) {
-	all := c.content.All()
+	all, err := c.content.AllWithError()
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
 	var years []int
 	var next *content.Meeting
 	today := time.Now().Format("2006-01-02")

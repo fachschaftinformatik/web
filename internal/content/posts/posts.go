@@ -13,6 +13,7 @@ import (
 var snapshot []byte
 
 type Post struct {
+	AuthorID                                        int64
 	ID, Title, Body, Summary, Author, Created, Type string
 	BodyFormat                                      string
 	Comments                                        int
@@ -23,7 +24,12 @@ func (p Post) URL() string { return "/d/" + p.ID }
 
 func (p Post) SourceURL() string { return "https://ik.fsv-wh.de/d/" + p.ID }
 
-func (p Post) DateISO() string { return p.Created[:10] }
+func (p Post) DateISO() string {
+	if len(p.Created) < 10 {
+		return ""
+	}
+	return p.Created[:10]
+}
 
 func (p Post) DateLabel() string {
 	return dateLabel(p.Created)

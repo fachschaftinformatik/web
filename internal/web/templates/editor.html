@@ -12,6 +12,13 @@
   </div>
 </div>{{end}}
 <form action="{{.Action}}" method="post" novalidate>
+  <input type="hidden" name="csrf" value="{{$.CSRF}}">
+  {{if .Live}}<div class="govuk-form-group">
+    <label class="govuk-label" for="type">Beitragsart</label>
+    <select class="govuk-select" id="type" name="type"><option value="discussion" {{if eq .Draft.Type "discussion"}}selected{{end}}>Diskussion</option><option value="news" {{if eq .Draft.Type "news"}}selected{{end}}>Neuigkeit</option><option value="event" {{if eq .Draft.Type "event"}}selected{{end}}>Veranstaltung</option></select>
+    {{if .Error "type"}}<p class="govuk-error-message">{{.Error "type"}}</p>{{end}}
+  </div>
+  <div class="govuk-form-group"><label class="govuk-label" for="tags">Schlagwörter, mit Komma getrennt</label><input class="govuk-input" id="tags" name="tags" value="{{.Draft.Tags}}"></div>{{end}}
   <div class="govuk-form-group {{if .Error "title"}}govuk-form-group--error{{end}}">
     <label class="govuk-label govuk-label--s" for="title">Titel</label>
     <div class="govuk-hint" id="title-hint">Fasse kurz zusammen, worum es geht.</div>
@@ -59,8 +66,7 @@
     </div>
     <p class="govuk-hint" id="editor-fallback">Einfache Textversion: Ohne Texteditor bleiben die Inhalte erhalten, Formatierungen werden beim Absenden entfernt.</p>
   </div>
-  {{if eq .Draft.Type "event"}}
-  <details class="govuk-details" {{if or (eq .Draft.Type "event") .Draft.Date .Draft.Time .Draft.Location}}open{{end}}>
+  {{if or .Live (eq .Draft.Type "event")}}<details class="govuk-details" {{if or (eq .Draft.Type "event") .Draft.Date .Draft.Time .Draft.Location}}open{{end}}>
     <summary class="govuk-details__summary"><span class="govuk-details__summary-text">Termin und Ort für Veranstaltungen</span></summary>
     <div class="govuk-details__text">
           <div class="govuk-form-group {{if .Error "date"}}govuk-form-group--error{{end}}">
@@ -77,8 +83,7 @@
           </div>
           <div class="govuk-form-group"><label class="govuk-label" for="location">Ort (optional)</label><input class="govuk-input" id="location" name="location" value="{{.Draft.Location}}"></div>
     </div>
-  </details>
-  {{end}}
+  </details>{{end}}
   <div class="govuk-button-group">
     <button class="govuk-button" type="submit" data-module="govuk-button">{{if .Editing}}Änderungen speichern{{else}}Beitrag veröffentlichen{{end}}</button>
     <a class="govuk-link" href="{{.BackURL}}">Abbrechen</a>

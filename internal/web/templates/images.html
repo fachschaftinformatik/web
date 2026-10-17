@@ -2,20 +2,20 @@
 {{define "content"}}
 {{$g := .Images}}
 {{if not $g.Detail}}
-<p class="govuk-body">Einblicke in unsere LAN-Partys und das Fachschaftsleben. Hier siehst du eine Auswahl aus den <a class="govuk-link" href="https://ik.fsv-wh.de/events">vollständigen Fotoalben</a>.</p>
+<p class="govuk-body">Einblicke in unsere LAN-Partys und das Fachschaftsleben.</p>
 <ul class="govuk-list app-gallery-grid">
   {{range $g.Albums}}
   <li>
-    <h2 class="govuk-heading-m"><a class="govuk-link app-gallery-link" href="{{.URL}}">{{if .Images}}{{$cover := index .Images 0}}<img class="app-gallery-thumbnail" src="{{$cover.Thumbnail}}" width="{{$cover.Width}}" height="{{$cover.Height}}" alt="" loading="lazy">{{end}}<span>{{.Title}}</span></a></h2>
-    <p class="govuk-body-s">{{len .Images}} von {{.OriginalCount}} Bildern</p>
+    <h2 class="govuk-heading-m"><a class="govuk-link app-gallery-link" href="{{.URL}}">{{if .Images}}{{$cover := index .Images 0}}<img class="app-gallery-thumbnail" src="{{$cover.Thumbnail}}" {{if $cover.Width}}width="{{$cover.Width}}" height="{{$cover.Height}}"{{end}} alt="" loading="lazy">{{end}}<span>{{.Title}}</span></a></h2>
+    <p class="govuk-body-s">{{len .Images}} Bilder</p>
   </li>
   {{end}}
 </ul>
 {{else if $g.Viewer}}
 <p class="govuk-body"><a class="govuk-link" href="{{$g.Return}}">Zurück zum Album: {{$g.Album.Title}}</a></p>
-<p class="govuk-body-s">Bild {{$g.Number}} von {{$g.Total}} der Fotoauswahl</p>
+<p class="govuk-body-s">Bild {{$g.Number}} von {{$g.Total}}</p>
 <figure class="app-gallery-figure">
-  <img class="app-gallery-image" src="{{$g.Image.Source}}" width="{{$g.Image.Width}}" height="{{$g.Image.Height}}" alt="{{$g.Image.Description}}">
+  <img class="app-gallery-image" src="{{$g.Image.Source}}" {{if $g.Image.Width}}width="{{$g.Image.Width}}" height="{{$g.Image.Height}}"{{end}} alt="{{$g.Image.Description}}">
   <figcaption class="govuk-body-s govuk-!-margin-top-3">{{$g.Image.Title}}</figcaption>
 </figure>
 <nav class="govuk-pagination govuk-pagination--block" aria-label="Bildernavigation">
@@ -25,10 +25,10 @@
 {{else}}
 <p class="govuk-body"><a class="govuk-link" href="/community/events">Alle Alben</a></p>
 {{if $g.Images}}
-<p class="govuk-body-s">{{$g.Total}} von {{$g.Album.OriginalCount}} Bildern · <a class="govuk-link" href="{{$g.Album.OriginalURL}}">Vollständiges Album</a></p>
+<p class="govuk-body-s">{{$g.Total}} Bilder</p>
 <ul class="govuk-list app-gallery-grid">
   {{range $g.Images}}
-  <li><a class="govuk-link app-gallery-link" id="image-{{.ID}}" href="{{$g.Album.ImageURL .}}"><img class="app-gallery-thumbnail" src="{{.Thumbnail}}" width="{{.Width}}" height="{{.Height}}" alt="" loading="lazy"><span>{{.Title}}</span></a></li>
+  <li><a class="govuk-link app-gallery-link" id="image-{{.ID}}" href="{{$g.Album.ImageURL .}}"><img class="app-gallery-thumbnail" src="{{.Thumbnail}}" {{if .Width}}width="{{.Width}}" height="{{.Height}}"{{end}} alt="" loading="lazy"><span>{{.Title}}</span></a></li>
   {{end}}
 </ul>
 {{if gt $g.Pages 1}}

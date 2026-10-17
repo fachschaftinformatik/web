@@ -2,11 +2,14 @@ package content
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
 	"fmt"
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/fachschaftinformatik/web/internal/data/blob"
 )
 
 const MaxPDFBytes = 8 << 20
@@ -19,6 +22,8 @@ type Publication struct {
 }
 
 type Store struct {
+	db           *sql.DB
+	blobs        blob.Provider
 	mu           sync.RWMutex
 	publications map[string]Publication
 }
@@ -57,6 +62,10 @@ func PDFError(data []byte) string {
 }
 
 func (s *Store) Save(p Publication) error {
+	if s.db != nil {
+		return s.savePersistent(p)
+	}
+	p.Published = false
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if old, ok := s.publications[p.ID]; ok && (old.Owner != p.Owner || old.Published) {
@@ -77,14 +86,26 @@ func (s *Store) Save(p Publication) error {
 }
 
 func (s *Store) Get(id string) (Publication, bool) {
+	p, ok, _ := s.GetWithError(id)
+	return p, ok
+}
+
+// GetWithError distinguishes unavailable storage from an unknown document.
+func (s *Store) GetWithError(id string) (Publication, bool, error) {
+	if s.db != nil {
+		return s.getPersistent(id)
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	p, ok := s.publications[id]
 	p.Data = slices.Clone(p.Data)
-	return p, ok
+	return p, ok, nil
 }
 
 func (s *Store) Publish(id, owner string) error {
+	if s.db != nil {
+		return s.publishPersistent(id, owner)
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	p, ok := s.publications[id]
@@ -117,15 +138,25 @@ func (s *Store) allLocked() []Meeting {
 		if !p.Published {
 			continue
 		}
-		date, _ := time.Parse("2006-01-02", p.Date)
-		doc := Document{Kind: p.Kind, File: p.ID, Bytes: len(p.Data), Demo: true}
-		index := slices.IndexFunc(records, func(m Meeting) bool { return m.Date == p.Date && m.Number == p.Number })
-		if index < 0 {
-			records = append(records, Meeting{Year: date.Year(), Number: p.Number, Date: p.Date, Documents: []Document{doc}})
-		} else {
-			records[index].Documents = append(records[index].Documents, doc)
-		}
+		records = appendPublication(records, p, len(p.Data))
 	}
+	sortMeetings(records)
+	return records
+}
+
+func appendPublication(records []Meeting, p Publication, size int) []Meeting {
+	date, _ := time.Parse("2006-01-02", p.Date)
+	doc := Document{Kind: p.Kind, File: p.ID, Bytes: size, Demo: true}
+	index := slices.IndexFunc(records, func(m Meeting) bool { return m.Date == p.Date && m.Number == p.Number })
+	if index < 0 {
+		records = append(records, Meeting{Year: date.Year(), Number: p.Number, Date: p.Date, Documents: []Document{doc}})
+	} else {
+		records[index].Documents = append(records[index].Documents, doc)
+	}
+	return records
+}
+
+func sortMeetings(records []Meeting) {
 	slices.SortFunc(records, func(a, b Meeting) int {
 		if a.Year != b.Year {
 			return b.Year - a.Year
@@ -138,10 +169,18 @@ func (s *Store) allLocked() []Meeting {
 		}
 		return b.Number - a.Number
 	})
-	return records
 }
 
-func (s *Store) All() []Meeting { s.mu.RLock(); defer s.mu.RUnlock(); return s.allLocked() }
+func (s *Store) All() []Meeting { records, _ := s.AllWithError(); return records }
+
+func (s *Store) AllWithError() ([]Meeting, error) {
+	if s.db != nil {
+		return s.allPersistent()
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.allLocked(), nil
+}
 
 func (p Publication) Size() string      { return fmt.Sprintf("%d kB", (len(p.Data)+999)/1000) }
 func (p Publication) KindLabel() string { return kindLabel(p.Kind) }

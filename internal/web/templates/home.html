@@ -14,12 +14,14 @@
       <div>
         <section class="app-event-carousel" aria-label="Veranstaltungsalben">
           <div id="event-slides">
-            {{range $index, $album := .Images.Albums}}
+             {{range $index, $album := .Images.Albums}}
+             {{if .Images}}
             {{$cover := index .Images 0}}
             <div class="app-event-slide" data-title="{{.Title}}" {{if $index}}hidden{{end}}>
               <a class="govuk-link govuk-link--inverse app-event-carousel__link" href="{{.URL}}"><img class="app-event-carousel__image" src="{{$cover.Source}}" width="{{$cover.Width}}" height="{{$cover.Height}}" alt="" {{if $index}}loading="lazy"{{end}}><span>{{.Title}}</span></a>
-            </div>
-            {{end}}
+             </div>
+             {{end}}
+             {{end}}
           </div>
           <div class="app-event-carousel__controls" hidden>
             <button class="govuk-button govuk-button--inverse app-event-carousel__button" type="button" aria-controls="event-slides" aria-label="Vorheriges Album" data-direction="-1"><span aria-hidden="true">←</span></button>
@@ -55,8 +57,8 @@
     <div class="govuk-grid-row">
       <section class="govuk-grid-column-two-thirds-from-desktop" aria-labelledby="announcements">
         <h2 class="govuk-heading-l" id="announcements">Neues aus der Fachschaft</h2>
-        <h3 class="govuk-heading-m"><time datetime="{{.Home.News.DateISO}}">{{.Home.News.Date}}</time>: <a class="govuk-link" href="{{.Home.News.URL}}">{{.Home.News.Title}}</a></h3>
-        <p class="govuk-body">{{.Home.News.Summary}}</p>
+        {{with .Home.News}}{{if .URL}}<h3 class="govuk-heading-m"><time datetime="{{.DateISO}}">{{.Date}}</time>: <a class="govuk-link" href="{{.URL}}">{{.Title}}</a></h3>
+        <p class="govuk-body">{{.Summary}}</p>{{else}}<p class="govuk-body">Noch keine Neuigkeiten veröffentlicht.</p>{{end}}{{end}}
         <p class="govuk-body"><a class="govuk-link" href="/discussions?type=news">Alle Neuigkeiten lesen</a></p>
         <hr class="govuk-section-break govuk-section-break--l">
         <h2 class="govuk-heading-l" id="home-events">Veranstaltungen</h2>
@@ -90,7 +92,6 @@
       <p class="govuk-body">Du möchtest eine Veranstaltung mitorganisieren oder eine Idee fürs Studium einbringen? Sprich uns an. In der Fachschaft kannst du dich auch neben den gewählten Ämtern engagieren.</p>
       <p class="govuk-body"><a class="govuk-link" href="/fachschaft">Mehr über die Fachschaft</a></p>
       <p class="govuk-body">Fragen oder Anregungen? Schreib uns an <a class="govuk-link" href="mailto:kontakt@fachschaftinformatik.de">kontakt@fachschaftinformatik.de</a>.</p>
-      <p class="govuk-body-s">Beiträge vom Stand 16. Oktober 2026.</p>
     </div>
   </div>
 </div>

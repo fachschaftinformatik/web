@@ -17,7 +17,10 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/config"
+	"github.com/fachschaftinformatik/web/internal/content"
 	"github.com/fachschaftinformatik/web/internal/content/files"
+	"github.com/fachschaftinformatik/web/internal/content/media"
+	"github.com/fachschaftinformatik/web/internal/content/posts"
 	"github.com/fachschaftinformatik/web/internal/data"
 	"github.com/fachschaftinformatik/web/internal/data/blob"
 	"github.com/fachschaftinformatik/web/internal/data/blob/disk"
@@ -45,7 +48,7 @@ func run(ctx context.Context, args []string) error {
 	addr := flags.String("addr", "127.0.0.1:8090", "HTTP listen address")
 	snapshot := flags.String("data", "", "Read-only user snapshot directory for the demo")
 	database := flags.String("database", "data/sqlite.db", "Writable SQLite database path")
-	blobs := flags.String("blobs", "", "Local object directory; otherwise use S3 configuration")
+	blobs := flags.String("blobs", "", "Local object directory; otherwise use configured S3 or blobs beside the database")
 	demo := flags.Bool("demo", false, "Use example data and local admin/admin credentials")
 	version := flags.Bool("version", false, "Print application version")
 	health := flags.String("check-health", "", "Check a running application's health URL and exit")
@@ -104,8 +107,12 @@ func run(ctx context.Context, args []string) error {
 		}
 		identity := users.NewService(db, cfg.Domain)
 		var storage blob.Provider
-		if *blobs != "" {
-			local, err := disk.New(*blobs)
+		if *blobs != "" || cfg.S3Endpoint == "" {
+			path := *blobs
+			if path == "" {
+				path = filepath.Join(filepath.Dir(*database), "blobs")
+			}
+			local, err := disk.New(path)
 			if err != nil {
 				return err
 			}
@@ -123,7 +130,11 @@ func run(ctx context.Context, args []string) error {
 		if err != nil {
 			return err
 		}
-		handler, err = web.NewPersistent(identity, files.NewService(db, storage), team, origin.Scheme == "https")
+		meetings, meetingErr := content.NewPersistentStore(db, storage)
+		if meetingErr != nil {
+			return meetingErr
+		}
+		handler, err = web.NewPersistent(web.Services{Users: identity, Archive: files.NewService(db, storage), People: team, Meetings: meetings, Posts: posts.NewService(db), Media: media.NewService(db, storage)}, origin.Scheme == "https")
 		if err == nil {
 			mailCtx, cancel := context.WithCancel(ctx)
 			done := make(chan struct{})
@@ -133,6 +144,9 @@ func run(ctx context.Context, args []string) error {
 				defer ticker.Stop()
 				sender := email.NewSender(cfg)
 				for {
+					if err := meetings.CleanupBlobs(mailCtx); err != nil && mailCtx.Err() == nil {
+						log.Printf("Meeting file maintenance: %v", err)
+					}
 					var err error
 					if cfg.SMTPHost != "" {
 						err = identity.DeliverMail(mailCtx, sender)

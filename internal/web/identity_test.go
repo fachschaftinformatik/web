@@ -11,8 +11,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fachschaftinformatik/web/internal/content"
 	"github.com/fachschaftinformatik/web/internal/content/files"
+	"github.com/fachschaftinformatik/web/internal/content/media"
+	"github.com/fachschaftinformatik/web/internal/content/posts"
 	"github.com/fachschaftinformatik/web/internal/data"
+	"github.com/fachschaftinformatik/web/internal/data/blob"
+	"github.com/fachschaftinformatik/web/internal/data/blob/disk"
 	"github.com/fachschaftinformatik/web/internal/people"
 	"github.com/fachschaftinformatik/web/internal/users"
 	"golang.org/x/crypto/bcrypt"
@@ -33,17 +38,35 @@ func identityBrowserWithStorage(t *testing.T, storage files.Storage) (*adminBrow
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	team, err := people.Open(context.Background(), db)
-	if err != nil {
-		t.Fatal(err)
-	}
-	handler, err := NewPersistent(users.NewService(db, "https://example.org"), files.NewService(db, storage), team, false)
+	handler, err := NewPersistent(persistentServices(t, db, storage), false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	server := httptest.NewServer(handler)
 	t.Cleanup(server.Close)
 	return newAdminBrowser(t, server), db
+}
+
+func persistentServices(t *testing.T, db *sql.DB, storage files.Storage) Services {
+	t.Helper()
+	team, err := people.Open(context.Background(), db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	provider, ok := storage.(blob.Provider)
+	if !ok {
+		local, err := disk.New(t.TempDir())
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { local.Close() })
+		provider = local
+	}
+	meetings, err := content.NewPersistentStore(db, provider)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return Services{Users: users.NewService(db, "https://example.org"), Archive: files.NewService(db, storage), People: team, Meetings: meetings, Posts: posts.NewService(db), Media: media.NewService(db, provider)}
 }
 
 func TestPersistentLoginAuthorizationAndLogout(t *testing.T) {
@@ -88,11 +111,7 @@ func TestPersistentLoginAuthorizationAndLogout(t *testing.T) {
 		t.Fatal("live directory or updated role not used")
 	}
 	// Build a fresh handler and service, keeping only the database and browser cookie.
-	team, err := people.Open(context.Background(), db)
-	if err != nil {
-		t.Fatal(err)
-	}
-	handler, err := NewPersistent(users.NewService(db, "https://example.org"), files.NewService(db, nil), team, false)
+	handler, err := NewPersistent(persistentServices(t, db, nil), false)
 	if err != nil {
 		t.Fatal(err)
 	}

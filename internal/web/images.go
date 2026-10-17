@@ -1,8 +1,12 @@
 package web
 
 import (
+	"errors"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 
 	"github.com/fachschaftinformatik/web/internal/content/media"
 )
@@ -20,9 +24,24 @@ type ImagesPage struct {
 
 func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 	g := ImagesPage{Albums: media.Albums()}
+	if c.media != nil {
+		albums, err := c.media.Catalog(r.Context())
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
+		g.Albums = albums
+	}
 	data := Page{Title: "Galerie", Active: "events", Community: true}
 	if id := r.PathValue("album"); id != "" {
-		album, found := media.Find(id)
+		var album media.Album
+		found := false
+		for _, candidate := range g.Albums {
+			if candidate.ID == id {
+				album, found = candidate, true
+				break
+			}
+		}
 		if !found {
 			http.NotFound(w, r)
 			return
@@ -79,4 +98,50 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 	}
 	data.Images = g
 	c.render(w, "images", false, data)
+}
+
+// MediaFile serves only database-backed gallery images, never raw storage keys.
+func (c *Handler) MediaFile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if c.media == nil {
+		http.NotFound(w, r)
+		return
+	}
+	object, err := c.media.Open(r.Context(), r.PathValue("id"), r.PathValue("size"))
+	if errors.Is(err, media.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	}
+	if errors.Is(err, media.ErrStorage) {
+		http.Error(w, "Das Bild konnte nicht geladen werden.", http.StatusServiceUnavailable)
+		return
+	}
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
+	defer object.Close()
+	seeker, ok := object.ReadCloser.(io.ReadSeeker)
+	if !ok {
+		// Providers may return streaming bodies. Spool those to a bounded
+		// temporary file so ServeContent still supports HEAD and byte ranges.
+		file, err := os.CreateTemp("", "gallery")
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
+		defer os.Remove(file.Name())
+		defer file.Close()
+		written, err := io.Copy(file, io.LimitReader(object, object.Info.Size+1))
+		if err != nil || written != object.Info.Size {
+			http.Error(w, "Das Bild konnte nicht geladen werden.", http.StatusServiceUnavailable)
+			return
+		}
+		seeker = file
+	}
+	w.Header().Set("Content-Type", object.Info.ContentType)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	// Revalidate rather than retaining deleted photographs in a shared cache.
+	w.Header().Set("Cache-Control", "public, no-cache")
+	http.ServeContent(w, r, "image", time.Time{}, seeker)
 }

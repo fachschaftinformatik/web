@@ -40,5 +40,5 @@
   <p class="govuk-body">Keine passenden Beiträge gefunden. Versuche einen anderen Suchbegriff oder wähle eine andere Beitragsart.</p>
   {{end}}
 </section>
-<p class="govuk-body-s govuk-!-margin-top-6">Stand: 16. Oktober 2026.</p>
+{{if not .Forum.Live}}<p class="govuk-body-s govuk-!-margin-top-6">Stand: 16. Oktober 2026.</p>{{end}}
 {{end}}

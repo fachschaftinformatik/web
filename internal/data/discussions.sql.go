@@ -157,7 +157,7 @@ INSERT INTO discussion_posts (
     ?8,
     ?9
 )
-RETURNING id, title, body, user_id, pinned, type, event_date, location, image_url, created_at, updated_at, deleted_at
+RETURNING id, title, body, user_id, pinned, type, event_date, location, image_url, created_at, updated_at, deleted_at, body_format
 `
 
 type CreateDiscussionPostParams struct {
@@ -198,6 +198,7 @@ func (q *Queries) CreateDiscussionPost(ctx context.Context, arg CreateDiscussion
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.BodyFormat,
 	)
 	return i, err
 }
@@ -245,7 +246,7 @@ func (q *Queries) GetDiscussionComment(ctx context.Context, id int64) (Discussio
 }
 
 const getDiscussionPost = `-- name: GetDiscussionPost :one
-SELECT p.id, p.title, p.body, p.user_id, p.pinned, p.type, p.event_date, p.location, p.image_url, p.created_at, p.updated_at, p.deleted_at,
+SELECT p.id, p.title, p.body, p.user_id, p.pinned, p.type, p.event_date, p.location, p.image_url, p.created_at, p.updated_at, p.deleted_at, p.body_format,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name,
        CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as user_avatar_url,
        (SELECT COUNT(*) FROM discussion_comments WHERE post_id = p.id AND deleted_at IS NULL) as comment_count,
@@ -275,6 +276,7 @@ type GetDiscussionPostRow struct {
 	CreatedAt     string  `json:"created_at"`
 	UpdatedAt     string  `json:"updated_at"`
 	DeletedAt     *string `json:"deleted_at"`
+	BodyFormat    string  `json:"body_format"`
 	UserName      string  `json:"user_name"`
 	UserAvatarUrl string  `json:"user_avatar_url"`
 	CommentCount  int64   `json:"comment_count"`
@@ -298,6 +300,7 @@ func (q *Queries) GetDiscussionPost(ctx context.Context, arg GetDiscussionPostPa
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.BodyFormat,
 		&i.UserName,
 		&i.UserAvatarUrl,
 		&i.CommentCount,
@@ -469,7 +472,7 @@ func (q *Queries) ListDiscussionComments(ctx context.Context, arg ListDiscussion
 }
 
 const listDiscussionPosts = `-- name: ListDiscussionPosts :many
-SELECT p.id, p.title, p.body, p.user_id, p.pinned, p.type, p.event_date, p.location, p.image_url, p.created_at, p.updated_at, p.deleted_at,
+SELECT p.id, p.title, p.body, p.user_id, p.pinned, p.type, p.event_date, p.location, p.image_url, p.created_at, p.updated_at, p.deleted_at, p.body_format,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name,
        CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as user_avatar_url,
        (SELECT COUNT(*) FROM discussion_comments WHERE post_id = p.id AND deleted_at IS NULL) as comment_count,
@@ -509,6 +512,7 @@ type ListDiscussionPostsRow struct {
 	CreatedAt     string  `json:"created_at"`
 	UpdatedAt     string  `json:"updated_at"`
 	DeletedAt     *string `json:"deleted_at"`
+	BodyFormat    string  `json:"body_format"`
 	UserName      string  `json:"user_name"`
 	UserAvatarUrl string  `json:"user_avatar_url"`
 	CommentCount  int64   `json:"comment_count"`
@@ -545,6 +549,7 @@ func (q *Queries) ListDiscussionPosts(ctx context.Context, arg ListDiscussionPos
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.BodyFormat,
 			&i.UserName,
 			&i.UserAvatarUrl,
 			&i.CommentCount,
@@ -565,7 +570,7 @@ func (q *Queries) ListDiscussionPosts(ctx context.Context, arg ListDiscussionPos
 }
 
 const listDiscussionPostsTop = `-- name: ListDiscussionPostsTop :many
-SELECT p.id, p.title, p.body, p.user_id, p.pinned, p.type, p.event_date, p.location, p.image_url, p.created_at, p.updated_at, p.deleted_at,
+SELECT p.id, p.title, p.body, p.user_id, p.pinned, p.type, p.event_date, p.location, p.image_url, p.created_at, p.updated_at, p.deleted_at, p.body_format,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name,
        CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as user_avatar_url,
        (SELECT COUNT(*) FROM discussion_comments WHERE post_id = p.id AND deleted_at IS NULL) as comment_count,
@@ -606,6 +611,7 @@ type ListDiscussionPostsTopRow struct {
 	CreatedAt     string  `json:"created_at"`
 	UpdatedAt     string  `json:"updated_at"`
 	DeletedAt     *string `json:"deleted_at"`
+	BodyFormat    string  `json:"body_format"`
 	UserName      string  `json:"user_name"`
 	UserAvatarUrl string  `json:"user_avatar_url"`
 	CommentCount  int64   `json:"comment_count"`
@@ -642,6 +648,7 @@ func (q *Queries) ListDiscussionPostsTop(ctx context.Context, arg ListDiscussion
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.BodyFormat,
 			&i.UserName,
 			&i.UserAvatarUrl,
 			&i.CommentCount,
@@ -662,7 +669,7 @@ func (q *Queries) ListDiscussionPostsTop(ctx context.Context, arg ListDiscussion
 }
 
 const searchDiscussionPosts = `-- name: SearchDiscussionPosts :many
-SELECT p.id, p.title, p.body, p.user_id, p.pinned, p.type, p.event_date, p.location, p.image_url, p.created_at, p.updated_at, p.deleted_at,
+SELECT p.id, p.title, p.body, p.user_id, p.pinned, p.type, p.event_date, p.location, p.image_url, p.created_at, p.updated_at, p.deleted_at, p.body_format,
        CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as user_name,
        CAST(CASE WHEN u.private = 1 THEN '' ELSE COALESCE(u.avatar_url, '') END AS TEXT) as user_avatar_url,
        (SELECT COUNT(*) FROM discussion_comments WHERE post_id = p.id AND deleted_at IS NULL) as comment_count,
@@ -698,6 +705,7 @@ type SearchDiscussionPostsRow struct {
 	CreatedAt     string  `json:"created_at"`
 	UpdatedAt     string  `json:"updated_at"`
 	DeletedAt     *string `json:"deleted_at"`
+	BodyFormat    string  `json:"body_format"`
 	UserName      string  `json:"user_name"`
 	UserAvatarUrl string  `json:"user_avatar_url"`
 	CommentCount  int64   `json:"comment_count"`
@@ -727,6 +735,7 @@ func (q *Queries) SearchDiscussionPosts(ctx context.Context, arg SearchDiscussio
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.BodyFormat,
 			&i.UserName,
 			&i.UserAvatarUrl,
 			&i.CommentCount,
@@ -783,7 +792,7 @@ SET title = COALESCE(?1, title),
     location = COALESCE(?5, location),
     image_url = COALESCE(?6, image_url)
 WHERE id = ?7 AND deleted_at IS NULL
-RETURNING id, title, body, user_id, pinned, type, event_date, location, image_url, created_at, updated_at, deleted_at
+RETURNING id, title, body, user_id, pinned, type, event_date, location, image_url, created_at, updated_at, deleted_at, body_format
 `
 
 type UpdateDiscussionPostParams struct {
@@ -820,6 +829,7 @@ func (q *Queries) UpdateDiscussionPost(ctx context.Context, arg UpdateDiscussion
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.BodyFormat,
 	)
 	return i, err
 }

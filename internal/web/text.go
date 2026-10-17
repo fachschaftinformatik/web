@@ -14,11 +14,16 @@ type textBlock struct {
 
 var publicURL = regexp.MustCompile(`https?://[^\s<>"']+`)
 
-// forumText preserves source paragraphs, lists and quotes as escaped text.
-// Only explicit HTTP(S) URLs become links; source HTML is never trusted.
+// forumText decodes the legacy snapshot's entity-encoded text before rendering.
 func forumText(source string) []textBlock {
+	return rawForumText(html.UnescapeString(source))
+}
+
+// rawForumText preserves literal text, paragraphs, lists and quotes.
+// Only explicit HTTP(S) URLs become links; source HTML is never trusted.
+func rawForumText(source string) []textBlock {
 	var blocks []textBlock
-	for _, line := range strings.Split(strings.ReplaceAll(html.UnescapeString(source), "\r\n", "\n"), "\n") {
+	for _, line := range strings.Split(strings.ReplaceAll(source, "\r\n", "\n"), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			blocks = append(blocks, textBlock{})
