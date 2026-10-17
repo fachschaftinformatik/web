@@ -46,11 +46,11 @@ func (s *Service) CanWrite(ctx context.Context, user, owner int64, comments bool
 	return permission(ctx, s.db, user, owner, comments)
 }
 
-const postSelect = `SELECT CAST(p.id AS TEXT),p.title,p.body,p.body_format,p.user_id,CASE WHEN u.private=1 THEN 'Anonym' ELSE u.name END,p.created_at,p.updated_at,p.type,COALESCE(p.event_date,''),COALESCE(p.location,''),(SELECT COUNT(*) FROM discussion_comments c WHERE c.post_id=p.id AND c.deleted_at IS NULL),COALESCE((SELECT SUM(vote) FROM discussion_votes WHERE post_id=p.id),0),COALESCE((SELECT vote FROM discussion_votes WHERE post_id=p.id AND user_id=?),0) FROM discussion_posts p JOIN users u ON u.id=p.user_id WHERE p.deleted_at IS NULL`
+const postSelect = `SELECT CAST(p.id AS TEXT),p.title,p.body,p.body_format,p.user_id,CASE WHEN u.private=1 OR u.deleted_at IS NOT NULL THEN 'Anonym' ELSE u.name END,p.created_at,p.updated_at,p.type,COALESCE(p.event_date,''),COALESCE(p.location,''),(SELECT COUNT(*) FROM discussion_comments c WHERE c.post_id=p.id AND c.deleted_at IS NULL),COALESCE((SELECT SUM(vote) FROM discussion_votes WHERE post_id=p.id),0),COALESCE((SELECT vote FROM discussion_votes WHERE post_id=p.id AND user_id=?),0),u.private=0 AND u.deleted_at IS NULL FROM discussion_posts p JOIN users u ON u.id=p.user_id WHERE p.deleted_at IS NULL`
 
 func scanThread(row interface{ Scan(...any) error }) (Thread, error) {
 	var t Thread
-	err := row.Scan(&t.ID, &t.Title, &t.Body, &t.BodyFormat, &t.AuthorID, &t.Author, &t.Created, &t.Updated, &t.Type, &t.EventDate, &t.Location, &t.Comments, &t.Votes, &t.UserVote)
+	err := row.Scan(&t.ID, &t.Title, &t.Body, &t.BodyFormat, &t.AuthorID, &t.Author, &t.Created, &t.Updated, &t.Type, &t.EventDate, &t.Location, &t.Comments, &t.Votes, &t.UserVote, &t.AuthorPublic)
 	if errors.Is(err, sql.ErrNoRows) {
 		return t, ErrNotFound
 	}
@@ -103,6 +103,9 @@ func (s *Service) Find(ctx context.Context, f Filter, viewer ...int64) ([]Post, 
 	}
 	var result []Post
 	for _, t := range threads {
+		if f.AuthorID != 0 && (t.AuthorID != f.AuthorID || !t.AuthorPublic) {
+			continue
+		}
 		if err := s.tags(ctx, &t); err != nil {
 			return nil, err
 		}
@@ -126,14 +129,14 @@ func (s *Service) Lookup(ctx context.Context, post string, viewer ...int64) (Thr
 	if err = s.tags(ctx, &t); err != nil {
 		return t, err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT CAST(c.id AS TEXT),c.user_id,CASE WHEN u.private=1 THEN 'Anonym' ELSE u.name END,c.text,c.created_at,c.updated_at,COALESCE((SELECT SUM(vote) FROM discussion_comment_votes WHERE comment_id=c.id),0),COALESCE((SELECT vote FROM discussion_comment_votes WHERE comment_id=c.id AND user_id=?),0) FROM discussion_comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=? AND c.deleted_at IS NULL ORDER BY c.created_at DESC,c.id DESC`, viewerID(viewer), post)
+	rows, err := s.db.QueryContext(ctx, `SELECT CAST(c.id AS TEXT),c.user_id,CASE WHEN u.private=1 OR u.deleted_at IS NOT NULL THEN 'Anonym' ELSE u.name END,c.text,c.created_at,c.updated_at,COALESCE((SELECT SUM(vote) FROM discussion_comment_votes WHERE comment_id=c.id),0),COALESCE((SELECT vote FROM discussion_comment_votes WHERE comment_id=c.id AND user_id=?),0),u.private=0 AND u.deleted_at IS NULL FROM discussion_comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=? AND c.deleted_at IS NULL ORDER BY c.created_at DESC,c.id DESC`, viewerID(viewer), post)
 	if err != nil {
 		return t, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var c Comment
-		if err = rows.Scan(&c.ID, &c.AuthorID, &c.Author, &c.Text, &c.Created, &c.Updated, &c.Votes, &c.UserVote); err != nil {
+		if err = rows.Scan(&c.ID, &c.AuthorID, &c.Author, &c.Text, &c.Created, &c.Updated, &c.Votes, &c.UserVote, &c.AuthorPublic); err != nil {
 			return t, err
 		}
 		t.Replies = append(t.Replies, c)

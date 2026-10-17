@@ -12,6 +12,7 @@ import (
 var threads []byte
 
 type Comment struct {
+	AuthorPublic    bool
 	Votes, UserVote int
 	AuthorID        int64
 	CanEdit         bool
@@ -22,7 +23,10 @@ type Comment struct {
 	Updated         string `json:"updated_at"`
 }
 
-func (c Comment) DateLabel() string    { return dateLabel(c.Created) }
+func (c Comment) DateLabel() string { return dateLabel(c.Created) }
+func (c Comment) AuthorURL() string {
+	return (Post{AuthorID: c.AuthorID, AuthorPublic: c.AuthorPublic}).AuthorURL()
+}
 func (c Comment) Edited() bool         { return c.Updated != "" && c.Updated != c.Created }
 func (c Comment) UpdatedLabel() string { return dateLabel(c.Updated) }
 

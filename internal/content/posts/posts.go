@@ -4,6 +4,7 @@ package posts
 import (
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ var snapshot []byte
 
 type Post struct {
 	AuthorID                                        int64
+	AuthorPublic                                    bool
 	ID, Title, Body, Summary, Author, Created, Type string
 	BodyFormat                                      string
 	Comments                                        int
@@ -22,6 +24,26 @@ type Post struct {
 }
 
 func (p Post) URL() string { return "/d/" + p.ID }
+
+func (p Post) AuthorURL() string {
+	if p.AuthorPublic && p.AuthorID > 0 {
+		return fmt.Sprintf("/users/%d", p.AuthorID)
+	}
+	return ""
+}
+
+func (p Post) PostedLabel() string { return postedLabel(p.Created) }
+
+func postedLabel(value string) string {
+	date, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		return dateLabel(value)
+	}
+	if location, err := time.LoadLocation("Europe/Berlin"); err == nil {
+		date = date.In(location)
+	}
+	return date.Format("15:04") + " Uhr am " + dateLabel(date.Format(time.RFC3339))
+}
 
 func (p Post) SourceURL() string { return "https://ik.fsv-wh.de/d/" + p.ID }
 
@@ -58,6 +80,7 @@ func (p Post) TypeLabel() string {
 
 type Filter struct {
 	Query, Type string
+	AuthorID    int64
 }
 
 // All returns a fresh copy, ordered by original publication date, newest first.

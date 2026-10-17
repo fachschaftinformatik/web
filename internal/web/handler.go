@@ -125,6 +125,7 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 	})
 	router.HandleFunc("GET /discussions", c.Forum)
 	router.HandleFunc("GET /d/{post}", c.Discussion)
+	router.HandleFunc("GET /users/{id}", c.PublicProfile)
 	router.HandleFunc("GET /d/new", c.EditDiscussion)
 	router.HandleFunc("POST /d/new", c.EditDiscussion)
 	router.HandleFunc("GET /d/{post}/edit", c.EditDiscussion)
