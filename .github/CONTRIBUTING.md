@@ -19,42 +19,36 @@ If in doubt, reach out to us. You can [open an issue](https://github.com/fachsch
 
 ## Building
 
-To build the project you will need to have [Go](https://go.dev/) (version 1.27.2 or newer), [Node.js](https://nodejs.org/) (version 26.12.0, pinned in `.node-version`), and [Bun](https://bun.sh/) installed.
+The application needs [Go](https://go.dev/) 1.27.2. Node (pinned in
+`.node-version`) and Bun are needed only when working on `.github/release`.
 
 Make sure you have the required Go version by running:
 ```
 go version
 ```
 
-Start the local API and Garage object storage from the repository root:
+Start the application from the repository root:
 ```bash
-docker compose up --build app garage
+go run .
 ```
 
-Configure `website/.env.local` as described in the [README](../README.md#getting-started), then start the frontend:
+Open <http://127.0.0.1:8090/>. Alternatively, use `docker compose up --build`.
+Garage is optional through the `storage` Compose profile.
+
+When changing SQL queries, regenerate the committed SQLC code before building:
 ```bash
-cd website
-bun i
-bun run dev
+go generate ./internal/data
+go build -o /path/to/output/web .
 ```
 
-To build the backend, make sure to `go generate` the required code first:
-```bash
-go generate ./...
-go build -o web .
-```
-
-If you have made any changes to the API or DTOs, make sure to re-generate the client too:
-```
-cd website
-bun run gen:api
-```
+Run `go test -race ./...` and `go vet ./...`. Templates and browser assets are
+embedded; rebuild the executable after changing them.
 
 ## Dependency updates
 
 Renovate runs on Mondays at 08:00 Europe/Berlin, with automatic daylight-saving adjustment.
 It opens one pull request per dependency, including lockfile and generated-code changes,
-using titles such as `chore(deps): bump next from 16.4.1 to 16.4.2`.
+using titles such as `chore(deps): bump golang from 1.27.2 to 1.27.3`.
 Updates require review and are not automatically merged.
 
 The workflow uses a dedicated GitHub App installed on this repository. Configure its
@@ -66,30 +60,27 @@ The Renovate workflow can also be started manually. Its `dry-run` input defaults
 true: Renovate checks updates and artifact generation without creating branches or
 pull requests. Disable it to publish updates immediately.
 
-Go updates run `go mod tidy` and `go generate ./...`; Go and Bun updates regenerate
-the website API client. Existing API and website CI checks validate the results.
+Go updates run `go mod tidy` and `go generate ./...`; CI verifies generated SQLC
+queries. Bun updates apply to release tooling only.
 Indirect Go modules are included. Floating Docker tags remain floating; existing
 digest-pinned images receive digest updates.
 
 ## CI
 
 The `ci:app` workflow in [ci.yaml](workflows/ci.yaml) runs on pull requests and pushes
-to `main`. It uses consistent job names:
+to `main`. It uses these job names:
 
-- `lint:api`, `lint:website`, `lint:app`, `lint:workflows`
-- `test:api`, `test:website`, `test:app`, `test:release`
-- `security:api`, `security:website`, `security:workflows`,
-  `security:dependencies`, `security:release`
+- `test:go` (formatting, vet, workflow/shell lint, query generation, race tests and govulncheck)
+- `security:dependencies`, `security:release`
+- `security:codeql` (weekly and manual scans for Go, JavaScript/TypeScript and Actions)
 - `build:app`
-- `release:plan`, `release:check`, `release:publish`
+- `release:check`, `release:publish`
 
-`release:plan` selects checks from the changed paths. Independent jobs run in
-parallel; there is no global lint/test/build barrier. A website-only content
-change does not run Go checks. Changes to the pipeline itself run all checks.
-Scheduled and manually dispatched runs also select all checks.
+Independent jobs run in parallel. Dependency review runs only for pull requests.
+Container validation runs on pull requests, scheduled and manual runs. Pushes to
+`main` build the container during release publication instead of building it twice.
 
-`release:check` rejects a failed plan or any failed or cancelled check, while
-allowing checks to be skipped for unaffected components. Branch protection should require `release:check` and
+`release:check` rejects any failed or cancelled check. Branch protection should require `release:check` and
 `lint:commit`. The latter runs in the separate `ci:lint` workflow so editing a PR
 title does not restart application checks. Keep both required-check names in sync
 when renaming jobs.
@@ -97,38 +88,31 @@ when renaming jobs.
 The dependency-update workflow is named `ci:renovate`, with the job
 `maintenance:dependencies`. Deployment is managed separately from CI.
 
-Go modules are cached only after downloading the complete module graph, including
-generators. Compiled Go caches are isolated by job purpose and use rolling keys,
-so a faster security job cannot freeze an incomplete generator cache. Production
-images build the committed generated files; `test:api` verifies Go and OpenAPI
-generation, and `test:website` checks the API client when its inputs change.
-`build:app` builds the combined image, and `test:app` loads it from the build cache
-and runs a small Compose smoke test for HTTP routing, native image processing,
-and shutdown. There are no duplicate standalone API or website builds.
+Go setup and caching use the standard `actions/setup-go` action. Production
+images build the committed generated files; `test:go` verifies database query
+generation and runs the Go tests with race detection. `build:app` builds the
+Go application image.
 
 ### Security checks
 
 GitHub secret scanning checks repository history and new commits; push protection
 blocks supported secrets before they enter the repository.
 
-The `security:*` jobs run for affected components on pull requests and pushes to
-`main`. The full pipeline also runs on Mondays at 09:00 Europe/Berlin and can be
+The full pipeline runs on Mondays at 09:00 Europe/Berlin and can be
 started manually. Security checks include:
 
-- CodeQL with extended security queries for Go, JavaScript/TypeScript, and Actions.
-  Findings appear in the repository's Security tab and pull-request code scanning.
+- Weekly/manual CodeQL with extended security queries for Go, JavaScript/TypeScript,
+  and Actions. Findings appear in the repository's Security tab.
 - Dependency review on pull requests, failing for newly introduced high or critical
   vulnerabilities in runtime and development dependencies recognized by GitHub.
 - `govulncheck` for known vulnerabilities reachable from the Go application.
-- `bun audit` against the frontend lockfile, including development dependencies,
+- `bun audit` against the release-tool lockfile, including development dependencies,
   failing for high or critical vulnerabilities.
 
 Scheduled scans also detect advisories published since the last code change.
 
-The frontend overrides `js-yaml` to a patched release because the API generator's
-parser pins an affected version. It also replaces `fast-glob` with `tinyglobby`:
-Next's ESLint plugin uses its compatible `globSync` API, avoiding the unpatched
-`braces` dependency. Revisit these overrides when the upstream dependencies are updated.
+The release tooling carries a scoped `braces` patch; see
+[release operations](release/README.md#release-tool-security-patch).
 
 ## Making changes
 If you plan to make any changes, the workflow is typically like this:
@@ -150,10 +134,10 @@ Example workflow:
 (3) [...]
 (3) go test ./...
 (4) git status -s
- M cmd/web/main.go
-(4) git diff api/api.go
+ M main.go
+(4) git diff main.go
  [...]
-(5) git add api/api.go
+(5) git add main.go
 (5) git commit -m "feat(api): add user registration endpoint"
 (5) git push -u origin api/registration
 ```
@@ -167,10 +151,8 @@ If you need to make any changes to the PR you can just keep committing and pushi
 ## Opening a PR
 
 1. Title the PR according to [Commits and Pull Requests](#commits-and-pull-requests) below
-2. Include helpful information in the description and, if applicable, include information on how to test manually
-3. For a bug fix, explain or show an example of the behavior before and after the change
+2. Leave the PR description empty
 5. Request review from one of the [maintainers][3]
-6. Link issues with “Fixes #123” or “Closes #123” in the description
 
 ## Style
 Follow Go’s official [Code Review Comments][1]. Prefer clarity over cleverness.
@@ -178,11 +160,7 @@ Follow Go’s official [Code Review Comments][1]. Prefer clarity over cleverness
 ### Commits and Pull Requests
 Use the [Conventional Commits][2] spec when writing commit messages and titles:
 ```
-<type>[optional scope]: <description>
-
-[optional body]
-
-[optional footer(s)]
+<type>[optional scope][optional !]: <description>
 ```
 Common types are `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`, `chore`, and `style`.
 Please keep the description short and meaningful.
@@ -190,12 +168,11 @@ Please keep the description short and meaningful.
 When a commit or PR directly relates to an existing issue or pull request, append
 its number in parentheses where useful: `fix(api): correct password reset logging (#123)`.
 Use real, relevant issue or PR numbers; omit the suffix when there is no useful
-reference. Keep `Fixes #123` or `Closes #123` in the PR description when the merge
-should close an issue automatically.
+reference. Commit messages are title-only; PR and release descriptions are empty.
 
-Breaking changes must include a footer:
+Mark breaking changes with `!` in the title:
 ```
-BREAKING CHANGE: explain what changed and how to migrate
+feat!: replace the application runtime
 ```
 
 Examples:

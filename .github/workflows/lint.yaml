@@ -13,13 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
       - name: Validate Conventional Commit title
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: node .github/release/title.mjs
+        run: |
+          pattern='^(feat|fix|docs|refactor|test|perf|build|ci|chore|style|revert)(\([a-z0-9][a-z0-9./_-]*\))?!?: [^[:cntrl:]]+$'
+          if [[ ! "$PR_TITLE" =~ $pattern || "$PR_TITLE" != "${PR_TITLE,,}" ]]; then
+            echo 'Use a lowercase Conventional Commit title, e.g. fix: correct event pagination'
+            exit 1
+          fi
