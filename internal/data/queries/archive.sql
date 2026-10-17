@@ -27,20 +27,26 @@ ORDER BY a.exam_date DESC;
 SELECT * FROM archive WHERE id = sqlc.arg(id) AND deleted_at IS NULL LIMIT 1;
 
 -- name: ListArchiveCatalog :many
-SELECT a.id, a.module_id, a.version, a.exam_date, a.comment, a.nbytes,
+SELECT a.id, b.module_id, b.version, a.exam_date, a.comment, a.nbytes,
        CAST((SELECT original.user_id FROM archive original WHERE original.group_id=a.group_id ORDER BY original.edit_version, original.id LIMIT 1) AS INTEGER) AS owner_id,
-       m.name AS module_name, m.alias, p.name AS program_name
+       m.name AS module_name, m.alias, COALESCE(sp.name,p.name) AS program_name, COALESCE(pq.degree,'') AS degree
 FROM archive a
-JOIN modules m ON m.id = a.module_id AND m.deleted_at IS NULL
+JOIN archive_placements b ON b.archive_id=a.id
+JOIN modules m ON m.id = b.module_id AND m.deleted_at IS NULL
 JOIN programs p ON p.id = m.program_id AND p.deleted_at IS NULL
+LEFT JOIN program_qualifications pq ON pq.legacy_program_id=p.id
+LEFT JOIN study_programs sp ON sp.id=pq.study_program_id
 WHERE a.is_latest = 1 AND a.deleted_at IS NULL AND a.mime_type = 'application/pdf'
+  AND NOT EXISTS (SELECT 1 FROM archive_entry_aliases x WHERE x.legacy_id=a.id AND x.canonical_id!=a.id)
   AND (a.request_id IS NULL OR EXISTS (SELECT 1 FROM archive_requests r WHERE r.id=a.request_id AND r.status='approved'))
 ORDER BY a.exam_date DESC, a.created_at DESC, a.id DESC;
 
 -- name: ListArchiveModules :many
-SELECT m.id, m.name, m.program_id, p.name AS program_name
+SELECT m.id, m.name, m.program_id, p.name AS program_name,COALESCE(sp.name,p.name) AS study_program,COALESCE(pq.degree,'') AS degree
 FROM modules m
 JOIN programs p ON p.id = m.program_id AND p.deleted_at IS NULL
+LEFT JOIN program_qualifications pq ON pq.legacy_program_id=p.id
+LEFT JOIN study_programs sp ON sp.id=pq.study_program_id
 WHERE m.deleted_at IS NULL
 ORDER BY m.name, m.id;
 

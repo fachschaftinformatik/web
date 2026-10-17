@@ -9,7 +9,8 @@
 </div>
 <form id="archive-search" class="app-archive-layout" method="get" action="/archive" novalidate
   hx-get="/archive" hx-target="#archive-results" hx-swap="outerHTML" hx-push-url="true"
-  hx-trigger="submit" hx-sync="this:replace" hx-indicator="#search-progress">
+   hx-trigger="submit" hx-sync="this:replace" hx-indicator="#search-progress">
+  <input type="hidden" name="applied" value="1">
   <div class="app-archive-search">
     <div class="govuk-form-group">
       <label class="govuk-label govuk-label--s" for="q">Modul oder Thema suchen</label>
@@ -57,14 +58,15 @@
             {{range .Archive.Versions}}
             <div class="govuk-checkboxes__item">
               <input class="govuk-checkboxes__input" id="version-{{.Name}}" name="version" type="checkbox" value="{{.Name}}" {{if .Selected}}checked{{end}}>
-              <label class="govuk-label govuk-checkboxes__label" for="version-{{.Name}}">{{.Name}}</label>
+               <label class="govuk-label govuk-checkboxes__label" for="version-{{.Name}}">{{poLabel .Name}}</label>
             </div>
             {{end}}
           </div>
         </fieldset>
       </div>
       <button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-4" data-module="govuk-button" type="submit">Filter anwenden</button>
-      <p class="govuk-body govuk-!-margin-bottom-0"><a class="govuk-link" href="/archive">Alles zurücksetzen</a></p>
+       <p class="govuk-body govuk-!-margin-bottom-0"><a class="govuk-link" href="/archive?applied=1">Alles zurücksetzen</a></p>
+       {{if .SignedIn}}<p class="govuk-body govuk-!-margin-top-3 govuk-!-margin-bottom-0"><a class="govuk-link" href="/archive/preferences">Voreinstellungen ändern</a></p>{{end}}
     </div>
   </details>
   {{template "results" .}}

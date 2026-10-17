@@ -8,9 +8,7 @@
   <thead class="govuk-table__head" role="rowgroup">
     <tr class="govuk-table__row" role="row">
       <th class="govuk-table__header" scope="col" role="columnheader">Datum</th>
-      <th class="govuk-table__header" scope="col" role="columnheader">Studiengang</th>
-      <th class="govuk-table__header" scope="col" role="columnheader">Abschluss</th>
-      <th class="govuk-table__header" scope="col" role="columnheader">Prüfungsordnung</th>
+       <th class="govuk-table__header" scope="col" role="columnheader">Gültig für</th>
       <th class="govuk-table__header" scope="col" role="columnheader">Dokumente</th>
     </tr>
   </thead>
@@ -20,9 +18,7 @@
       <th class="govuk-table__header govuk-!-font-weight-regular" scope="row" role="rowheader">
         {{.Date}}
       </th>
-      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Studiengang</span><span>{{.Program}}</span></td>
-      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Abschluss</span><span>{{.Degree}}</span></td>
-      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Prüfungsordnung</span><span>{{.Version}}</span></td>
+       <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Gültig für</span><div>{{if .Assignments}}<ul class="govuk-list govuk-!-margin-bottom-0">{{range .Assignments}}<li>{{.Degree}} · {{.Program}} · {{.VersionLabel}}</li>{{end}}</ul>{{else}}{{.Degree}} · {{.Program}} · {{.VersionLabel}}{{end}}</div></td>
       <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Dokumente</span><span><a class="govuk-link" href="{{.URL}}">Reko<span class="govuk-visually-hidden"> für {{.Title}} vom {{.Date}}</span></a> (PDF, {{.Size}}){{if .CanRevise $.UserID $.Role}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0"><a class="govuk-link" href="{{.URL}}/revision">Neue Revision einreichen<span class="govuk-visually-hidden"> für {{.Title}} vom {{.Date}}</span></a></p>{{end}}</span></td>
     </tr>
     {{end}}
@@ -32,5 +28,5 @@
 <p class="govuk-body">Für deine Suche und Filter wurden in diesem Modul keine Rekos gefunden.</p>
 {{end}}
 {{end}}
-{{if .Archive.Filtered}}<p class="govuk-body"><a class="govuk-link" href="/archive/{{.Archive.Module.ID}}">Alle Rekos für dieses Modul anzeigen</a>.</p>{{end}}
+{{if .Archive.Filtered}}<p class="govuk-body"><a class="govuk-link" href="/archive/{{.Archive.Module.ID}}?applied=1">Alle Rekos für dieses Modul anzeigen</a>.</p>{{end}}
 {{end}}

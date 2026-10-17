@@ -40,6 +40,118 @@ root.querySelectorAll(".govuk-file-upload-button").forEach((button) => {
 }
 fixUploadLabels(document);
 
+function initAssignmentSearch(root) {
+  const search = root.querySelector("[data-assignment-search]");
+  if (!search) return;
+  const input = search.querySelector("input");
+  const modules = [...root.querySelectorAll("[data-assignment-module]")];
+  const count = search.querySelector("[data-assignment-count]");
+  const list = root.querySelector("#assignment-modules");
+  const pageSize = 10;
+  let page = 0;
+  const pagination = document.createElement("nav");
+  pagination.className = "govuk-pagination app-module-pagination";
+  pagination.setAttribute("aria-label", "Modulseiten");
+  list.after(pagination);
+  const empty = document.createElement("p");
+  empty.className = "govuk-body";
+  empty.textContent = "Keine passenden Module gefunden.";
+  empty.hidden = true;
+  list.after(empty);
+  search.hidden = false;
+  const render = () => {
+    const query = input.value.trim().toLocaleLowerCase("de");
+    const matches = modules.filter((module) => module.querySelector("label").textContent.toLocaleLowerCase("de").includes(query));
+    const pages = Math.max(1, Math.ceil(matches.length / pageSize));
+    page = Math.min(page, pages - 1);
+    const visible = new Set(matches.slice(page * pageSize, (page + 1) * pageSize));
+    modules.forEach((module) => { module.hidden = !visible.has(module); });
+    empty.hidden = matches.length > 0;
+    const selected = modules.filter((module) => module.querySelector("input:checked")).length;
+    count.textContent = `${matches.length} Module gefunden. ${selected} ausgewählt.${pages > 1 ? ` Seite ${page + 1} von ${pages}.` : ""}`;
+    pagination.replaceChildren();
+    pagination.hidden = pages <= 1;
+    const button = (label, target, accessibleLabel) => {
+      const element = document.createElement("button");
+      element.type = "button";
+      element.className = "govuk-link govuk-pagination__link";
+      element.textContent = label;
+      element.dataset.page = target;
+      element.setAttribute("aria-label", accessibleLabel);
+      element.setAttribute("aria-controls", "assignment-modules");
+      return element;
+    };
+    const directionButton = (label, target, direction) => {
+      const element = button("", target, `${label} Modulseite`);
+      const title = document.createElement("span");
+      title.className = "govuk-pagination__link-title";
+      title.textContent = label;
+      const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      icon.setAttribute("class", `govuk-pagination__icon govuk-pagination__icon--${direction}`);
+      icon.setAttribute("viewBox", "0 0 15 13");
+      icon.setAttribute("aria-hidden", "true");
+      icon.setAttribute("focusable", "false");
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", direction === "prev"
+        ? "m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"
+        : "m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z");
+      icon.append(path);
+      element.append(...(direction === "prev" ? [icon, title] : [title, icon]));
+      return element;
+    };
+    if (page > 0) {
+      const previous = document.createElement("div");
+      previous.className = "govuk-pagination__prev";
+      previous.append(directionButton("Vorherige", page - 1, "prev"));
+      pagination.append(previous);
+    }
+    const numbers = document.createElement("ul");
+    numbers.className = "govuk-pagination__list";
+    let previousPage = -1;
+    for (let i = 0; i < pages; i++) {
+      if (pages > 5 && i !== 0 && i !== pages - 1 && Math.abs(i - page) > 1) continue;
+      if (previousPage >= 0 && i - previousPage > 1) {
+        const ellipsis = document.createElement("li");
+        ellipsis.className = "govuk-pagination__item govuk-pagination__item--ellipsis";
+        ellipsis.textContent = "⋯";
+        ellipsis.setAttribute("aria-hidden", "true");
+        numbers.append(ellipsis);
+      }
+      previousPage = i;
+      const item = document.createElement("li");
+      item.className = "govuk-pagination__item";
+      const link = button(String(i + 1), i, `Seite ${i + 1}`);
+      if (i === page) {
+        item.classList.add("govuk-pagination__item--current");
+        link.setAttribute("aria-current", "page");
+      }
+      item.append(link);
+      numbers.append(item);
+    }
+    pagination.append(numbers);
+    if (page < pages - 1) {
+      const next = document.createElement("div");
+      next.className = "govuk-pagination__next";
+      next.append(directionButton("Nächste", page + 1, "next"));
+      pagination.append(next);
+    }
+  };
+  input.addEventListener("input", () => { page = 0; render(); });
+  list.addEventListener("change", render);
+  pagination.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-page]");
+    if (!button) return;
+    page = Number(button.dataset.page);
+    render();
+    root.querySelector("#module_id").focus();
+  });
+  // After validation, start on the page containing the first selected module.
+  const selectedIndex = modules.findIndex((module) => module.querySelector("input:checked"));
+  if (selectedIndex >= 0) page = Math.floor(selectedIndex / pageSize);
+  render();
+}
+initAssignmentSearch(document);
+
 // Keep the user's local files when server-side validation returns the form.
 // Files stay in the browser until a valid draft has been saved.
 const uploadResponses = new WeakMap();
@@ -65,6 +177,7 @@ document.addEventListener("htmx:afterSwap", (event) => {
   }
   initAll({ ...frontendOptions, scope: root });
   fixUploadLabels(root);
+  initAssignmentSearch(root);
   input?.dispatchEvent(new Event("change", { bubbles: true }));
 });
 

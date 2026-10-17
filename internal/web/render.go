@@ -55,6 +55,7 @@ type ArchivePage struct {
 
 func (p ArchivePage) querySuffix() string {
 	q := url.Values{}
+	q.Set("applied", "1")
 	if p.Filter.Query != "" {
 		q.Set("q", p.Filter.Query)
 	}
@@ -75,7 +76,9 @@ func (p ArchivePage) ModuleURL(module files.Module) string {
 	return "/archive/" + url.PathEscape(module.ID) + p.querySuffix()
 }
 
-func (p ArchivePage) Filtered() bool { return p.querySuffix() != "" }
+func (p ArchivePage) Filtered() bool {
+	return p.Filter.Query != "" || len(p.Filter.Programs)+len(p.Filter.Degrees)+len(p.Filter.Versions) > 0
+}
 
 func (p ArchivePage) FilterCount() int {
 	count := 0
@@ -108,8 +111,8 @@ type Renderer struct {
 
 func newRenderer() (*Renderer, error) {
 	r := &Renderer{pages: make(map[string]*template.Template)}
-	for _, name := range []string{"home", "team", "contact", "archive", "module", "upload", "request", "requests", "images", "community", "fachschaft", "content", "elections", "regulations", "login", "register", "forgot", "token", "invite", "forum", "thread", "editor", "admin"} {
-		t, err := template.New("layout").Funcs(template.FuncMap{"forumText": forumText, "rawForumText": rawForumText, "richHTML": func(source string) template.HTML { return template.HTML(posts.SanitizeRichText(source)) }}).ParseFS(resources, "templates/layout.html", "templates/requestlist.html", "templates/adminnav.html", "templates/"+name+".html")
+	for _, name := range []string{"home", "team", "contact", "archive", "archivepreferences", "module", "upload", "request", "requests", "images", "community", "fachschaft", "content", "elections", "regulations", "login", "register", "forgot", "token", "invite", "forum", "thread", "editor", "admin"} {
+		t, err := template.New("layout").Funcs(template.FuncMap{"requestScope": requestScope, "assignmentSummary": assignmentSummary, "scopeField": scopeField, "poLabel": files.VersionLabel, "forumText": forumText, "rawForumText": rawForumText, "richHTML": func(source string) template.HTML { return template.HTML(posts.SanitizeRichText(source)) }}).ParseFS(resources, "templates/layout.html", "templates/requestlist.html", "templates/archivescope.html", "templates/assignmentsummary.html", "templates/adminnav.html", "templates/"+name+".html")
 		if err != nil {
 			return nil, err
 		}

@@ -89,7 +89,7 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 			}
 		}
 		account := r.URL.Path == "/login" || r.URL.Path == "/register" || r.URL.Path == "/forgot" || r.URL.Path == "/reset" || r.URL.Path == "/verify" || r.URL.Path == "/invite"
-		archiveWrite := r.URL.Path == "/archive/new" || strings.HasPrefix(r.URL.Path, "/archive/requests") || strings.HasPrefix(r.URL.Path, "/archive/files/") && strings.HasSuffix(r.URL.Path, "/revision")
+		archiveWrite := r.URL.Path == "/archive/new" || r.URL.Path == "/archive/preferences" || strings.HasPrefix(r.URL.Path, "/archive/requests") || strings.HasPrefix(r.URL.Path, "/archive/files/") && strings.HasSuffix(r.URL.Path, "/revision")
 		forumWrite := c.posts != nil && (r.URL.Path == "/d/new" || strings.HasPrefix(r.URL.Path, "/d/") && (strings.HasSuffix(r.URL.Path, "/edit") || r.Method == http.MethodPost))
 		if s == nil && (r.URL.Path == "/login" || c.identity != nil && account) && r.Method == http.MethodGet {
 			if c.identity != nil {

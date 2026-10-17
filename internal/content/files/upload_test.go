@@ -9,7 +9,7 @@ import (
 )
 
 func submission() Submission {
-	return Submission{ModuleID: "10", Version: "2023", Date: "2026-02-12", Documents: [][]byte{[]byte("%PDF-1.7\nfirst\n%%EOF"), []byte("%PDF-1.7\nsecond\n%%EOF")}}
+	return Submission{ModuleID: "10", Version: "2023", Date: "2026-02-12", Documents: [][]byte{[]byte("%PDF-1.7\nfirst\n%%EOF")}}
 }
 
 func TestMultiplePersistentUploadsAndAuthorizedRevision(t *testing.T) {
@@ -19,14 +19,26 @@ func TestMultiplePersistentUploadsAndAuthorizedRevision(t *testing.T) {
 	}
 	ctx := context.Background()
 	result, err := s.SaveDraft(ctx, 1, submission())
-	if err != nil || len(result.IDs) != 2 {
-		t.Fatalf("multiple upload: %+v %v", result, err)
+	if err != nil || len(result.IDs) != 1 {
+		t.Fatalf("single upload: %+v %v", result, err)
 	}
 	var groups int
 	if err := s.SendRequest(ctx, 1, result.RequestID); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.Review(ctx, 1, result.RequestID, true); err != nil {
+		t.Fatal(err)
+	}
+	second := submission()
+	second.Documents = [][]byte{[]byte("%PDF-1.7\nsecond\n%%EOF")}
+	other, err := s.SaveDraft(ctx, 1, second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SendRequest(ctx, 1, other.RequestID); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Review(ctx, 1, other.RequestID, true); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.QueryRow(`SELECT COUNT(DISTINCT group_id) FROM archive WHERE exam_date='2026-02-12' AND is_latest=1`).Scan(&groups); err != nil || groups != 2 {
@@ -101,7 +113,7 @@ func TestFailedUploadOrCommitRetainsPreviousRevision(t *testing.T) {
 			s.storage = storage
 			input := submission()
 			if mode == "storage" {
-				storage.failAt = 2
+				storage.failAt = 1
 			} else {
 				input.RevisionOf = "101"
 				input.Documents = input.Documents[:1]
@@ -145,6 +157,7 @@ func TestUploadValidationDoesNotWriteObjects(t *testing.T) {
 		func(s *Submission) { s.Documents[0] = []byte("not a PDF") },
 		func(s *Submission) { s.Documents[0] = make([]byte, 8<<20+1) },
 		func(s *Submission) { s.Date = "not a date" },
+		func(s *Submission) { s.Documents = append(s.Documents, s.Documents[0]) },
 	} {
 		input := submission()
 		change(&input)

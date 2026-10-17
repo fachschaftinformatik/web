@@ -2,6 +2,7 @@ package s3
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/fachschaftinformatik/web/internal/config"
@@ -61,6 +62,10 @@ func (c *Client) GetObject(ctx context.Context, key string) (*blob.Object, error
 	stat, err := minioObj.Stat()
 	if err != nil {
 		minioObj.Close()
+		code := minio.ToErrorResponse(err).Code
+		if code == "NoSuchKey" || code == "NoSuchObject" || code == "NotFound" {
+			return nil, errors.Join(blob.ErrNotFound, err)
+		}
 		return nil, err
 	}
 

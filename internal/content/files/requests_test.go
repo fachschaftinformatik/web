@@ -45,7 +45,7 @@ func TestDraftPrivacySubmissionAndConfirmation(t *testing.T) {
 		t.Fatal(err)
 	}
 	request, err := s.Request(ctx, 1, result.RequestID, false)
-	if err != nil || len(request.Documents) != 2 || request.Documents[0].ID != result.IDs[0] || request.Comment != input.Comment {
+	if err != nil || len(request.Documents) != 1 || request.Documents[0].ID != result.IDs[0] || request.Comment != input.Comment {
 		t.Fatal("editing metadata did not retain PDFs")
 	}
 	if err := s.SendRequest(ctx, 1, result.RequestID); err != nil {
@@ -79,7 +79,7 @@ func TestDraftPrivacySubmissionAndConfirmation(t *testing.T) {
 		t.Fatal("confirmation replay was not idempotent")
 	}
 	catalog, err = s.Catalog(ctx)
-	if err != nil || len(catalog.FindExams(Filter{})) != 5 {
+	if err != nil || len(catalog.FindExams(Filter{})) != 4 {
 		t.Fatal("confirmed files not published")
 	}
 	object, err = s.Open(ctx, 3, result.IDs[0])

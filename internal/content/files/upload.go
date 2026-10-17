@@ -1,12 +1,9 @@
 package files
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -17,7 +14,6 @@ import (
 
 	"github.com/fachschaftinformatik/web/internal/content"
 	"github.com/fachschaftinformatik/web/internal/data"
-	"github.com/fachschaftinformatik/web/internal/data/blob"
 	"github.com/fachschaftinformatik/web/internal/id"
 )
 
@@ -29,6 +25,7 @@ type Submission struct {
 	ModuleID, Version, Date, Comment, RevisionOf string
 	RequestID                                    string
 	Documents                                    [][]byte
+	Assignments                                  []Assignment
 }
 
 type ValidationErrors map[string]string
@@ -37,10 +34,13 @@ func (e ValidationErrors) Error() string { return "Prüfe die Angaben im Formula
 
 func (s Submission) Validate() ValidationErrors {
 	result := ValidationErrors{}
-	if s.ModuleID == "" {
+	if len(s.Assignments) > 1024 {
+		result["module_id"] = "Wähle höchstens 1024 Zuordnungen aus."
+	}
+	if len(s.Assignments) == 0 && s.ModuleID == "" {
 		result["module_id"] = "Wähle ein Modul aus."
 	}
-	if s.Version == "" {
+	if len(s.Assignments) == 0 && s.Version == "" {
 		result["version"] = "Wähle eine Prüfungsordnung aus."
 	}
 	date, err := time.Parse("2006-01-02", s.Date)
@@ -48,7 +48,7 @@ func (s Submission) Validate() ValidationErrors {
 		result["date"] = "Gib ein gültiges Prüfungsdatum zwischen 1900 und 2100 ein."
 	}
 	if len(s.Documents) == 0 && s.RequestID == "" {
-		result["files"] = "Wähle mindestens eine PDF-Datei aus."
+		result["files"] = "Wähle eine Datei aus."
 	}
 	total := 0
 	for _, document := range s.Documents {
@@ -59,10 +59,13 @@ func (s Submission) Validate() ValidationErrors {
 		total += len(document)
 	}
 	if total > MaxUploadBytes {
-		result["files"] = "Die PDF-Dateien dürfen zusammen höchstens 32 MB groß sein."
+		result["files"] = "Wähle genau eine Datei aus."
+	}
+	if len(s.Documents) > 1 {
+		result["files"] = "Wähle genau eine Datei aus."
 	}
 	if s.RevisionOf != "" && len(s.Documents) != 1 && !(s.RequestID != "" && len(s.Documents) == 0) {
-		result["files"] = "Wähle genau eine PDF-Datei für die neue Revision aus."
+		result["files"] = "Wähle genau eine Datei für die neue Revision aus."
 	}
 	return result
 }
@@ -95,7 +98,18 @@ func prepare(ctx context.Context, db data.DBTX, userID int64, submission Submiss
 	if err != nil {
 		return prepared{}, err
 	}
-	moduleID, err := strconv.ParseInt(submission.ModuleID, 10, 64)
+	selected := submission.placements()
+	for _, a := range selected {
+		var valid int
+		err := db.QueryRowContext(ctx, `SELECT 1 FROM modules m JOIN programs p ON p.id=m.program_id AND p.deleted_at IS NULL JOIN program_versions v ON v.program_id=p.id AND v.name=? WHERE m.id=? AND m.deleted_at IS NULL`, a.Version, a.ModuleID).Scan(&valid)
+		if errors.Is(err, sql.ErrNoRows) {
+			return prepared{}, ValidationErrors{"module_id": "Wähle gültige Module und dazugehörige Prüfungsordnungen aus."}
+		}
+		if err != nil {
+			return prepared{}, err
+		}
+	}
+	moduleID, err := strconv.ParseInt(selected[0].ModuleID, 10, 64)
 	if err != nil {
 		return prepared{}, ValidationErrors{"module_id": "Wähle ein gültiges Modul aus."}
 	}
@@ -108,7 +122,7 @@ func prepare(ctx context.Context, db data.DBTX, userID int64, submission Submiss
 		return prepared{}, err
 	}
 	var exists int
-	err = db.QueryRowContext(ctx, `SELECT 1 FROM program_versions WHERE program_id=? AND name=?`, programID, submission.Version).Scan(&exists)
+	err = db.QueryRowContext(ctx, `SELECT 1 FROM program_versions WHERE program_id=? AND name=?`, programID, selected[0].Version).Scan(&exists)
 	if errors.Is(err, sql.ErrNoRows) {
 		return prepared{}, ValidationErrors{"version": "Wähle eine Prüfungsordnung aus, die zu diesem Modul gehört."}
 	}
@@ -123,15 +137,12 @@ func prepare(ctx context.Context, db data.DBTX, userID int64, submission Submiss
 	if err != nil {
 		return prepared{}, ErrNotFound
 	}
-	parent, err := data.New(db).GetArchiveEntry(ctx, parentID)
+	parent, err := canonicalEntry(ctx, db, parentID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return prepared{}, ErrNotFound
 	}
 	if err != nil {
 		return prepared{}, err
-	}
-	if parent.ModuleID != moduleID {
-		return prepared{}, ValidationErrors{"module_id": "Eine Revision muss zum bisherigen Modul gehören."}
 	}
 	var status string
 	err = db.QueryRowContext(ctx, `SELECT COALESCE(r.status,'approved') FROM archive a LEFT JOIN archive_requests r ON r.id=a.request_id WHERE a.id=?`, parent.ID).Scan(&status)
@@ -186,40 +197,36 @@ func (s *Service) SaveDraft(ctx context.Context, userID int64, submission Submis
 	if !ok {
 		return result, ErrStorage
 	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return result, err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, "UPDATE archive_requests SET id=id WHERE id=?", submission.RequestID); err != nil {
+		return result, err
+	}
+	metadata, err := prepare(ctx, tx, userID, submission)
+	if err != nil {
+		return result, err
+	}
 	var attempts []string
 	committed := false
 	defer func() {
 		if committed {
 			return
 		}
+		tx.Rollback()
 		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 		defer cancel()
 		for _, key := range attempts {
 			if cleanupErr := storage.Delete(cleanup, key); cleanupErr != nil {
 				err = errors.Join(err, fmt.Errorf("remove uncommitted object: %w", cleanupErr))
+				_, queueErr := s.db.ExecContext(cleanup, "INSERT OR IGNORE INTO archive_blob_cleanup(blob_key) VALUES(?)", key)
+				err = errors.Join(err, queueErr)
 			}
 		}
 	}()
-	ids := make([]int64, len(submission.Documents))
-	for i, document := range submission.Documents {
-		ids[i] = int64(id.New())
-		key := blob.ArchiveSourceKey(strconv.FormatInt(ids[i], 10))
-		attempts = append(attempts, key)
-		if err := storage.Upload(ctx, key, bytes.NewReader(document), int64(len(document)), "application/pdf"); err != nil {
-			return result, fmt.Errorf("%w: %v", ErrStorage, err)
-		}
-	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return result, err
-	}
-	defer tx.Rollback()
-	metadata, err := prepare(ctx, tx, userID, submission)
-	if err != nil {
-		return result, err
-	}
 	requestID := submission.RequestID
-	var obsolete []string
 	if requestID == "" {
 		requestID = rand.Text()
 		var base any
@@ -239,23 +246,6 @@ func (s *Service) SaveDraft(ctx context.Context, userID int64, submission Submis
 			return result, ErrConflict
 		}
 		if len(submission.Documents) != 0 {
-			rows, err := tx.QueryContext(ctx, `SELECT id FROM archive WHERE request_id=?`, requestID)
-			if err != nil {
-				return result, err
-			}
-			for rows.Next() {
-				var value int64
-				if err := rows.Scan(&value); err != nil {
-					rows.Close()
-					return result, err
-				}
-				obsolete = append(obsolete, blob.ArchiveSourceKey(strconv.FormatInt(value, 10)))
-			}
-			err = rows.Err()
-			rows.Close()
-			if err != nil {
-				return result, err
-			}
 			if _, err := tx.ExecContext(ctx, `DELETE FROM archive WHERE request_id=?`, requestID); err != nil {
 				return result, err
 			}
@@ -266,43 +256,80 @@ func (s *Service) SaveDraft(ctx context.Context, userID int64, submission Submis
 		comment = &value
 	}
 	if len(submission.Documents) == 0 {
-		if _, err := tx.ExecContext(ctx, `UPDATE archive SET module_id=?,version=?,exam_date=?,comment=? WHERE request_id=?`, metadata.moduleID, submission.Version, submission.Date, comment, requestID); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE archive SET module_id=?,version=?,exam_date=?,comment=? WHERE request_id=?`, metadata.moduleID, submission.placements()[0].Version, submission.Date, comment, requestID); err != nil {
 			return result, err
 		}
 	}
-	for i, document := range submission.Documents {
+	seen := map[string]bool{}
+	for _, document := range submission.Documents {
+		checksum, err := storeObject(ctx, tx, storage, document, &attempts)
+		if err != nil {
+			return result, err
+		}
+		if seen[checksum] {
+			continue
+		}
+		seen[checksum] = true
+		entryID := int64(id.New())
 		groupID := metadata.groupID
 		if groupID == 0 {
-			groupID = ids[i]
+			groupID = entryID
 		}
-		checksum := sha256.Sum256(document)
-		_, err := data.New(tx).CreateArchiveEntry(ctx, data.CreateArchiveEntryParams{
-			ID: ids[i], GroupID: groupID, UserID: userID, ModuleID: metadata.moduleID,
-			Version: submission.Version, ExamDate: submission.Date, Comment: comment,
+		_, err = data.New(tx).CreateArchiveEntry(ctx, data.CreateArchiveEntryParams{
+			ID: entryID, GroupID: groupID, UserID: userID, ModuleID: metadata.moduleID,
+			Version: submission.placements()[0].Version, ExamDate: submission.Date, Comment: comment,
 			EditVersion: metadata.editVersion, IsLatest: 0, AccessKey: rand.Text(),
-			MimeType: "application/pdf", Nbytes: int64(len(document)), Checksum: hex.EncodeToString(checksum[:]),
+			MimeType: "application/pdf", Nbytes: int64(len(document)), Checksum: checksum,
 		})
 		if err != nil {
 			return result, err
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE archive SET request_id=? WHERE id=?`, requestID, ids[i]); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE archive SET request_id=? WHERE id=?`, requestID, entryID); err != nil {
 			return result, err
 		}
-		result.IDs = append(result.IDs, strconv.FormatInt(ids[i], 10))
+		result.IDs = append(result.IDs, strconv.FormatInt(entryID, 10))
+	}
+	rows, err := tx.QueryContext(ctx, "SELECT id FROM archive WHERE request_id=? ORDER BY id", requestID)
+	if err != nil {
+		return result, err
+	}
+	var entries []int64
+	for rows.Next() {
+		var entryID int64
+		if err := rows.Scan(&entryID); err != nil {
+			rows.Close()
+			return result, err
+		}
+		entries = append(entries, entryID)
+	}
+	err = errors.Join(rows.Err(), rows.Close())
+	if err != nil {
+		return result, err
+	}
+	for _, entryID := range entries {
+		if err := writeAssignments(ctx, tx, entryID, submission.placements()); err != nil {
+			return result, err
+		}
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO archive_blob_cleanup(blob_key) SELECT blob_key FROM archive_objects o WHERE NOT EXISTS(SELECT 1 FROM archive a WHERE a.checksum=o.checksum)`); err != nil {
+		return result, err
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO archive_blob_cleanup(blob_key) SELECT c.blob_key FROM archive_legacy_copies c WHERE NOT EXISTS(SELECT 1 FROM archive a WHERE a.checksum=c.checksum)`); err != nil {
+		return result, err
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM archive_objects WHERE NOT EXISTS(SELECT 1 FROM archive a WHERE a.checksum=archive_objects.checksum)`); err != nil {
+		return result, err
 	}
 	if err := tx.Commit(); err != nil {
 		return UploadResult{}, err
 	}
 	committed = true
-	result.ModuleID = submission.ModuleID
+	result.ModuleID = submission.placements()[0].ModuleID
 	result.RequestID = requestID
-	for _, key := range obsolete {
-		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
-		cleanupErr := storage.Delete(cleanup, key)
-		cancel()
-		if cleanupErr != nil {
-			log.Printf("Remove replaced draft object: %v", cleanupErr)
-		}
+	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+	defer cancel()
+	if err := s.CleanupBlobs(cleanup); err != nil {
+		log.Printf("Remove replaced draft object: %v", err)
 	}
 	return result, nil
 }

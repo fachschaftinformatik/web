@@ -17,7 +17,9 @@ type Exam struct {
 	Bytes                                      int64
 	OwnerID                                    int64
 	Number                                     int
+	Assignments                                []Assignment
 	alias                                      string
+	programs, degrees, versions                []string
 }
 
 func (e Exam) CanRevise(userID int64, role string) bool {
@@ -66,14 +68,40 @@ func Versions() []string { return slices.Clone(versions) }
 func Degrees() []string  { return slices.Clone(degrees) }
 
 type Module struct {
-	ID, Title string
-	Program   string
-	Exams     []Exam
+	ID, Title            string
+	Program              string
+	Exams                []Exam
+	StudyProgram, Degree string
 }
+
+func (m Module) Qualification() (string, string) {
+	if m.StudyProgram != "" && m.Degree != "" {
+		return m.StudyProgram, m.Degree
+	}
+	return ProgramName(m.Program)
+}
+
+func VersionLabel(value string) string {
+	version := strings.TrimSpace(strings.TrimPrefix(value, "PO"))
+	if len(version) == 4 && strings.Trim(version, "0123456789") == "" {
+		return version
+	}
+	return value
+}
+
+func (e Exam) VersionLabel() string { return VersionLabel(e.Version) }
 
 func (m Module) Programs() []string {
 	var programs []string
 	for _, exam := range m.Exams {
+		if len(exam.Assignments) > 0 {
+			for _, a := range exam.Assignments {
+				if !slices.Contains(programs, a.Program) {
+					programs = append(programs, a.Program)
+				}
+			}
+			continue
+		}
 		if !slices.Contains(programs, exam.Program) {
 			programs = append(programs, exam.Program)
 		}
@@ -114,7 +142,7 @@ func (c Catalog) FindModule(id string, filter Filter) (Module, bool) {
 			continue
 		}
 		for _, matching := range c.FindModules(filter) {
-			if matching.ID == id {
+			if matching.ID == id || c.modules != nil && matching.Title == module.Title {
 				return matching, true
 			}
 		}
@@ -132,12 +160,36 @@ func FindModules(filter Filter) []Module {
 func (c Catalog) FindModules(filter Filter) []Module {
 	modules := make([]Module, 0)
 	indices := make(map[string]int)
-	for _, exam := range c.FindExams(filter) {
-		index, exists := indices[exam.ModuleID]
+	for _, exam := range c.matchingExams(filter) {
+		key := exam.ModuleID
+		if c.modules != nil {
+			key = exam.Title
+		}
+		index, exists := indices[key]
 		if !exists {
 			index = len(modules)
-			indices[exam.ModuleID] = index
-			modules = append(modules, Module{ID: exam.ModuleID, Title: exam.Title})
+			indices[key] = index
+			moduleID := exam.ModuleID
+			if c.modules != nil {
+				for _, m := range c.modules {
+					if m.Title == exam.Title {
+						moduleID = m.ID
+						break
+					}
+				}
+			}
+			modules = append(modules, Module{ID: moduleID, Title: exam.Title})
+		}
+		found := false
+		for i := range modules[index].Exams {
+			if exam.ID != "" && modules[index].Exams[i].ID == exam.ID {
+				mergeExam(&modules[index].Exams[i], exam)
+				found = true
+				break
+			}
+		}
+		if found {
+			continue
 		}
 		modules[index].Exams = append(modules[index].Exams, exam)
 	}
@@ -149,6 +201,45 @@ func FindExams(filter Filter) []Exam {
 }
 
 func (c Catalog) FindExams(filter Filter) []Exam {
+	var result []Exam
+	indices := map[string]int{}
+	for _, exam := range c.matchingExams(filter) {
+		if i, ok := indices[exam.ID]; exam.ID != "" && ok {
+			mergeExam(&result[i], exam)
+			continue
+		}
+		indices[exam.ID] = len(result)
+		result = append(result, exam)
+	}
+	return result
+}
+
+func mergeExam(target *Exam, value Exam) {
+	for _, a := range value.Assignments {
+		if !slices.ContainsFunc(target.Assignments, func(existing Assignment) bool {
+			return existing.ModuleID == a.ModuleID && existing.Version == a.Version
+		}) {
+			target.Assignments = append(target.Assignments, a)
+		}
+	}
+	if target.programs == nil {
+		target.programs = []string{target.Program}
+		target.degrees = []string{target.Degree}
+		target.versions = []string{target.Version}
+	}
+	target.programs = appendUnique(target.programs, value.Program)
+	target.degrees = appendUnique(target.degrees, value.Degree)
+	target.versions = appendUnique(target.versions, value.Version)
+	target.Program = strings.Join(target.programs, ", ")
+	target.Degree = strings.Join(target.degrees, ", ")
+	labels := make([]string, len(target.versions))
+	for i, value := range target.versions {
+		labels[i] = VersionLabel(value)
+	}
+	target.Version = strings.Join(labels, ", ")
+}
+
+func (c Catalog) matchingExams(filter Filter) []Exam {
 	result := make([]Exam, 0)
 	query := strings.ToLower(strings.TrimSpace(filter.Query))
 	for _, exam := range c.exams {

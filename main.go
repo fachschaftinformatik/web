@@ -134,7 +134,8 @@ func run(ctx context.Context, args []string) error {
 		if meetingErr != nil {
 			return meetingErr
 		}
-		handler, err = web.NewPersistent(web.Services{Users: identity, Archive: files.NewService(db, storage), People: team, Meetings: meetings, Posts: posts.NewService(db), Media: media.NewService(db, storage)}, origin.Scheme == "https")
+		archive := files.NewService(db, storage)
+		handler, err = web.NewPersistent(web.Services{Users: identity, Archive: archive, People: team, Meetings: meetings, Posts: posts.NewService(db), Media: media.NewService(db, storage)}, origin.Scheme == "https")
 		if err == nil {
 			mailCtx, cancel := context.WithCancel(ctx)
 			done := make(chan struct{})
@@ -144,6 +145,9 @@ func run(ctx context.Context, args []string) error {
 				defer ticker.Stop()
 				sender := email.NewSender(cfg)
 				for {
+					if err := archive.CleanupBlobs(mailCtx); err != nil && mailCtx.Err() == nil {
+						log.Printf("Archive file maintenance: %v", err)
+					}
 					if err := meetings.CleanupBlobs(mailCtx); err != nil && mailCtx.Err() == nil {
 						log.Printf("Meeting file maintenance: %v", err)
 					}

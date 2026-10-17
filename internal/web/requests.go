@@ -18,6 +18,7 @@ type RequestPage struct {
 	Entry     files.Request
 	Reviewing bool
 	Error     string
+	EditURL   string
 }
 
 func (c *Handler) ArchiveRequests(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +60,7 @@ func (c *Handler) ArchiveRequest(w http.ResponseWriter, r *http.Request) {
 	if request.Status == files.Pending {
 		title = "Einreichung eingegangen"
 	}
-	c.render(w, "request", false, Page{Title: title, Active: "archive", Request: &RequestPage{Entry: request}})
+	c.render(w, "request", false, Page{Title: title, Active: "archive", Request: &RequestPage{Entry: request, EditURL: "/archive/requests/" + request.ID + "/edit"}})
 }
 
 func (c *Handler) ReviewArchiveRequest(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +78,7 @@ func (c *Handler) ReviewArchiveRequest(w http.ResponseWriter, r *http.Request) {
 		c.archiveWriteError(w, r, err)
 		return
 	}
-	page := Page{Title: "Einreichung prüfen", Active: "admin", Admin: &AdminPage{Section: "einreichungen", SectionTitle: "Einreichungen", View: "review", ReviewerOnly: !session.CanAdmin()}, Request: &RequestPage{Entry: request, Reviewing: true}}
+	page := Page{Title: "Einreichung prüfen", Active: "admin", Admin: &AdminPage{Section: "einreichungen", SectionTitle: "Einreichungen", View: "review", ReviewerOnly: !session.CanAdmin()}, Request: &RequestPage{Entry: request, Reviewing: true, EditURL: "/verwaltung/einreichungen/" + request.ID + "/edit"}}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		decision := r.PostForm.Get("decision")

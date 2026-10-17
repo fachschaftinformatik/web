@@ -1,63 +1,64 @@
-{{define "sidebar"}}{{end}}
+{{define "sidebar"}}{{if .Admin}}{{template "admin-navigation" .}}{{end}}{{end}}
 {{define "content"}}
 {{with .Upload}}
 {{if .Errors}}<div class="govuk-error-summary" data-module="govuk-error-summary"><div role="alert">
   <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
-  <div class="govuk-error-summary__body"><ul class="govuk-list govuk-error-summary__list">{{range .ErrorFields}}<li><a href="#{{if eq . "program"}}program-0{{else}}{{.}}{{end}}">{{index $.Upload.Errors .}}</a></li>{{end}}</ul></div>
+  <div class="govuk-error-summary__body"><ul class="govuk-list govuk-error-summary__list">{{range .ErrorFields}}<li><a href="#{{if eq . "date"}}{{$.Upload.DateAnchor}}{{else if or (eq . "program") (eq . "degree") (eq . "version")}}{{.}}-0{{else}}{{.}}{{end}}">{{index $.Upload.Errors .}}</a></li>{{end}}</ul></div>
 </div></div>{{end}}
-{{if .ChooseProgram}}
+{{if .ChooseScope}}
+<p class="govuk-body">Wähle alle Abschlüsse, Studiengänge und Prüfungsordnungen aus, für die die Reko gilt. Im nächsten Schritt wählst du die passenden Module und lädst die Datei hoch.</p>
 <form action="{{.Action}}" method="get" novalidate>
-  <div class="govuk-form-group {{if index .Errors "program"}}govuk-form-group--error{{end}}">
-    <fieldset class="govuk-fieldset" {{if index .Errors "program"}}aria-describedby="program-error"{{end}}>
-      <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">Zu welchem Studiengang gehört die Reko?</legend>
-      {{if index .Errors "program"}}<p class="govuk-error-message" id="program-error"><span class="govuk-visually-hidden">Fehler:</span> {{index .Errors "program"}}</p>{{end}}
-      <div class="govuk-radios" data-module="govuk-radios">{{range $index,$program:=.Programs}}<div class="govuk-radios__item"><input class="govuk-radios__input" id="program-{{$index}}" name="program" type="radio" value="{{$program}}"><label class="govuk-label govuk-radios__label" for="program-{{$index}}">{{$program}}</label></div>{{end}}</div>
-    </fieldset>
-  </div>
-  <div class="govuk-button-group"><button class="govuk-button" type="submit" data-module="govuk-button">Weiter</button><a class="govuk-link" href="/archive">Abbrechen</a></div>
+  <input type="hidden" name="scope" value="1">
+  {{if .ReviewEditing}}<input type="hidden" name="edit_token" value="{{.EditToken}}">{{end}}
+  {{template "upload-scope" (scopeField "degree" "Abschlüsse" .Degrees (index .Errors "degree"))}}
+  {{template "upload-scope" (scopeField "program" "Studiengänge" .Programs (index .Errors "program"))}}
+  {{template "upload-scope" (scopeField "version" "Prüfungsordnungen" .Versions (index .Errors "version"))}}
+  <div class="govuk-button-group"><button class="govuk-button" type="submit" data-module="govuk-button">Weiter</button><a class="govuk-link" href="{{if .ReviewEditing}}/verwaltung/einreichungen/{{.RequestID}}{{else}}/archive{{end}}">Abbrechen</a></div>
 </form>
 {{else}}
-<p class="govuk-body">Studiengang: <strong>{{.Program}}</strong>{{if not .Revision}} · <a class="govuk-link" href="{{.Action}}?choose_program=1">Ändern<span class="govuk-visually-hidden">: Studiengang</span></a>{{end}}</p>
+<dl class="govuk-summary-list">
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Abschlüsse</dt><dd class="govuk-summary-list__value">{{range $i,$value:=.Scope.Degrees}}{{if $i}}<br>{{end}}{{$value}}{{end}}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="{{.Action}}?choose_scope=1">Ändern<span class="govuk-visually-hidden">: Abschlüsse, Studiengänge und Prüfungsordnungen</span></a></dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Studiengänge</dt><dd class="govuk-summary-list__value">{{range $i,$value:=.Scope.Programs}}{{if $i}}<br>{{end}}{{$value}}{{end}}</dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Prüfungsordnungen</dt><dd class="govuk-summary-list__value">{{range $i,$value:=.Scope.Versions}}{{if $i}}<br>{{end}}{{poLabel $value}}{{end}}</dd></div>
+</dl>
 <form class="app-archive-upload" action="{{.Action}}" method="post" enctype="multipart/form-data" novalidate hx-post="{{.Action}}" hx-encoding="multipart/form-data" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML">
-  <input type="hidden" name="csrf" value="{{$.CSRF}}">
-  <input type="hidden" name="program" value="{{.Program}}">
-  <div class="govuk-form-group {{if index .Errors "module_id"}}govuk-form-group--error{{end}}">
-    <label class="govuk-label" for="module_id">Modul</label>
-    {{if index .Errors "module_id"}}<p class="govuk-error-message" id="module-error"><span class="govuk-visually-hidden">Fehler:</span> {{index .Errors "module_id"}}</p>{{end}}
-    <select class="govuk-select {{if index .Errors "module_id"}}govuk-select--error{{end}}" id="module_id" name="module_id" {{if index .Errors "module_id"}}aria-describedby="module-error" aria-invalid="true"{{end}}>
-      <option value="">Bitte auswählen</option>
-      {{range .Modules}}<option value="{{.ID}}" {{if eq $.Upload.ModuleID .ID}}selected{{end}}>{{.Title}}</option>{{end}}
-    </select>
-  </div>
-  <div class="govuk-form-group {{if index .Errors "version"}}govuk-form-group--error{{end}}">
-    <label class="govuk-label" for="version">Prüfungsordnung</label>
-    {{if index .Errors "version"}}<p class="govuk-error-message" id="version-error"><span class="govuk-visually-hidden">Fehler:</span> {{index .Errors "version"}}</p>{{end}}
-    <select class="govuk-select {{if index .Errors "version"}}govuk-select--error{{end}}" id="version" name="version" {{if index .Errors "version"}}aria-describedby="version-error" aria-invalid="true"{{end}}>
-      <option value="">Bitte auswählen</option>
-      {{range .Versions}}<option value="{{.}}" {{if eq $.Upload.Version .}}selected{{end}}>{{.}}</option>{{end}}
-    </select>
+  <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="scope" value="1"><input type="hidden" name="module_selection" value="1">
+  {{if .ReviewEditing}}<input type="hidden" name="edit_token" value="{{.EditToken}}">{{end}}
+  {{range .Scope.Programs}}<input type="hidden" name="program" value="{{.}}">{{end}}
+  {{range .Scope.Degrees}}<input type="hidden" name="degree" value="{{.}}">{{end}}
+  {{range .Scope.Versions}}<input type="hidden" name="version" value="{{.}}">{{end}}
+  <div class="govuk-form-group {{if index .Errors "module_id"}}govuk-form-group--error{{end}}" id="module_id" tabindex="-1">
+    <fieldset class="govuk-fieldset" aria-describedby="modules-hint{{if index .Errors "module_id"}} module-error{{end}}">
+      <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">Für welche Module gilt die Reko?</legend>
+      <div class="govuk-hint" id="modules-hint">Wähle alle passenden Module aus.</div>
+      {{if index .Errors "module_id"}}<p class="govuk-error-message" id="module-error"><span class="govuk-visually-hidden">Fehler:</span> {{index .Errors "module_id"}}</p>{{end}}
+      <div class="govuk-form-group" data-assignment-search hidden><label class="govuk-label" for="assignment-search">Modul suchen</label><input class="govuk-input" id="assignment-search" type="search" aria-controls="assignment-modules"><p class="govuk-visually-hidden" data-assignment-count role="status"></p></div>
+      <div class="govuk-checkboxes" id="assignment-modules" data-module="govuk-checkboxes">
+        {{range $index,$group:=.Groups}}<div class="govuk-checkboxes__item" data-assignment-module><input class="govuk-checkboxes__input" id="module-{{$index}}" name="module" type="checkbox" value="{{.Title}}" {{if .Selected}}checked{{end}}><label class="govuk-label govuk-checkboxes__label" for="module-{{$index}}">{{.Title}}</label></div>{{end}}
+      </div>
+    </fieldset>
   </div>
   <div class="govuk-form-group {{if index .Errors "date"}}govuk-form-group--error{{end}}">
-    <label class="govuk-label" for="date">Prüfungsdatum</label>
-    <div class="govuk-hint" id="date-hint">Zum Beispiel 27.03.2026.</div>
+    <fieldset class="govuk-fieldset" role="group" {{if index .Errors "date"}}aria-describedby="date-error"{{end}}>
+    <legend class="govuk-fieldset__legend">Prüfungsdatum</legend>
     {{if index .Errors "date"}}<p class="govuk-error-message" id="date-error"><span class="govuk-visually-hidden">Fehler:</span> {{index .Errors "date"}}</p>{{end}}
-    <input class="govuk-input govuk-input--width-10 {{if index .Errors "date"}}govuk-input--error{{end}}" id="date" name="date" type="text" value="{{.Date}}" aria-describedby="date-hint{{if index .Errors "date"}} date-error{{end}}" {{if index .Errors "date"}}aria-invalid="true"{{end}}>
+    <div class="govuk-date-input" id="date">
+      {{range .DateParts}}<div class="govuk-date-input__item"><div class="govuk-form-group">
+        <label class="govuk-label govuk-date-input__label" for="date-{{.ID}}">{{.Label}}</label>
+        <input class="govuk-input govuk-date-input__input govuk-input--width-{{.Width}} {{if .Invalid}}govuk-input--error{{end}}" id="date-{{.ID}}" name="date-{{.ID}}" type="text" inputmode="numeric" value="{{.Value}}" {{if .Invalid}}aria-invalid="true" aria-describedby="date-error"{{end}}>
+      </div></div>{{end}}
+    </div>
+    </fieldset>
   </div>
-  <div class="govuk-form-group">
-    <label class="govuk-label" for="comment">Anmerkung (optional)</label>
-    <textarea class="govuk-textarea" id="comment" name="comment" rows="3">{{.Comment}}</textarea>
-  </div>
+  <div class="govuk-form-group"><label class="govuk-label" for="comment">Anmerkung (optional)</label><textarea class="govuk-textarea" id="comment" name="comment" rows="3">{{.Comment}}</textarea></div>
   <div class="govuk-form-group {{if index .Errors "files"}}govuk-form-group--error{{end}}">
-    {{if .Existing}}<p class="govuk-body">Ohne neue Auswahl bleiben die bisherigen Dateien erhalten. Eine neue Auswahl ersetzt alle bisherigen Dateien.</p><ul class="govuk-list">{{range .Existing}}<li><a class="govuk-link" href="{{.URL}}">Reko {{.Number}}</a> (PDF, {{.Size}})</li>{{end}}</ul>{{end}}
-    <label class="govuk-label" for="files">{{if .Revision}}PDF-Datei{{else}}PDF-Dateien{{end}}</label>
-    <div class="govuk-hint" id="files-hint">{{if .Revision}}Höchstens 8 MB.{{else}}Du kannst mehrere PDFs auswählen. Pro Datei sind höchstens 8 MB möglich, insgesamt höchstens 32 MB.{{end}}</div>
+    {{if .Existing}}<p class="govuk-body">Ohne neue Auswahl bleibt die bisherige Datei erhalten. Eine neue Auswahl ersetzt sie.</p><ul class="govuk-list">{{range .Existing}}<li><a class="govuk-link" href="{{.URL}}">Reko {{.Number}}</a> (PDF, {{.Size}})</li>{{end}}</ul>{{end}}
+    <label class="govuk-label" for="files">Datei</label>
+    <div class="govuk-hint" id="files-hint">PDF, höchstens 8 MB.</div>
     {{if index .Errors "files"}}<p class="govuk-error-message" id="files-error"><span class="govuk-visually-hidden">Fehler:</span> {{index .Errors "files"}}</p>{{end}}
-    <div class="govuk-file-upload-wrapper" data-module="govuk-file-upload"><input class="govuk-file-upload {{if index .Errors "files"}}govuk-file-upload--error{{end}}" id="files" name="files" type="file" accept="application/pdf,.pdf" {{if not .Revision}}multiple{{end}} aria-describedby="files-hint{{if index .Errors "files"}} files-error{{end}}" {{if index .Errors "files"}}aria-invalid="true"{{end}}></div>
+    <div class="govuk-file-upload-wrapper" data-module="govuk-file-upload"><input class="govuk-file-upload {{if index .Errors "files"}}govuk-file-upload--error{{end}}" id="files" name="files" type="file" accept="application/pdf,.pdf" aria-describedby="files-hint{{if index .Errors "files"}} files-error{{end}}" {{if index .Errors "files"}}aria-invalid="true"{{end}}></div>
   </div>
-  <div class="govuk-button-group">
-    <button class="govuk-button" type="submit" data-module="govuk-button">Angaben prüfen</button>
-    <a class="govuk-link" href="/archive">Abbrechen</a>
-  </div>
+  <div class="govuk-button-group"><button class="govuk-button" type="submit" data-module="govuk-button">{{if .ReviewEditing}}Änderungen speichern{{else}}Angaben prüfen{{end}}</button><a class="govuk-link" href="{{if .ReviewEditing}}/verwaltung/einreichungen/{{.RequestID}}{{else}}/archive{{end}}">Abbrechen</a></div>
 </form>
 {{end}}
 {{end}}

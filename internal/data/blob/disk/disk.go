@@ -35,6 +35,9 @@ func (s *Store) GetObject(ctx context.Context, key string) (*blob.Object, error)
 	}
 	file, err := s.root.Open(key)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, errors.Join(blob.ErrNotFound, err)
+		}
 		return nil, err
 	}
 	info, err := file.Stat()

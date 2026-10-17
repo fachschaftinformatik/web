@@ -14,7 +14,7 @@ func (s *Service) Revision(ctx context.Context, userID int64, value string) (Sub
 	if err != nil {
 		return Submission{}, ErrNotFound
 	}
-	entry, err := data.New(s.db).GetArchiveEntry(ctx, entryID)
+	entry, err := canonicalEntry(ctx, s.db, entryID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Submission{}, ErrNotFound
 	}
@@ -29,6 +29,10 @@ func (s *Service) Revision(ctx context.Context, userID int64, value string) (Sub
 		return Submission{}, err
 	}
 	submission := Submission{ModuleID: strconv.FormatInt(latest.ModuleID, 10), Version: latest.Version, Date: latest.ExamDate, RevisionOf: strconv.FormatInt(latest.ID, 10)}
+	submission.Assignments, err = assignments(ctx, s.db, latest.ID)
+	if err != nil {
+		return Submission{}, err
+	}
 	if latest.Comment != nil {
 		submission.Comment = *latest.Comment
 	}

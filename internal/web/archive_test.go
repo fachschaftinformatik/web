@@ -69,7 +69,7 @@ INSERT INTO archive (id,group_id,user_id,module_id,version,exam_date,access_key,
 	}
 }
 
-func TestAuthenticatedMultiplePDFSubmission(t *testing.T) {
+func TestAuthenticatedSinglePDFSubmission(t *testing.T) {
 	storage, err := disk.New(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -95,10 +95,10 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 	}
 	base, _ := url.Parse(b.server.URL)
 	b.client.Jar.SetCookies(base, []*http.Cookie{{Name: sessionCookie, Value: session.ID, Path: "/"}})
-	if status, body, _ := b.get("/archive/new"); status != 200 || !strings.Contains(body, "Zu welchem Studiengang") {
+	if status, body, _ := b.get("/archive/new"); status != 200 || !strings.Contains(body, "Studiengänge") {
 		t.Fatal("program selection is missing")
 	}
-	status, body, _ := b.get("/archive/new?program=" + url.QueryEscape("Informatik (B. Sc.)"))
+	status, body, _ := b.get("/archive/new?scope=1&program=Informatik&degree=Bachelor&version=2023")
 	if status != 200 {
 		t.Fatal("upload form unavailable")
 	}
@@ -106,19 +106,23 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 	if strings.Contains(body, "Fremdes Modul") || strings.Contains(body, `value="2025"`) {
 		t.Fatal("upload catalog is not scoped to the selected program")
 	}
-	if status, body, _ := b.post("/archive/new", url.Values{"csrf": {csrf}, "program": {"Informatik (B. Sc.)"}}); status != 422 || strings.Index(body, `href="#module_id"`) > strings.Index(body, `href="#date"`) {
+	if status, body, _ := b.post("/archive/new", url.Values{"csrf": {csrf}, "scope": {"1"}, "program": {"Informatik"}, "degree": {"Bachelor"}, "version": {"2023"}}); status != 422 || strings.Index(body, `href="#module_id"`) > strings.Index(body, `href="#date-day"`) {
 		t.Fatal("upload errors do not follow field order")
 	}
 	var reviewPath string
-	for _, value := range []string{"", csrf} {
+	for _, value := range []string{"", csrf + "-multiple", csrf} {
 		var buffer bytes.Buffer
 		form := multipart.NewWriter(&buffer)
-		for name, field := range map[string]string{"csrf": value, "module_id": "10", "version": "2023", "date": "12.02.2026"} {
+		for name, field := range map[string]string{"csrf": strings.TrimSuffix(value, "-multiple"), "module_id": "10", "version": "2023", "date": "12.02.2026"} {
 			if err := form.WriteField(name, field); err != nil {
 				t.Fatal(err)
 			}
 		}
-		for _, filename := range []string{"eins.pdf", "zwei.pdf"} {
+		filenames := []string{"eins.pdf"}
+		if strings.HasSuffix(value, "-multiple") {
+			filenames = append(filenames, "zwei.pdf")
+		}
+		for _, filename := range filenames {
 			part, err := form.CreateFormFile("files", filename)
 			if err != nil {
 				t.Fatal(err)
@@ -135,10 +139,18 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 			if status != 403 {
 				t.Fatal("upload accepted without CSRF")
 			}
+		} else if strings.HasSuffix(value, "-multiple") {
+			if status != 422 || !strings.Contains(body, "Wähle genau eine Datei aus.") {
+				t.Fatal("multiple PDF upload accepted")
+			}
+			var count int
+			if err := db.QueryRow("SELECT count(*) FROM archive").Scan(&count); err != nil || count != 0 {
+				t.Fatal("rejected multi-file upload wrote records")
+			}
 		} else {
 			reviewPath = headers.Get("Location")
 			if status != 303 || !strings.HasPrefix(reviewPath, "/archive/requests/") || !strings.HasSuffix(reviewPath, "/review") {
-				t.Fatalf("multiple upload: %d %s", status, body)
+				t.Fatalf("single upload: %d %s", status, body)
 			}
 		}
 	}
@@ -146,7 +158,7 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 	if err := db.QueryRow(`SELECT COUNT(*) FROM archive WHERE is_latest=1`).Scan(&count); err != nil || count != 0 {
 		t.Fatal("draft PDFs were immediately published")
 	}
-	if status, body, _ := b.get(reviewPath); status != 200 || !strings.Contains(body, "Prüfe deine Angaben") || !strings.Contains(body, "Reko 2") {
+	if status, body, _ := b.get(reviewPath); status != 200 || !strings.Contains(body, "Prüfe deine Angaben") || strings.Contains(body, "Reko 2") {
 		t.Fatal("check-answers review missing")
 	}
 	// Enhanced uploads must redirect with a 200 response: browsers follow a 303
@@ -190,6 +202,9 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 	if status, _, _ := b.get(adminPath); status != 403 {
 		t.Fatal("ordinary user accessed administration review")
 	}
+	if status, _, _ := b.get(adminPath + "/edit"); status != 403 {
+		t.Fatal("ordinary uploader accessed reviewed editing")
+	}
 	if _, err := db.Exec(`UPDATE users SET role='editor' WHERE id=1`); err != nil {
 		t.Fatal(err)
 	}
@@ -205,10 +220,51 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 	if status, _, _ := b.post(adminPath, url.Values{"csrf": {csrf}, "decision": {"approve"}}); status != 303 {
 		t.Fatal("editor approval failed")
 	}
-	if err := db.QueryRow(`SELECT COUNT(*) FROM archive WHERE is_latest=1`).Scan(&count); err != nil || count != 2 {
+	if err := db.QueryRow(`SELECT COUNT(*) FROM archive WHERE is_latest=1`).Scan(&count); err != nil || count != 1 {
 		t.Fatal("confirmed PDFs were not published")
 	}
-	if status, body, _ := b.get("/archive/10"); status != 200 || !strings.Contains(body, "2 Rekos") || !strings.Contains(body, "Neue Revision einreichen") {
+	if status, body, _ := b.get("/archive/10"); status != 200 || !strings.Contains(body, "1 Reko") || !strings.Contains(body, "Neue Revision einreichen") {
 		t.Fatal("uploaded PDFs not available in module view")
+	}
+	for _, decision := range []string{"reject", "approve"} {
+		if status, body, _ := b.get(adminPath); status != 200 || !strings.Contains(body, `name="decision" value="`+decision+`"`) {
+			t.Fatal("completed review does not offer the opposite decision")
+		}
+		if status, _, _ := b.post(adminPath, url.Values{"decision": {decision}}); status != 403 {
+			t.Fatal("decision reversal accepted without CSRF")
+		}
+		if status, _, _ := b.post(adminPath, url.Values{"csrf": {csrf}, "decision": {decision}}); status != 303 {
+			t.Fatal("decision could not be reversed")
+		}
+		want := 0
+		if decision == "approve" {
+			want = 1
+		}
+		if err := db.QueryRow(`SELECT count(*) FROM archive WHERE is_latest=1`).Scan(&count); err != nil || count != want {
+			t.Fatal("reversed decision did not update public archive")
+		}
+	}
+	status, body, _ = b.get(adminPath + "/edit")
+	if status != 200 {
+		t.Fatal("reviewer cannot edit approved submission")
+	}
+	_, tokenPart, ok := strings.Cut(body, `name="edit_token" value="`)
+	if !ok {
+		t.Fatal("missing edit concurrency token")
+	}
+	token, _, _ := strings.Cut(tokenPart, `"`)
+	edit := url.Values{"scope": {"1"}, "module_selection": {"1"}, "module": {"Datenbanken"}, "degree": {"Bachelor"}, "program": {"Informatik"}, "version": {"2023"}, "date-day": {"27"}, "date-month": {"3"}, "date-year": {"2026"}, "comment": {"Redaktionell korrigiert"}, "edit_token": {token}}
+	if status, _, _ := b.post(adminPath+"/edit", edit); status != 403 {
+		t.Fatal("reviewer edit accepted without CSRF")
+	}
+	edit.Set("csrf", csrf)
+	if status, _, headers := b.post(adminPath+"/edit", edit); status != 303 || headers.Get("Location") != adminPath {
+		t.Fatal("reviewer edit did not return to review")
+	}
+	if status, body, _ := b.get(adminPath); status != 200 || !strings.Contains(body, "Redaktionell korrigiert") || !strings.Contains(body, adminPath+"/edit#comment") || strings.Contains(body, "govuk-button--warning") {
+		t.Fatal("reviewed corrections or neutral actions missing")
+	}
+	if status, _, _ := b.post(adminPath+"/edit", edit); status != 409 {
+		t.Fatal("stale reviewer edit accepted")
 	}
 }

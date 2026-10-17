@@ -107,6 +107,8 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 	router.HandleFunc("GET /archive/{module}", c.ArchiveModule)
 	router.HandleFunc("GET /archive/new", c.UploadArchive)
 	router.HandleFunc("POST /archive/new", c.UploadArchive)
+	router.HandleFunc("GET /archive/preferences", c.ArchivePreferences)
+	router.HandleFunc("POST /archive/preferences", c.ArchivePreferences)
 	router.HandleFunc("GET /archive/files/{id}/revision", c.UploadArchive)
 	router.HandleFunc("POST /archive/files/{id}/revision", c.UploadArchive)
 	router.HandleFunc("GET /archive/requests", c.ArchiveRequests)
@@ -141,6 +143,8 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 	router.HandleFunc("POST /verwaltung/antraege/{request}", c.ReviewArchiveRequest)
 	router.HandleFunc("GET /verwaltung/einreichungen/{request}", c.ReviewArchiveRequest)
 	router.HandleFunc("POST /verwaltung/einreichungen/{request}", c.ReviewArchiveRequest)
+	router.HandleFunc("GET /verwaltung/einreichungen/{request}/edit", c.UploadArchive)
+	router.HandleFunc("POST /verwaltung/einreichungen/{request}/edit", c.UploadArchive)
 	router.HandleFunc("GET /verwaltung/sitzungen/{id}/pruefen", c.ReviewPublication)
 	router.HandleFunc("POST /verwaltung/sitzungen/{id}/pruefen", c.ReviewPublication)
 	router.HandleFunc("GET /verwaltung/benutzer/{id}/passwort-zuruecksetzen", c.ResetUserPassword)
@@ -195,7 +199,11 @@ func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
-	filter := archiveFilter(r)
+	filter, err := c.preferredArchiveFilter(w, r)
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
 	programs := make([]FilterOption, 0)
 	for _, program := range catalog.Programs() {
 		programs = append(programs, FilterOption{Name: program, Selected: slices.Contains(filter.Programs, program)})
@@ -223,7 +231,11 @@ func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
-	filter := archiveFilter(r)
+	filter, err := c.preferredArchiveFilter(w, r)
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
 	module, ok := catalog.FindModule(r.PathValue("module"), filter)
 	if !ok {
 		http.NotFound(w, r)

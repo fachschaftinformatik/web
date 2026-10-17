@@ -35,6 +35,43 @@ type Archive struct {
 	RequestID   *string `json:"request_id"`
 }
 
+type ArchiveAssignment struct {
+	ArchiveID int64  `json:"archive_id"`
+	ModuleID  int64  `json:"module_id"`
+	Version   string `json:"version"`
+}
+
+type ArchiveBlobCleanup struct {
+	BlobKey string `json:"blob_key"`
+}
+
+type ArchiveEntryAlias struct {
+	LegacyID    int64 `json:"legacy_id"`
+	CanonicalID int64 `json:"canonical_id"`
+}
+
+type ArchiveGroupAlias struct {
+	GroupID          int64 `json:"group_id"`
+	CanonicalGroupID int64 `json:"canonical_group_id"`
+}
+
+type ArchiveLegacyCopy struct {
+	BlobKey  string `json:"blob_key"`
+	Checksum string `json:"checksum"`
+}
+
+type ArchiveObject struct {
+	Checksum string `json:"checksum"`
+	BlobKey  string `json:"blob_key"`
+	Nbytes   int64  `json:"nbytes"`
+}
+
+type ArchivePlacement struct {
+	ArchiveID int64  `json:"archive_id"`
+	ModuleID  int64  `json:"module_id"`
+	Version   string `json:"version"`
+}
+
 type ArchiveRequest struct {
 	ID          string  `json:"id"`
 	UserID      int64   `json:"user_id"`
@@ -202,6 +239,12 @@ type Program struct {
 	DeletedAt *string `json:"deleted_at"`
 }
 
+type ProgramQualification struct {
+	LegacyProgramID int64  `json:"legacy_program_id"`
+	StudyProgramID  int64  `json:"study_program_id"`
+	Degree          string `json:"degree"`
+}
+
 type ProgramVersion struct {
 	ProgramID int64  `json:"program_id"`
 	Name      string `json:"name"`
@@ -253,6 +296,11 @@ type Session struct {
 	ExpiresAt string  `json:"expires_at"`
 }
 
+type StudyProgram struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
 type User struct {
 	ID                   int64   `json:"id"`
 	Email                string  `json:"email"`
@@ -272,6 +320,13 @@ type User struct {
 	DeletedAt            *string `json:"deleted_at"`
 	PasswordResetToken   *string `json:"password_reset_token"`
 	PasswordResetExpires *string `json:"password_reset_expires"`
+}
+
+type UserArchivePreference struct {
+	UserID   int64  `json:"user_id"`
+	Programs string `json:"programs"`
+	Degrees  string `json:"degrees"`
+	Versions string `json:"versions"`
 }
 
 type UserToken struct {

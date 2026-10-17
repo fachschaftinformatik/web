@@ -2,8 +2,11 @@ package blob
 
 import (
 	"context"
+	"errors"
 	"io"
 )
+
+var ErrNotFound = errors.New("blob object not found")
 
 type ObjectInfo struct {
 	ContentType string
