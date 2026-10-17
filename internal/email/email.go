@@ -36,8 +36,7 @@ type verificationData struct {
 	Domain     string
 }
 
-func (s *Sender) SendVerificationEmail(toEmail, name, token string) error {
-	link := fmt.Sprintf("%s/api/v1/auth/verify?token=%s", s.cfg.Domain, token)
+func (s *Sender) SendVerificationEmail(toEmail, name, link string) error {
 
 	data := verificationData{
 		Name:       name,
@@ -85,8 +84,7 @@ type passwordResetData struct {
 	Domain    string
 }
 
-func (s *Sender) SendPasswordResetEmail(toEmail, name, token string) error {
-	link := fmt.Sprintf("%s/auth/reset?token=%s", s.cfg.Domain, token)
+func (s *Sender) SendPasswordResetEmail(toEmail, name, link string) error {
 
 	data := passwordResetData{
 		Name:      name,

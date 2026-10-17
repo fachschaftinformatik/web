@@ -45,6 +45,23 @@ func (q *Queries) CreateProgramVersion(ctx context.Context, arg CreateProgramVer
 	return err
 }
 
+const getProgram = `-- name: GetProgram :one
+SELECT id, name, created_at, updated_at, deleted_at FROM programs WHERE id = ?1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetProgram(ctx context.Context, id int64) (Program, error) {
+	row := q.db.QueryRowContext(ctx, getProgram, id)
+	var i Program
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const getProgramWithVersions = `-- name: GetProgramWithVersions :many
 SELECT p.id, p.name, pv.name as version
 FROM programs p
@@ -69,6 +86,39 @@ func (q *Queries) GetProgramWithVersions(ctx context.Context, id int64) ([]GetPr
 	for rows.Next() {
 		var i GetProgramWithVersionsRow
 		if err := rows.Scan(&i.ID, &i.Name, &i.Version); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPrograms = `-- name: ListPrograms :many
+SELECT id, name, created_at, updated_at, deleted_at FROM programs WHERE deleted_at IS NULL ORDER BY name, id
+`
+
+func (q *Queries) ListPrograms(ctx context.Context) ([]Program, error) {
+	rows, err := q.db.QueryContext(ctx, listPrograms)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Program
+	for rows.Next() {
+		var i Program
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

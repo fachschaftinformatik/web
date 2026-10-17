@@ -5,6 +5,12 @@ JOIN program_versions pv ON p.id = pv.program_id
 WHERE p.deleted_at IS NULL
 ORDER BY p.name, pv.name DESC;
 
+-- name: ListPrograms :many
+SELECT * FROM programs WHERE deleted_at IS NULL ORDER BY name, id;
+
+-- name: GetProgram :one
+SELECT * FROM programs WHERE id = sqlc.arg(id) AND deleted_at IS NULL;
+
 -- name: GetProgramWithVersions :many
 SELECT p.id, p.name, pv.name as version
 FROM programs p
