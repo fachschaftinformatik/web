@@ -120,7 +120,7 @@ func (s *Store) readPublication(row publicationRow) (Publication, bool, error) {
 	}
 	hash := sha256.Sum256(p.Data)
 	if int64(len(p.Data)) != size || hex.EncodeToString(hash[:]) != digest {
-		return p, false, errors.New("Die gespeicherte PDF-Datei ist beschädigt.")
+		return p, false, errors.New("Die gespeicherte Datei ist beschädigt.")
 	}
 	return p, true, nil
 }
@@ -161,7 +161,7 @@ func (s *Store) publishPersistent(id, owner string) error {
 		return nil
 	}
 	if len(ValidatePublication(p)) != 0 {
-		return errors.New("Prüfe die Angaben und die PDF-Datei.")
+		return errors.New("Prüfe die Angaben und die Datei.")
 	}
 	date, _ := time.Parse("2006-01-02", p.Date)
 	conflict := errors.New("Datum und Sitzungsnummer stimmen nicht mit der vorhandenen Sitzung überein.")

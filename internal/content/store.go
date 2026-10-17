@@ -50,13 +50,13 @@ func ValidatePublication(p Publication) map[string]string {
 
 func PDFError(data []byte) string {
 	if len(data) == 0 {
-		return "Wähle eine PDF-Datei aus."
+		return "Wähle eine Datei aus."
 	}
 	if len(data) > MaxPDFBytes {
-		return "Die PDF-Datei darf höchstens 8 MB groß sein."
+		return "Die Datei darf höchstens 8 MB groß sein."
 	}
 	if !bytes.HasPrefix(data, []byte("%PDF-")) || !bytes.Contains(data, []byte("%%EOF")) {
-		return "Die ausgewählte Datei muss eine PDF-Datei sein."
+		return "Die ausgewählte Datei muss im PDF-Format vorliegen."
 	}
 	return ""
 }
@@ -116,7 +116,7 @@ func (s *Store) Publish(id, owner string) error {
 		return nil
 	}
 	if len(ValidatePublication(p)) != 0 {
-		return errors.New("Prüfe die Angaben und die PDF-Datei.")
+		return errors.New("Prüfe die Angaben und die Datei.")
 	}
 	date, _ := time.Parse("2006-01-02", p.Date)
 	for _, meeting := range s.allLocked() {

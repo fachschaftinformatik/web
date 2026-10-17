@@ -201,12 +201,12 @@
 
 {{if eq .View "review"}}
 {{with .Publication}}
-<p class="govuk-body">Prüfe die Angaben und die PDF-Datei. Erst mit „Veröffentlichen“ wird das Dokument auf der Website sichtbar.</p>
+<p class="govuk-body">Prüfe die Angaben und die Datei. Erst mit „Veröffentlichen“ wird das Dokument auf der Website sichtbar.</p>
 <dl class="govuk-summary-list">
   <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Sitzungsdatum</dt><dd class="govuk-summary-list__value">{{.DateLabel}}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#date-day">Ändern<span class="govuk-visually-hidden">: Sitzungsdatum</span></a></dd></div>
   <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Sitzungsnummer</dt><dd class="govuk-summary-list__value">{{.Number}}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#number">Ändern<span class="govuk-visually-hidden">: Sitzungsnummer</span></a></dd></div>
   <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Dokumentart</dt><dd class="govuk-summary-list__value">{{.KindLabel}}</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#kind">Ändern<span class="govuk-visually-hidden">: Dokumentart</span></a></dd></div>
-  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">PDF-Datei</dt><dd class="govuk-summary-list__value app-wrap-anywhere"><a class="govuk-link" href="/documents/{{.ID}}">{{.Filename}}</a> (PDF, {{.Size}})</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#file">Ändern<span class="govuk-visually-hidden">: PDF-Datei</span></a></dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Datei</dt><dd class="govuk-summary-list__value app-wrap-anywhere"><a class="govuk-link" href="/documents/{{.ID}}">{{.Filename}}</a> (PDF, {{.Size}})</dd><dd class="govuk-summary-list__actions"><a class="govuk-link" href="/verwaltung/sitzungen/{{.ID}}#file">Ändern<span class="govuk-visually-hidden">: Datei</span></a></dd></div>
 </dl>
 {{end}}
 <form id="admin-form" action="{{.Action}}" method="post" tabindex="-1"><input type="hidden" name="csrf" value="{{$csrf}}"><div class="govuk-button-group"><button class="govuk-button" data-module="govuk-button" type="submit">Veröffentlichen</button><a class="govuk-link" href="/verwaltung/sitzungen/{{.Publication.ID}}">Angaben bearbeiten</a></div></form>

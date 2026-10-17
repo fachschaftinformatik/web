@@ -556,7 +556,7 @@ func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *Adm
 		{ID: "date", Label: "Sitzungsdatum", Kind: "date", Day: day, Month: month, Year: year},
 		field("number", "Sitzungsnummer", number, "text"),
 		{ID: "kind", Label: "Dokumentart", Kind: "radios", Options: []AdminOption{{"Einladung", "Einladung zur Sitzung", p.Kind == "Einladung"}, {"Protokoll", "Sitzungsprotokoll", p.Kind == "Protokoll"}}},
-		{ID: "file", Label: "PDF-Datei", Kind: "file", Hint: "Wähle eine PDF-Datei mit höchstens 8 MB aus."},
+		{ID: "file", Label: "Datei", Kind: "file", Hint: "PDF, höchstens 8 MB."},
 	}
 	attachErrors(a.Fields, errors)
 	status := http.StatusOK
