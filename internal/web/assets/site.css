@@ -745,7 +745,12 @@
 .app-forum-search .govuk-input { flex: 1; min-width: 0; }
 .app-forum-search .govuk-button { flex: none; width: auto; margin: 0; }
 .app-event-cover { display: block; width: 100%; height: auto; max-height: 650px; object-fit: contain; background: #f4f8fb; }
-.app-event-cover--detail { width: auto; max-width: min(100%, 360px); max-height: 320px; }
+.app-event-detail { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 30px; align-items: start; }
+.app-event-detail__figure { margin: 0; max-width: 240px; }
+.app-event-cover--detail { width: auto; max-width: 100%; max-height: 320px; }
+@media (max-width: 40.0524em) {
+  .app-event-detail { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+}
 .app-event-cover--preview { max-width: 320px; max-height: 320px; margin-bottom: 20px; }
 .app-image-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .app-image-card { position: relative; display: flex; flex-direction: column; margin: 0; border: 1px solid var(--govuk-border-colour); border-bottom: 4px solid var(--govuk-link-colour); background: #fff; overflow-wrap: anywhere; }

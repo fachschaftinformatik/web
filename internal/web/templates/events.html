@@ -1,7 +1,8 @@
 {{define "sidebar"}}{{end}}
 {{define "content"}}
 {{if .Events.Detail}}{{with .Events.Detail}}
-{{if .CoverURL}}<img class="app-event-cover app-event-cover--detail govuk-!-margin-bottom-6" src="{{.CoverURL}}" width="{{.CoverWidth}}" height="{{.CoverHeight}}" alt="{{.CoverAlt}}" fetchpriority="high">{{end}}
+<div class="{{if .CoverURL}}app-event-detail{{end}}">
+<div>
 <dl class="govuk-summary-list">
   <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Termin</dt><dd class="govuk-summary-list__value">{{if .EventDate}}<time datetime="{{.EventDate}}">{{.EventLabel}}</time>{{else}}Termin folgt{{end}}</dd></div>
   {{if .Location}}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Ort</dt><dd class="govuk-summary-list__value">{{.Location}}</dd></div>{{end}}
@@ -9,6 +10,12 @@
 <div class="app-rich-content">{{richHTML .RichBody}}</div>
 {{if $.Events.CanCreate}}<p class="govuk-body"><a class="govuk-button govuk-button--secondary" href="{{.URL}}/edit">Veranstaltung bearbeiten</a></p>{{end}}
 {{if .LegacyURL}}<p class="govuk-body"><a class="govuk-link" href="{{.LegacyURL}}#comments-heading">Bisherige Diskussion zur Veranstaltung ansehen</a></p>{{end}}
+</div>
+{{if .CoverURL}}<figure class="app-event-detail__figure">
+  <img class="app-event-cover app-event-cover--detail" src="{{.CoverURL}}" width="{{.CoverWidth}}" height="{{.CoverHeight}}" alt="{{.CoverAlt}}" fetchpriority="high">
+  <figcaption class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0"><a class="govuk-link" href="{{.CoverURL}}">Bild in voller Größe ansehen</a></figcaption>
+</figure>{{end}}
+</div>
 {{end}}{{else}}
 {{if .Events.CanCreate}}<p class="govuk-body"><a class="govuk-button" href="/community/veranstaltungen/new">Veranstaltung erstellen</a></p>{{end}}
 <section aria-labelledby="upcoming-events">
