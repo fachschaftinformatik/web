@@ -18,7 +18,7 @@ module.exports = {
     }],
     ['@semantic-release/exec', {
       execCwd: '../..',
-      prepareCmd: 'RELEASE_TAG=${nextRelease.gitTag} docker buildx bake --file bake.hcl --push',
+      prepareCmd: 'docker buildx build --platform linux/amd64 --sbom=true --build-arg VERSION=${nextRelease.gitTag} --label org.opencontainers.image.version=${nextRelease.gitTag} --tag ghcr.io/fachschaftinformatik/web:${nextRelease.gitTag} --cache-from type=gha,scope=app-amd64 --cache-to type=gha,mode=max,scope=app-amd64 --push .',
       successCmd: 'printf "released=true\\ntag=%s\\n" "${nextRelease.gitTag}" >> "$GITHUB_OUTPUT"',
     }],
   ],

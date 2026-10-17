@@ -19,8 +19,8 @@ If in doubt, reach out to us. You can [open an issue](https://github.com/fachsch
 
 ## Building
 
-The application needs [Go](https://go.dev/) 1.27.2. Node (pinned in
-`.node-version`) and Bun are needed only when working on `.github/release`.
+The application needs [Go](https://go.dev/) 1.27.2. Node (pinned in the CI
+workflow) and Bun are needed only when working on `.github/release`.
 
 Make sure you have the required Go version by running:
 ```
@@ -48,6 +48,9 @@ go build -o /path/to/output/web .
 
 Run `go test -race ./...` and `go vet ./...`. Templates and browser assets are
 embedded; rebuild the executable after changing them.
+
+Run `sh tools/vendor.sh` with curl, tar and Dart Sass installed to refresh the
+pinned GOV.UK, HTMX and TinyMCE browser assets and their licenses.
 
 ## Dependency updates
 

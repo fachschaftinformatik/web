@@ -9,7 +9,7 @@ Run against a writable copy first:
 
 ```sh
 go run . -database .dev-data/local/sqlite.db -migrate-only
-python3 tools/import-site-data/import.py .dev-data/local/sqlite.db .dev-data/local/blobs
+go run ./tools/import-site-data .dev-data/local/sqlite.db .dev-data/local/blobs
 ```
 
 The import retains the existing organization details and 48 original PDFs,
@@ -24,7 +24,7 @@ the target database. Contact pages use the addresses stored on those existing
 responsibilities rather than a second set of template literals. No domain aliases
 are inferred or rewritten.
 
-The Python command verifies bytes, copies objects without replacing differing
+The Go command verifies bytes, copies objects without replacing differing
 content, and applies the SQL transaction. Repeating it preserves existing settings
 and document records. If verification fails, database changes are rolled back.
 
