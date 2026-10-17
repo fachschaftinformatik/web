@@ -90,11 +90,11 @@ func TestUTCEnforcementMigrationRejectsExistingInvalidValuesAtomically(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	provider, err := goose.NewProvider(goose.DialectSQLite3, db, source, goose.WithGoMigrations(utcEventMigration(), utcEnforcementMigration()))
+	provider, err := goose.NewProvider(goose.DialectSQLite3, db, source, goose.WithGoMigrations(utcEnforcementMigration()))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := provider.UpTo(context.Background(), 15); err != nil {
+	if _, err := provider.UpTo(context.Background(), 14); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.Exec(`INSERT INTO users(id,email,name,password,created_at) VALUES(1,'old@example.org','Name','hash','2026-10-17T12:00:00+02:00')`); err != nil {

@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -129,10 +128,7 @@ func TestMeetingDocuments(t *testing.T) {
 				}
 				sources[source] = true
 			}
-			data, err := os.ReadFile("../../tools/import-site-data/documents/" + document.File)
-			if err != nil {
-				t.Fatal(err)
-			}
+			data := historicalTestPDF(document.File)
 			if err = objects.Upload(context.Background(), "meetings/historical/"+document.SHA256, bytes.NewReader(data), int64(len(data)), "application/pdf"); err != nil {
 				t.Fatal(err)
 			}
@@ -147,8 +143,8 @@ func TestMeetingDocuments(t *testing.T) {
 			}
 		}
 	}
-	if len(files) != 48 || len(sources) != 49 {
-		t.Fatalf("import coverage: %d files, %d sources", len(files), len(sources))
+	if len(files) != 3 || len(sources) != 3 {
+		t.Fatalf("document coverage: %d files, %d sources", len(files), len(sources))
 	}
 }
 
@@ -208,13 +204,9 @@ func TestMeetingYears(t *testing.T) {
 		query, want string
 		status      int
 	}{
-		{"", "24.09.2026", 200},
-		{"?jahr=2024", "10.12.2024", 200},
-		{"?jahr=2025", "Datum uneindeutig", 200},
-		{"?jahr=2022", "2022", 200},
-		{"?jahr=2020", "06.03.2020", 200},
-		{"?jahr=2021", "22.01.2021", 200},
-		{"?jahr=2023", "18.01.2023", 200},
+		{"", "05.04.2030", 200},
+		{"?jahr=2029", "04.03.2029", 200},
+		{"?jahr=2028", "Datum uneindeutig", 200},
 		{"?jahr=1999", "Seite nicht gefunden", 404},
 		{"?jahr=invalid", "Seite nicht gefunden", 404},
 	} {

@@ -45,18 +45,17 @@ values (exam dates, meeting dates, all-day events and legal revision dates) use
 `YYYY-MM-DD` without a timezone. The view formats dates centrally for `de-DE`
 and converts timestamps to `Europe/Berlin` for display and event editing; locale
 and timezone are separate concerns. Adding another display format belongs in
-`internal/view/dates.go`, not in database records. Migration 15 converts legacy
-Berlin event times to UTC while preserving publication metadata.
+`internal/view/dates.go`, not in database records.
 Migration 16 checks existing timestamps and installs database triggers on insert
 and update. These reject non-canonical non-empty values, including timestamps
 without `Z`, numeric offsets and invalid calendar/time values, even through direct
 SQL connections. Timestamps have second precision; existing optional NULL/empty
 values remain supported. Event dates additionally allow ISO calendar-only dates.
 
-For the one-time transition of existing compiled-in content, see
-[the explicit site-data import](tools/import-site-data/README.md). This is a
-manual data migration, not automatic initialization. Subsequent production-data
-copies already contain these records. Schema-only migrations can be run with
+Legacy content imports and timestamp conversion are managed outside this
+repository. Prepare the production database and objects before starting the new
+application; the application does not import or repair legacy content. Development
+uses copies of that prepared database and object storage. Schema migrations can be run with
 `go run . -database PATH -migrate-only`; they insert no organization content.
 
 ### Container

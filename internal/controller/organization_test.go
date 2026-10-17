@@ -127,7 +127,7 @@ func TestMasterDataRevisionDate(t *testing.T) {
 	if got := c.organization.Current().RegulationLinks[0]; got.Title != d.RegulationLinks[0].Title || got.URL != "https://example.org/statute.pdf" {
 		t.Fatal("URL-only edit did not preserve the document heading", got)
 	}
-	if c.organization.Current().LegalUpdated != time.Now().Format(time.DateOnly) {
+	if c.organization.Current().LegalUpdated != time.Now().UTC().Format(time.DateOnly) {
 		t.Fatal("legal change did not update revision date automatically")
 	}
 	values.Set("HostingURL", "invalid")

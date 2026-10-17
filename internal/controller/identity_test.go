@@ -2,7 +2,10 @@ package controller
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http/httptest"
@@ -10,8 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"os"
 
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/model/archive"
@@ -54,12 +55,34 @@ func identityBrowserWithStorage(t *testing.T, storage archive.Storage) (*adminBr
 func persistentServices(t *testing.T, db *sql.DB, storage archive.Storage) Services {
 	t.Helper()
 
-	content, err := os.ReadFile("../../tools/import-site-data/content.sql")
+	content, err := json.Marshal(organization.Details{
+		Name: "Example Council", FormalName: "Example Representative Body", ShortName: "Example Council", Institution: "Example University",
+		City: "Example City", Street: "Example Street 1", PostalCode: "12345", Country: "Deutschland", Office: "A1",
+		ContactEmail: "contact@example.org", ChairResponsibility: "1", PublicityResponsibility: "6", LegalUpdated: "2026-01-01",
+		HostingName: "Example Host", HostingURL: "https://example.org/hosting", PrivacyURL: "https://example.org/privacy",
+		SupervisionName: "Example Supervision", SupervisionURL: "https://example.org/supervision",
+		PrivacyAuthorityName: "Example Privacy Authority", PrivacyAuthorityURL: "https://example.org/authority",
+		SocialLinks:     []organization.Link{{Title: "Social", URL: "https://social.example.org/"}},
+		ElectionLinks:   []organization.Link{{Title: "Election", URL: "https://example.org/election"}},
+		RegulationLinks: []organization.Link{{Title: "Satzung der Studierendenschaft", URL: "https://example.org/rules.pdf"}},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.Exec(string(content)); err != nil {
+	if _, err = db.Exec(`INSERT INTO organization(id,data) VALUES(1,?) ON CONFLICT(id) DO NOTHING`, string(content)); err != nil {
 		t.Fatal(err)
+	}
+	for _, record := range []struct {
+		year int
+		date string
+	}{{2030, "2030-04-05"}, {2029, "2029-03-04"}, {2028, ""}} {
+		file := fmt.Sprintf("%d-example.pdf", record.year)
+		data := historicalTestPDF(file)
+		digest := fmt.Sprintf("%x", sha256.Sum256(data))
+		sources, _ := json.Marshal([]string{file})
+		if _, err := db.Exec(`INSERT INTO historical_meeting_documents(file,year,number,date,kind,note,bytes,sha256,sources,blob_key) VALUES(?,?,1,?,'Einladung','',?,?,?,?) ON CONFLICT(file) DO NOTHING`, file, record.year, record.date, len(data), digest, string(sources), "meetings/historical/"+digest); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if _, err = db.Exec(`INSERT OR IGNORE INTO people(id,name,email,position) VALUES('1','Example Chair','chair@example.org',0); INSERT OR IGNORE INTO responsibilities(id,group_name,title,email,position) VALUES('1','board','Vorsitz','chair@example.org',0),('6','departments','Öffentlichkeit','public@example.org',1); INSERT OR IGNORE INTO responsibility_members(responsibility_id,person_id,position) VALUES('1','1',0)`); err != nil {
 		t.Fatal(err)
@@ -88,6 +111,8 @@ func persistentServices(t *testing.T, db *sql.DB, storage archive.Storage) Servi
 	}
 	return Services{Organization: org, Users: users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}), Archive: archive.NewService(db, storage), People: team, Meetings: meetingStore, Forum: forum.NewService(db), Gallery: gallery.NewService(db, provider), Events: events.NewService(db, provider)}
 }
+
+func historicalTestPDF(file string) []byte { return []byte("%PDF-1.4\n" + file + "\n%%EOF") }
 
 func TestPersistentLoginAuthorizationAndLogout(t *testing.T) {
 	b, db := identityBrowser(t)

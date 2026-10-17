@@ -178,7 +178,7 @@ func TestCalendarMigrationPreservesLegacyDiscussions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	provider, err := goose.NewProvider(goose.DialectSQLite3, db, source, goose.WithGoMigrations(utcEventMigration()))
+	provider, err := goose.NewProvider(goose.DialectSQLite3, db, source)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,13 +203,13 @@ func TestCalendarMigrationPreservesLegacyDiscussions(t *testing.T) {
 		t.Fatal(err)
 	}
 	var updated, eventDate string
-	if err := db.QueryRow(`SELECT updated_at,event_date FROM discussion_posts WHERE id=10`).Scan(&updated, &eventDate); err != nil || updated != originalUpdated || eventDate != "2026-06-09T15:00:00Z" {
-		t.Fatal("UTC conversion changed publication metadata or left a naive time", updated, eventDate, err)
+	if err := db.QueryRow(`SELECT updated_at,event_date FROM discussion_posts WHERE id=10`).Scan(&updated, &eventDate); err != nil || updated != originalUpdated || eventDate != "2026-06-09T17:00" {
+		t.Fatal("calendar migration changed publication metadata or event time", updated, eventDate, err)
 	}
 	for query, want := range map[string]int{
 		`SELECT COUNT(*) FROM calendar_events`:                          2,
 		`SELECT COUNT(*) FROM calendar_events WHERE deleted_at IS NULL`: 1,
-		`SELECT COUNT(*) FROM calendar_events WHERE id=10 AND legacy_post_id=10 AND body='Original body' AND event_date='2026-06-09T15:00:00Z' AND location='Innenhof'`: 1,
+		`SELECT COUNT(*) FROM calendar_events WHERE id=10 AND legacy_post_id=10 AND body='Original body' AND event_date='2026-06-09T17:00' AND location='Innenhof'`: 1,
 		`SELECT COUNT(*) FROM discussion_posts`:                                                 3,
 		`SELECT COUNT(*) FROM discussion_comments WHERE post_id=10 AND text='Original comment'`: 1,
 		`SELECT COUNT(*) FROM discussion_votes WHERE post_id=10 AND vote=1`:                     1,

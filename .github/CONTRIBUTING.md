@@ -28,8 +28,8 @@ go version
 ```
 
 Use a writable copy of the production database and object storage for development.
-The application does not seed members or organization content. See the README's
-site-data section for the one-time migration of pre-existing compiled-in content.
+The application does not seed members or organization content. Legacy content
+imports and data conversion are managed outside this repository.
 Start the application from the repository root with explicit account-domain policy:
 ```bash
 export ACCOUNT_DOMAINS=studmail.w-hs.de,fsv-wh.de
