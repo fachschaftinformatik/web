@@ -98,11 +98,6 @@
   overflow-wrap: anywhere;
 }
 
-.app-subnav-heading {
-  color: var(--govuk-secondary-text-colour);
-  margin-bottom: 10px;
-}
-
 .app-subnav-theme {
   font-family: "GDS Transport", arial, sans-serif;
   font-size: 19px;
@@ -458,7 +453,6 @@
 }
 
 .app-register-program,
-.app-forum-type,
 .app-editor-format {
   width: 100%;
   min-width: 0;
@@ -610,7 +604,6 @@
 
 @media (forced-colors: active) {
   .app-register-program,
-  .app-forum-type,
   .app-editor-format {
     appearance: auto;
     background-image: none;
