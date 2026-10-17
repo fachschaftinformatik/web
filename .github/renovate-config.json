@@ -4,6 +4,5 @@
   "requireConfig": "required",
   "branchPrefix": "renovate-self-hosted/",
   "binarySource": "install",
-  "allowedUnsafeExecutions": ["goGenerate"],
-  "allowedCommands": ["^cd website && bun install --frozen-lockfile && bun run gen:api$"]
+  "allowedUnsafeExecutions": ["goGenerate"]
 }

@@ -1,0 +1,26 @@
+{{define "sidebar"}}{{end}}
+{{define "content"}}
+{{if .Invite.Error}}
+<h1 class="govuk-heading-l">Einladung annehmen</h1>
+<p class="govuk-body">{{.Invite.Error}}</p>
+{{else if .Invite.Done}}
+<h1 class="govuk-heading-l">Dein Konto ist bestätigt</h1>
+<p class="govuk-body">Du kannst dich jetzt mit deiner E-Mail-Adresse und deinem Passwort anmelden.</p>
+<a class="govuk-button" href="/login" data-module="govuk-button">Anmelden</a>
+{{else}}
+{{if .Invite.PasswordError}}<div class="govuk-error-summary" data-module="govuk-error-summary"><div role="alert"><h2 class="govuk-error-summary__title">Es gibt ein Problem</h2><div class="govuk-error-summary__body"><ul class="govuk-list govuk-error-summary__list"><li><a href="#password">{{.Invite.PasswordError}}</a></li></ul></div></div></div>{{end}}
+<h1 class="govuk-heading-l">Einladung annehmen</h1>
+<p class="govuk-body">Hallo {{.Invite.Name}}. Lege ein Passwort fest, um dein Konto mit der E-Mail-Adresse <strong>{{.Invite.Email}}</strong> zu bestätigen.</p>
+<form action="/invite" method="post" novalidate>
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <input type="hidden" name="token" value="{{.Invite.Value}}">
+  <div class="govuk-form-group {{if .Invite.PasswordError}}govuk-form-group--error{{end}}">
+    <label class="govuk-label" for="password">Passwort festlegen</label>
+    <div class="govuk-hint" id="password-hint">Verwende mindestens 8 Zeichen.</div>
+    {{if .Invite.PasswordError}}<p class="govuk-error-message" id="password-error">{{.Invite.PasswordError}}</p>{{end}}
+    <input class="govuk-input" id="password" name="password" type="password" autocomplete="new-password" aria-describedby="password-hint{{if .Invite.PasswordError}} password-error{{end}}" {{if .Invite.PasswordError}}aria-invalid="true"{{end}}>
+  </div>
+  <button class="govuk-button" type="submit" data-module="govuk-button">Einladung annehmen</button>
+</form>
+{{end}}
+{{end}}
