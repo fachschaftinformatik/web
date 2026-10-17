@@ -22,3 +22,8 @@ vendor
 
 node_modules/
 dist/
+
+# Local production snapshots and generated build state.
+.dev-data/
+*.private-key.pem
+*.tsbuildinfo

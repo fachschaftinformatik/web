@@ -1,0 +1,57 @@
+[
+  {
+    "id": "203823111852785665",
+    "title": "LaTeX Template für Bachelor-/Masterarbeit",
+    "body": "Wer kurz davor ist seine Abschlussarbeit zu schreiben, hat vielleicht Interesse daran, sich Alternativen zu Word oder GoogleDocs zu suchen, um die Arbeit zu schreiben. \n\nDer Standard der Wissenschaft ist die LaTeX-Syntax, mit der alle ernstzunehmenden wissenshaftlichen Arbeiten/Papers/Artikel verfasst werden.\n\nDer Vorteil besteht einfach aus dem simplen Umgang, nachdem man die Einstiegsbarriere überwunden hat. Da das hier kein Tutorial sein soll, sollte sich jeder selbst einmal informieren, vallah auf Ehre ich schwöre die Arbeit ist es wert.\n\nIch habe mal das Template das ich genutzt habe auf github hochgeladen, wer Interesse hat und ein vorgefertigtes Format nutzen möchte, schaut gerne rein: \nhttps://github.com/LEMMIIX/latex-ba-template\n(Das repo gerne mit Stern markieren und/oder forken)\n\nDort ist ebenfalls eine &#34;Beispiel.pdf&#34; im repo, wie das ganze aussieht. \n\nAuf Windows ist es am einfachsten, den TeXworks editor zu nutzen, allerdings empfehle ich stark Vim oder Neovim einzurichten dafür.\n\ngaligrü ",
+    "summary": "Eine Vorlage für die Abschlussarbeit und Tipps zum Einstieg in LaTeX.",
+    "author": "Lennart",
+    "created": "2026-07-17T10:40:16Z",
+    "type": "discussion",
+    "comments": 2,
+    "tags": ["Diskussion", "Wichtig"]
+  },
+  {
+    "id": "147381306706100225",
+    "title": "BA Kolloquium, was wird abgefragt?",
+    "body": "Weiß jemand (von Freunden oder aus eigener Erfahrung) was im Bachelor Kolloquium generell so abgefragt wird? \nBzw. kann ich mich noch anders darauf vorbereiten als nur mein Programm gut zu kennen? \n\nGaligrü",
+    "summary": "Wie läuft das Bachelor-Kolloquium ab und wie kannst du dich darauf vorbereiten?",
+    "author": "Lennart",
+    "created": "2026-02-11T16:40:41Z",
+    "type": "discussion",
+    "comments": 1,
+    "tags": ["Frage", "Hilfe benötigt"]
+  },
+  {
+    "id": "140400616152236033",
+    "title": "Websitebwertung",
+    "body": "Wie toll ist die Website? Only Positive Feedback allowed ✌️",
+    "summary": "Feedback und Meinungen zur Website der Fachschaft.",
+    "author": "MegaGeil!!",
+    "created": "2026-01-23T10:21:55Z",
+    "type": "discussion",
+    "comments": 1,
+    "tags": ["Diskussion", "Wichtig"]
+  },
+  {
+    "id": "140128508453060609",
+    "title": "Show And Tell 2026",
+    "body": "Ablauf\n- 10:30 Uhr (Hörsaal 1): Vorstellung der Projekte in 60 Sekunden\n- 11:00 Uhr (Foyer A4): Erkunden der Projektstände\n- 13:30 Uhr (Hörsaal 1): Voting für die Lieblingsprojekte\n- 13:45 Uhr (Hörsaal 1): Impulsvorträge + Paneldiskussion\n- 14:30 Uhr (Hörsaal 1): Auszeichnung der beliebtesten Projekte\n\nMehr dazu hier: https://www.w-hs.de/informatik/show-tell/2026/.",
+    "summary": "Projektvorstellungen, Projektstände und Vorträge beim Show And Tell 2026.",
+    "author": "Francesco La Camera",
+    "created": "2026-01-22T16:20:39Z",
+    "type": "news",
+    "comments": 3,
+    "tags": []
+  },
+  {
+    "id": "140127153315381249",
+    "title": "Spieleabend",
+    "body": "Ende des Januars findet wieder unser Spieleabend statt. Ihr könnt gemeinsam auf der Switch Mario Kart, Smash und co zocken. Oder auch Karten- und Brettspiele. Gerne könnt ihr eure eigene Switch 1/2 oder Controller mitbringen. Kommt gerne vorbei ☺️ .",
+    "summary": "Konsolen-, Karten- und Brettspiele beim Spieleabend am 30. Januar 2026.",
+    "author": "Francesco La Camera",
+    "created": "2026-01-22T16:15:16Z",
+    "type": "event",
+    "comments": 1,
+    "tags": []
+  }
+]

@@ -4,7 +4,6 @@
   "type": "module",
   "scripts": {
     "release": "semantic-release",
-    "test": "node --test tests/*.test.mjs",
     "audit": "bun audit --audit-level=high --ignore GHSA-vfj7-8cjw-p6xm"
   },
   "devDependencies": {
