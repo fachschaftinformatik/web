@@ -38,7 +38,7 @@ func (c *Handler) Meetings(w http.ResponseWriter, r *http.Request) {
 		var err error
 		year, err = strconv.Atoi(value)
 		if err != nil {
-			http.NotFound(w, r)
+			c.notFound(w, r)
 			return
 		}
 	}
@@ -49,7 +49,7 @@ func (c *Handler) Meetings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(records) == 0 {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	c.render(w, "content", false, Page{

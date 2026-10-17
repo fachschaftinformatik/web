@@ -18,7 +18,8 @@ func galleryPhoto(id, title, description string, number int, albumTitle string) 
 	if strings.TrimSpace(title) == "" {
 		title = fmt.Sprintf("%s – Bild %d", albumTitle, number)
 	}
-	if strings.TrimSpace(description) == "" {
+	// Instagram's publisher/date strings are provenance, not image alternatives.
+	if strings.TrimSpace(description) == "" || strings.HasPrefix(description, "Photo by ") || strings.HasPrefix(description, "Video by ") {
 		description = title
 	}
 	return Image{ID: id, Title: title, Description: description, Source: "/media/" + id + "/1200", thumbnail: "/media/" + id + "/400"}

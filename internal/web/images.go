@@ -55,7 +55,7 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if !found {
-			http.NotFound(w, r)
+			c.notFound(w, r)
 			return
 		}
 		g.Album, g.Detail, g.Total = album, true, len(album.Images)
@@ -69,7 +69,7 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			if index < 0 {
-				http.NotFound(w, r)
+				c.notFound(w, r)
 				return
 			}
 			g.Image, g.Viewer, g.Number = album.Images[index], true, index+1
@@ -121,7 +121,7 @@ func (c *Handler) pagedImages(w http.ResponseWriter, r *http.Request) {
 	if id := r.PathValue("album"); id != "" {
 		a, err := c.media.Album(r.Context(), id)
 		if errors.Is(err, media.ErrNotFound) {
-			http.NotFound(w, r)
+			c.notFound(w, r)
 			return
 		}
 		if err != nil {
@@ -133,7 +133,7 @@ func (c *Handler) pagedImages(w http.ResponseWriter, r *http.Request) {
 		if imageID := r.PathValue("image"); imageID != "" {
 			index, err := c.media.PhotoPosition(r.Context(), id, imageID)
 			if errors.Is(err, media.ErrNotFound) {
-				http.NotFound(w, r)
+				c.notFound(w, r)
 				return
 			}
 			if err != nil {
@@ -147,7 +147,7 @@ func (c *Handler) pagedImages(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if index-start >= len(photos) {
-				http.NotFound(w, r)
+				c.notFound(w, r)
 				return
 			}
 			g.Image, g.Viewer, g.Number = photos[index-start], true, index+1

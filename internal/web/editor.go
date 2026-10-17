@@ -77,7 +77,7 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 			thread, ok = posts.Lookup(id)
 		}
 		if !ok {
-			http.NotFound(w, r)
+			c.notFound(w, r)
 			return
 		}
 		editor.Editing = true
@@ -130,7 +130,7 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, 128<<10)
 		parseErr := r.ParseForm()
 		if parseErr != nil {
-			http.Error(w, "Das Formular konnte nicht gelesen werden. Versuche es mit einem kürzeren Beitrag erneut.", http.StatusBadRequest)
+			c.pageError(w, "Das Formular konnte nicht gelesen werden. Versuche es mit einem kürzeren Beitrag erneut.", http.StatusBadRequest)
 			return
 		}
 		kind, tags := editor.Draft.Type, editor.Draft.Tags

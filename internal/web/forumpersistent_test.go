@@ -136,6 +136,52 @@ func TestPersistentForumRequests(t *testing.T) {
 			t.Fatal("deleted profile is public")
 		}
 	})
+	t.Run("comment errors retain escaped text and resolve the edit page", func(t *testing.T) {
+		ctx := context.Background()
+		postID, err := c.posts.Save(ctx, 1, "", posts.Draft{Title: "Kommentarprüfung", Body: "Eine Diskussion zur Fehlerbehandlung.", Type: "discussion"}, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var commentID string
+		for range 21 {
+			commentID, err = c.posts.SaveComment(ctx, 1, postID, "", "Unveränderter Kommentar")
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		text := "<script>unerlaubt()</script>" + strings.Repeat("ü", 10001)
+		for _, edit := range []bool{false, true} {
+			path, id, anchor := "/d/"+postID+"/comments", "", "comment-text"
+			if edit {
+				path += "/" + commentID + "/edit"
+				id, anchor = commentID, "edit-comment-"+commentID
+			}
+			w := request("POST", path, url.Values{"text": {text}}, 1, c.Comment, postID, id)
+			body := w.Body.String()
+			if w.Code != 422 || !strings.HasPrefix(w.Header().Get("Content-Type"), "text/html") || !strings.Contains(body, "<title>Fehler: Kommentarprüfung") || !strings.Contains(body, `href="#`+anchor+`"`) || strings.Contains(body, "<script>unerlaubt()") {
+				t.Fatalf("invalid comment recovery: %d %s", w.Code, body)
+			}
+			doc, err := xhtml.Parse(strings.NewReader(body))
+			if err != nil {
+				t.Fatal(err)
+			}
+			field := forumTestElement(t, doc, "textarea", "id", anchor)
+			if got := forumTestText(field); got != text {
+				t.Fatal("invalid input was not retained verbatim")
+			}
+			if edit && !strings.Contains(body, `id="comment-`+commentID+`"`) {
+				t.Fatal("edit recovery did not load the comment's page")
+			}
+		}
+		w := request("POST", "/d/"+postID+"/comments/"+commentID+"/edit", url.Values{"text": {text}}, 2, c.Comment, postID, commentID)
+		if w.Code != 403 || strings.Contains(w.Body.String(), "unerlaubt()") {
+			t.Fatal("validation bypassed comment ownership")
+		}
+		thread, _, err := c.posts.LookupPage(ctx, postID, 2, 1)
+		if err != nil || len(thread.Replies) != 1 || thread.Replies[0].Text != "Unveränderter Kommentar" {
+			t.Fatalf("failed validation modified stored comments: %+v %v", thread, err)
+		}
+	})
 	t.Run("voting authentication csrf and local return", func(t *testing.T) {
 		c.sessions = newSessionStore()
 		session := c.sessions.create(true)
