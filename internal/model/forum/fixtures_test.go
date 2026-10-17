@@ -33,7 +33,7 @@ func Find(filter Filter) []Post {
 		if filter.Type != "" && post.Type != filter.Type {
 			continue
 		}
-		text := strings.ToLower(strings.Join([]string{post.Title, post.Body, post.Summary, strings.Join(post.Tags, " ")}, " "))
+		text := strings.ToLower(strings.Join([]string{post.Title, post.Body, strings.Join(post.Tags, " ")}, " "))
 		if slices.ContainsFunc(terms, func(term string) bool { return !strings.Contains(text, term) }) {
 			continue
 		}

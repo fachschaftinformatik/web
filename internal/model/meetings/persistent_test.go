@@ -292,7 +292,7 @@ func TestPersistentMeetingRestartAndOwnership(t *testing.T) {
 		t.Fatal("publication is not idempotent", err)
 	}
 	after, err := s.AllWithError()
-	if err != nil || len(after) != len(All())+1 || after[0].Documents[0].URL() != "/documents/first" {
+	if err != nil || len(after) != len(All())+1 || after[0].Documents[0].File != "first" || !after[0].Documents[0].Stored {
 		t.Fatal("publication not durable", err)
 	}
 	p.Owner = "42"

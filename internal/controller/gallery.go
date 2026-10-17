@@ -15,7 +15,7 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
-	g := view.ImagesPage{Albums: albums, Pagination: listPagination(r, total, 12)}
+	g := view.ImagesPage{Albums: view.Albums(albums), Pagination: listPagination(r, total, 12)}
 	data := view.Page{Title: "Fotos", Active: "events", Community: true}
 	if id := r.PathValue("album"); id != "" {
 		a, err := c.gallery.Album(r.Context(), id)
@@ -27,7 +27,8 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 			c.serverError(w, err)
 			return
 		}
-		g.Album, g.Detail, g.Total = a, true, a.OriginalCount
+		album := view.NewAlbum(a)
+		g.Album, g.Detail, g.Total = album, true, a.OriginalCount
 		data.Title = a.Title
 		if imageID := r.PathValue("image"); imageID != "" {
 			index, err := c.gallery.PhotoPosition(r.Context(), id, imageID)
@@ -49,13 +50,13 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 				c.notFound(w, r)
 				return
 			}
-			g.Image, g.Viewer, g.Number = photos[index-start], true, index+1
-			g.Return = a.PageURL(index/gallery.PageSize+1) + "#image-" + imageID
+			g.Image, g.Viewer, g.Number = view.NewImage(photos[index-start]), true, index+1
+			g.Return = album.PageURL(index/gallery.PageSize+1) + "#image-" + imageID
 			if index > 0 {
-				g.Previous = a.ImageURL(photos[0])
+				g.Previous = album.ImageURL(view.NewImage(photos[0]))
 			}
 			if index+1 < g.Total && index-start+1 < len(photos) {
-				g.Next = a.ImageURL(photos[index-start+1])
+				g.Next = album.ImageURL(view.NewImage(photos[index-start+1]))
 			}
 			data.DocumentTitle = a.Title + " – Bild " + strconv.Itoa(g.Number) + " von " + strconv.Itoa(g.Total)
 		} else {
@@ -63,7 +64,7 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 			if raw := r.URL.Query().Get("page"); raw != "" {
 				n, err := strconv.Atoi(raw)
 				if err != nil || n < 1 || n > g.Pagination.Pages {
-					http.Redirect(w, r, a.URL(), http.StatusSeeOther)
+					http.Redirect(w, r, album.URL(), http.StatusSeeOther)
 					return
 				}
 			}
@@ -71,12 +72,13 @@ func (c *Handler) Images(w http.ResponseWriter, r *http.Request) {
 			if g.Pages > 1 {
 				data.DocumentTitle = a.Title + " – Seite " + strconv.Itoa(g.Page) + " von " + strconv.Itoa(g.Pages)
 			}
-			g.Images, err = c.gallery.Photos(r.Context(), a, (g.Page-1)*gallery.PageSize, gallery.PageSize)
+			photos, err := c.gallery.Photos(r.Context(), a, (g.Page-1)*gallery.PageSize, gallery.PageSize)
 			if err != nil {
 				c.serverError(w, err)
 				return
 			}
 			g.PageNumbers = view.GalleryPageNumbers(g.Page, g.Pages)
+			g.Images = view.Images(photos)
 			g.Previous, g.Next = g.Pagination.PreviousURL(), g.Pagination.NextURL()
 		}
 	}

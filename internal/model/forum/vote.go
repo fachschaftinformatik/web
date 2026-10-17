@@ -17,7 +17,7 @@ func viewerID(viewer []int64) int64 {
 // Zero removes the viewer's vote. Existing votes by other users are preserved.
 func (s *Service) Vote(ctx context.Context, user int64, post, comment string, value int) error {
 	if value < -1 || value > 1 {
-		return &ValidationError{[]FieldError{{"vote", "Wähle eine gültige Bewertung."}}}
+		return &ValidationError{Fields: []FieldError{{Field: "vote", Message: "Wähle eine gültige Bewertung."}}}
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

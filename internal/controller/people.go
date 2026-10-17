@@ -15,16 +15,6 @@ func responsibilityGroup(section string) string {
 	return "project"
 }
 
-func responsibilityKind(group string) string {
-	if group == "board" {
-		return "Vorstand"
-	}
-	if group == "departments" {
-		return "Referat"
-	}
-	return "Projektstelle"
-}
-
 func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *view.AdminPage) {
 	id := r.PathValue("id")
 	p := people.Person{ID: id}
@@ -72,7 +62,7 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *view.Adm
 	}
 	a.View, a.Action = "form", r.URL.Path
 	if id != "neu" {
-		a.Person = &p
+		a.Person = ptr(view.Person{Person: p})
 	}
 	a.Fields = []view.AdminField{view.Field("name", "Name", p.Name, "text")}
 	if a.Inviting {

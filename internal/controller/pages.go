@@ -29,14 +29,14 @@ func (c *Handler) home(ctx context.Context, viewer ...int64) (view.HomePage, err
 	if err != nil {
 		return view.HomePage{}, err
 	}
-	page := view.HomePage{Events: upcoming}
+	page := view.HomePage{Events: view.Events(upcoming)}
 	news, _, err := c.forum.FindPage(ctx, forum.Filter{Type: "news"}, 1, 1, viewer...)
 	if err != nil {
 		return view.HomePage{}, err
 	}
 	records = append(records, news...)
 	for _, post := range records {
-		item := view.HomePost{Title: post.Title, Summary: post.Summary, URL: post.URL(), Date: post.DateLabel(), DateISO: post.DateISO(), Votes: post.Votes, UserVote: post.UserVote}
+		item := view.HomeItem(post)
 		if post.Type == "news" && page.News.URL == "" {
 			page.News = item
 		}
@@ -75,5 +75,5 @@ func (c *Handler) Sitemap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c.render(w, "sitemap", false, view.Page{Title: "Seitenübersicht", Active: "sitemap", Images: view.ImagesPage{Albums: albums, Pagination: listPagination(r, total, 100)}})
+	c.render(w, "sitemap", false, view.Page{Title: "Seitenübersicht", Active: "sitemap", Images: view.ImagesPage{Albums: view.Albums(albums), Pagination: listPagination(r, total, 100)}})
 }

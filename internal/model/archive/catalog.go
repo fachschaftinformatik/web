@@ -35,17 +35,6 @@ func (e Exam) CanRevise(userID int64, role string) bool {
 	return e.ID != "" && userID != 0 && (e.OwnerID == userID || role == "admin" || role == "editor")
 }
 
-func (e Exam) URL() string {
-	return "/archive/files/" + e.ID
-}
-
-func (e Exam) Size() string {
-	if e.Bytes < 1024*1024 {
-		return fmt.Sprintf("%d kB", max(1, (e.Bytes+1023)/1024))
-	}
-	return strings.ReplaceAll(fmt.Sprintf("%.1f MB", float64(e.Bytes)/(1024*1024)), ".", ",")
-}
-
 type Filter struct {
 	Query    string
 	Programs []string
@@ -85,16 +74,6 @@ func (m Module) Programs() []string {
 	return programs
 }
 
-func VersionLabel(value string) string {
-	version := strings.TrimSpace(strings.TrimPrefix(value, "PO"))
-	if len(version) == 4 && strings.Trim(version, "0123456789") == "" {
-		return version
-	}
-	return value
-}
-
-func (e Exam) VersionLabel() string { return VersionLabel(e.Version) }
-
 type Catalog struct {
 	exams                       []Exam
 	modules                     []Module
@@ -126,7 +105,7 @@ func mergeExam(target *Exam, value Exam) {
 	target.Degree = strings.Join(target.degrees, ", ")
 	labels := make([]string, len(target.versions))
 	for i, value := range target.versions {
-		labels[i] = VersionLabel(value)
+		labels[i] = value
 	}
 	target.Version = strings.Join(labels, ", ")
 }
@@ -320,7 +299,7 @@ func (s *Service) Catalog(ctx context.Context) (Catalog, error) {
 		if err != nil {
 			return Catalog{}, fmt.Errorf("archive entry %d: %w", entry.ID, err)
 		}
-		exam := Exam{ID: strconv.FormatInt(entry.ID, 10), ModuleID: strconv.FormatInt(entry.ModuleID, 10), Title: entry.ModuleName, Program: program, Degree: degree, Version: entry.Version, Date: date.Format("02.01.2006"), Bytes: entry.Nbytes, OwnerID: entry.OwnerID}
+		exam := Exam{ID: strconv.FormatInt(entry.ID, 10), ModuleID: strconv.FormatInt(entry.ModuleID, 10), Title: entry.ModuleName, Program: program, Degree: degree, Version: entry.Version, Date: date.Format("2006-01-02"), Bytes: entry.Nbytes, OwnerID: entry.OwnerID}
 		exam.Assignments = []Assignment{{ModuleID: exam.ModuleID, Version: exam.Version, Title: exam.Title, Program: program, Degree: degree}}
 		if entry.Comment != nil {
 			exam.Description = *entry.Comment

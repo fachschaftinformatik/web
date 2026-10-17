@@ -230,7 +230,7 @@ func TestPublicationReviewAndVisibility(t *testing.T) {
 }
 
 func TestPasswordResetConfirmationPreview(t *testing.T) {
-	handler, _ := testApplication(t, []users.User{{ID: "42", Name: "Kim Beispiel", Email: "Kim@STUDMAIL.W-HS.DE", Permission: "FSV", Status: "Aktiv"}}...)
+	handler, _ := testApplication(t, []users.User{{ID: "42", Name: "Kim Beispiel", Email: "Kim@STUDMAIL.W-HS.DE", Role: "editor", Active: true}}...)
 	server := httptest.NewServer(handler)
 	defer server.Close()
 	b := newAdminBrowser(t, server)
@@ -260,7 +260,7 @@ func TestPasswordResetConfirmationPreview(t *testing.T) {
 func TestUserPaginationKeepsSearchContext(t *testing.T) {
 	var records []users.User
 	for i := 1; i <= 45; i++ {
-		records = append(records, users.User{ID: fmt.Sprint(i), Name: fmt.Sprintf("Beispiel %02d", i), Email: fmt.Sprintf("user%d@studmail.w-hs.de", i), Verified: i%2 == 0, Status: "Aktiv"})
+		records = append(records, users.User{ID: fmt.Sprint(i), Name: fmt.Sprintf("Beispiel %02d", i), Email: fmt.Sprintf("user%d@studmail.w-hs.de", i), Verified: i%2 == 0, Active: true})
 	}
 	handler, _ := testApplication(t, records...)
 	server := httptest.NewServer(handler)

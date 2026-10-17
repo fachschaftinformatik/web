@@ -5,17 +5,15 @@ import (
 
 	"github.com/fachschaftinformatik/web/internal/content"
 
-	"github.com/fachschaftinformatik/web/internal/model/events"
 	"github.com/fachschaftinformatik/web/internal/model/forum"
 	"github.com/fachschaftinformatik/web/internal/model/gallery"
-	"github.com/fachschaftinformatik/web/internal/model/meetings"
 )
 
 type MeetingsPage struct {
 	Year     int
 	Years    []int
-	Meetings []meetings.Meeting
-	Next     *meetings.Meeting
+	Meetings []Meeting
+	Next     *Meeting
 }
 
 type ContentEditor struct {
@@ -32,9 +30,9 @@ func (e ContentEditor) RichHTML() template.HTML {
 	return template.HTML(content.SanitizeRichText(e.RichBody))
 }
 
-func (e ContentEditor) Error(Field string) string {
+func (e ContentEditor) Error(field string) string {
 	for _, err := range e.Errors {
-		if err.Field == Field {
+		if err.Field == field {
 			return err.Message
 		}
 	}
@@ -43,8 +41,8 @@ func (e ContentEditor) Error(Field string) string {
 
 type EventsPage struct {
 	Pagination     ListPagination
-	Upcoming, Past []events.Event
-	Detail         *events.Event
+	Upcoming, Past []Event
+	Detail         *Event
 	CanCreate      bool
 }
 
@@ -52,8 +50,8 @@ type ForumPage struct {
 	Pagination        ListPagination
 	CanWrite, CanEdit bool
 	Filter            forum.Filter
-	Posts             []forum.Post
-	Thread            *forum.Thread
+	Posts             []Post
+	Thread            *Thread
 	BackURL           string
 	Comment           CommentForm
 }
@@ -82,18 +80,23 @@ type HomePost struct {
 	Votes, UserVote                    int
 }
 
+func HomeItem(post forum.Post) HomePost {
+	p := NewPost(post)
+	return HomePost{Title: p.Title, Summary: p.Summary(), URL: p.URL(), Date: p.DateLabel(), DateISO: p.DateISO(), Votes: p.Votes, UserVote: p.UserVote}
+}
+
 type HomePage struct {
 	News   HomePost
 	Forum  []HomePost
-	Events []events.Event
+	Events []Event
 }
 
 type ImagesPage struct {
 	Pagination                 ListPagination
-	Albums                     []gallery.Album
-	Album                      gallery.Album
-	Images                     []gallery.Image
-	Image                      gallery.Image
+	Albums                     []Album
+	Album                      Album
+	Images                     []Image
+	Image                      Image
 	Detail, Viewer             bool
 	Number, Total, Page, Pages int
 	PageNumbers                []int
@@ -104,10 +107,10 @@ func (g ImagesPage) ImageNumber(index int) int {
 	return (g.Page-1)*gallery.PageSize + index + 1
 }
 
-func (g ImagesPage) CarouselAlbums() []gallery.Album {
-	var albums []gallery.Album
+func (g ImagesPage) CarouselAlbums() []Album {
+	var albums []Album
 	for _, album := range g.Albums {
-		if album.CoverImage().Source != "" {
+		if album.CoverImage().ID != "" {
 			albums = append(albums, album)
 		}
 	}

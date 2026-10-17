@@ -85,8 +85,6 @@ func ResolveModules(available []Assignment, titles []string) ([]Assignment, Vali
 	return result, fields
 }
 
-func (a Assignment) VersionLabel() string { return VersionLabel(a.Version) }
-
 func (s Submission) placements() []Assignment {
 	if len(s.Assignments) > 0 {
 		return s.Assignments

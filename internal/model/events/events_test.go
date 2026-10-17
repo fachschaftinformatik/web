@@ -76,7 +76,7 @@ func TestStandaloneEventsPersistCoversAndRestrictPublishing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(e.Body, "bad()") || e.EventDate != "2027-01-30T17:00" || e.CoverWidth != 711 || e.CoverHeight != 1600 || e.LegacyURL() != "" {
+	if strings.Contains(e.Body, "bad()") || e.EventDate != "2027-01-30T17:00" || e.CoverWidth != 711 || e.CoverHeight != 1600 || e.LegacyPostID.Valid {
 		t.Fatalf("event: %+v", e)
 	}
 	var count int
@@ -177,7 +177,7 @@ func TestEventWithoutStartTimeDoesNotInventMidnight(t *testing.T) {
 		t.Fatal(err)
 	}
 	event, err := s.Lookup(ctx, value)
-	if err != nil || event.EventDate != "2026-11-27" || event.EventLabel() != "27. November 2026" {
+	if err != nil || event.EventDate != "2026-11-27" {
 		t.Fatalf("date-only event: %+v %v", event, err)
 	}
 }

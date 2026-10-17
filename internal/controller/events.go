@@ -25,7 +25,7 @@ func (c *Handler) Events(w http.ResponseWriter, r *http.Request) {
 			c.eventError(w, r, err)
 			return
 		}
-		page.Detail = &event
+		page.Detail = ptr(view.Event(event))
 		c.render(w, "events", false, view.Page{Title: event.Title, Active: "calendar", Community: true, Events: page})
 		return
 	}
@@ -34,7 +34,8 @@ func (c *Handler) Events(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
-	page.Upcoming, page.Past = events.Group(records, time.Now())
+	upcoming, past := events.Group(records, time.Now())
+	page.Upcoming, page.Past = view.Events(upcoming), view.Events(past)
 	page.Pagination = listPagination(r, total, eventsPageSize)
 
 	c.render(w, "events", false, view.Page{Title: "Veranstaltungen", Active: "calendar", Community: true, Events: page})
@@ -62,11 +63,11 @@ func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		editor.Editing = true
-		editor.Action = event.URL() + "/edit"
-		editor.BackURL = event.URL()
-		editor.CoverURL, editor.CoverAlt = event.CoverURL(), event.CoverAlt
+		editor.Action = view.Event(event).URL() + "/edit"
+		editor.BackURL = view.Event(event).URL()
+		editor.CoverURL, editor.CoverAlt = view.Event(event).CoverURL(), event.CoverAlt
 		editor.Draft = view.EditorDraft{Title: event.Title, Body: event.Body, Type: "event", Location: event.Location}
-		editor.RichBody = event.RichBody()
+		editor.RichBody = view.Event(event).RichBody()
 		if d, err := time.Parse("2006-01-02T15:04", event.EventDate); err == nil {
 			editor.Draft.Date, editor.Draft.Time = d.Format("02.01.2006"), d.Format("15:04")
 		} else {

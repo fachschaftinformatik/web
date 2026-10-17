@@ -119,7 +119,7 @@ func TestPersistentForumRequests(t *testing.T) {
 			}
 		}
 		thread, err := c.forum.Lookup(context.Background(), post)
-		if err != nil || thread.AuthorURL() != "/users/1" || thread.Replies[0].AuthorURL() != "" || thread.Replies[0].Author != "Anonym" {
+		if err != nil || !thread.AuthorPublic || thread.AuthorID != 1 || thread.Replies[0].AuthorPublic || thread.Replies[0].Author != "Anonym" {
 			t.Fatalf("author visibility: %+v %v", thread, err)
 		}
 		w := request("GET", "/d/"+post, nil, 0, c.Discussion, post, "")

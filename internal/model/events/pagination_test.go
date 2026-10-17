@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -28,5 +29,13 @@ func TestEventPagesOrderHistoryAndExcludeCancelledFromHome(t *testing.T) {
 	home, total, err := s.FindPage(context.Background(), now, 1, 3, true)
 	if err != nil || total != 2 || len(home) != 2 || home[0].ID != "10" || home[1].ID != "14" {
 		t.Fatalf("home: %+v %d %v", home, total, err)
+	}
+	all, _, err := s.FindPage(context.Background(), now, 1, 100, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	upcoming, past := Group(all, now)
+	if !reflect.DeepEqual(upcoming, home) || len(past) != 3 {
+		t.Fatal("calendar grouping and the bounded upcoming query disagree")
 	}
 }

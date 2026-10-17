@@ -92,7 +92,7 @@ func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *vie
 			}
 		}
 	}
-	a.View, a.Action, a.Publication = "form", "/verwaltung/sitzungen/"+p.ID, &p
+	a.View, a.Action, a.Publication = "form", "/verwaltung/sitzungen/"+p.ID, ptr(view.Publication(p))
 	a.Fields = []view.AdminField{
 		{ID: "date", Label: "Sitzungsdatum", Kind: "date", Day: day, Month: month, Year: year},
 		view.Field("number", "Sitzungsnummer", number, "text"),
@@ -118,7 +118,7 @@ func (c *Handler) ReviewPublication(w http.ResponseWriter, r *http.Request) {
 		c.notFound(w, r)
 		return
 	}
-	a := &view.AdminPage{Section: "sitzungen", SectionTitle: "Sitzungen und Protokolle", View: "review", Publication: &p, Action: r.URL.Path}
+	a := &view.AdminPage{Section: "sitzungen", SectionTitle: "Sitzungen und Protokolle", View: "review", Publication: ptr(view.Publication(p)), Action: r.URL.Path}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		if err := c.meetings.Publish(p.ID, owner); err != nil {
@@ -186,8 +186,12 @@ func (c *Handler) Meetings(w http.ResponseWriter, r *http.Request) {
 		c.notFound(w, r)
 		return
 	}
+	var nextMeeting *view.Meeting
+	if next != nil {
+		nextMeeting = ptr(view.NewMeeting(*next))
+	}
 	c.render(w, "content", false, view.Page{
 		Title: "Sitzungen und Protokolle", Active: "meetings", Fachschaft: true,
-		Meetings: view.MeetingsPage{Year: year, Years: years, Meetings: records, Next: next},
+		Meetings: view.MeetingsPage{Year: year, Years: years, Meetings: view.Meetings(records), Next: nextMeeting},
 	})
 }

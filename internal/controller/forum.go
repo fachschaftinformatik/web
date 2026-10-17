@@ -52,13 +52,13 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 		editor.Editing = true
 		if thread.Type == "event" {
 			if event, err := c.events.Lookup(r.Context(), id); err == nil {
-				http.Redirect(w, r, event.URL()+"/edit", http.StatusSeeOther)
+				http.Redirect(w, r, view.Event(event).URL()+"/edit", http.StatusSeeOther)
 				return
 			}
 		}
 		editor.Announcement = thread.Type == "news"
 		editor.Event = thread.Type == "event"
-		editor.Action, editor.BackURL, editor.SourceURL = thread.URL()+"/edit", thread.URL(), thread.SourceURL()+"/edit"
+		editor.Action, editor.BackURL, editor.SourceURL = view.NewThread(thread).URL()+"/edit", view.NewThread(thread).URL(), view.NewThread(thread).SourceURL()+"/edit"
 		editor.Draft = view.EditorDraft{Title: thread.Title, Body: thread.Body, Type: thread.Type, Tags: strings.Join(thread.Tags, ", "), Location: thread.Location}
 		if thread.BodyFormat == "html" {
 			editor.RichBody = content.SanitizeRichText(thread.Body)
@@ -171,13 +171,13 @@ func (c *Handler) discussion(w http.ResponseWriter, r *http.Request, draft view.
 	if len(values) > 0 {
 		back += "?" + values.Encode()
 	}
-	forum := view.ForumPage{Thread: &thread, BackURL: back, Pagination: listPagination(r, total, 20), Comment: draft}
+	forum := view.ForumPage{Thread: ptr(view.NewThread(thread)), BackURL: back, Pagination: listPagination(r, total, 20), Comment: draft}
 
 	if user := forumUser(w); user != 0 {
 		forum.CanWrite = c.forum.CanWrite(r.Context(), user, 0, false) == nil
 		forum.CanEdit = c.forum.CanWrite(r.Context(), user, thread.AuthorID, false) == nil
 		for i := range thread.Replies {
-			thread.Replies[i].CanEdit = c.forum.CanWrite(r.Context(), user, thread.Replies[i].AuthorID, true) == nil
+			forum.Thread.Replies[i].CanEdit = c.forum.CanWrite(r.Context(), user, thread.Replies[i].AuthorID, true) == nil
 		}
 	}
 
@@ -213,9 +213,8 @@ func (c *Handler) Forum(w http.ResponseWriter, r *http.Request) {
 		Forum: view.ForumPage{Filter: filter},
 	}
 
-	var err error
-	var total int
-	data.Forum.Posts, total, err = c.forum.FindPage(r.Context(), filter, requestedPage(r), 20, forumUser(w))
+	records, total, err := c.forum.FindPage(r.Context(), filter, requestedPage(r), 20, forumUser(w))
+	data.Forum.Posts = view.Posts(records)
 	data.Forum.Pagination = listPagination(r, total, 20)
 	if err != nil {
 		c.serverError(w, err)
@@ -283,9 +282,8 @@ func (c *Handler) Comment(w http.ResponseWriter, r *http.Request) {
 func (c *Handler) News(w http.ResponseWriter, r *http.Request) {
 	page := view.ForumPage{}
 
-	var err error
-	var total int
-	page.Posts, total, err = c.forum.FindPage(r.Context(), forum.Filter{Type: "news"}, requestedPage(r), 20, forumUser(w))
+	records, total, err := c.forum.FindPage(r.Context(), forum.Filter{Type: "news"}, requestedPage(r), 20, forumUser(w))
+	page.Posts = view.Posts(records)
 	page.Pagination = listPagination(r, total, 20)
 	if err != nil {
 		c.serverError(w, err)

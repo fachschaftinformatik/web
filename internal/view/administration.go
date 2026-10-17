@@ -3,21 +3,26 @@ package view
 import (
 	"net/url"
 	"strconv"
-
-	"github.com/fachschaftinformatik/web/internal/model/archive"
-	"github.com/fachschaftinformatik/web/internal/model/meetings"
-	"github.com/fachschaftinformatik/web/internal/model/people"
-	"github.com/fachschaftinformatik/web/internal/model/users"
 )
 
 type AdminMemberRow struct {
-	people.Person
+	Person
 	Tasks []string
 }
 
 type AdminTaskRow struct {
 	Title, Kind, URL string
 	Members          []string
+}
+
+func ResponsibilityKind(group string) string {
+	if group == "board" {
+		return "Vorstand"
+	}
+	if group == "departments" {
+		return "Referat"
+	}
+	return "Projektstelle"
 }
 
 type AdminLink struct{ ID, Label, URL, Group string }
@@ -32,18 +37,18 @@ var AdminLinks = []AdminLink{
 
 type AdminPage struct {
 	CanResendConfirmation                                        bool
-	Person                                                       *people.Person
+	Person                                                       *Person
 	Inviting                                                     bool
 	ReviewerOnly                                                 bool
-	Requests                                                     []archive.Request
+	Requests                                                     []Request
 	Section, SectionTitle, View, Action, Query, Message, Success string
 	Fields                                                       []AdminField
 	Members                                                      []AdminMemberRow
 	Tasks                                                        []AdminTaskRow
-	Users                                                        []users.User
-	User                                                         *users.User
-	Meetings                                                     []meetings.Meeting
-	Publication                                                  *meetings.Publication
+	Users                                                        []User
+	User                                                         *User
+	Meetings                                                     []Meeting
+	Publication                                                  *Publication
 	Page, Pages, Total                                           int
 	PreviousURL, NextURL                                         string
 }

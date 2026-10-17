@@ -20,7 +20,7 @@ func (d Draft) Validate() []FieldError {
 	switch d.Type {
 	case "discussion", "news", "event":
 	default:
-		errors = append(errors, FieldError{"type", "Wähle eine Beitragsart aus."})
+		errors = append(errors, FieldError{Field: "type", Message: "Wähle eine Beitragsart aus."})
 	}
 	if d.Type == "event" {
 		errors = append(errors, content.ValidateSchedule(d.Date, d.Time)...)

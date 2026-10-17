@@ -26,20 +26,6 @@ const (
 	Rejected Status = "rejected"
 )
 
-func (s Status) Label() string {
-	switch s {
-	case Draft:
-		return "Entwurf"
-	case Pending:
-		return "Eingereicht"
-	case Approved:
-		return "Bestätigt"
-	case Rejected:
-		return "Abgelehnt"
-	}
-	return ""
-}
-
 var ErrConflict = errors.New("Der Antrag wurde bereits geändert. Lade die Seite neu und prüfe den aktuellen Stand.")
 
 type Request struct {
@@ -53,24 +39,6 @@ type Request struct {
 	Assignments                                                            []Assignment
 	SharedAssignments                                                      bool
 	EditToken                                                              string
-}
-
-func (r Request) DateLabel() string {
-	if date, err := parseDate(r.Date); err == nil {
-		return date.Format("02.01.2006")
-	}
-	return r.Date
-}
-
-func (r Request) SubmittedLabel() string {
-	value := r.CreatedAt
-	if r.SubmittedAt != nil {
-		value = *r.SubmittedAt
-	}
-	if date, err := time.Parse(time.RFC3339, value); err == nil {
-		return date.Format("02.01.2006")
-	}
-	return value
 }
 
 func accountRole(ctx context.Context, db database.DBTX, userID int64) (string, error) {
@@ -119,7 +87,7 @@ func (s *Service) Request(ctx context.Context, userID int64, value string, revie
 			return Request{}, err
 		}
 		result.ModuleID = strconv.FormatInt(moduleID, 10)
-		result.Documents = append(result.Documents, Exam{ID: strconv.FormatInt(id, 10), ModuleID: result.ModuleID, Title: result.Title, Date: result.DateLabel(), Bytes: size, Number: len(result.Documents) + 1})
+		result.Documents = append(result.Documents, Exam{ID: strconv.FormatInt(id, 10), ModuleID: result.ModuleID, Title: result.Title, Date: result.Date, Bytes: size, Number: len(result.Documents) + 1})
 	}
 	if err := rows.Err(); err != nil {
 		return Request{}, err

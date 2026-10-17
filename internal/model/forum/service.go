@@ -54,14 +54,8 @@ func scanThread(row interface{ Scan(...any) error }) (Thread, error) {
 	if errors.Is(err, sql.ErrNoRows) {
 		return t, ErrNotFound
 	}
-	text := t.Body
 	if t.BodyFormat == "html" {
 		t.Body = content.SanitizeRichText(t.Body)
-		text = content.RichTextVisible(t.Body)
-	}
-	t.Summary = text
-	if r := []rune(text); len(r) > 240 {
-		t.Summary = string(r[:240]) + "…"
 	}
 	return t, err
 }
@@ -112,7 +106,7 @@ func (s *Service) Find(ctx context.Context, f Filter, viewer ...int64) ([]Post, 
 		if f.Type != "" && t.Type != f.Type {
 			continue
 		}
-		text := strings.ToLower(t.Title + " " + t.Summary + " " + t.Body + " " + strings.Join(t.Tags, " "))
+		text := strings.ToLower(t.Title + " " + " " + t.Body + " " + strings.Join(t.Tags, " "))
 		if slices.ContainsFunc(strings.Fields(strings.ToLower(f.Query)), func(term string) bool { return !strings.Contains(text, term) }) {
 			continue
 		}
@@ -174,7 +168,7 @@ func (s *Service) Save(ctx context.Context, user int64, post string, d Draft, ri
 		return "", err
 	}
 	if d.Type == "event" || oldType == "event" {
-		return "", &ValidationError{[]FieldError{{"body", "Veranstaltungen werden im Veranstaltungsbereich verwaltet."}}}
+		return "", &ValidationError{Fields: []FieldError{{Field: "body", Message: "Veranstaltungen werden im Veranstaltungsbereich verwaltet."}}}
 	}
 	if d.Type == "news" || oldType == "news" {
 		if err := editorialPermission(ctx, tx, user); err != nil {
@@ -189,7 +183,7 @@ func (s *Service) Save(ctx context.Context, user int64, post string, d Draft, ri
 		d.Body = content.RichTextVisible(body)
 	}
 	if fields := d.Validate(); len(fields) > 0 {
-		return "", &ValidationError{fields}
+		return "", &ValidationError{Fields: fields}
 	}
 	event := ""
 	if post == "" {
@@ -243,7 +237,7 @@ func (s *Service) SaveComment(ctx context.Context, user int64, post, comment, te
 	}
 	text = strings.TrimSpace(text)
 	if n := utf8.RuneCountInString(text); n < 1 || n > 10000 {
-		return "", &ValidationError{[]FieldError{{"text", "Der Kommentar muss zwischen 1 und 10.000 Zeichen lang sein."}}}
+		return "", &ValidationError{Fields: []FieldError{{Field: "text", Message: "Der Kommentar muss zwischen 1 und 10.000 Zeichen lang sein."}}}
 	}
 	if comment == "" {
 		comment = id.New().String()

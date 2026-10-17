@@ -22,7 +22,7 @@ func galleryPhoto(id, title, description string, number int, albumTitle string) 
 	if strings.TrimSpace(description) == "" || strings.HasPrefix(description, "Photo by ") || strings.HasPrefix(description, "Video by ") {
 		description = title
 	}
-	return Image{ID: id, Title: title, Description: description, Source: "/media/" + id + "/1200", thumbnail: "/media/" + id + "/400"}
+	return Image{ID: id, Title: title, Description: description}
 }
 func scanAlbum(row interface{ Scan(...any) error }) (Album, error) {
 	var a Album
@@ -40,8 +40,7 @@ func scanAlbum(row interface{ Scan(...any) error }) (Album, error) {
 		a.Title = "Fotoalbum"
 	}
 	if cover == storage.EventCoverSourceKey(a.ID) {
-		prefix := "/media/events/" + a.ID + "/cover/"
-		a.Cover = Image{ID: a.ID, Title: a.Title, Description: a.Title, Source: prefix + "1200", thumbnail: prefix + "400"}
+		a.Cover = Image{ID: a.ID, Title: a.Title, Description: a.Title, AlbumCover: true}
 	} else {
 		a.Cover = galleryPhoto(first, a.Title, a.Title, 1, a.Title)
 	}

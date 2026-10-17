@@ -133,7 +133,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (int64, err
 }
 
 func (s *Service) Directory(ctx context.Context) (*Directory, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT CAST(u.id AS TEXT),u.name,lower(u.email),u.role,COALESCE(p.name,''),CASE WHEN u.active=1 THEN 'Aktiv' ELSE 'Inaktiv' END,u.verified=1 FROM users u LEFT JOIN programs p ON p.id=u.program_id WHERE u.deleted_at IS NULL ORDER BY u.name COLLATE NOCASE,u.id`)
+	rows, err := s.db.QueryContext(ctx, `SELECT CAST(u.id AS TEXT),u.name,lower(u.email),u.role,COALESCE(p.name,''),u.active=1,u.verified=1 FROM users u LEFT JOIN programs p ON p.id=u.program_id WHERE u.deleted_at IS NULL ORDER BY u.name COLLATE NOCASE,u.id`)
 	if err != nil {
 		return nil, err
 	}
@@ -141,16 +141,8 @@ func (s *Service) Directory(ctx context.Context) (*Directory, error) {
 	var records []User
 	for rows.Next() {
 		var user User
-		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Permission, &user.Program, &user.Status, &user.Verified); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.Program, &user.Active, &user.Verified); err != nil {
 			return nil, err
-		}
-		switch user.Permission {
-		case "admin":
-			user.Permission = "Administration"
-		case "editor":
-			user.Permission = "Redaktion"
-		case "user":
-			user.Permission = "Studierende"
 		}
 		records = append(records, user)
 	}

@@ -11,9 +11,10 @@ import (
 
 // User is a login identity, independent of a public person profile.
 type User struct {
-	ID, Name, Email, Permission string
-	Program, Status             string
-	Verified                    bool
+	ID, Name, Email, Role string
+	Program               string
+	Active                bool
+	Verified              bool
 }
 
 // Directory is an immutable account display snapshot. It contains neither

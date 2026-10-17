@@ -40,7 +40,7 @@ func testApplication(t *testing.T, records ...users.User) (*Handler, *sql.DB) {
 		t.Fatal(err)
 	}
 	if len(records) == 0 {
-		records = []users.User{{ID: "42", Name: "Kim Muster", Email: "kim@studmail.w-hs.de", Status: "Aktiv"}, {ID: "43", Name: "Alex Beispiel", Email: "alex@studmail.w-hs.de", Status: "Aktiv"}}
+		records = []users.User{{ID: "42", Name: "Kim Muster", Email: "kim@studmail.w-hs.de", Active: true}, {ID: "43", Name: "Alex Beispiel", Email: "alex@studmail.w-hs.de", Active: true}}
 	}
 	for _, user := range records {
 		if _, err := db.Exec(`INSERT INTO users(id,email,name,password,role,active,verified) VALUES(?,?,?,?,'user',1,?)`, user.ID, strings.ToLower(strings.TrimSpace(user.Email)), user.Name, string(hash), user.Verified); err != nil {

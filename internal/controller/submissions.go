@@ -31,7 +31,7 @@ func (c *Handler) ArchiveRequests(w http.ResponseWriter, r *http.Request) {
 		c.archiveWriteError(w, r, err)
 		return
 	}
-	c.render(w, "requests", false, view.Page{Title: "Meine Einreichungen", Active: "archive", RequestList: view.RequestListPage{Requests: requests}})
+	c.render(w, "requests", false, view.Page{Title: "Meine Einreichungen", Active: "archive", RequestList: view.RequestListPage{Requests: view.Requests(requests)}})
 }
 
 func (c *Handler) ArchiveRequest(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +57,7 @@ func (c *Handler) ArchiveRequest(w http.ResponseWriter, r *http.Request) {
 	if request.Status == archive.Pending {
 		title = "Einreichung eingegangen"
 	}
-	c.render(w, "request", false, view.Page{Title: title, Active: "archive", Request: &view.RequestPage{Entry: request, EditURL: "/archive/requests/" + request.ID + "/edit"}})
+	c.render(w, "request", false, view.Page{Title: title, Active: "archive", Request: &view.RequestPage{Entry: view.NewRequest(request), EditURL: "/archive/requests/" + request.ID + "/edit"}})
 }
 
 func (c *Handler) ReviewArchiveRequest(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +72,7 @@ func (c *Handler) ReviewArchiveRequest(w http.ResponseWriter, r *http.Request) {
 		c.archiveWriteError(w, r, err)
 		return
 	}
-	page := view.Page{Title: "Einreichung prüfen", Active: "admin", Admin: &view.AdminPage{Section: "einreichungen", SectionTitle: "Einreichungen", View: "review", ReviewerOnly: !session.CanAdmin()}, Request: &view.RequestPage{Entry: request, Reviewing: true, EditURL: "/verwaltung/einreichungen/" + request.ID + "/edit"}}
+	page := view.Page{Title: "Einreichung prüfen", Active: "admin", Admin: &view.AdminPage{Section: "einreichungen", SectionTitle: "Einreichungen", View: "review", ReviewerOnly: !session.CanAdmin()}, Request: &view.RequestPage{Entry: view.NewRequest(request), Reviewing: true, EditURL: "/verwaltung/einreichungen/" + request.ID + "/edit"}}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		decision := r.PostForm.Get("decision")
@@ -126,9 +126,9 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 			c.archiveWriteError(w, r, archive.ErrConflict)
 			return
 		}
-		form.RequestID, form.Existing = request.ID, request.Documents
+		form.RequestID, form.Existing = request.ID, view.Exams(request.Documents)
 		form.EditToken = request.EditToken
-		form.Date, form.Comment = request.DateLabel(), request.Comment
+		form.Date, form.Comment = view.NewRequest(request).DateLabel(), request.Comment
 		selected, revisionOf = request.Assignments, request.RevisionOf
 	} else {
 		if revisionOf != "" {

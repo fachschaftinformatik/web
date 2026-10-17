@@ -125,3 +125,5 @@ func (c *Handler) renderStatus(w http.ResponseWriter, page string, fragment bool
 	w.WriteHeader(status)
 	_, _ = html.WriteTo(w)
 }
+
+func ptr[T any](value T) *T { return &value }

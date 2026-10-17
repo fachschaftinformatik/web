@@ -117,7 +117,7 @@ func TestMeetingDocuments(t *testing.T) {
 				sources[source] = true
 			}
 			response := httptest.NewRecorder()
-			handler.ServeHTTP(response, httptest.NewRequest("GET", document.URL(), nil))
+			handler.ServeHTTP(response, httptest.NewRequest("GET", view.Document(document).URL(), nil))
 			content := response.Body.Bytes()
 			if response.Code != 200 || !strings.HasPrefix(response.Header().Get("Content-Type"), "application/pdf") {
 				t.Fatalf("PDF not served: %s (%d)", document.File, response.Code)

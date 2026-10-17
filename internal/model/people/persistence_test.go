@@ -58,7 +58,7 @@ func TestPersistentInvitationConfirmationAndAssignments(t *testing.T) {
 	}
 	people := store.People()
 	member := people[len(people)-1]
-	if member.UserID == 0 || member.Confirmed || member.Status() != "Eingeladen" || member.AccountEmail != "new@studmail.w-hs.de" || member.Email != "" {
+	if member.UserID == 0 || member.Confirmed || member.AccountEmail != "new@studmail.w-hs.de" || member.Email != "" {
 		t.Fatalf("invited member: %+v", member)
 	}
 	token := inviteToken(t, db)
@@ -128,7 +128,7 @@ func TestPersistentInvitationConfirmationAndAssignments(t *testing.T) {
 	confirmed := false
 	for _, p := range restarted.People() {
 		if p.ID == member.ID {
-			confirmed = p.Confirmed && p.Status() == "Bestätigt"
+			confirmed = p.Confirmed
 		}
 	}
 	if !confirmed {
@@ -192,7 +192,7 @@ func TestLinkExistingMemberAndUseAccountIdentity(t *testing.T) {
 	ctx := context.Background()
 	members := store.People()
 	member := members[0]
-	if member.UserID != 0 || member.Status() != "Ohne Benutzerkonto" {
+	if member.UserID != 0 {
 		t.Fatal("unlinked profile claims a confirmed account")
 	}
 	before := store.Responsibilities("board")

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	_ "embed"
 	"encoding/json"
-	"fmt"
 	"slices"
 	"time"
 
@@ -22,40 +21,10 @@ type Document struct {
 	Stored                   bool
 }
 
-func (d Document) URL() string {
-	if d.Stored {
-		return "/documents/" + d.File
-	}
-	return "/assets/content/" + d.File
-}
-
-func (d Document) Size() string { return fmt.Sprintf("%d kB", (d.Bytes+999)/1000) }
-
-func kindLabel(kind string) string {
-	if kind == "Einladung" {
-		return "Einladung zur Sitzung"
-	}
-	if kind == "Protokoll" {
-		return "Sitzungsprotokoll"
-	}
-	return kind
-}
-
-func (d Document) Label() string { return kindLabel(d.Kind) }
-
 type Meeting struct {
 	Year, Number int
 	Date         string
 	Documents    []Document
-}
-
-func (m Meeting) DateLabel() string {
-	date, err := time.Parse("2006-01-02", m.Date)
-	if err != nil {
-		return "Datum uneindeutig"
-	}
-	months := [...]string{"Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"}
-	return fmt.Sprintf("%d. %s %d", date.Day(), months[date.Month()-1], date.Year())
 }
 
 // All returns a fresh copy of the curated, newest-first document index.
@@ -165,9 +134,3 @@ func sortMeetings(records []Meeting) {
 }
 
 func (s *Store) All() []Meeting { records, _ := s.AllWithError(); return records }
-
-func (p Publication) Size() string { return fmt.Sprintf("%d kB", (len(p.Data)+999)/1000) }
-
-func (p Publication) KindLabel() string { return kindLabel(p.Kind) }
-
-func (p Publication) DateLabel() string { return (Meeting{Date: p.Date}).DateLabel() }

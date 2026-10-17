@@ -53,13 +53,17 @@ internal/
     users/              Accounts, authentication and access policies
     people/             Members, groups and responsibilities
   view/                 Presentation types, templates and embedded assets
+  content/              Shared text sanitization and content validation
   database/             SQLite connections, migrations and generated queries
   storage/              Binary objects and image processing; disk/S3 adapters
   email/                SMTP transport and email templates
 ```
 
 Controllers call model operations and pass presentation data to views. Models
-do not depend on controllers or views. The V1 REST API, Next.js website,
+own assignment resolution, publication rules and event classification. Typed view
+adapters own website URLs, display labels, summaries and image-preview paths.
+Models do not depend on controllers or views, and views do not access storage or
+the database. The V1 REST API, Next.js website,
 OpenAPI client generation and multi-process runtime are retired;
 their implementation remains in Git history at `86a6968`.
 

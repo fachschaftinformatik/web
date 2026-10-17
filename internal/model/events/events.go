@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -14,7 +13,6 @@ import (
 	"github.com/fachschaftinformatik/web/internal/content"
 
 	"github.com/fachschaftinformatik/web/internal/id"
-	"github.com/fachschaftinformatik/web/internal/model/forum"
 	"github.com/fachschaftinformatik/web/internal/storage"
 )
 
@@ -46,47 +44,6 @@ type Event struct {
 	LegacyPostID                                                       sql.NullInt64
 	SourceURL, SourcePublishedAt, SourceStatus                         string
 	GalleryAlbumID, GalleryCoverID                                     sql.NullInt64
-}
-
-func (e Event) URL() string { return "/community/veranstaltungen/" + e.ID }
-
-func (e Event) CoverURL() string {
-	if e.CoverKey != "" {
-		return e.URL() + "/cover"
-	}
-	return ""
-}
-
-func (e Event) LegacyURL() string {
-	if e.LegacyPostID.Valid {
-		return "/d/" + strconv.FormatInt(e.LegacyPostID.Int64, 10)
-	}
-	return ""
-}
-
-func (e Event) EventLabel() string {
-	if len(e.EventDate) == 10 {
-		return (forum.Post{Created: e.EventDate + "T00:00:00Z"}).DateLabel()
-	}
-	return (forum.Thread{EventDate: e.EventDate}).EventLabel()
-}
-
-func (e Event) RichBody() string {
-	if e.BodyFormat == "html" {
-		return content.SanitizeRichText(e.Body)
-	}
-	return content.PlainRichText(e.Body)
-}
-
-func (e Event) Summary() string {
-	text := e.Body
-	if e.BodyFormat == "html" {
-		text = content.RichTextVisible(text)
-	}
-	if r := []rune(text); len(r) > 240 {
-		return string(r[:240]) + "…"
-	}
-	return text
 }
 
 type Draft struct{ Title, Body, Date, Time, Location string }
@@ -133,39 +90,11 @@ func (s *Service) Lookup(ctx context.Context, event string) (Event, error) {
 	return scan(s.db.QueryRowContext(ctx, selectEvent+` AND id=?`, event))
 }
 
-func (e Event) SourceDateLabel() string {
-	return (forum.Post{Created: e.SourcePublishedAt}).DateLabel()
-}
-
-func (e Event) FullImageURL() string {
-	if e.GalleryCoverID.Valid {
-		return "/media/" + strconv.FormatInt(e.GalleryCoverID.Int64, 10) + "/original"
-	}
-	return e.CoverURL()
-}
-
-func (e Event) GalleryURL() string {
-	if e.GalleryAlbumID.Valid {
-		return "/community/events/" + strconv.FormatInt(e.GalleryAlbumID.Int64, 10)
-	}
-	return ""
-}
-
 func (e Event) SortDate() string {
 	if e.EventDate != "" {
 		return e.EventDate
 	}
 	return e.SourcePublishedAt
-}
-
-func (e Event) StatusLabel() string {
-	switch e.SourceStatus {
-	case "cancelled":
-		return "Abgesagt"
-	case "rescheduled":
-		return "Termin geändert"
-	}
-	return ""
 }
 
 func (s *Service) Save(ctx context.Context, user int64, event string, d Draft, rich string, cover *CoverUpload) (string, error) {

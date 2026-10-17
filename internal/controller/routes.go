@@ -25,7 +25,7 @@ func (c *Handler) routes() http.Handler {
 			return
 		}
 
-		c.render(w, "home", false, view.Page{Title: "Startseite", Active: "home", Home: home, Images: view.ImagesPage{Albums: albums}})
+		c.render(w, "home", false, view.Page{Title: "Startseite", Active: "home", Home: home, Images: view.ImagesPage{Albums: view.Albums(albums)}})
 	})
 	router.HandleFunc("GET /team", c.Team)
 	router.HandleFunc("GET /sitemap", c.Sitemap)

@@ -74,7 +74,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 			c.archiveWriteError(w, r, err)
 			return
 		}
-		a.View, a.Requests = "requests", requests
+		a.View, a.Requests = "requests", view.Requests(requests)
 	case "benutzer":
 		var directory *users.Directory
 		if c.identity != nil {
@@ -95,10 +95,10 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Query().Get("zuruecksetzen") == "1" {
 					a.Success = "Die E-Mail zum Zurücksetzen des Passworts wurde zum Versand vorgemerkt."
 				}
-				a.User = &user
+				a.User = ptr(view.User{User: user})
 				for _, person := range c.people.People() {
 					if person.UserID != 0 && strconv.FormatInt(person.UserID, 10) == user.ID {
-						a.Person = &person
+						a.Person = ptr(view.Person{Person: person})
 						break
 					}
 				}
@@ -129,7 +129,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, a.UserPageURL(1), http.StatusSeeOther)
 			return
 		}
-		a.Users, a.Total, a.Pages = page.Users, page.Total, page.Pages
+		a.Users, a.Total, a.Pages = view.Users(page.Users), page.Total, page.Pages
 		if a.Page > 1 {
 			a.PreviousURL = a.UserPageURL(a.Page - 1)
 		}
@@ -153,10 +153,10 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 		responsibilities := append(c.people.Responsibilities("board"), c.people.Responsibilities("departments")...)
 		responsibilities = append(responsibilities, c.people.Responsibilities("project")...)
 		for _, person := range members {
-			row := view.AdminMemberRow{Person: person}
+			row := view.AdminMemberRow{Person: view.Person{Person: person}}
 			for _, task := range responsibilities {
 				if slices.Contains(task.MemberIDs, person.ID) {
-					row.Tasks = append(row.Tasks, task.Title+" ("+responsibilityKind(task.Group)+")")
+					row.Tasks = append(row.Tasks, task.Title+" ("+view.ResponsibilityKind(task.Group)+")")
 				}
 			}
 			a.Members = append(a.Members, row)
@@ -168,7 +168,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 					names = append(names, person.Name)
 				}
 			}
-			a.Tasks = append(a.Tasks, view.AdminTaskRow{Title: task.Title, Kind: responsibilityKind(task.Group), Members: names, URL: "/verwaltung/funktionen/" + task.ID})
+			a.Tasks = append(a.Tasks, view.AdminTaskRow{Title: task.Title, Kind: view.ResponsibilityKind(task.Group), Members: names, URL: "/verwaltung/funktionen/" + task.ID})
 		}
 	case "sitzungen":
 		if id != "" {
@@ -176,8 +176,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		a.View = "meetings"
-		var err error
-		a.Meetings, err = c.meetings.AllWithError()
+		records, err := c.meetings.AllWithError()
 		if err != nil {
 			c.serverError(w, err)
 			return
@@ -185,6 +184,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("veroeffentlicht") == "1" {
 			a.Success = "Das Dokument wurde veröffentlicht."
 		}
+		a.Meetings = view.Meetings(records)
 	}
 	c.adminRender(w, a.SectionTitle, a, http.StatusOK)
 }
@@ -211,7 +211,7 @@ func (c *Handler) ResetUserPassword(w http.ResponseWriter, r *http.Request) {
 			return
 
 		}
-		c.adminRender(w, "Passwort zurücksetzen", &view.AdminPage{Section: "benutzer", SectionTitle: "Benutzer", View: "reset", User: &user}, http.StatusOK)
+		c.adminRender(w, "Passwort zurücksetzen", &view.AdminPage{Section: "benutzer", SectionTitle: "Benutzer", View: "reset", User: ptr(view.User{User: user})}, http.StatusOK)
 		return
 	}
 	c.notFound(w, r)
@@ -233,5 +233,5 @@ func (c *Handler) PublicProfile(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
-	c.render(w, "profile", false, view.Page{Title: profile.Name, Active: "forum", Community: true, Forum: view.ForumPage{Posts: records, Pagination: listPagination(r, total, 20)}})
+	c.render(w, "profile", false, view.Page{Title: profile.Name, Active: "forum", Community: true, Forum: view.ForumPage{Posts: view.Posts(records), Pagination: listPagination(r, total, 20)}})
 }

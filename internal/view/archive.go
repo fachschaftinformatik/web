@@ -42,11 +42,11 @@ func (g *AssignmentGroup) add(a archive.Assignment, checked bool) {
 		p = len(degree.Programs)
 		degree.Programs = append(degree.Programs, AssignmentProgram{Name: a.Program})
 	}
-	degree.Programs[p].Choices = append(degree.Programs[p].Choices, AssignmentChoice{Value: a.Key(), Label: archive.VersionLabel(a.Version), Selected: checked})
+	degree.Programs[p].Choices = append(degree.Programs[p].Choices, AssignmentChoice{Value: a.Key(), Label: VersionLabel(a.Version), Selected: checked})
 	g.Selected = g.Selected || checked
 }
 
-func assignmentSummary(selected []archive.Assignment) []string {
+func assignmentSummary(selected []Assignment) []string {
 	var titles []string
 	for _, a := range selected {
 		titles = UniqueChoice(titles, a.Title)
@@ -164,12 +164,12 @@ func (p ArchivePage) NextURL() string {
 
 type ArchivePage struct {
 	ListPagination     ListPagination
-	Module             *archive.Module
+	Module             *Module
 	Filter             archive.Filter
 	Programs           []FilterOption
 	Versions           []FilterOption
 	Degrees            []FilterOption
-	Modules            []archive.Module
+	Modules            []Module
 	Page, Pages, Total int
 }
 
@@ -192,7 +192,7 @@ func (p ArchivePage) querySuffix() string {
 
 func (p ArchivePage) SearchURL() string { return "/archive" + p.querySuffix() }
 
-func (p ArchivePage) ModuleURL(module archive.Module) string {
+func (p ArchivePage) ModuleURL(module Module) string {
 	return "/archive/" + url.PathEscape(module.ID) + p.querySuffix()
 }
 
@@ -226,13 +226,13 @@ type FilterOption struct {
 }
 
 type RequestListPage struct {
-	Requests     []archive.Request
+	Requests     []Request
 	Reviewing    bool
 	CanViewUsers bool
 }
 
 type RequestPage struct {
-	Entry     archive.Request
+	Entry     Request
 	Reviewing bool
 	Error     string
 	EditURL   string
@@ -240,7 +240,7 @@ type RequestPage struct {
 
 type UploadPage struct {
 	RequestID, Date, Comment, Action string
-	Existing                         []archive.Exam
+	Existing                         []Exam
 	Revision, ChooseScope            bool
 	ReviewEditing                    bool
 	EditToken                        string

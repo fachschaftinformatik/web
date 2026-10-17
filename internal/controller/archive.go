@@ -97,7 +97,7 @@ func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 	}
 	data := view.Page{
 		Title: "Altklausuren", Active: "archive",
-		Archive: view.ArchivePage{Filter: filter, Programs: programs, Versions: versions, Degrees: degrees, Modules: catalog.FindModules(filter)},
+		Archive: view.ArchivePage{Filter: filter, Programs: programs, Versions: versions, Degrees: degrees, Modules: view.Modules(catalog.FindModules(filter))},
 	}
 
 	data.Archive.Total = total
@@ -132,7 +132,7 @@ func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
-	c.render(w, "module", false, view.Page{Title: module.Title, Active: "archive", Archive: view.ArchivePage{Module: &module, Filter: filter, ListPagination: listPagination(r, total, 20)}})
+	c.render(w, "module", false, view.Page{Title: module.Title, Active: "archive", Archive: view.ArchivePage{Module: ptr(view.NewModule(module)), Filter: filter, ListPagination: listPagination(r, total, 20)}})
 }
 
 func requestedPage(r *http.Request) int {

@@ -96,16 +96,6 @@ type Person struct {
 	Confirmed       bool
 }
 
-func (p Person) Status() string {
-	if p.UserID == 0 {
-		return "Ohne Benutzerkonto"
-	}
-	if p.Confirmed {
-		return "Bestätigt"
-	}
-	return "Eingeladen"
-}
-
 type Responsibility struct {
 	ID, Group, Title, Email string
 	MemberIDs               []string

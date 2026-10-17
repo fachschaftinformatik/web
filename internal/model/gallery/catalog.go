@@ -53,8 +53,7 @@ ORDER BY e.created_at DESC,e.id DESC,m.created_at DESC,m.id DESC`)
 			}
 			album := Album{ID: id, Title: title}
 			if coverPath == storage.EventCoverSourceKey(id) {
-				prefix := "/media/events/" + id + "/cover/"
-				album.Cover = Image{ID: id, Title: title, Description: title, Source: prefix + "1200", thumbnail: prefix + "400"}
+				album.Cover = Image{ID: id, Title: title, Description: title, AlbumCover: true}
 			}
 			albums = append(albums, album)
 		}

@@ -18,7 +18,8 @@ func TestForumLiteralTextEscaping(t *testing.T) {
 	const decoded = "Beispiel <script> und & https://example.org/?a=1&b=2"
 	thread := forum.Thread{Post: forum.Post{ID: "1", Body: source}, Replies: []forum.Comment{{ID: "2", Text: source}}}
 	var output bytes.Buffer
-	if err := renderer.Render(&output, "thread", false, Page{Forum: ForumPage{Thread: &thread}}); err != nil {
+	display := NewThread(thread)
+	if err := renderer.Render(&output, "thread", false, Page{Forum: ForumPage{Thread: &display}}); err != nil {
 		t.Fatal(err)
 	}
 	doc, err := xhtml.Parse(strings.NewReader(output.String()))

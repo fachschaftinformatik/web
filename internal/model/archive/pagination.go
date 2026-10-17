@@ -143,7 +143,7 @@ func (s *Service) catalogPage(ctx context.Context, f Filter, page, size int, mod
 			rows.Close()
 			return result, 0, fmt.Errorf("archive entry %s: %w", e.ID, err)
 		}
-		e.Date = parsed.Format("02.01.2006")
+		e.Date = parsed.Format("2006-01-02")
 		e.OwnerID = owner.Int64
 		e.Assignments = []Assignment{{ModuleID: e.ModuleID, Version: e.Version, Title: e.Title, Program: e.Program, Degree: e.Degree}}
 		result.exams = append(result.exams, e)

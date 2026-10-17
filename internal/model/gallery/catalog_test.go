@@ -83,7 +83,7 @@ func TestCatalogCompleteAndFiltered(t *testing.T) {
 		if i > 0 && image.ID != strconv.Itoa(273-i) {
 			t.Errorf("image order at %d: %s", i, image.ID)
 		}
-		if image.Title == "" || image.Description == "" || image.Source != "/media/"+image.ID+"/1200" || image.Thumbnail() != "/media/"+image.ID+"/400" {
+		if image.Title == "" || image.Description == "" || image.AlbumCover {
 			t.Errorf("image metadata: %+v", image)
 		}
 	}
@@ -93,9 +93,6 @@ func TestCatalogCompleteAndFiltered(t *testing.T) {
 	}
 	if fallback := albums[1].Images[0]; fallback.Title != "Sommerfest – Bild 1" || fallback.Description != fallback.Title {
 		t.Errorf("fallback: %+v", fallback)
-	}
-	if got := albums[0].ReturnURL(25); got != "/community/events/20?page=2#image-248" {
-		t.Errorf("return to page: %s", got)
 	}
 }
 
@@ -127,11 +124,8 @@ func TestEventCoversUseOnlyTheirOwnRegisteredPreview(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(albums) != 1 || albums[0].CoverImage().Source != "/media/events/10/cover/1200" {
+	if len(albums) != 1 || !albums[0].Cover.AlbumCover || albums[0].Cover.ID != "10" {
 		t.Fatalf("configured covers and fallback: %+v", albums)
-	}
-	if !strings.Contains(albums[0].CoverImage().ThumbnailSources(), "/media/events/10/cover/800 2x") {
-		t.Fatal("cover srcset uses media photo paths")
 	}
 }
 

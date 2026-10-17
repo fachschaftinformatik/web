@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -31,7 +30,7 @@ func TestImportPreservesCaptionsFullImagesAndEditorialEdits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e.Body != input.Draft.Body || e.EventDate != "" || e.SourceDateLabel() != "7. November 2025" || e.SourceURL != input.SourceURL || !e.GalleryAlbumID.Valid || strings.Contains(e.RichBody(), "<script>") {
+	if e.Body != input.Draft.Body || e.EventDate != "" || e.SourcePublishedAt != input.PublishedAt.Format(time.RFC3339) || e.SourceURL != input.SourceURL || !e.GalleryAlbumID.Valid {
 		t.Fatalf("imported event: %+v", e)
 	}
 	gallery := gallery.NewService(db, s.storage)
@@ -98,7 +97,7 @@ func TestImportPreservesCaptionsFullImagesAndEditorialEdits(t *testing.T) {
 		t.Fatal(err)
 	}
 	e, err = s.Lookup(ctx, event)
-	if err != nil || e.GalleryURL() != "" || e.CoverURL() == "" || e.FullImageURL() == "" {
+	if err != nil || e.GalleryAlbumID.Valid || e.CoverKey == "" {
 		t.Fatalf("two-image album linked or event cover lost: %+v %v", e, err)
 	}
 	if _, err := db.Exec(`UPDATE calendar_events SET deleted_at='deleted' WHERE id=?`, event); err != nil {

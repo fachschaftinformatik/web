@@ -39,5 +39,5 @@ func Find(id string) (Album, bool) {
 }
 
 func photo(id, title, description string, width, height int) Image {
-	return Image{ID: id, Title: title, Description: description, Source: "/assets/images/" + id + "-1200.jpg", Width: width, Height: height}
+	return Image{ID: id, Title: title, Description: description, Width: width, Height: height}
 }
