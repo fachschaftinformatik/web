@@ -1,9 +1,11 @@
 {{define "sidebar"}}{{end}}
 {{define "content"}}
-{{if .Forgot.Unavailable}}
-<h1 class="govuk-heading-l">Passwort zurücksetzen derzeit nicht verfügbar</h1>
-<p class="govuk-body">Du kannst dein Passwort auf der bestehenden Website zurücksetzen.</p>
-<p class="govuk-body"><a class="govuk-link" href="https://ik.fsv-wh.de/forgot">Passwort auf der bestehenden Website zurücksetzen</a></p>
+{{if .Forgot.Submitted}}
+<h1 class="govuk-heading-l">Prüfe dein E-Mail-Postfach</h1>
+<p class="govuk-body">Wenn ein Konto mit dieser E-Mail-Adresse besteht, erhältst du eine E-Mail mit einem Link zum Zurücksetzen deines Passworts.</p>
+{{else if .Forgot.Unavailable}}
+<h1 class="govuk-heading-l">Passwort zurücksetzen</h1>
+<p class="govuk-body">Die Anfrage konnte nicht verarbeitet werden. Versuche es später erneut.</p>
 {{else}}
 {{if .Forgot.EmailError}}
 <div class="govuk-error-summary" data-module="govuk-error-summary">
@@ -18,6 +20,7 @@
 <h1 class="govuk-heading-l">Passwort vergessen</h1>
 <p class="govuk-body">Fordere einen Link an, um dein Passwort zurückzusetzen.</p>
 <form action="/forgot" method="post" novalidate>
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
   <div class="govuk-form-group {{if .Forgot.EmailError}}govuk-form-group--error{{end}}">
     <label class="govuk-label" for="email">E-Mail-Adresse</label>
     <div class="govuk-hint" id="email-hint">Nur @studmail.w-hs.de oder @fsv-wh.de.</div>

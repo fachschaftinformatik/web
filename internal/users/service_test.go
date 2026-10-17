@@ -135,3 +135,64 @@ func TestRegistrationVerificationAndSingleUseReset(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+type queuedMailer struct {
+	failTo    string
+	delivered []string
+}
+
+func (m *queuedMailer) SendVerificationEmail(to, name, link string) error {
+	if to == m.failTo {
+		return errors.New("SMTP unavailable")
+	}
+	m.delivered = append(m.delivered, to)
+	return nil
+}
+
+func (m *queuedMailer) SendPasswordResetEmail(to, name, link string) error {
+	return m.SendVerificationEmail(to, name, link)
+}
+
+func TestOutboxRetriesAndExpiredTokens(t *testing.T) {
+	s, db := testService(t)
+	ctx := context.Background()
+	for _, email := range []string{"first@studmail.w-hs.de", "second@studmail.w-hs.de"} {
+		if err := s.Register(ctx, "Test Person", email, "valid password", ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mailer := &queuedMailer{failTo: "first@studmail.w-hs.de"}
+	if err := s.DeliverMail(ctx, mailer); err == nil {
+		t.Fatal("delivery failure not reported")
+	}
+	if len(mailer.delivered) != 1 || mailer.delivered[0] != "second@studmail.w-hs.de" {
+		t.Fatal("one failed message blocked later mail")
+	}
+	var pending int
+	if err := db.QueryRow(`SELECT count(*) FROM mail_outbox`).Scan(&pending); err != nil || pending != 1 {
+		t.Fatal("failed message not retained")
+	}
+	mailer.failTo = ""
+	if err := s.DeliverMail(ctx, mailer); err != nil {
+		t.Fatal(err)
+	}
+	if len(mailer.delivered) != 2 {
+		t.Fatal("retry lost or duplicated mail")
+	}
+	if err := s.RequestReset(ctx, "first@studmail.w-hs.de"); err != nil {
+		t.Fatal(err)
+	}
+	value := queuedToken(t, db, "reset")
+	if _, err := db.Exec(`UPDATE user_tokens SET expires_at='2000-01-01T00:00:00Z' WHERE kind='reset'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.ConsumeToken(ctx, value, "reset", "changed password"); !errors.Is(err, ErrToken) {
+		t.Fatal("expired link accepted")
+	}
+	if err := s.DeliverMail(ctx, mailer); err != nil {
+		t.Fatal(err)
+	}
+	if len(mailer.delivered) != 2 {
+		t.Fatal("expired link was sent")
+	}
+}

@@ -2,10 +2,13 @@ package email
 
 import (
 	"bytes"
+	"crypto/tls"
 	"embed"
 	"fmt"
 	"html/template"
+	"net"
 	"net/smtp"
+	"time"
 
 	"github.com/fachschaftinformatik/web/internal/config"
 )
@@ -71,7 +74,7 @@ func (s *Sender) SendVerificationEmail(toEmail, name, link string) error {
 		auth = smtp.PlainAuth("", s.cfg.SMTPUser, s.cfg.SMTPPass, s.cfg.SMTPHost)
 	}
 
-	if err := smtp.SendMail(addr, auth, s.cfg.SMTPFrom, []string{toEmail}, []byte(message)); err != nil {
+	if err := send(addr, s.cfg.SMTPHost, auth, s.cfg.SMTPFrom, toEmail, []byte(message)); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
@@ -119,9 +122,53 @@ func (s *Sender) SendPasswordResetEmail(toEmail, name, link string) error {
 		auth = smtp.PlainAuth("", s.cfg.SMTPUser, s.cfg.SMTPPass, s.cfg.SMTPHost)
 	}
 
-	if err := smtp.SendMail(addr, auth, s.cfg.SMTPFrom, []string{toEmail}, []byte(message)); err != nil {
+	if err := send(addr, s.cfg.SMTPHost, auth, s.cfg.SMTPFrom, toEmail, []byte(message)); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
 	return nil
+}
+
+// Bound the complete SMTP exchange so unavailable mail cannot block shutdown.
+func send(addr, host string, auth smtp.Auth, from, to string, message []byte) error {
+	conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		return err
+	}
+	client, err := smtp.NewClient(conn, host)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		if err := client.StartTLS(&tls.Config{ServerName: host, MinVersion: tls.VersionTLS12}); err != nil {
+			return err
+		}
+	}
+	if auth != nil {
+		if err := client.Auth(auth); err != nil {
+			return err
+		}
+	}
+	if err := client.Mail(from); err != nil {
+		return err
+	}
+	if err := client.Rcpt(to); err != nil {
+		return err
+	}
+	writer, err := client.Data()
+	if err != nil {
+		return err
+	}
+	if _, err := writer.Write(message); err != nil {
+		return err
+	}
+	if err := writer.Close(); err != nil {
+		return err
+	}
+	return client.Quit()
 }

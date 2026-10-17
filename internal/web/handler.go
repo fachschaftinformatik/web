@@ -16,11 +16,13 @@ import (
 )
 
 type Handler struct {
-	views    *Renderer
-	people   *people.Store
-	content  *content.Store
-	users    *users.Directory
-	sessions sessionStore
+	views         *Renderer
+	people        *people.Store
+	content       *content.Store
+	users         *users.Directory
+	sessions      sessionStore
+	identity      *users.Service
+	secureCookies bool
 }
 
 func New() (http.Handler, error) {
@@ -28,11 +30,22 @@ func New() (http.Handler, error) {
 }
 
 func NewWithUsers(records []users.User) (http.Handler, error) {
+	return newHandler(records, nil, false)
+}
+
+// NewPersistent uses database-backed identities instead of demo credentials.
+func NewPersistent(identity *users.Service, secureCookies bool) (http.Handler, error) {
+	return newHandler(nil, identity, secureCookies)
+}
+
+func newHandler(records []users.User, identity *users.Service, secureCookies bool) (http.Handler, error) {
 	views, err := newRenderer()
 	if err != nil {
 		return nil, err
 	}
 	c := &Handler{views: views, people: people.NewStore(), content: content.NewStore(), users: users.NewDirectory(records), sessions: newSessionStore()}
+	c.identity = identity
+	c.secureCookies = secureCookies
 	router := http.NewServeMux()
 	router.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -79,6 +92,10 @@ func NewWithUsers(records []users.User) (http.Handler, error) {
 	router.HandleFunc("POST /register", c.Register)
 	router.HandleFunc("GET /forgot", c.ForgotPassword)
 	router.HandleFunc("POST /forgot", c.ForgotPassword)
+	router.HandleFunc("GET /verify", c.Token)
+	router.HandleFunc("POST /verify", c.Token)
+	router.HandleFunc("GET /reset", c.Token)
+	router.HandleFunc("POST /reset", c.Token)
 	router.HandleFunc("GET /community", func(w http.ResponseWriter, r *http.Request) {
 		c.render(w, "community", false, Page{Title: "Community", Active: "community", Community: true})
 	})
@@ -147,9 +164,15 @@ func (c *Handler) render(w http.ResponseWriter, page string, fragment bool, data
 	c.renderStatus(w, page, fragment, data, http.StatusOK)
 }
 
+func (c *Handler) serverError(w http.ResponseWriter, err error) {
+	log.Printf("Request failed: %v", err)
+	http.Error(w, "Die Anfrage konnte nicht verarbeitet werden. Versuche es später erneut.", http.StatusInternalServerError)
+}
+
 func (c *Handler) renderStatus(w http.ResponseWriter, page string, fragment bool, data Page, status int) {
 	if response, ok := w.(*sessionResponse); ok && response.session != nil {
 		data.SignedIn, data.CSRF = response.session.Authenticated, response.session.CSRF
+		data.CanAdmin = response.session.CanAdmin()
 	}
 	var html bytes.Buffer
 	if err := c.views.Render(&html, page, fragment, data); err != nil {

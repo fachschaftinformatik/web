@@ -10,6 +10,7 @@ import (
 type ForgotPage struct {
 	Email, EmailError string
 	Unavailable       bool
+	Submitted         bool
 }
 
 func (c *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
@@ -27,11 +28,18 @@ func (c *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		if data.Forgot.EmailError != "" {
 			data.DocumentTitle = "Fehler: Passwort vergessen"
 			status = http.StatusUnprocessableEntity
+		} else if c.identity != nil {
+			if err := c.identity.RequestReset(r.Context(), data.Forgot.Email); err != nil {
+				c.serverError(w, err)
+				return
+			}
+			data.Forgot = ForgotPage{Submitted: true}
+			data.Title = "Prüfe dein E-Mail-Postfach"
 		} else {
 			// The isolated demo has no mail delivery or account lookup.
 			// Never imply a reset email was sent or an account was found.
 			data.Forgot = ForgotPage{Unavailable: true}
-			data.Title = "Passwort zurücksetzen derzeit nicht verfügbar"
+			data.Title = "Passwort zurücksetzen"
 			status = http.StatusServiceUnavailable
 		}
 	}

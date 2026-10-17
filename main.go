@@ -9,12 +9,16 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/config"
+	"github.com/fachschaftinformatik/web/internal/data"
+	"github.com/fachschaftinformatik/web/internal/email"
 	"github.com/fachschaftinformatik/web/internal/users"
 	"github.com/fachschaftinformatik/web/internal/web"
 )
@@ -34,7 +38,9 @@ func main() {
 func run(ctx context.Context, args []string) error {
 	flags := flag.NewFlagSet("web", flag.ContinueOnError)
 	addr := flags.String("addr", "127.0.0.1:8090", "HTTP listen address")
-	data := flags.String("data", "", "Optional read-only snapshot directory containing sqlite.db")
+	snapshot := flags.String("data", "", "Read-only user snapshot directory for the demo")
+	database := flags.String("database", "data/sqlite.db", "Writable SQLite database path")
+	demo := flags.Bool("demo", false, "Use example data and local admin/admin credentials")
 	version := flags.Bool("version", false, "Print application version")
 	health := flags.String("check-health", "", "Check a running application's health URL and exit")
 	if err := flags.Parse(args); err != nil {
@@ -62,16 +68,64 @@ func run(ctx context.Context, args []string) error {
 		}
 		return nil
 	}
-	records := users.Examples()
-	if *data != "" {
-		var err error
-		records, err = users.Load(filepath.Join(*data, "sqlite.db"))
-		if err != nil {
-			return fmt.Errorf("load account snapshot: %w", err)
+	var handler http.Handler
+	var err error
+	if *demo || *snapshot != "" {
+		records := users.Examples()
+		if *snapshot != "" {
+			records, err = users.Load(filepath.Join(*snapshot, "sqlite.db"))
+			if err != nil {
+				return fmt.Errorf("load account snapshot: %w", err)
+			}
 		}
-		log.Printf("Read-only account snapshot: %d accounts", len(records))
+		handler, err = web.NewWithUsers(records)
+	} else {
+		if err := os.MkdirAll(filepath.Dir(*database), 0700); err != nil {
+			return err
+		}
+		if err := data.Migrate(*database, log.Default()); err != nil {
+			return err
+		}
+		db, openErr := data.NewConnection(*database)
+		if openErr != nil {
+			return openErr
+		}
+		defer db.Close()
+		cfg := config.New()
+		origin, parseErr := url.Parse(cfg.Domain)
+		if parseErr != nil || origin.Host == "" || (origin.Scheme != "http" && origin.Scheme != "https") || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" {
+			return errors.New("DOMAIN must be an absolute HTTP or HTTPS URL")
+		}
+		identity := users.NewService(db, cfg.Domain)
+		handler, err = web.NewPersistent(identity, origin.Scheme == "https")
+		if err == nil {
+			mailCtx, cancel := context.WithCancel(ctx)
+			done := make(chan struct{})
+			go func() {
+				defer close(done)
+				ticker := time.NewTicker(30 * time.Second)
+				defer ticker.Stop()
+				sender := email.NewSender(cfg)
+				for {
+					var err error
+					if cfg.SMTPHost != "" {
+						err = identity.DeliverMail(mailCtx, sender)
+					} else {
+						err = identity.PurgeExpired(mailCtx)
+					}
+					if err != nil && mailCtx.Err() == nil {
+						log.Printf("Account maintenance: %v", err)
+					}
+					select {
+					case <-mailCtx.Done():
+						return
+					case <-ticker.C:
+					}
+				}
+			}()
+			defer func() { cancel(); <-done }()
+		}
 	}
-	handler, err := web.NewWithUsers(records)
 	if err != nil {
 		return err
 	}

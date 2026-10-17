@@ -23,9 +23,9 @@ func TestForgotPassword(t *testing.T) {
 		{"invalid", "POST", "not-an-email", 422, "Gib eine vollständige E-Mail-Adresse ein"},
 		{"other domain", "POST", "person@example.org", 422, "Verwende eine E-Mail-Adresse mit"},
 		{"lookalike", "POST", "person@fsv-wh.de.example.org", 422, "Verwende eine E-Mail-Adresse mit"},
-		{"student", "POST", "person@studmail.w-hs.de", 503, "Passwort zurücksetzen derzeit nicht verfügbar"},
-		{"staff", "POST", "person@fsv-wh.de", 503, "Passwort zurücksetzen derzeit nicht verfügbar"},
-		{"trim and case", "POST", "  Person@FSV-WH.DE  ", 503, "Passwort zurücksetzen derzeit nicht verfügbar"},
+		{"student", "POST", "person@studmail.w-hs.de", 503, "Die Anfrage konnte nicht verarbeitet werden."},
+		{"staff", "POST", "person@fsv-wh.de", 503, "Die Anfrage konnte nicht verarbeitet werden."},
+		{"trim and case", "POST", "  Person@FSV-WH.DE  ", 503, "Die Anfrage konnte nicht verarbeitet werden."},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			form := url.Values{"email": {tc.email}}

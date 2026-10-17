@@ -24,7 +24,6 @@
 
 {{if eq .View "index"}}
 <p class="govuk-body">Verwalte Benutzer, die Mitglieder der Fachschaft und Sitzungsdokumente.</p>
-<p class="govuk-inset-text">Lokale Demo. Änderungen und hochgeladene Dateien werden beim Neustart zurückgesetzt.</p>
 <ul class="govuk-list govuk-list--spaced">
   {{range .Links}}<li><a class="govuk-link" href="{{.URL}}">{{.Label}}</a></li>{{end}}
 </ul>
@@ -55,7 +54,6 @@
 {{end}}
 
 {{if eq .View "user"}}
-{{if .ResetPreview}}<div class="govuk-notification-banner" role="region" aria-labelledby="reset-preview-title" data-module="govuk-notification-banner"><div class="govuk-notification-banner__header"><h2 class="govuk-notification-banner__title" id="reset-preview-title">Demovorschau</h2></div><div class="govuk-notification-banner__content"><p class="govuk-body app-wrap-anywhere">Ein Link zum Zurücksetzen würde an <strong>{{.User.Email}}</strong> gesendet. In dieser Demo wurde keine E-Mail versendet und kein Passwort geändert.</p></div></div>{{end}}
 {{with .User}}
 <dl class="govuk-summary-list">
   <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Name</dt><dd class="govuk-summary-list__value">{{.Name}}</dd></div>
@@ -153,7 +151,6 @@
 {{define "password-reset-form"}}
 <p class="govuk-body app-wrap-anywhere">Soll ein Link zum Zurücksetzen des Passworts an <strong>{{.Admin.User.Email}}</strong> gesendet werden?</p>
 <p class="govuk-body">Das bisherige Passwort bleibt gültig, bis die Person ein neues Passwort festlegt.</p>
-<p class="govuk-inset-text">Demovorschau. Es wird keine E-Mail versendet und kein Passwort geändert.</p>
 <form action="/verwaltung/benutzer/{{.Admin.User.ID}}/passwort-zuruecksetzen" method="post">
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <div class="govuk-button-group">

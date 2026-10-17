@@ -254,13 +254,9 @@ func TestPasswordResetConfirmationPreview(t *testing.T) {
 	if status, _, _ := b.post(path, url.Values{}); status != 403 {
 		t.Fatal("reset without CSRF accepted")
 	}
-	status, _, headers := b.post(path, url.Values{"csrf": {b.csrf}})
-	if status != 303 {
-		t.Fatal("reset confirmation failed")
-	}
-	_, body, _ := b.get(headers.Get("Location"))
-	if !strings.Contains(body, "keine E-Mail versendet und kein Passwort geändert") {
-		t.Fatal("preview falsely claims email/password side effect")
+	status, body, _ := b.post(path, url.Values{"csrf": {b.csrf}})
+	if status != 503 || !strings.Contains(body, "Die Anfrage konnte nicht verarbeitet werden.") {
+		t.Fatal("reset without a mail service must fail")
 	}
 	if status, _, _ := b.get("/verwaltung/benutzer/missing/passwort-zuruecksetzen"); status != 404 {
 		t.Fatal("unknown reset user accepted")

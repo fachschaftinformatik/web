@@ -18,9 +18,9 @@ type Config struct {
 
 func New() *Config {
 	return &Config{
-		Domain:      getEnv("DOMAIN", "http://localhost:3000"),
+		Domain:      getEnv("DOMAIN", "http://localhost:8090"),
 		SMTPHost:    getEnv("SMTP_HOST", ""),
-		SMTPPort:    getEnv("SMTP_PORT", ""),
+		SMTPPort:    getEnv("SMTP_PORT", "587"),
 		SMTPUser:    getEnv("SMTP_USERNAME", ""),
 		SMTPPass:    getEnv("SMTP_PASSWORD", ""),
 		SMTPFrom:    getEnv("SMTP_FROM", ""),

@@ -104,6 +104,16 @@ type GlobalConfig struct {
 	UpdatedAt      string `json:"updated_at"`
 }
 
+type MailOutbox struct {
+	ID        int64  `json:"id"`
+	UserID    int64  `json:"user_id"`
+	Kind      string `json:"kind"`
+	Recipient string `json:"recipient"`
+	Name      string `json:"name"`
+	Link      string `json:"link"`
+	CreatedAt string `json:"created_at"`
+}
+
 type Medium struct {
 	ID          int64   `json:"id"`
 	EventID     int64   `json:"event_id"`
@@ -199,4 +209,17 @@ type User struct {
 	DeletedAt            *string `json:"deleted_at"`
 	PasswordResetToken   *string `json:"password_reset_token"`
 	PasswordResetExpires *string `json:"password_reset_expires"`
+}
+
+type UserToken struct {
+	ID        string `json:"id"`
+	UserID    int64  `json:"user_id"`
+	Kind      string `json:"kind"`
+	ExpiresAt string `json:"expires_at"`
+}
+
+type WebSession struct {
+	ID        string `json:"id"`
+	UserID    *int64 `json:"user_id"`
+	ExpiresAt string `json:"expires_at"`
 }

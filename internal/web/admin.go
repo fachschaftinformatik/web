@@ -54,7 +54,6 @@ type AdminPage struct {
 	Publication                                                            *content.Publication
 	Page, Pages, Total                                                     int
 	PreviousURL, NextURL                                                   string
-	ResetPreview                                                           bool
 }
 
 func (a AdminPage) Links() []AdminLink { return adminLinks }
@@ -135,14 +134,25 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 	}
 	switch section {
 	case "benutzer":
+		directory := c.users
+		if c.identity != nil {
+			var err error
+			directory, err = c.identity.Directory(r.Context())
+			if err != nil {
+				c.serverError(w, err)
+				return
+			}
+		}
 		if r.Method != http.MethodGet {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
 		if id != "" {
-			if user, ok := c.users.Get(id); ok {
+			if user, ok := directory.Get(id); ok {
 				a.View = "user"
-				a.ResetPreview = r.URL.Query().Get("zuruecksetzen") == "demo"
+				if c.identity != nil && r.URL.Query().Get("zuruecksetzen") == "1" {
+					a.Success = "Die E-Mail zum Zurücksetzen des Passworts wurde zum Versand vorgemerkt."
+				}
 				a.User = &user
 				c.adminRender(w, user.Name, a, http.StatusOK)
 				return
@@ -160,7 +170,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 			}
 			a.Page = page
 		}
-		page, ok := c.users.Search(a.Query, a.Page)
+		page, ok := directory.Search(a.Query, a.Page)
 		if !ok {
 			http.Redirect(w, r, a.UserPageURL(1), http.StatusSeeOther)
 			return
@@ -428,12 +438,28 @@ func (c *Handler) Document(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, "dokument.pdf", time.Time{}, bytes.NewReader(p.Data))
 }
 
-// ResetUserPassword previews the future mail action; it does not change a
-// password, create a reset token or send mail to production-copy accounts.
+// ResetUserPassword confirms the destination before queuing a reset email.
 func (c *Handler) ResetUserPassword(w http.ResponseWriter, r *http.Request) {
-	if user, ok := c.users.Get(r.PathValue("id")); ok {
+	directory := c.users
+	if c.identity != nil {
+		var err error
+		directory, err = c.identity.Directory(r.Context())
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
+	}
+	if user, ok := directory.Get(r.PathValue("id")); ok {
 		if r.Method == http.MethodPost {
-			http.Redirect(w, r, "/verwaltung/benutzer/"+url.PathEscape(user.ID)+"?zuruecksetzen=demo", http.StatusSeeOther)
+			if c.identity != nil {
+				if err := c.identity.RequestReset(r.Context(), user.Email); err != nil {
+					c.serverError(w, err)
+					return
+				}
+				http.Redirect(w, r, "/verwaltung/benutzer/"+url.PathEscape(user.ID)+"?zuruecksetzen=1", http.StatusSeeOther)
+				return
+			}
+			http.Error(w, "Die Anfrage konnte nicht verarbeitet werden. Versuche es später erneut.", http.StatusServiceUnavailable)
 			return
 		}
 		c.adminRender(w, "Passwort zurücksetzen", &AdminPage{Section: "benutzer", SectionTitle: "Benutzer", View: "reset", User: &user}, http.StatusOK)

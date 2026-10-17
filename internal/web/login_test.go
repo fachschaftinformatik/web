@@ -23,9 +23,9 @@ func TestLoginPreview(t *testing.T) {
 		{"display name is not email", "Name <name@studmail.w-hs.de>", "private-test-password", 422, "Gib eine vollständige E-Mail-Adresse ein"},
 		{"other domain", "name@example.org", "private-test-password", 422, "Verwende eine E-Mail-Adresse mit"},
 		{"missing password", "name@studmail.w-hs.de", "", 422, "Gib dein Passwort ein."},
-		{"complete preview", "name@studmail.w-hs.de", "private-test-password", 200, "Anmeldung derzeit nicht verfügbar"},
-		{"staff domain", "name@fsv-wh.de", "private-test-password", 200, "Anmeldung derzeit nicht verfügbar"},
-		{"trim and domain case", "  Name@STUDMAIL.W-HS.DE  ", "private-test-password", 200, "Anmeldung derzeit nicht verfügbar"},
+		{"unknown user", "name@studmail.w-hs.de", "private-test-password", 422, "E-Mail-Adresse oder Passwort ist falsch."},
+		{"staff domain", "name@fsv-wh.de", "private-test-password", 422, "E-Mail-Adresse oder Passwort ist falsch."},
+		{"trim and domain case", "  Name@STUDMAIL.W-HS.DE  ", "private-test-password", 422, "E-Mail-Adresse oder Passwort ist falsch."},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			form := url.Values{"email": {tc.email}, "password": {tc.password}}

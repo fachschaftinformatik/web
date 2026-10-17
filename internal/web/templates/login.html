@@ -13,19 +13,12 @@
   </div>
 </div>
 {{end}}
-{{if .Login.Submitted}}
-<div class="govuk-notification-banner" role="alert" aria-labelledby="login-preview-title" data-module="govuk-notification-banner" tabindex="-1">
-  <div class="govuk-notification-banner__header"><h2 class="govuk-notification-banner__title" id="login-preview-title">Anmeldung derzeit nicht verfügbar</h2></div>
-  <div class="govuk-notification-banner__content"><p class="govuk-body"><a class="govuk-notification-banner__link" href="https://ik.fsv-wh.de/login">Auf der bestehenden Website anmelden</a></p></div>
-</div>
-{{end}}
 <h1 class="govuk-heading-l">Anmelden</h1>
-<p class="govuk-inset-text">Demozugang: Benutzername <strong>admin</strong>, Passwort <strong>admin</strong>.</p>
 <form action="/login" method="post" novalidate>
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <div class="govuk-form-group {{if .Login.EmailError}}govuk-form-group--error{{end}}">
-    <label class="govuk-label" for="email">E-Mail-Adresse oder Demobenutzername</label>
-    <div class="govuk-hint" id="email-hint">Nutze deine E-Mail-Adresse mit @studmail.w-hs.de oder @fsv-wh.de. Für die Demo kannst du admin eingeben.</div>
+    <label class="govuk-label" for="email">E-Mail-Adresse</label>
+    <div class="govuk-hint" id="email-hint">Nutze deine E-Mail-Adresse mit @studmail.w-hs.de oder @fsv-wh.de.</div>
     {{if .Login.EmailError}}<p class="govuk-error-message" id="email-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Login.EmailError}}</p>{{end}}
     <input class="govuk-input {{if .Login.EmailError}}govuk-input--error{{end}}" id="email" name="email" type="text" autocomplete="username" spellcheck="false" autocapitalize="none" value="{{.Login.Email}}" aria-describedby="email-hint{{if .Login.EmailError}} email-error{{end}}" {{if .Login.EmailError}}aria-invalid="true"{{end}}>
   </div>

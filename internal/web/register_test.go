@@ -23,11 +23,11 @@ func TestRegistrationPreview(t *testing.T) {
 		{"Name", "name@sub.fsv-wh.de", "private-test-password", "Verwende eine E-Mail-Adresse mit", 422},
 		{"Name", "Name <name@fsv-wh.de>", "private-test-password", "Gib eine vollständige E-Mail-Adresse ein", 422},
 		{"Name", "name@studmail.w-hs.de", "short", "Das Passwort muss mindestens 8 Zeichen lang sein.", 422},
-		{"Name", "name@studmail.w-hs.de", strings.Repeat("x", 73), "Deine Angaben wurden nicht gespeichert.", 503},
+		{"Name", "name@studmail.w-hs.de", strings.Repeat("x", 73), "Dein Konto konnte nicht erstellt werden.", 503},
 		{"Name", "name@studmail.w-hs.de", "äöüßéèñ", "Das Passwort muss mindestens 8 Zeichen lang sein.", 422},
-		{"Name", "name@studmail.w-hs.de", "äöüßéèñø", "Deine Angaben wurden nicht gespeichert.", 503},
-		{"Name", "name@studmail.w-hs.de", " a b c d", "Deine Angaben wurden nicht gespeichert.", 503},
-		{"  Name  ", "  Name@STUDMAIL.W-HS.DE  ", "private-test-password", "Deine Angaben wurden nicht gespeichert.", 503},
+		{"Name", "name@studmail.w-hs.de", "äöüßéèñø", "Dein Konto konnte nicht erstellt werden.", 503},
+		{"Name", "name@studmail.w-hs.de", " a b c d", "Dein Konto konnte nicht erstellt werden.", 503},
+		{"  Name  ", "  Name@STUDMAIL.W-HS.DE  ", "private-test-password", "Dein Konto konnte nicht erstellt werden.", 503},
 		{"Name", "name@fsv-wh.de", "private-test-password", "Verwende eine E-Mail-Adresse mit @studmail.w-hs.de.", 422},
 	} {
 		form := url.Values{"name": {tc.name}, "email": {tc.email}, "password": {tc.password}, "program_id": {"140113416076394497"}}

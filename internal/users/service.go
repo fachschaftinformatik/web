@@ -313,6 +313,9 @@ type Mailer interface {
 
 // DeliverMail retains failed messages for a later retry.
 func (s *Service) DeliverMail(ctx context.Context, mailer Mailer) error {
+	if err := s.PurgeExpired(ctx); err != nil {
+		return err
+	}
 	rows, err := s.db.QueryContext(ctx, `SELECT id,kind,recipient,name,link FROM mail_outbox ORDER BY id LIMIT 20`)
 	if err != nil {
 		return err
@@ -335,19 +338,42 @@ func (s *Service) DeliverMail(ctx context.Context, mailer Mailer) error {
 	if err != nil {
 		return err
 	}
+	var failures []error
 	for _, m := range pending {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		if m.kind == "verify" {
 			err = mailer.SendVerificationEmail(m.to, m.name, m.link)
 		} else {
 			err = mailer.SendPasswordResetEmail(m.to, m.name, m.link)
 		}
 		if err != nil {
-			return fmt.Errorf("deliver queued mail: %w", err)
+			failures = append(failures, fmt.Errorf("deliver queued mail: %w", err))
+			continue
 		}
 		if _, err = s.db.ExecContext(ctx, `DELETE FROM mail_outbox WHERE id=?`, m.id); err != nil {
 			return err
 		}
 	}
-	_, err = s.db.ExecContext(ctx, `DELETE FROM web_sessions WHERE expires_at<=?`, time.Now().UTC().Format(time.RFC3339))
-	return err
+	return errors.Join(failures...)
+}
+
+func (s *Service) PurgeExpired(ctx context.Context) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	now := time.Now().UTC().Format(time.RFC3339)
+	if _, err := tx.ExecContext(ctx, `DELETE FROM web_sessions WHERE expires_at<=?`, now); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM user_tokens WHERE expires_at<=?`, now); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM mail_outbox WHERE NOT EXISTS (SELECT 1 FROM user_tokens t JOIN users u ON u.id=t.user_id WHERE t.user_id=mail_outbox.user_id AND t.kind=mail_outbox.kind AND u.deleted_at IS NULL)`); err != nil {
+		return err
+	}
+	return tx.Commit()
 }

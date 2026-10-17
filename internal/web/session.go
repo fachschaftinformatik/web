@@ -8,15 +8,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fachschaftinformatik/web/internal/users"
 )
 
 const sessionCookie = "web-session"
 
-type session struct {
-	ID, CSRF      string
-	Authenticated bool
-	Expires       time.Time
-}
+type session = users.Session
 
 type sessionStore struct {
 	mu    sync.Mutex
@@ -56,6 +54,9 @@ func (s *sessionStore) create(authenticated bool) *session {
 		}
 	}
 	item := session{ID: randomToken(), CSRF: randomToken(), Authenticated: authenticated, Expires: time.Now().Add(8 * time.Hour)}
+	if authenticated {
+		item.Role = "admin"
+	}
 	s.items[item.ID] = item
 	return &item
 }
@@ -67,19 +68,38 @@ type sessionResponse struct {
 	session *session
 }
 
-func setSessionCookie(w http.ResponseWriter, r *http.Request, s *session) {
-	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: s.ID, Path: "/", HttpOnly: true, Secure: r.TLS != nil, SameSite: http.SameSiteLaxMode, MaxAge: 8 * 60 * 60})
+func (c *Handler) setSessionCookie(w http.ResponseWriter, r *http.Request, s *session) {
+	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: s.ID, Path: "/", HttpOnly: true, Secure: c.secureCookies || r.TLS != nil, SameSite: http.SameSiteLaxMode, MaxAge: 8 * 60 * 60})
 }
 
 func (c *Handler) withSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var s *session
 		if cookie, err := r.Cookie(sessionCookie); err == nil {
-			s = c.sessions.get(cookie.Value)
+			if c.identity != nil {
+				var err error
+				s, err = c.identity.Session(r.Context(), cookie.Value)
+				if err != nil {
+					c.serverError(w, err)
+					return
+				}
+			} else {
+				s = c.sessions.get(cookie.Value)
+			}
 		}
-		if s == nil && r.URL.Path == "/login" && r.Method == http.MethodGet {
-			s = c.sessions.create(false)
-			setSessionCookie(w, r, s)
+		account := r.URL.Path == "/login" || r.URL.Path == "/register" || r.URL.Path == "/forgot" || r.URL.Path == "/reset" || r.URL.Path == "/verify"
+		if s == nil && (r.URL.Path == "/login" || c.identity != nil && account) && r.Method == http.MethodGet {
+			if c.identity != nil {
+				var err error
+				s, err = c.identity.CreateSession(r.Context(), 0)
+				if err != nil {
+					c.serverError(w, err)
+					return
+				}
+			} else {
+				s = c.sessions.create(false)
+			}
+			c.setSessionCookie(w, r, s)
 		}
 		response := &sessionResponse{ResponseWriter: w, session: s}
 		admin := r.URL.Path == "/verwaltung" || strings.HasPrefix(r.URL.Path, "/verwaltung/")
@@ -91,8 +111,16 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
-		if r.Method == http.MethodPost && (admin || r.URL.Path == "/logout") {
-			r.Body = http.MaxBytesReader(w, r.Body, uploadBodyLimit)
+		if admin && !s.CanAdmin() {
+			http.Error(w, "Du hast keine Berechtigung für die Verwaltung.", http.StatusForbidden)
+			return
+		}
+		if r.Method == http.MethodPost && (admin || r.URL.Path == "/logout" || c.identity != nil && account) {
+			limit := int64(uploadBodyLimit)
+			if account {
+				limit = 64 << 10
+			}
+			r.Body = http.MaxBytesReader(w, r.Body, limit)
 			if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
 				if err := r.ParseMultipartForm(uploadBodyLimit); err != nil {
 					http.Error(w, "Das Formular ist zu groß oder konnte nicht gelesen werden.", http.StatusBadRequest)
@@ -118,8 +146,15 @@ func validCSRF(s *session, value string) bool {
 
 func (c *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if response := w.(*sessionResponse); response.session != nil {
-		c.sessions.remove(response.session.ID)
+		if c.identity != nil {
+			if err := c.identity.DeleteSession(r.Context(), response.session.ID); err != nil {
+				c.serverError(w, err)
+				return
+			}
+		} else {
+			c.sessions.remove(response.session.ID)
+		}
 	}
-	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Path: "/", MaxAge: -1, HttpOnly: true, Secure: r.TLS != nil, SameSite: http.SameSiteLaxMode})
+	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Path: "/", MaxAge: -1, HttpOnly: true, Secure: c.secureCookies || r.TLS != nil, SameSite: http.SameSiteLaxMode})
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
