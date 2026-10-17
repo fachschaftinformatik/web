@@ -232,6 +232,12 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 					a.Success = "Die E-Mail zum Zurücksetzen des Passworts wurde zum Versand vorgemerkt."
 				}
 				a.User = &user
+				for _, person := range c.people.People() {
+					if person.UserID != 0 && strconv.FormatInt(person.UserID, 10) == user.ID {
+						a.Person = &person
+						break
+					}
+				}
 				c.adminRender(w, user.Name, a, http.StatusOK)
 				return
 			}
@@ -349,20 +355,22 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPag
 		return
 	}
 	title := "Mitglied bearbeiten"
-	if id == "neu" {
+	if id == "neu" || c.identity != nil && p.UserID == 0 {
 		title = "Mitglied einladen"
 		a.Inviting = true
 	}
+	accountEmail := ""
 	errors := map[string]string{}
 	if r.Method == http.MethodPost {
-		p.Name, p.Email = r.PostForm.Get("name"), r.PostForm.Get("email")
-		if id == "neu" {
+		p.Name = r.PostForm.Get("name")
+		if a.Inviting {
+			accountEmail = r.PostForm.Get("email")
 			if c.identity == nil {
 				http.Error(w, "Die Einladung konnte nicht verarbeitet werden.", http.StatusServiceUnavailable)
 				return
 			}
 			var err error
-			errors, err = c.people.Invite(r.Context(), c.identity, p.Name, p.Email)
+			errors, err = c.people.InviteMember(r.Context(), c.identity, id, p.Name, accountEmail)
 			if err != nil {
 				c.serverError(w, err)
 				return
@@ -372,6 +380,9 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPag
 				return
 			}
 		} else {
+			if c.identity == nil {
+				p.Email = r.PostForm.Get("email")
+			}
 			errors = c.people.SavePerson(p)
 		}
 		if len(errors) == 0 {
@@ -383,9 +394,14 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPag
 	if id != "neu" {
 		a.Person = &p
 	}
-	a.Fields = []AdminField{field("name", "Name", p.Name, "text"), field("email", "E-Mail-Adresse", p.Email, "email")}
-	if id != "neu" {
-		a.Fields[1].Label = "Öffentliche E-Mail-Adresse (optional)"
+	a.Fields = []AdminField{field("name", "Name", p.Name, "text")}
+	if a.Inviting {
+		a.Fields = append(a.Fields, field("email", "E-Mail-Adresse des Benutzerkontos", accountEmail, "email"))
+		a.Fields[1].Hint = "Besteht bereits ein Benutzerkonto, wird es mit dem Mitglied verknüpft. Andernfalls wird ein Konto angelegt und eine Einladung gesendet."
+	} else if c.identity == nil {
+		a.Fields = append(a.Fields, field("email", "Öffentliche E-Mail-Adresse (optional)", p.Email, "email"))
+	} else {
+		a.Fields[0].Hint = "Der Name wird auch im verknüpften Benutzerkonto geändert."
 	}
 	attachErrors(a.Fields, errors)
 	status := http.StatusOK

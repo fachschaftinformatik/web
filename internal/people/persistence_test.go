@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/url"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/fachschaftinformatik/web/internal/data"
@@ -57,7 +58,7 @@ func TestPersistentInvitationConfirmationAndAssignments(t *testing.T) {
 	}
 	people := store.People()
 	member := people[len(people)-1]
-	if member.UserID == 0 || member.Confirmed || member.Status() != "Eingeladen" || member.InviteEmail != "new@studmail.w-hs.de" || member.Email != "" {
+	if member.UserID == 0 || member.Confirmed || member.Status() != "Eingeladen" || member.AccountEmail != "new@studmail.w-hs.de" || member.Email != "" {
 		t.Fatalf("invited member: %+v", member)
 	}
 	token := inviteToken(t, db)
@@ -81,14 +82,21 @@ func TestPersistentInvitationConfirmationAndAssignments(t *testing.T) {
 	if fields := store.SaveResponsibility(Responsibility{ID: "neu", Group: "project", Title: "Neue Aufgabe", MemberIDs: []string{member.ID}}); len(fields) != 0 {
 		t.Fatal(fields)
 	}
+	public := false
 	for _, group := range store.Groups() {
 		for _, section := range group.Sections {
 			for _, p := range section.Members {
 				if p.Name == member.Name {
-					t.Fatal("unconfirmed invitation appeared publicly")
+					public = true
+					if p.Email != "" {
+						t.Fatal("private account email appeared publicly")
+					}
 				}
 			}
 		}
+	}
+	if !public {
+		t.Fatal("account confirmation hid a public member assignment")
 	}
 	restarted, err := Open(ctx, db)
 	if err != nil {
@@ -176,5 +184,71 @@ func TestExistingConfirmedAccountAndFailedInvitationArePreserved(t *testing.T) {
 	}
 	if err := db.QueryRow(`SELECT count(*) FROM mail_outbox`).Scan(&count); err != nil || count != 0 {
 		t.Fatal("failed invitation queued mail")
+	}
+}
+
+func TestLinkExistingMemberAndUseAccountIdentity(t *testing.T) {
+	store, identity, db := membershipStore(t)
+	ctx := context.Background()
+	members := store.People()
+	member := members[0]
+	if member.UserID != 0 || member.Status() != "Ohne Benutzerkonto" {
+		t.Fatal("unlinked profile claims a confirmed account")
+	}
+	before := store.Responsibilities("board")
+	fields, err := store.InviteMember(ctx, identity, member.ID, "Linked Person", "linked@studmail.w-hs.de")
+	if err != nil || len(fields) != 0 {
+		t.Fatal(fields, err)
+	}
+	if len(store.People()) != len(members) {
+		t.Fatal("linking duplicated the membership")
+	}
+	linked := store.People()[0]
+	if linked.ID != member.ID || linked.UserID == 0 || linked.Name != "Linked Person" || linked.Email != member.Email || linked.Confirmed {
+		t.Fatalf("incorrect linkage: %+v", linked)
+	}
+	after := store.Responsibilities("board")
+	if len(before) != len(after) {
+		t.Fatal("linking changed functions")
+	}
+	for i := range before {
+		if strings.Join(before[i].MemberIDs, ",") != strings.Join(after[i].MemberIDs, ",") {
+			t.Fatal("linking lost function assignments")
+		}
+	}
+	if _, err := db.Exec(`UPDATE users SET name='Account Name' WHERE id=?`, linked.UserID); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Refresh(ctx); err != nil {
+		t.Fatal(err)
+	}
+	linked = store.People()[0]
+	if linked.Name != "Account Name" {
+		t.Fatal("member name does not come from its account")
+	}
+	invitation, err := identity.Invitation(ctx, inviteToken(t, db))
+	if err != nil || invitation.Name != "Account Name" {
+		t.Fatal("invitation uses a stale profile name")
+	}
+	linked.Name = "Edited Name"
+	if fields := store.SavePerson(linked); len(fields) != 0 {
+		t.Fatal(fields)
+	}
+	var name string
+	if err := db.QueryRow(`SELECT name FROM users WHERE id=?`, linked.UserID).Scan(&name); err != nil || name != "Edited Name" {
+		t.Fatal("member edit did not update account identity")
+	}
+	if _, err := db.Exec(`CREATE TRIGGER fail_profile BEFORE UPDATE ON people BEGIN SELECT RAISE(FAIL,'forced profile failure'); END`); err != nil {
+		t.Fatal(err)
+	}
+	linked.Name = "Failed Name"
+	if fields := store.SavePerson(linked); len(fields) == 0 {
+		t.Fatal("failed profile update reported success")
+	}
+	if err := db.QueryRow(`SELECT name FROM users WHERE id=?`, linked.UserID).Scan(&name); err != nil || name != "Edited Name" {
+		t.Fatal("failed profile update changed account identity")
+	}
+	if store.People()[0].Name != "Edited Name" {
+		t.Fatal("failed profile update changed displayed identity")
 	}
 }

@@ -84,18 +84,18 @@ func (s *Store) refresh(ctx context.Context) error {
 		return err
 	}
 	defer tx.Rollback()
-	rows, err := tx.QueryContext(ctx, `SELECT p.id,p.name,p.email,COALESCE(p.user_id,0),COALESCE(u.email,''),p.user_id IS NULL OR (u.verified=1 AND u.deleted_at IS NULL) FROM people p LEFT JOIN users u ON u.id=p.user_id ORDER BY p.position,p.id`)
+	rows, err := tx.QueryContext(ctx, `SELECT p.id,COALESCE(u.name,p.name),p.email,COALESCE(p.user_id,0),COALESCE(u.email,''),COALESCE(u.verified=1 AND u.deleted_at IS NULL,0) FROM people p LEFT JOIN users u ON u.id=p.user_id ORDER BY p.position,p.id`)
 	if err != nil {
 		return err
 	}
 	var people []Person
 	for rows.Next() {
 		var p Person
-		if err := rows.Scan(&p.ID, &p.Name, &p.Email, &p.UserID, &p.InviteEmail, &p.Confirmed); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Email, &p.UserID, &p.AccountEmail, &p.Confirmed); err != nil {
 			rows.Close()
 			return err
 		}
-		p.InviteEmail = strings.ToLower(p.InviteEmail)
+		p.AccountEmail = strings.ToLower(p.AccountEmail)
 		people = append(people, p)
 	}
 	err = rows.Err()
@@ -162,7 +162,7 @@ func (s *Store) Resend(ctx context.Context, identity *users.Service, personID st
 	}
 	defer tx.Rollback()
 	var name, email string
-	err = tx.QueryRowContext(ctx, `SELECT p.name,u.email FROM people p JOIN users u ON u.id=p.user_id WHERE p.id=? AND u.deleted_at IS NULL`, personID).Scan(&name, &email)
+	err = tx.QueryRowContext(ctx, `SELECT u.name,u.email FROM people p JOIN users u ON u.id=p.user_id WHERE p.id=? AND u.deleted_at IS NULL`, personID).Scan(&name, &email)
 	if err != nil {
 		return false, err
 	}
@@ -177,9 +177,15 @@ func (s *Store) Resend(ctx context.Context, identity *users.Service, personID st
 }
 
 func (s *Store) Invite(ctx context.Context, identity *users.Service, name, email string) (map[string]string, error) {
+	return s.InviteMember(ctx, identity, "neu", name, email)
+}
+
+// InviteMember links an existing public profile or creates a new membership.
+// Account creation, profile linkage and queued mail commit together.
+func (s *Store) InviteMember(ctx context.Context, identity *users.Service, personID, name, email string) (map[string]string, error) {
 	fields := map[string]string{}
 	name = strings.TrimSpace(name)
-	nameError, _, _ := users.RegistrationErrors(name, "valid@studmail.w-hs.de", "valid password")
+	nameError := users.NameError(name)
 	if nameError != "" {
 		fields["name"] = nameError
 	}
@@ -199,6 +205,15 @@ func (s *Store) Invite(ctx context.Context, identity *users.Service, name, email
 		return nil, err
 	}
 	defer tx.Rollback()
+	if personID != "neu" {
+		var linked sql.NullInt64
+		if err := tx.QueryRowContext(ctx, `SELECT user_id FROM people WHERE id=?`, personID).Scan(&linked); err != nil {
+			return nil, err
+		}
+		if linked.Valid {
+			return map[string]string{"email": "Dieses Mitglied hat bereits ein Benutzerkonto."}, nil
+		}
+	}
 	user, err := identity.Invite(ctx, tx, name, email)
 	if errors.Is(err, users.ErrEmailExists) {
 		return map[string]string{"email": err.Error()}, nil
@@ -213,11 +228,40 @@ func (s *Store) Invite(ctx context.Context, identity *users.Service, name, email
 	if existing != 0 {
 		return map[string]string{"email": "Dieses Benutzerkonto ist bereits einem Mitglied zugeordnet."}, nil
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO people(id,name,user_id,position) VALUES (?,?,?,?)`, id.New().String(), name, user.ID, len(s.people)); err != nil {
-		return nil, err
+	if personID == "neu" {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO people(id,name,user_id,position) VALUES (?,?,?,?)`, id.New().String(), user.Name, user.ID, len(s.people)); err != nil {
+			return nil, err
+		}
+	} else {
+		if _, err := tx.ExecContext(ctx, `UPDATE people SET user_id=?,name=? WHERE id=? AND user_id IS NULL`, user.ID, user.Name, personID); err != nil {
+			return nil, err
+		}
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return nil, s.refresh(ctx)
+}
+
+func (s *Store) saveLinked(ctx context.Context, p Person) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	result, err := tx.ExecContext(ctx, `UPDATE users SET name=? WHERE id=? AND deleted_at IS NULL`, p.Name, p.UserID)
+	if err != nil {
+		return err
+	}
+	count, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count != 1 {
+		return sql.ErrNoRows
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE people SET name=?,email=? WHERE id=? AND user_id=?`, p.Name, p.Email, p.ID, p.UserID); err != nil {
+		return err
+	}
+	return tx.Commit()
 }

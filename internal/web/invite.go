@@ -58,7 +58,7 @@ func (c *Handler) Invitation(w http.ResponseWriter, r *http.Request) {
 		form.Name, form.Email = invitation.Name, invitation.Email
 		if r.Method == http.MethodPost {
 			password := r.PostForm.Get("password")
-			_, _, form.PasswordError = users.RegistrationErrors("Valid Name", "valid@studmail.w-hs.de", password)
+			form.PasswordError = users.PasswordError(password)
 			if form.PasswordError == "" {
 				err := c.identity.AcceptInvitation(r.Context(), form.Value, password)
 				if errors.Is(err, users.ErrToken) {

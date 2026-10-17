@@ -50,7 +50,7 @@ func (s *Service) Invitation(ctx context.Context, value string) (Invitation, err
 		return Invitation{}, ErrToken
 	}
 	var result Invitation
-	err := s.db.QueryRowContext(ctx, `SELECT p.name,u.email FROM user_tokens t JOIN users u ON u.id=t.user_id JOIN people p ON p.user_id=u.id WHERE t.id=? AND t.kind='verify' AND t.expires_at>? AND u.verified=0 AND u.deleted_at IS NULL`, digest(value), time.Now().UTC().Format(time.RFC3339)).Scan(&result.Name, &result.Email)
+	err := s.db.QueryRowContext(ctx, `SELECT u.name,u.email FROM user_tokens t JOIN users u ON u.id=t.user_id JOIN people p ON p.user_id=u.id WHERE t.id=? AND t.kind='verify' AND t.expires_at>? AND u.verified=0 AND u.deleted_at IS NULL`, digest(value), time.Now().UTC().Format(time.RFC3339)).Scan(&result.Name, &result.Email)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Invitation{}, ErrToken
 	}
@@ -62,7 +62,7 @@ func (s *Service) AcceptInvitation(ctx context.Context, value, password string) 
 	if _, err := s.Invitation(ctx, value); err != nil {
 		return err
 	}
-	_, _, message := RegistrationErrors("Valid Name", "valid@studmail.w-hs.de", password)
+	message := PasswordError(password)
 	if message != "" {
 		return errors.New(message)
 	}

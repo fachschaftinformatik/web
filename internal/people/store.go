@@ -9,16 +9,21 @@ import (
 	"slices"
 	"strings"
 	"sync"
+
+	"github.com/fachschaftinformatik/web/internal/users"
 )
 
 type Person struct {
 	ID, Name, Email string
 	UserID          int64
-	InviteEmail     string
+	AccountEmail    string
 	Confirmed       bool
 }
 
 func (p Person) Status() string {
+	if p.UserID == 0 {
+		return "Ohne Benutzerkonto"
+	}
 	if p.Confirmed {
 		return "Bestätigt"
 	}
@@ -58,7 +63,7 @@ func NewStore() *Store {
 				if !ok {
 					id = fmt.Sprint(len(s.people) + 1)
 					ids[member.Name] = id
-					s.people = append(s.people, Person{ID: id, Name: member.Name, Email: member.Email, Confirmed: true})
+					s.people = append(s.people, Person{ID: id, Name: member.Name, Email: member.Email})
 				}
 				r.MemberIDs = append(r.MemberIDs, id)
 			}
@@ -100,8 +105,8 @@ func (s *Store) SavePerson(p Person) map[string]string {
 	defer s.mu.Unlock()
 	errors := map[string]string{}
 	p.Name, p.Email = strings.TrimSpace(p.Name), strings.TrimSpace(p.Email)
-	if p.Name == "" {
-		errors["name"] = "Gib einen Namen ein."
+	if message := users.NameError(p.Name); message != "" {
+		errors["name"] = message
 	}
 	if !validEmail(p.Email) {
 		errors["email"] = "Gib eine gültige E-Mail-Adresse ein."
@@ -122,6 +127,16 @@ func (s *Store) SavePerson(p Person) map[string]string {
 	for i := range s.people {
 		if s.people[i].ID == p.ID {
 			old := s.people[i]
+			// Account linkage is not editable through public profile fields.
+			p.UserID, p.AccountEmail, p.Confirmed = old.UserID, old.AccountEmail, old.Confirmed
+			if s.db != nil && old.UserID != 0 {
+				if err := s.saveLinked(context.Background(), p); err != nil {
+					log.Printf("Save member: %v", err)
+					return map[string]string{"name": "Das Mitglied konnte nicht gespeichert werden."}
+				}
+				s.people[i] = p
+				return nil
+			}
 			s.people[i] = p
 			if err := s.persist(); err != nil {
 				s.people[i] = old
@@ -202,7 +217,7 @@ func (s *Store) Groups() []Group {
 			}
 			for _, id := range r.MemberIDs {
 				for _, p := range s.people {
-					if p.ID != id || !p.Confirmed {
+					if p.ID != id {
 						continue
 					}
 					email, role := p.Email, r.Title

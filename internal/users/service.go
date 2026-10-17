@@ -150,7 +150,7 @@ func (s *Service) Directory(ctx context.Context) (*Directory, error) {
 		case "editor":
 			user.Permission = "Redaktion"
 		case "user":
-			user.Permission = "Mitglied"
+			user.Permission = "Studierende"
 		}
 		records = append(records, user)
 	}
