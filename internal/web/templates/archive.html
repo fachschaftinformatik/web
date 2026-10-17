@@ -93,7 +93,7 @@
           {{range .Programs}}<p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">{{.}}</p>{{end}}
         </th>
         <td class="govuk-table__cell">
-          {{with index .Exams 0}}<a class="govuk-link" href="/assets/example.pdf">Reko vom {{.Date}}<span class="govuk-visually-hidden"> für {{$title}}</span></a> (PDF, 1 kB){{end}}
+          {{with index .Exams 0}}<a class="govuk-link" href="{{.URL}}">Reko vom {{.Date}}<span class="govuk-visually-hidden"> für {{$title}}</span></a> (PDF, {{.Size}}){{end}}
           {{if gt (len .Exams) 1}}<p class="govuk-body govuk-!-margin-top-3 govuk-!-margin-bottom-0"><a class="govuk-link" href="{{$.Archive.ModuleURL .}}">Alle {{len .Exams}} Rekos ansehen<span class="govuk-visually-hidden"> für {{$title}}</span></a></p>{{end}}
         </td>
       </tr>

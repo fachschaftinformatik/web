@@ -26,6 +26,22 @@ ORDER BY a.exam_date DESC;
 -- name: GetArchiveEntry :one
 SELECT * FROM archive WHERE id = sqlc.arg(id) AND deleted_at IS NULL LIMIT 1;
 
+-- name: ListArchiveCatalog :many
+SELECT a.id, a.module_id, a.version, a.exam_date, a.comment, a.nbytes,
+       m.name AS module_name, m.alias, p.name AS program_name
+FROM archive a
+JOIN modules m ON m.id = a.module_id AND m.deleted_at IS NULL
+JOIN programs p ON p.id = m.program_id AND p.deleted_at IS NULL
+WHERE a.is_latest = 1 AND a.deleted_at IS NULL AND a.mime_type = 'application/pdf'
+ORDER BY a.exam_date DESC, a.created_at DESC, a.id DESC;
+
+-- name: ListArchiveModules :many
+SELECT m.id, m.name, m.program_id, p.name AS program_name
+FROM modules m
+JOIN programs p ON p.id = m.program_id AND p.deleted_at IS NULL
+WHERE m.deleted_at IS NULL
+ORDER BY m.name, m.id;
+
 -- name: GetArchiveEntryDetails :one
 SELECT a.*,
        m.name as module_name, m.program_id,

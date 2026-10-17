@@ -247,6 +247,61 @@ func (q *Queries) GetLatestByGroupId(ctx context.Context, groupID int64) (Archiv
 	return i, err
 }
 
+const listArchiveCatalog = `-- name: ListArchiveCatalog :many
+SELECT a.id, a.module_id, a.version, a.exam_date, a.comment, a.nbytes,
+       m.name AS module_name, m.alias, p.name AS program_name
+FROM archive a
+JOIN modules m ON m.id = a.module_id AND m.deleted_at IS NULL
+JOIN programs p ON p.id = m.program_id AND p.deleted_at IS NULL
+WHERE a.is_latest = 1 AND a.deleted_at IS NULL AND a.mime_type = 'application/pdf'
+ORDER BY a.exam_date DESC, a.created_at DESC, a.id DESC
+`
+
+type ListArchiveCatalogRow struct {
+	ID          int64   `json:"id"`
+	ModuleID    int64   `json:"module_id"`
+	Version     string  `json:"version"`
+	ExamDate    string  `json:"exam_date"`
+	Comment     *string `json:"comment"`
+	Nbytes      int64   `json:"nbytes"`
+	ModuleName  string  `json:"module_name"`
+	Alias       *string `json:"alias"`
+	ProgramName string  `json:"program_name"`
+}
+
+func (q *Queries) ListArchiveCatalog(ctx context.Context) ([]ListArchiveCatalogRow, error) {
+	rows, err := q.db.QueryContext(ctx, listArchiveCatalog)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListArchiveCatalogRow
+	for rows.Next() {
+		var i ListArchiveCatalogRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ModuleID,
+			&i.Version,
+			&i.ExamDate,
+			&i.Comment,
+			&i.Nbytes,
+			&i.ModuleName,
+			&i.Alias,
+			&i.ProgramName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listArchiveEntries = `-- name: ListArchiveEntries :many
 SELECT a.id, a.group_id, a.user_id, a.module_id, a.version, a.exam_date, a.comment, a.edit_version, a.is_latest, a.access_key, a.mime_type, a.nbytes, a.checksum, a.created_at, a.updated_at, a.deleted_at,
        m.name as module_name, m.program_id,
@@ -319,6 +374,49 @@ func (q *Queries) ListArchiveEntries(ctx context.Context, arg ListArchiveEntries
 			&i.ModuleName,
 			&i.ProgramID,
 			&i.UploaderName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listArchiveModules = `-- name: ListArchiveModules :many
+SELECT m.id, m.name, m.program_id, p.name AS program_name
+FROM modules m
+JOIN programs p ON p.id = m.program_id AND p.deleted_at IS NULL
+WHERE m.deleted_at IS NULL
+ORDER BY m.name, m.id
+`
+
+type ListArchiveModulesRow struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	ProgramID   int64  `json:"program_id"`
+	ProgramName string `json:"program_name"`
+}
+
+func (q *Queries) ListArchiveModules(ctx context.Context) ([]ListArchiveModulesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listArchiveModules)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListArchiveModulesRow
+	for rows.Next() {
+		var i ListArchiveModulesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.ProgramID,
+			&i.ProgramName,
 		); err != nil {
 			return nil, err
 		}

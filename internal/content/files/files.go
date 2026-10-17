@@ -2,6 +2,7 @@
 package files
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -12,6 +13,23 @@ type Exam struct {
 	Pages                                      int
 	Degree                                     string
 	ModuleID                                   string
+	ID                                         string
+	Bytes                                      int64
+	alias                                      string
+}
+
+func (e Exam) URL() string {
+	if e.ID == "" {
+		return "/assets/example.pdf"
+	}
+	return "/archive/files/" + e.ID
+}
+
+func (e Exam) Size() string {
+	if e.Bytes < 1024*1024 {
+		return fmt.Sprintf("%d kB", max(1, (e.Bytes+1023)/1024))
+	}
+	return strings.ReplaceAll(fmt.Sprintf("%.1f MB", float64(e.Bytes)/(1024*1024)), ".", ",")
 }
 
 type Filter struct {
@@ -27,14 +45,14 @@ var degrees = []string{"Bachelor", "Master"}
 
 // Archive is a read-only fixture. No production exams or accounts are accessed.
 var exams = []Exam{
-	{"Algorithmen und Datenstrukturen", "Informatik", "2023", "12.02.2026", "Sortierverfahren, Graphen und Laufzeitanalyse. Beispiel für eine Klausur mit Lösungshinweisen.", 8, "Bachelor", "algorithmen-und-datenstrukturen"},
-	{"Datenbanken", "Wirtschaftsinformatik", "2023", "06.02.2026", "Relationale Modellierung, SQL und Normalisierung. Beispiel für eine schriftliche Prüfung.", 6, "Bachelor", "datenbanken"},
-	{"Mathematik I", "Informatik", "2023", "29.01.2026", "Lineare Algebra und Analysis. Beispiel für eine Grundlagenklausur.", 10, "Bachelor", "mathematik-1"},
-	{"Web Engineering", "Medieninformatik", "2023", "15.07.2025", "HTTP, Barrierefreiheit und serverseitige Webanwendungen. Beispiel für eine Modulklausur.", 5, "Bachelor", "web-engineering"},
-	{"Betriebssysteme", "Informatik", "2017", "10.07.2025", "Prozesse, Speicherverwaltung und Dateisysteme. Beispiel für eine Prüfung ohne Lösung.", 7, "Bachelor", "betriebssysteme"},
-	{"Software Engineering", "Wirtschaftsinformatik", "2017", "04.02.2025", "Anforderungen, Architektur und Softwaretests. Beispiel für eine Klausur mit Fallstudie.", 9, "Bachelor", "software-engineering"},
-	{"Algorithmen und Datenstrukturen", "Informatik", "2023", "10.07.2025", "Weitere Beispielrekonstruktion zu Sortierverfahren und Suchbäumen.", 6, "Bachelor", "algorithmen-und-datenstrukturen"},
-	{"Algorithmen und Datenstrukturen", "Informatik", "2017", "22.01.2025", "Ältere Beispielrekonstruktion zu Datenstrukturen und Rekursion.", 5, "Bachelor", "algorithmen-und-datenstrukturen"},
+	{Title: "Algorithmen und Datenstrukturen", Program: "Informatik", Version: "2023", Date: "12.02.2026", Description: "Sortierverfahren, Graphen und Laufzeitanalyse. Beispiel für eine Klausur mit Lösungshinweisen.", Pages: 8, Degree: "Bachelor", ModuleID: "algorithmen-und-datenstrukturen"},
+	{Title: "Datenbanken", Program: "Wirtschaftsinformatik", Version: "2023", Date: "06.02.2026", Description: "Relationale Modellierung, SQL und Normalisierung. Beispiel für eine schriftliche Prüfung.", Pages: 6, Degree: "Bachelor", ModuleID: "datenbanken"},
+	{Title: "Mathematik I", Program: "Informatik", Version: "2023", Date: "29.01.2026", Description: "Lineare Algebra und Analysis. Beispiel für eine Grundlagenklausur.", Pages: 10, Degree: "Bachelor", ModuleID: "mathematik-1"},
+	{Title: "Web Engineering", Program: "Medieninformatik", Version: "2023", Date: "15.07.2025", Description: "HTTP, Barrierefreiheit und serverseitige Webanwendungen. Beispiel für eine Modulklausur.", Pages: 5, Degree: "Bachelor", ModuleID: "web-engineering"},
+	{Title: "Betriebssysteme", Program: "Informatik", Version: "2017", Date: "10.07.2025", Description: "Prozesse, Speicherverwaltung und Dateisysteme. Beispiel für eine Prüfung ohne Lösung.", Pages: 7, Degree: "Bachelor", ModuleID: "betriebssysteme"},
+	{Title: "Software Engineering", Program: "Wirtschaftsinformatik", Version: "2017", Date: "04.02.2025", Description: "Anforderungen, Architektur und Softwaretests. Beispiel für eine Klausur mit Fallstudie.", Pages: 9, Degree: "Bachelor", ModuleID: "software-engineering"},
+	{Title: "Algorithmen und Datenstrukturen", Program: "Informatik", Version: "2023", Date: "10.07.2025", Description: "Weitere Beispielrekonstruktion zu Sortierverfahren und Suchbäumen.", Pages: 6, Degree: "Bachelor", ModuleID: "algorithmen-und-datenstrukturen"},
+	{Title: "Algorithmen und Datenstrukturen", Program: "Informatik", Version: "2017", Date: "22.01.2025", Description: "Ältere Beispielrekonstruktion zu Datenstrukturen und Rekursion.", Pages: 5, Degree: "Bachelor", ModuleID: "algorithmen-und-datenstrukturen"},
 }
 
 func Programs() []string { return slices.Clone(programs) }
@@ -58,11 +76,32 @@ func (m Module) Programs() []string {
 
 // FindModule keeps known modules addressable even if the filters match no uploads.
 func FindModule(id string, filter Filter) (Module, bool) {
-	for _, module := range FindModules(Filter{}) {
+	return Examples().FindModule(id, filter)
+}
+
+type Catalog struct {
+	exams                       []Exam
+	modules                     []Module
+	programs, versions, degrees []string
+}
+
+func Examples() Catalog {
+	return Catalog{exams: exams, programs: programs, versions: versions, degrees: degrees}
+}
+func (c Catalog) Programs() []string { return slices.Clone(c.programs) }
+func (c Catalog) Versions() []string { return slices.Clone(c.versions) }
+func (c Catalog) Degrees() []string  { return slices.Clone(c.degrees) }
+
+func (c Catalog) FindModule(id string, filter Filter) (Module, bool) {
+	known := c.modules
+	if known == nil {
+		known = c.FindModules(Filter{})
+	}
+	for _, module := range known {
 		if module.ID != id {
 			continue
 		}
-		for _, matching := range FindModules(filter) {
+		for _, matching := range c.FindModules(filter) {
 			if matching.ID == id {
 				return matching, true
 			}
@@ -75,9 +114,13 @@ func FindModule(id string, filter Filter) (Module, bool) {
 
 // FindModules groups matching reconstructions by module, as the existing archive does.
 func FindModules(filter Filter) []Module {
+	return Examples().FindModules(filter)
+}
+
+func (c Catalog) FindModules(filter Filter) []Module {
 	modules := make([]Module, 0)
 	indices := make(map[string]int)
-	for _, exam := range FindExams(filter) {
+	for _, exam := range c.FindExams(filter) {
 		index, exists := indices[exam.ModuleID]
 		if !exists {
 			index = len(modules)
@@ -90,9 +133,13 @@ func FindModules(filter Filter) []Module {
 }
 
 func FindExams(filter Filter) []Exam {
+	return Examples().FindExams(filter)
+}
+
+func (c Catalog) FindExams(filter Filter) []Exam {
 	result := make([]Exam, 0)
 	query := strings.ToLower(strings.TrimSpace(filter.Query))
-	for _, exam := range exams {
+	for _, exam := range c.exams {
 		if len(filter.Degrees) > 0 && !slices.Contains(filter.Degrees, exam.Degree) {
 			continue
 		}
@@ -102,7 +149,7 @@ func FindExams(filter Filter) []Exam {
 		if len(filter.Versions) > 0 && !slices.Contains(filter.Versions, exam.Version) {
 			continue
 		}
-		if !strings.Contains(strings.ToLower(exam.Title+" "+exam.Description), query) {
+		if !strings.Contains(strings.ToLower(exam.Title+" "+exam.Description+" "+exam.alias), query) {
 			continue
 		}
 		result = append(result, exam)

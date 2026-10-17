@@ -23,7 +23,7 @@
       <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Studiengang</span><span>{{.Program}}</span></td>
       <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Abschluss</span><span>{{.Degree}}</span></td>
       <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Prüfungsordnung</span><span>{{.Version}}</span></td>
-      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Dokumente</span><span><a class="govuk-link" href="/assets/example.pdf">Reko<span class="govuk-visually-hidden"> für {{.Title}} vom {{.Date}}</span></a> (PDF, 1 kB)</span></td>
+      <td class="govuk-table__cell" role="cell"><span class="app-archive-upload-label" aria-hidden="true">Dokumente</span><span><a class="govuk-link" href="{{.URL}}">Reko<span class="govuk-visually-hidden"> für {{.Title}} vom {{.Date}}</span></a> (PDF, {{.Size}})</span></td>
     </tr>
     {{end}}
   </tbody>

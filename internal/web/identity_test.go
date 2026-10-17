@@ -11,12 +11,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fachschaftinformatik/web/internal/content/files"
 	"github.com/fachschaftinformatik/web/internal/data"
 	"github.com/fachschaftinformatik/web/internal/users"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func identityBrowser(t *testing.T) (*adminBrowser, *sql.DB) {
+	return identityBrowserWithStorage(t, nil)
+}
+
+func identityBrowserWithStorage(t *testing.T, storage files.Storage) (*adminBrowser, *sql.DB) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "sqlite.db")
 	if err := data.Migrate(path, log.New(io.Discard, "", 0)); err != nil {
@@ -27,7 +32,7 @@ func identityBrowser(t *testing.T) (*adminBrowser, *sql.DB) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	handler, err := NewPersistent(users.NewService(db, "https://example.org"), false)
+	handler, err := NewPersistent(users.NewService(db, "https://example.org"), files.NewService(db, storage), false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +83,7 @@ func TestPersistentLoginAuthorizationAndLogout(t *testing.T) {
 		t.Fatal("live directory or updated role not used")
 	}
 	// Build a fresh handler and service, keeping only the database and browser cookie.
-	handler, err := NewPersistent(users.NewService(db, "https://example.org"), false)
+	handler, err := NewPersistent(users.NewService(db, "https://example.org"), files.NewService(db, nil), false)
 	if err != nil {
 		t.Fatal(err)
 	}

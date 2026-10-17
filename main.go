@@ -17,7 +17,11 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/config"
+	"github.com/fachschaftinformatik/web/internal/content/files"
 	"github.com/fachschaftinformatik/web/internal/data"
+	"github.com/fachschaftinformatik/web/internal/data/blob"
+	"github.com/fachschaftinformatik/web/internal/data/blob/disk"
+	"github.com/fachschaftinformatik/web/internal/data/blob/s3"
 	"github.com/fachschaftinformatik/web/internal/email"
 	"github.com/fachschaftinformatik/web/internal/users"
 	"github.com/fachschaftinformatik/web/internal/web"
@@ -40,6 +44,7 @@ func run(ctx context.Context, args []string) error {
 	addr := flags.String("addr", "127.0.0.1:8090", "HTTP listen address")
 	snapshot := flags.String("data", "", "Read-only user snapshot directory for the demo")
 	database := flags.String("database", "data/sqlite.db", "Writable SQLite database path")
+	blobs := flags.String("blobs", "", "Local object directory; otherwise use S3 configuration")
 	demo := flags.Bool("demo", false, "Use example data and local admin/admin credentials")
 	version := flags.Bool("version", false, "Print application version")
 	health := flags.String("check-health", "", "Check a running application's health URL and exit")
@@ -97,7 +102,22 @@ func run(ctx context.Context, args []string) error {
 			return errors.New("DOMAIN must be an absolute HTTP or HTTPS URL")
 		}
 		identity := users.NewService(db, cfg.Domain)
-		handler, err = web.NewPersistent(identity, origin.Scheme == "https")
+		var storage blob.Provider
+		if *blobs != "" {
+			local, err := disk.New(*blobs)
+			if err != nil {
+				return err
+			}
+			defer local.Close()
+			storage = local
+		} else if cfg.S3Endpoint != "" {
+			client, err := s3.NewClient(cfg)
+			if err != nil {
+				return err
+			}
+			storage = client
+		}
+		handler, err = web.NewPersistent(identity, files.NewService(db, storage), origin.Scheme == "https")
 		if err == nil {
 			mailCtx, cancel := context.WithCancel(ctx)
 			done := make(chan struct{})

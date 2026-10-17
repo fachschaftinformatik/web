@@ -3,6 +3,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"log"
 	"net/http"
 	"slices"
@@ -23,6 +24,7 @@ type Handler struct {
 	sessions      sessionStore
 	identity      *users.Service
 	secureCookies bool
+	archive       *files.Service
 }
 
 func New() (http.Handler, error) {
@@ -30,15 +32,15 @@ func New() (http.Handler, error) {
 }
 
 func NewWithUsers(records []users.User) (http.Handler, error) {
-	return newHandler(records, nil, false)
+	return newHandler(records, nil, nil, false)
 }
 
 // NewPersistent uses database-backed identities instead of demo credentials.
-func NewPersistent(identity *users.Service, secureCookies bool) (http.Handler, error) {
-	return newHandler(nil, identity, secureCookies)
+func NewPersistent(identity *users.Service, archive *files.Service, secureCookies bool) (http.Handler, error) {
+	return newHandler(nil, identity, archive, secureCookies)
 }
 
-func newHandler(records []users.User, identity *users.Service, secureCookies bool) (http.Handler, error) {
+func newHandler(records []users.User, identity *users.Service, archive *files.Service, secureCookies bool) (http.Handler, error) {
 	views, err := newRenderer()
 	if err != nil {
 		return nil, err
@@ -46,6 +48,7 @@ func newHandler(records []users.User, identity *users.Service, secureCookies boo
 	c := &Handler{views: views, people: people.NewStore(), content: content.NewStore(), users: users.NewDirectory(records), sessions: newSessionStore()}
 	c.identity = identity
 	c.secureCookies = secureCookies
+	c.archive = archive
 	router := http.NewServeMux()
 	router.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -70,6 +73,11 @@ func newHandler(records []users.User, identity *users.Service, secureCookies boo
 	})
 	router.HandleFunc("GET /archive", c.Archive)
 	router.HandleFunc("GET /archive/{module}", c.ArchiveModule)
+	router.HandleFunc("GET /archive/files/{id}", c.ArchiveFile)
+	router.HandleFunc("GET /api/v1/archive/{id}/file", c.ArchiveFile)
+	router.HandleFunc("GET /archive/{module}/{entry}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/archive/"+r.PathValue("module"), http.StatusSeeOther)
+	})
 	router.HandleFunc("GET /discussions", c.Forum)
 	router.HandleFunc("GET /d/{post}", c.Discussion)
 	router.HandleFunc("GET /d/new", c.EditDiscussion)
@@ -125,22 +133,27 @@ func archiveFilter(r *http.Request) files.Filter {
 }
 
 func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
+	catalog, err := c.archiveCatalog(r.Context())
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
 	filter := archiveFilter(r)
 	programs := make([]FilterOption, 0)
-	for _, program := range files.Programs() {
+	for _, program := range catalog.Programs() {
 		programs = append(programs, FilterOption{Name: program, Selected: slices.Contains(filter.Programs, program)})
 	}
 	versions := make([]FilterOption, 0)
-	for _, version := range files.Versions() {
+	for _, version := range catalog.Versions() {
 		versions = append(versions, FilterOption{Name: version, Selected: slices.Contains(filter.Versions, version)})
 	}
 	degrees := make([]FilterOption, 0)
-	for _, degree := range files.Degrees() {
+	for _, degree := range catalog.Degrees() {
 		degrees = append(degrees, FilterOption{Name: degree, Selected: slices.Contains(filter.Degrees, degree)})
 	}
 	data := Page{
 		Title: "Altklausuren", Active: "archive",
-		Archive: ArchivePage{Filter: filter, Programs: programs, Versions: versions, Degrees: degrees, Modules: files.FindModules(filter)},
+		Archive: ArchivePage{Filter: filter, Programs: programs, Versions: versions, Degrees: degrees, Modules: catalog.FindModules(filter)},
 	}
 	w.Header().Set("Vary", "HX-Request, HX-History-Restore-Request")
 	fragment := r.Header.Get("HX-Request") == "true" && r.Header.Get("HX-History-Restore-Request") != "true"
@@ -148,8 +161,13 @@ func (c *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
+	catalog, err := c.archiveCatalog(r.Context())
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
 	filter := archiveFilter(r)
-	module, ok := files.FindModule(r.PathValue("module"), filter)
+	module, ok := catalog.FindModule(r.PathValue("module"), filter)
 	if !ok {
 		http.NotFound(w, r)
 		return
@@ -158,6 +176,13 @@ func (c *Handler) ArchiveModule(w http.ResponseWriter, r *http.Request) {
 		Title: module.Title, Active: "archive",
 		Archive: ArchivePage{Module: &module, Filter: filter},
 	})
+}
+
+func (c *Handler) archiveCatalog(ctx context.Context) (files.Catalog, error) {
+	if c.archive == nil {
+		return files.Examples(), nil
+	}
+	return c.archive.Catalog(ctx)
 }
 
 func (c *Handler) render(w http.ResponseWriter, page string, fragment bool, data Page) {

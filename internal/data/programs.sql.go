@@ -99,6 +99,35 @@ func (q *Queries) GetProgramWithVersions(ctx context.Context, id int64) ([]GetPr
 	return items, nil
 }
 
+const listProgramVersions = `-- name: ListProgramVersions :many
+SELECT pv.program_id, pv.name FROM program_versions pv
+JOIN programs p ON p.id = pv.program_id AND p.deleted_at IS NULL
+ORDER BY pv.name DESC, pv.program_id
+`
+
+func (q *Queries) ListProgramVersions(ctx context.Context) ([]ProgramVersion, error) {
+	rows, err := q.db.QueryContext(ctx, listProgramVersions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ProgramVersion
+	for rows.Next() {
+		var i ProgramVersion
+		if err := rows.Scan(&i.ProgramID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPrograms = `-- name: ListPrograms :many
 SELECT id, name, created_at, updated_at, deleted_at FROM programs WHERE deleted_at IS NULL ORDER BY name, id
 `
