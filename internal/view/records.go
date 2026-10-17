@@ -339,6 +339,14 @@ type Request struct {
 	Assignments []Assignment
 	Status      RequestStatus
 }
+
+func (r Request) ListTitle() string {
+	if r.ModuleCount > 1 {
+		return fmt.Sprintf("%s und %d weitere", r.Title, r.ModuleCount-1)
+	}
+	return r.Title
+}
+
 type Image struct{ gallery.Image }
 type Album struct {
 	gallery.Album
