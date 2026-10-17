@@ -25,7 +25,7 @@ type ImagesPage struct {
 func (g ImagesPage) CarouselAlbums() []media.Album {
 	var albums []media.Album
 	for _, album := range g.Albums {
-		if len(album.Images) > 0 {
+		if album.CoverImage().Source != "" {
 			albums = append(albums, album)
 		}
 	}
@@ -124,12 +124,24 @@ func galleryPageNumbers(page, pages int) []int {
 
 // MediaFile serves only database-backed gallery images, never raw storage keys.
 func (c *Handler) MediaFile(w http.ResponseWriter, r *http.Request) {
+	c.galleryImageFile(w, r, false)
+}
+
+func (c *Handler) EventCover(w http.ResponseWriter, r *http.Request) {
+	c.galleryImageFile(w, r, true)
+}
+
+func (c *Handler) galleryImageFile(w http.ResponseWriter, r *http.Request, cover bool) {
 	w.Header().Set("Cache-Control", "no-store")
 	if c.media == nil {
 		http.NotFound(w, r)
 		return
 	}
-	object, err := c.media.Open(r.Context(), r.PathValue("id"), r.PathValue("size"))
+	open := c.media.Open
+	if cover {
+		open = c.media.OpenCover
+	}
+	object, err := open(r.Context(), r.PathValue("id"), r.PathValue("size"))
 	if errors.Is(err, media.ErrNotFound) {
 		http.NotFound(w, r)
 		return

@@ -98,6 +98,42 @@ func TestCatalogCompleteAndFiltered(t *testing.T) {
 	}
 }
 
+func TestEventCoversUseOnlyTheirOwnRegisteredPreview(t *testing.T) {
+	s, db := galleryService(t)
+	_, err := db.Exec(`UPDATE events SET cover_path=CASE id WHEN 10 THEN 'events/10/cover/source' WHEN 20 THEN 'avatars/1/source' WHEN 30 THEN 'events/30/cover/source' WHEN 40 THEN 'events/40/cover/source' END`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	key := blob.EventCoverPreviewKey("10", 400)
+	if err := s.storage.Upload(context.Background(), key, strings.NewReader("cover"), 5, "application/octet-stream"); err != nil {
+		t.Fatal(err)
+	}
+	object, err := s.OpenCover(context.Background(), "10", "400")
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := io.ReadAll(object)
+	object.Close()
+	if err != nil || string(value) != "cover" || object.Info.ContentType != "image/jpeg" {
+		t.Fatalf("cover bytes or type: %q, %v", value, err)
+	}
+	for _, tc := range []struct{ id, size string }{{"20", "400"}, {"30", "400"}, {"999", "400"}, {"010", "400"}, {"../10", "400"}, {"10", "original"}, {"10", "../source"}} {
+		if _, err := s.OpenCover(context.Background(), tc.id, tc.size); !errors.Is(err, ErrNotFound) {
+			t.Errorf("unregistered cover %s/%s: %v", tc.id, tc.size, err)
+		}
+	}
+	albums, err := s.Catalog(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if albums[1].CoverImage().Source != "/media/events/10/cover/1200" || albums[0].CoverImage().Source != "/media/102/1200" || albums[2].CoverImage().Source != "/media/events/40/cover/1200" {
+		t.Fatalf("configured covers and fallback: %+v", albums)
+	}
+	if !strings.Contains(albums[1].CoverImage().ThumbnailSources(), "/media/events/10/cover/800 2x") {
+		t.Fatal("cover srcset uses media photo paths")
+	}
+}
+
 func TestOpenHistoricalKeysAndProtections(t *testing.T) {
 	s, db := galleryService(t)
 	ctx := context.Background()

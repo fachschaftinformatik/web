@@ -131,6 +131,7 @@ func newHandler(records []users.User, services *Services, secureCookies bool) (h
 	router.HandleFunc("POST /d/{post}/comments", c.Comment)
 	router.HandleFunc("POST /d/{post}/comments/{comment}/edit", c.Comment)
 	router.HandleFunc("GET /media/{id}/{size}", c.MediaFile)
+	router.HandleFunc("GET /media/events/{id}/cover/{size}", c.EventCover)
 	router.HandleFunc("GET /login", c.Login)
 	router.HandleFunc("POST /login", c.Login)
 	router.HandleFunc("POST /logout", c.Logout)

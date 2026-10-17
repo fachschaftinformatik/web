@@ -6,7 +6,7 @@
 <ul class="govuk-list app-gallery-grid app-gallery-albums">
   {{range $g.Albums}}
   <li>
-    <h2 class="govuk-heading-m"><a class="govuk-link app-gallery-link" href="{{.URL}}">{{if .Images}}{{$cover := index .Images 0}}<img class="app-gallery-thumbnail" src="{{$cover.Thumbnail}}" srcset="{{$cover.ThumbnailSources}}" {{if $cover.Width}}width="{{$cover.Width}}" height="{{$cover.Height}}"{{end}} alt="" loading="lazy" decoding="async">{{end}}<span>{{.Title}}</span></a></h2>
+    <h2 class="govuk-heading-m"><a class="govuk-link app-gallery-link" href="{{.URL}}">{{with .CoverImage}}{{if .Source}}<img class="app-gallery-thumbnail" src="{{.Thumbnail}}" srcset="{{.ThumbnailSources}}" {{if .Width}}width="{{.Width}}" height="{{.Height}}"{{end}} alt="" loading="lazy" decoding="async">{{end}}{{end}}<span>{{.Title}}</span></a></h2>
     <p class="govuk-body-s">{{len .Images}} {{if eq (len .Images) 1}}Bild{{else}}Bilder{{end}}</p>
   </li>
   {{end}}

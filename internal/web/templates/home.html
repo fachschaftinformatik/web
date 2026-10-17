@@ -25,7 +25,7 @@
           </div>
           <div id="event-slides">
              {{range $index, $album := $albums}}
-            {{$cover := index .Images 0}}
+            {{$cover := .CoverImage}}
             <div class="app-event-slide" data-title="{{.Title}}" {{if $index}}hidden{{end}}>
               <a class="govuk-link govuk-link--inverse app-event-carousel__link" href="{{.URL}}"><img class="app-event-carousel__image" src="{{$cover.Source}}" {{if $cover.Width}}width="{{$cover.Width}}" height="{{$cover.Height}}"{{end}} alt="" {{if $index}}loading="lazy"{{else}}fetchpriority="high"{{end}} decoding="async"><span class="govuk-visually-hidden">Album ansehen: {{.Title}}</span></a>
              </div>
