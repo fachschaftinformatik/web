@@ -38,6 +38,12 @@
   </ul>{{end}}
   {{if .CanAdmin}}<h2 class="govuk-heading-m govuk-!-margin-top-7">Verwaltung</h2>
   <p class="govuk-body"><a class="govuk-link" href="/verwaltung">Zur Verwaltung</a></p>{{end}}
+  <h2 class="govuk-heading-m govuk-!-margin-top-7">Über diese Website</h2>
+  <ul class="govuk-list govuk-list--spaced">
+    <li><a class="govuk-link" href="/impressum">Impressum</a></li>
+    <li><a class="govuk-link" href="/datenschutz">Datenschutz</a></li>
+    <li><a class="govuk-link" href="/barrierefreiheit">Barrierefreiheit</a></li>
+  </ul>
 </nav>
 {{template "list-pagination" .Images.Pagination}}
 {{end}}

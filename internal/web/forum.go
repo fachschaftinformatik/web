@@ -17,6 +17,18 @@ type ForumPage struct {
 	Posts                   []posts.Post
 	Thread                  *posts.Thread
 	BackURL                 string
+	Comment                 CommentForm
+}
+
+type CommentForm struct {
+	ID, Text, Error string
+}
+
+func (f CommentForm) Anchor() string {
+	if f.ID != "" {
+		return "edit-comment-" + f.ID
+	}
+	return "comment-text"
 }
 
 func (p ForumPage) CommentURL(id string) string {
@@ -28,11 +40,28 @@ func (p ForumPage) CommentURL(id string) string {
 }
 
 func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
+	c.discussion(w, r, CommentForm{})
+}
+
+func (c *Handler) discussion(w http.ResponseWriter, r *http.Request, draft CommentForm) {
 	var thread posts.Thread
 	var ok bool
 	var total int
 	if c.posts != nil {
 		var err error
+		if draft.ID != "" {
+			page, err := c.posts.CommentPage(r.Context(), r.PathValue("post"), draft.ID)
+			if err != nil {
+				c.forumError(w, r, err)
+				return
+			}
+			query := r.URL.Query()
+			query.Set("page", strconv.Itoa(page))
+			r = r.Clone(r.Context())
+			urlCopy := *r.URL
+			r.URL = &urlCopy
+			r.URL.RawQuery = query.Encode()
+		}
 		thread, total, err = c.posts.LookupPage(r.Context(), r.PathValue("post"), requestedPage(r), forumUser(w))
 		if err != nil {
 			c.forumError(w, r, err)
@@ -43,7 +72,7 @@ func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
 		thread, ok = posts.Lookup(r.PathValue("post"))
 	}
 	if !ok {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	values := url.Values{}
@@ -58,7 +87,7 @@ func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
 	if len(values) > 0 {
 		back += "?" + values.Encode()
 	}
-	forum := ForumPage{Thread: &thread, BackURL: back, Live: c.posts != nil, Pagination: listPagination(r, total, 20)}
+	forum := ForumPage{Thread: &thread, BackURL: back, Live: c.posts != nil, Pagination: listPagination(r, total, 20), Comment: draft}
 	if c.posts != nil {
 		if user := forumUser(w); user != 0 {
 			forum.CanWrite = c.posts.CanWrite(r.Context(), user, 0, false) == nil
@@ -77,7 +106,11 @@ func (c *Handler) Discussion(w http.ResponseWriter, r *http.Request) {
 		active = "news"
 		forum.BackURL = newsURL
 	}
-	c.render(w, "thread", false, Page{Title: thread.Title, Active: active, Community: true, Forum: forum})
+	status := http.StatusOK
+	if draft.Error != "" {
+		status = http.StatusUnprocessableEntity
+	}
+	c.renderStatus(w, "thread", false, Page{Title: thread.Title, Active: active, Community: true, Forum: forum}, status)
 }
 
 func (c *Handler) Forum(w http.ResponseWriter, r *http.Request) {
@@ -127,9 +160,9 @@ func forumUser(w http.ResponseWriter) int64 {
 func (c *Handler) forumError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, posts.ErrNotFound):
-		http.NotFound(w, r)
+		c.notFound(w, r)
 	case errors.Is(err, posts.ErrForbidden):
-		http.Error(w, "Du hast keine Berechtigung für diese Aktion.", http.StatusForbidden)
+		c.pageError(w, "Du hast keine Berechtigung für diese Aktion.", http.StatusForbidden)
 	default:
 		c.serverError(w, err)
 	}
@@ -137,7 +170,7 @@ func (c *Handler) forumError(w http.ResponseWriter, r *http.Request, err error) 
 
 func (c *Handler) Comment(w http.ResponseWriter, r *http.Request) {
 	if c.posts == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	user := forumUser(w)
@@ -147,14 +180,14 @@ func (c *Handler) Comment(w http.ResponseWriter, r *http.Request) {
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 128<<10)
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Das Formular konnte nicht gelesen werden.", http.StatusBadRequest)
+		c.pageError(w, "Das Formular konnte nicht gelesen werden.", http.StatusBadRequest)
 		return
 	}
 	comment, err := c.posts.SaveComment(r.Context(), user, r.PathValue("post"), r.PathValue("comment"), r.PostForm.Get("text"))
 	if err != nil {
 		var validation *posts.ValidationError
 		if errors.As(err, &validation) {
-			http.Error(w, validation.Fields[0].Message, http.StatusUnprocessableEntity)
+			c.discussion(w, r, CommentForm{ID: r.PathValue("comment"), Text: r.PostForm.Get("text"), Error: validation.Fields[0].Message})
 			return
 		}
 		c.forumError(w, r, err)

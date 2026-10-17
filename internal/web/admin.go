@@ -193,7 +193,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if a.SectionTitle == "" {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	if r.URL.Query().Get("gespeichert") == "1" {
@@ -208,7 +208,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 	switch section {
 	case "einreichungen":
 		if c.archive == nil {
-			http.NotFound(w, r)
+			c.notFound(w, r)
 			return
 		}
 		requests, err := c.archive.Requests(r.Context(), w.(*sessionResponse).session.UserID, true)
@@ -253,7 +253,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 				c.adminRender(w, user.Name, a, http.StatusOK)
 				return
 			}
-			http.NotFound(w, r)
+			c.notFound(w, r)
 			return
 		}
 		a.View, a.Query = "users", strings.TrimSpace(r.URL.Query().Get("q"))
@@ -368,7 +368,7 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPag
 		}
 	}
 	if !found {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	title := "Mitglied bearbeiten"
@@ -383,7 +383,7 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *AdminPag
 		if a.Inviting {
 			accountEmail = r.PostForm.Get("email")
 			if c.identity == nil {
-				http.Error(w, "Die Einladung konnte nicht verarbeitet werden.", http.StatusServiceUnavailable)
+				c.pageError(w, "Die Einladung konnte nicht verarbeitet werden.", http.StatusServiceUnavailable)
 				return
 			}
 			var err error
@@ -448,7 +448,7 @@ func (c *Handler) EditResponsibility(w http.ResponseWriter, r *http.Request, a *
 		}
 	}
 	if !found {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	title := "Funktion bearbeiten"
@@ -495,7 +495,7 @@ func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *Adm
 			return
 		}
 		if !ok || p.Owner != owner || p.Published {
-			http.NotFound(w, r)
+			c.notFound(w, r)
 			return
 		}
 	}
@@ -578,7 +578,7 @@ func (c *Handler) ReviewPublication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !ok || p.Owner != owner {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	a := &AdminPage{Section: "sitzungen", SectionTitle: "Sitzungen und Protokolle", View: "review", Publication: &p, Action: r.URL.Path}
@@ -652,11 +652,11 @@ func (c *Handler) ResetUserPassword(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, "/verwaltung/benutzer/"+url.PathEscape(user.ID)+"?zuruecksetzen=1", http.StatusSeeOther)
 				return
 			}
-			http.Error(w, "Die Anfrage konnte nicht verarbeitet werden. Versuche es später erneut.", http.StatusServiceUnavailable)
+			c.pageError(w, "Die Anfrage konnte nicht verarbeitet werden. Versuche es später erneut.", http.StatusServiceUnavailable)
 			return
 		}
 		c.adminRender(w, "Passwort zurücksetzen", &AdminPage{Section: "benutzer", SectionTitle: "Benutzer", View: "reset", User: &user}, http.StatusOK)
 		return
 	}
-	http.NotFound(w, r)
+	c.notFound(w, r)
 }

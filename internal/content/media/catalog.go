@@ -53,15 +53,8 @@ ORDER BY e.created_at DESC,e.id DESC,m.created_at DESC,m.id DESC`)
 			continue
 		}
 		album := &albums[len(albums)-1]
-		if strings.TrimSpace(imageTitle) == "" {
-			imageTitle = fmt.Sprintf("%s – Bild %d", album.Title, len(album.Images)+1)
-		}
-		if strings.TrimSpace(description) == "" {
-			description = imageTitle
-		}
 		imageIDString := strconv.FormatInt(imageID.Int64, 10)
-		album.Images = append(album.Images, Image{ID: imageIDString, Title: imageTitle, Description: description,
-			Source: "/media/" + imageIDString + "/1200", thumbnail: "/media/" + imageIDString + "/400"})
+		album.Images = append(album.Images, galleryPhoto(imageIDString, imageTitle, description, len(album.Images)+1, album.Title))
 		album.OriginalCount = len(album.Images)
 	}
 	return albums, rows.Err()

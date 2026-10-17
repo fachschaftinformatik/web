@@ -15,12 +15,12 @@ type InvitationPage struct {
 
 func (c *Handler) ResendInvitation(w http.ResponseWriter, r *http.Request) {
 	if c.identity == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	queued, err := c.people.Resend(r.Context(), c.identity, r.PathValue("id"))
 	if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	if err != nil {
@@ -36,7 +36,7 @@ func (c *Handler) ResendInvitation(w http.ResponseWriter, r *http.Request) {
 
 func (c *Handler) Invitation(w http.ResponseWriter, r *http.Request) {
 	if c.identity == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
