@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/fachschaftinformatik/web/internal/datetime"
 	"net/url"
 	"strconv"
 	"strings"
@@ -29,10 +30,13 @@ type Service struct {
 	db      *sql.DB
 	queries *database.Queries
 	baseURL string
+	domains DomainPolicy
 }
 
-func NewService(db *sql.DB, baseURL string) *Service {
-	return &Service{db: db, queries: database.New(db), baseURL: strings.TrimRight(baseURL, "/")}
+func NewService(db *sql.DB, baseURL string, domains DomainPolicy) *Service {
+	domains.Registration = append([]string{}, domains.Registration...)
+	domains.Accounts = append([]string{}, domains.Accounts...)
+	return &Service{domains: domains, db: db, queries: database.New(db), baseURL: strings.TrimRight(baseURL, "/")}
 }
 
 type Session struct {
@@ -72,7 +76,7 @@ func (s *Service) CreateSession(ctx context.Context, userID int64) (*Session, er
 	if userID != 0 {
 		user = userID
 	}
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO web_sessions (id,user_id,expires_at) VALUES (?,?,?)`, digest(value), user, expires.Format(time.RFC3339)); err != nil {
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO web_sessions (id,user_id,expires_at) VALUES (?,?,?)`, digest(value), user, datetime.FormatUTC(expires)); err != nil {
 		return nil, err
 	}
 	return s.Session(ctx, value)
@@ -108,7 +112,7 @@ func (s *Service) DeleteSession(ctx context.Context, value string) error {
 }
 
 func (s *Service) Login(ctx context.Context, email, password string) (int64, error) {
-	if EmailError(email) != "" {
+	if s.EmailError(email) != "" {
 		return 0, ErrCredentials
 	}
 	user, err := s.queries.GetUserByEmail(ctx, strings.ToLower(strings.TrimSpace(email)))
@@ -165,7 +169,7 @@ func (s *Service) Programs(ctx context.Context) ([]Program, error) {
 }
 
 func (s *Service) Register(ctx context.Context, name, email, password, programID string) error {
-	a, b, c := RegistrationErrors(name, email, password)
+	a, b, c := s.RegistrationErrors(name, email, password)
 	if a != "" || b != "" || c != "" {
 		return errors.New("Prüfe die Angaben im Formular.")
 	}
@@ -224,7 +228,7 @@ func (s *Service) queueLink(ctx context.Context, tx *sql.Tx, userID int64, email
 	if kind == "verify" {
 		duration = 24 * time.Hour
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO user_tokens (id,user_id,kind,expires_at) VALUES (?,?,?,?) ON CONFLICT(user_id,kind) DO UPDATE SET id=excluded.id,expires_at=excluded.expires_at`, digest(value), userID, kind, time.Now().UTC().Add(duration).Format(time.RFC3339))
+	_, err = tx.ExecContext(ctx, `INSERT INTO user_tokens (id,user_id,kind,expires_at) VALUES (?,?,?,?) ON CONFLICT(user_id,kind) DO UPDATE SET id=excluded.id,expires_at=excluded.expires_at`, digest(value), userID, kind, datetime.FormatUTC(time.Now().Add(duration)))
 	if err != nil {
 		return err
 	}
@@ -236,7 +240,7 @@ func (s *Service) queueLink(ctx context.Context, tx *sql.Tx, userID int64, email
 }
 
 func (s *Service) RequestReset(ctx context.Context, email string) error {
-	if EmailError(email) != "" {
+	if s.EmailError(email) != "" {
 		return ErrCredentials
 	}
 	user, err := s.queries.GetUserByEmail(ctx, strings.TrimSpace(email))
@@ -270,7 +274,7 @@ func (s *Service) ConsumeToken(ctx context.Context, value, kind, password string
 	}
 	var hash string
 	if kind == "reset" {
-		_, _, message := RegistrationErrors("Valid Name", "valid@studmail.w-hs.de", password)
+		message := PasswordError(password)
 		if message != "" {
 			return errors.New(message)
 		}
@@ -286,7 +290,7 @@ func (s *Service) ConsumeToken(ctx context.Context, value, kind, password string
 	}
 	defer tx.Rollback()
 	var userID int64
-	err = tx.QueryRowContext(ctx, `DELETE FROM user_tokens WHERE id=? AND kind=? AND expires_at>? AND user_id IN (SELECT id FROM users WHERE deleted_at IS NULL) RETURNING user_id`, digest(value), kind, time.Now().UTC().Format(time.RFC3339)).Scan(&userID)
+	err = tx.QueryRowContext(ctx, `DELETE FROM user_tokens WHERE id=? AND kind=? AND expires_at>? AND user_id IN (SELECT id FROM users WHERE deleted_at IS NULL) RETURNING user_id`, digest(value), kind, datetime.FormatUTC(time.Now())).Scan(&userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrToken
 	}
@@ -372,7 +376,7 @@ func (s *Service) PurgeExpired(ctx context.Context) error {
 		return err
 	}
 	defer tx.Rollback()
-	now := time.Now().UTC().Format(time.RFC3339)
+	now := datetime.FormatUTC(time.Now())
 	if _, err := tx.ExecContext(ctx, `DELETE FROM web_sessions WHERE expires_at<=?`, now); err != nil {
 		return err
 	}

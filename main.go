@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/fachschaftinformatik/web/internal/database"
 	"log"
 	"net"
 	"net/http"
@@ -32,6 +33,7 @@ func run(ctx context.Context, args []string) error {
 	addr := flags.String("addr", "127.0.0.1:8090", "HTTP listen address")
 	databasePath := flags.String("database", "data/sqlite.db", "Writable SQLite database path")
 	blobs := flags.String("blobs", "", "Local object directory; otherwise use configured S3 or blobs beside the database")
+	migrate := flags.Bool("migrate-only", false, "Apply database schema migrations and exit without loading site settings")
 	version := flags.Bool("version", false, "Print application version")
 	health := flags.String("check-health", "", "Check a running application's health URL and exit")
 	if err := flags.Parse(args); err != nil {
@@ -58,6 +60,9 @@ func run(ctx context.Context, args []string) error {
 			return fmt.Errorf("health check returned HTTP %d", response.StatusCode)
 		}
 		return nil
+	}
+	if *migrate {
+		return database.Migrate(*databasePath, log.Default())
 	}
 	app, err := newApplication(ctx, *databasePath, *blobs)
 	if err != nil {

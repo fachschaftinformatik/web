@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/fachschaftinformatik/web/internal/content"
 
@@ -28,7 +27,7 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	editor := view.ContentEditor{Action: "/d/new", BackURL: "/discussions", SourceURL: "https://ik.fsv-wh.de/d/new", Draft: view.EditorDraft{Type: "discussion"}}
+	editor := view.ContentEditor{Action: "/d/new", BackURL: "/discussions", Draft: view.EditorDraft{Type: "discussion"}}
 
 	title := "Beitrag verfassen"
 	if r.URL.Path == view.NewsURL+"/new" {
@@ -58,15 +57,13 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 		}
 		editor.Announcement = thread.Type == "news"
 		editor.Event = thread.Type == "event"
-		editor.Action, editor.BackURL, editor.SourceURL = view.NewThread(thread).URL()+"/edit", view.NewThread(thread).URL(), view.NewThread(thread).SourceURL()+"/edit"
+		editor.Action, editor.BackURL = view.NewThread(thread).URL()+"/edit", view.NewThread(thread).URL()
 		editor.Draft = view.EditorDraft{Title: thread.Title, Body: thread.Body, Type: thread.Type, Tags: strings.Join(thread.Tags, ", "), Location: thread.Location}
 		if thread.BodyFormat == "html" {
 			editor.RichBody = content.SanitizeRichText(thread.Body)
 			editor.Draft.Body = content.RichTextPlain(editor.RichBody)
 		}
-		if date, err := time.Parse("2006-01-02T15:04", thread.EventDate); err == nil {
-			editor.Draft.Date, editor.Draft.Time = date.Format("02.01.2006"), date.Format("15:04")
-		}
+		editor.Draft.Date, editor.Draft.Time = view.ScheduleFields(thread.EventDate)
 		title = "Beitrag bearbeiten"
 		if editor.Event {
 			title = "Veranstaltung bearbeiten"

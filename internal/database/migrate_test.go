@@ -7,10 +7,85 @@ import (
 	"io/fs"
 	"log"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/pressly/goose/v3"
 )
+
+func TestAccountPolicyMigrationPreservesUsersAndReferences(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "site.db")
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	source, err := fs.Sub(migrations, "migrations")
+	if err != nil {
+		t.Fatal(err)
+	}
+	provider, err := goose.NewProvider(goose.DialectSQLite3, db, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = provider.UpTo(context.Background(), 12); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(`INSERT INTO users(id,email,name,password,role,active,verified,password_reset_token,password_reset_expires) VALUES(42,'member@fsv-wh.de','Existing','hash','admin',1,1,'token','2030-01-01T00:00:00Z');
+INSERT INTO people(id,name,user_id,position)VALUES('person','Existing',42,0);
+INSERT INTO web_sessions(id,user_id,expires_at) VALUES('session',42,'2030-01-01T00:00:00Z');`); err != nil {
+		t.Fatal(err)
+	}
+	read := func() []any {
+		t.Helper()
+		rows, err := db.Query("SELECT * FROM users WHERE id=42")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rows.Close()
+		cols, _ := rows.Columns()
+		values := make([]any, len(cols))
+		dest := make([]any, len(cols))
+		for i := range values {
+			dest[i] = &values[i]
+		}
+		if !rows.Next() {
+			t.Fatal("user missing")
+		}
+		if err := rows.Scan(dest...); err != nil {
+			t.Fatal(err)
+		}
+		return values
+	}
+	before := read()
+	if err := Migrate(path, log.New(io.Discard, "", 0)); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(before, read()) {
+		t.Fatal("users-table rebuild changed existing account data")
+	}
+	if _, err = db.Exec(`PRAGMA foreign_keys=ON; INSERT INTO users(email,name,password)VALUES('person@new.example.org','New','hash')`); err != nil {
+		t.Fatal("old domain constraint remains", err)
+	}
+	if _, err = db.Exec("DELETE FROM users WHERE id=42"); err == nil {
+		t.Fatal("existing foreign-key restriction was lost")
+	}
+	var count int
+	if err = db.QueryRow("SELECT count(*) FROM web_sessions WHERE user_id=42").Scan(&count); err != nil || count != 1 {
+		t.Fatal("session changed during rebuild", err)
+	}
+	rows, err := db.Query("PRAGMA foreign_key_check")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	if rows.Next() {
+		t.Fatal("migration introduced broken references")
+	}
+	if err = db.QueryRow("SELECT count(*) FROM organization").Scan(&count); err != nil || count != 0 {
+		t.Fatal("schema migration inserted organization content", err)
+	}
+}
 
 func TestEmbeddedMigrationsPreserveDataOnRestart(t *testing.T) {
 	// The executable must migrate without SQL files in its working directory.
@@ -120,8 +195,16 @@ func TestCalendarMigrationPreservesLegacyDiscussions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	var originalUpdated string
+	if err := db.QueryRow(`SELECT updated_at FROM discussion_posts WHERE id=10`).Scan(&originalUpdated); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := provider.Up(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+	var updated, eventDate string
+	if err := db.QueryRow(`SELECT updated_at,event_date FROM discussion_posts WHERE id=10`).Scan(&updated, &eventDate); err != nil || updated != originalUpdated || eventDate != "2026-06-09T17:00" {
+		t.Fatal("calendar migration changed publication metadata or event time", updated, eventDate, err)
 	}
 	for query, want := range map[string]int{
 		`SELECT COUNT(*) FROM calendar_events`:                          2,

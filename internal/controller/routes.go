@@ -28,6 +28,7 @@ func (c *Handler) routes() http.Handler {
 		c.render(w, "home", false, view.Page{Title: "Startseite", Active: "home", Home: home, Images: view.ImagesPage{Albums: view.Albums(albums)}})
 	})
 	router.HandleFunc("GET /team", c.Team)
+	router.HandleFunc("GET /assets/content/{file}", c.HistoricalDocument)
 	router.HandleFunc("GET /sitemap", c.Sitemap)
 	router.HandleFunc("GET /impressum", c.Legal)
 	router.HandleFunc("GET /datenschutz", c.Legal)

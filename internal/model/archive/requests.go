@@ -36,6 +36,7 @@ type Request struct {
 	SubmittedAt, ReviewedAt                                                *string
 	Documents                                                              []Exam
 	Count                                                                  int
+	ModuleCount                                                            int
 	Assignments                                                            []Assignment
 	SharedAssignments                                                      bool
 	EditToken                                                              string
@@ -137,7 +138,7 @@ func (s *Service) Requests(ctx context.Context, userID int64, reviewer bool) ([]
 	if reviewer && !canReview(role) {
 		return nil, ErrForbidden
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT r.id,r.user_id,r.status,r.created_at,r.submitted_at,u.name,GROUP_CONCAT(DISTINCT m.name),COUNT(DISTINCT a.id) FROM archive_requests r JOIN users u ON u.id=r.user_id JOIN archive a ON a.request_id=r.id AND a.deleted_at IS NULL JOIN archive_placements b ON b.archive_id=a.id JOIN modules m ON m.id=b.module_id WHERE (? AND r.status!='draft') OR (NOT ? AND r.user_id=?) GROUP BY r.id ORDER BY CASE r.status WHEN 'pending' THEN 0 ELSE 1 END,r.created_at DESC,r.id DESC`, reviewer, reviewer, userID)
+	rows, err := s.db.QueryContext(ctx, `SELECT r.id,r.user_id,r.status,r.created_at,r.submitted_at,u.name,MIN(m.name),COUNT(DISTINCT a.id),COUNT(DISTINCT m.name) FROM archive_requests r JOIN users u ON u.id=r.user_id JOIN archive a ON a.request_id=r.id AND a.deleted_at IS NULL JOIN archive_placements b ON b.archive_id=a.id JOIN modules m ON m.id=b.module_id WHERE (? AND r.status!='draft') OR (NOT ? AND r.user_id=?) GROUP BY r.id ORDER BY CASE r.status WHEN 'pending' THEN 0 ELSE 1 END,r.created_at DESC,r.id DESC`, reviewer, reviewer, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -145,11 +146,10 @@ func (s *Service) Requests(ctx context.Context, userID int64, reviewer bool) ([]
 	var result []Request
 	for rows.Next() {
 		var request Request
-		if err := rows.Scan(&request.ID, &request.UserID, &request.Status, &request.CreatedAt, &request.SubmittedAt, &request.Name, &request.Title, &request.Count); err != nil {
+		if err := rows.Scan(&request.ID, &request.UserID, &request.Status, &request.CreatedAt, &request.SubmittedAt, &request.Name, &request.Title, &request.Count, &request.ModuleCount); err != nil {
 			return nil, err
 		}
 		result = append(result, request)
-		result[len(result)-1].Title = strings.ReplaceAll(request.Title, ",", ", ")
 	}
 	return result, rows.Err()
 }

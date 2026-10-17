@@ -29,14 +29,14 @@ func TestSQLPostFiltersPrecedePagingAndCommentsAreBounded(t *testing.T) {
 		if i > 30 {
 			kind = "news"
 		}
-		if _, err := db.Exec(`INSERT INTO discussion_posts(id,title,body,user_id,type,created_at,pinned) VALUES(?,?,'token',1,?,'2026-01-01',?)`, i, fmt.Sprintf("Title %d", i), kind, i == 1); err != nil {
+		if _, err := db.Exec(`INSERT INTO discussion_posts(id,title,body,user_id,type,created_at,pinned) VALUES(?,?,'token',1,?,'2026-01-01T00:00:00Z',?)`, i, fmt.Sprintf("Title %d", i), kind, i == 1); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := db.Exec(`INSERT INTO discussion_post_tags(post_id,tag) VALUES(?,'match')`, i); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if _, err := db.Exec(`UPDATE discussion_posts SET deleted_at='deleted' WHERE id=5`); err != nil {
+	if _, err := db.Exec(`UPDATE discussion_posts SET deleted_at='2026-01-01T00:00:00Z' WHERE id=5`); err != nil {
 		t.Fatal(err)
 	}
 	s := NewService(db)
@@ -65,7 +65,7 @@ func TestSQLPostFiltersPrecedePagingAndCommentsAreBounded(t *testing.T) {
 		t.Fatal("missing results")
 	}
 	for i := 1; i <= 25; i++ {
-		if _, err := db.Exec(`INSERT INTO discussion_comments(id,post_id,user_id,text,created_at) VALUES(?,1,1,'Comment','2026-01-01')`, i); err != nil {
+		if _, err := db.Exec(`INSERT INTO discussion_comments(id,post_id,user_id,text,created_at) VALUES(?,1,1,'Comment','2026-01-01T00:00:00Z')`, i); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -26,7 +26,7 @@ func testService(t *testing.T) (*Service, *sql.DB) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	return NewService(db, "https://example.org"), db
+	return NewService(db, "https://example.org", DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}), db
 }
 
 func TestExistingCredentialsAndPersistentSessionPolicy(t *testing.T) {
@@ -47,7 +47,7 @@ func TestExistingCredentialsAndPersistentSessionPolicy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	restarted := NewService(db, "https://example.org")
+	restarted := NewService(db, "https://example.org", DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}})
 	loaded, err := restarted.Session(ctx, session.ID)
 	if err != nil || loaded == nil || !loaded.CanAdmin() || loaded.CSRF != session.CSRF {
 		t.Fatalf("persisted session: %+v %v", loaded, err)

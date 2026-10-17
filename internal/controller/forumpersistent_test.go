@@ -94,9 +94,9 @@ func TestPersistentForumRequests(t *testing.T) {
 		t.Fatalf("%+v %v", list, err)
 	}
 	t.Run("public author profiles protect private identities", func(t *testing.T) {
-		profileHandler := &Handler{views: c.views, forum: c.forum, identity: users.NewService(db, "http://example.test")}
+		profileHandler := &Handler{views: c.views, forum: c.forum, identity: users.NewService(db, "http://example.test", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}})}
 		if _, err := db.Exec(`UPDATE users SET private=0 WHERE id=1; UPDATE users SET private=1 WHERE id=2;
-		INSERT INTO discussion_posts(id,title,body,user_id,type,deleted_at) VALUES(999001,'Nicht veröffentlichter Beitrag','Hidden body',1,'discussion','deleted');`); err != nil {
+		INSERT INTO discussion_posts(id,title,body,user_id,type,deleted_at) VALUES(999001,'Nicht veröffentlichter Beitrag','Hidden body',1,'discussion','2026-01-01T00:00:00Z');`); err != nil {
 			t.Fatal(err)
 		}
 		defer db.Exec(`UPDATE users SET private=0 WHERE id=2; DELETE FROM discussion_posts WHERE id=999001`)
@@ -126,7 +126,7 @@ func TestPersistentForumRequests(t *testing.T) {
 		if strings.Contains(w.Body.String(), `href="/users/2"`) || !strings.Contains(w.Body.String(), `href="/users/1"`) {
 			t.Fatal("private author linked or public author unlinked")
 		}
-		if _, err := db.Exec(`UPDATE users SET deleted_at='deleted' WHERE id=1`); err != nil {
+		if _, err := db.Exec(`UPDATE users SET deleted_at='2026-01-01T00:00:00Z' WHERE id=1`); err != nil {
 			t.Fatal(err)
 		}
 		defer db.Exec(`UPDATE users SET deleted_at=NULL WHERE id=1`)
@@ -185,7 +185,7 @@ func TestPersistentForumRequests(t *testing.T) {
 		}
 	})
 	t.Run("voting authentication csrf and local return", func(t *testing.T) {
-		c.identity = users.NewService(db, "https://example.org")
+		c.identity = users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}})
 		session, err := c.identity.CreateSession(context.Background(), 1)
 		if err != nil {
 			t.Fatal(err)

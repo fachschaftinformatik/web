@@ -144,7 +144,7 @@ func TestPersistentForum(t *testing.T) {
 	if err = db.QueryRow(`SELECT COUNT(*) FROM activities WHERE target_id=?`, post).Scan(&count); err != nil || count != 2 {
 		t.Fatalf("atomic activities: %d %v", count, err)
 	}
-	_, err = db.Exec(`UPDATE discussion_posts SET deleted_at='2026-10-17' WHERE id=?`, post)
+	_, err = db.Exec(`UPDATE discussion_posts SET deleted_at='2026-10-17T00:00:00Z' WHERE id=?`, post)
 	if err != nil {
 		t.Fatal(err)
 	}

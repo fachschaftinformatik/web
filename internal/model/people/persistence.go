@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"slices"
 	"strings"
 
 	"github.com/fachschaftinformatik/web/internal/id"
@@ -11,28 +12,6 @@ import (
 )
 
 func Open(ctx context.Context, db *sql.DB) (*Store, error) {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-	insert, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO people_state(id) VALUES (1)`)
-	if err != nil {
-		return nil, err
-	}
-	count, err := insert.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-	if count != 0 {
-		seed := initialState()
-		if err := writeState(ctx, tx, seed.people, seed.responsibilities); err != nil {
-			return nil, err
-		}
-	}
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
 	s := &Store{db: db}
 	if err := s.Refresh(ctx); err != nil {
 		return nil, err
@@ -55,10 +34,31 @@ func writeState(ctx context.Context, tx *sql.Tx, people []Person, tasks []Respon
 			return err
 		}
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM responsibility_members`); err != nil {
-		return err
-	}
 	for _, task := range tasks {
+		rows, err := tx.QueryContext(ctx, `SELECT person_id FROM responsibility_members WHERE responsibility_id=? ORDER BY position`, task.ID)
+		if err != nil {
+			return err
+		}
+		var current []string
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				rows.Close()
+				return err
+			}
+			current = append(current, id)
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return err
+		}
+		if slices.Equal(current, task.MemberIDs) {
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM responsibility_members WHERE responsibility_id=?`, task.ID); err != nil {
+			return err
+		}
 		for position, member := range task.MemberIDs {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO responsibility_members(responsibility_id,person_id,position) VALUES (?,?,?)`, task.ID, member, position); err != nil {
 				return err
@@ -174,7 +174,7 @@ func (s *Store) InviteMember(ctx context.Context, identity *users.Service, perso
 	if nameError != "" {
 		fields["name"] = nameError
 	}
-	if message := users.EmailError(email); message != "" {
+	if message := identity.EmailError(email); message != "" {
 		fields["email"] = message
 	}
 	if len(fields) != 0 {

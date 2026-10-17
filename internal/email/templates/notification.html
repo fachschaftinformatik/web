@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{.Title}} · fsInformatik</title>
+  <title>{{.Title}} · {{.Organization.Name}}</title>
   <style>
     a:focus { outline: 3px solid #ffdd00; outline-offset: 2px; }
     @media (max-width: 480px) {
@@ -17,7 +17,7 @@
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 640px; border-collapse: collapse; table-layout: fixed; text-align: left;">
         <tr><td style="background-color: #1d70b8; padding: 20px;">
-          <a href="{{.Domain}}/" style="color: #ffffff; font-size: 30px; line-height: 1.2; font-weight: bold; text-decoration: none;">fsInformatik</a>
+          <a href="{{.Domain}}/" style="color: #ffffff; font-size: 30px; line-height: 1.2; font-weight: bold; text-decoration: none;">{{.Organization.Name}}</a>
         </td></tr>
         <tr><td class="email-content" style="background-color: #ffffff; padding: 40px 30px;">
           <h1 class="email-title" style="margin: 0 0 30px; font-size: 36px; line-height: 1.15; font-weight: bold;">{{.Title}}</h1>
@@ -26,10 +26,10 @@
           <p style="margin: 0 0 20px; font-size: 19px; line-height: 1.5; overflow-wrap: anywhere; word-break: break-all;">{{.Action}}:<br><a href="{{.Link}}" style="color: #1d70b8; text-decoration: underline; overflow-wrap: anywhere; word-break: break-all;">{{.Link}}</a></p>
           <p style="margin: 0 0 30px; font-size: 19px; line-height: 1.5;">{{.Validity}}</p>
           <p style="margin: 0 0 30px; font-size: 19px; line-height: 1.5;">{{.Note}}</p>
-          <p style="margin: 0; font-size: 19px; line-height: 1.5;">Deine Fachschaft Informatik</p>
+          <p style="margin: 0; font-size: 19px; line-height: 1.5;">Deine {{.Organization.ShortName}}</p>
         </td></tr>
         <tr><td style="padding: 25px 20px; border-top: 1px solid #b1b4b6;">
-          <p style="margin: 0 0 10px; font-size: 16px; line-height: 1.5;">Fachschaft Informatik · Westfälische Hochschule</p>
+          <p style="margin: 0 0 10px; font-size: 16px; line-height: 1.5;">{{.Organization.ShortName}} · {{.Organization.Institution}}</p>
           <p style="margin: 0; font-size: 16px; line-height: 1.5;"><a href="{{.Domain}}/contact" style="color: #0b0c0c; text-decoration: underline;">Fachschaft kontaktieren</a></p>
         </td></tr>
       </table>

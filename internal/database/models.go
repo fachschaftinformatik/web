@@ -177,6 +177,19 @@ type GlobalConfig struct {
 	UpdatedAt      string `json:"updated_at"`
 }
 
+type HistoricalMeetingDocument struct {
+	File    string `json:"file"`
+	Year    int64  `json:"year"`
+	Number  int64  `json:"number"`
+	Date    string `json:"date"`
+	Kind    string `json:"kind"`
+	Note    string `json:"note"`
+	Bytes   int64  `json:"bytes"`
+	Sha256  string `json:"sha256"`
+	Sources string `json:"sources"`
+	BlobKey string `json:"blob_key"`
+}
+
 type MailOutbox struct {
 	ID        int64  `json:"id"`
 	UserID    int64  `json:"user_id"`
@@ -240,6 +253,11 @@ type Notification struct {
 	CreatedAt string  `json:"created_at"`
 	UpdatedAt string  `json:"updated_at"`
 	DeletedAt *string `json:"deleted_at"`
+}
+
+type Organization struct {
+	ID   int64  `json:"id"`
+	Data string `json:"data"`
 }
 
 type PeopleState struct {

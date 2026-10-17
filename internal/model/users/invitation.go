@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/fachschaftinformatik/web/internal/datetime"
 	"strings"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 // together. Existing passwords, verification and activation are preserved.
 func (s *Service) Invite(ctx context.Context, tx *sql.Tx, name, email string) (database.User, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
-	if EmailError(email) != "" {
+	if s.EmailError(email) != "" {
 		return database.User{}, ErrCredentials
 	}
 	q := database.New(tx)
@@ -50,7 +51,7 @@ func (s *Service) Invitation(ctx context.Context, value string) (Invitation, err
 		return Invitation{}, ErrToken
 	}
 	var result Invitation
-	err := s.db.QueryRowContext(ctx, `SELECT u.name,u.email FROM user_tokens t JOIN users u ON u.id=t.user_id JOIN people p ON p.user_id=u.id WHERE t.id=? AND t.kind='verify' AND t.expires_at>? AND u.verified=0 AND u.deleted_at IS NULL`, digest(value), time.Now().UTC().Format(time.RFC3339)).Scan(&result.Name, &result.Email)
+	err := s.db.QueryRowContext(ctx, `SELECT u.name,u.email FROM user_tokens t JOIN users u ON u.id=t.user_id JOIN people p ON p.user_id=u.id WHERE t.id=? AND t.kind='verify' AND t.expires_at>? AND u.verified=0 AND u.deleted_at IS NULL`, digest(value), datetime.FormatUTC(time.Now())).Scan(&result.Name, &result.Email)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Invitation{}, ErrToken
 	}
@@ -76,7 +77,7 @@ func (s *Service) AcceptInvitation(ctx context.Context, value, password string) 
 	}
 	defer tx.Rollback()
 	var userID int64
-	err = tx.QueryRowContext(ctx, `DELETE FROM user_tokens WHERE id=? AND kind='verify' AND expires_at>? AND user_id IN (SELECT u.id FROM users u JOIN people p ON p.user_id=u.id WHERE u.verified=0 AND u.deleted_at IS NULL) RETURNING user_id`, digest(value), time.Now().UTC().Format(time.RFC3339)).Scan(&userID)
+	err = tx.QueryRowContext(ctx, `DELETE FROM user_tokens WHERE id=? AND kind='verify' AND expires_at>? AND user_id IN (SELECT u.id FROM users u JOIN people p ON p.user_id=u.id WHERE u.verified=0 AND u.deleted_at IS NULL) RETURNING user_id`, digest(value), datetime.FormatUTC(time.Now())).Scan(&userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrToken
 	}

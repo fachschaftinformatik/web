@@ -26,11 +26,14 @@ func membershipStore(t *testing.T) (*Store, *users.Service, *sql.DB) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
+	if _, err := db.Exec(`INSERT INTO people(id,name,email,position) VALUES('1','Example Chair','chair@example.org',0); INSERT INTO responsibilities(id,group_name,title,email,position) VALUES('1','board','Vorsitz','chair@example.org',0);INSERT INTO responsibility_members(responsibility_id,person_id,position)VALUES('1','1',0)`); err != nil {
+		t.Fatal(err)
+	}
 	store, err := Open(context.Background(), db)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return store, users.NewService(db, "https://example.org"), db
+	return store, users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}), db
 }
 
 func inviteToken(t *testing.T, db *sql.DB) string {

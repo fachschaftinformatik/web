@@ -38,7 +38,7 @@ INSERT INTO archive (id,group_id,user_id,module_id,version,exam_date,access_key,
 			t.Fatal("anonymous PDF download allowed or cacheable")
 		}
 	}
-	session, err := users.NewService(db, "http://example.org").CreateSession(context.Background(), 1)
+	session, err := users.NewService(db, "http://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}).CreateSession(context.Background(), 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ INSERT INTO users(id,email,name,password,active,verified) VALUES (1,'author@fsv-
 	if status, _, _ := b.get("/archive/new"); status != 303 {
 		t.Fatal("anonymous upload form allowed")
 	}
-	session, err := users.NewService(db, "http://example.org").CreateSession(context.Background(), 1)
+	session, err := users.NewService(db, "http://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}).CreateSession(context.Background(), 1)
 	if err != nil {
 		t.Fatal(err)
 	}

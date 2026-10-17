@@ -68,13 +68,7 @@ func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {
 		editor.CoverURL, editor.CoverAlt = view.Event(event).CoverURL(), event.CoverAlt
 		editor.Draft = view.EditorDraft{Title: event.Title, Body: event.Body, Type: "event", Location: event.Location}
 		editor.RichBody = view.Event(event).RichBody()
-		if d, err := time.Parse("2006-01-02T15:04", event.EventDate); err == nil {
-			editor.Draft.Date, editor.Draft.Time = d.Format("02.01.2006"), d.Format("15:04")
-		} else {
-			if d, err := time.Parse("2006-01-02", event.EventDate); err == nil {
-				editor.Draft.Date = d.Format("02.01.2006")
-			}
-		}
+		editor.Draft.Date, editor.Draft.Time = view.ScheduleFields(event.EventDate)
 		title = "Veranstaltung bearbeiten"
 	}
 	status := http.StatusOK

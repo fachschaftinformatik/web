@@ -14,9 +14,9 @@ import (
 
 // RegistrationErrors validates account creation using the GOV.UK password guidance.
 // Passwords are deliberately not trimmed: whitespace can be part of a password.
-func RegistrationErrors(name, email, password string) (nameError, emailError, passwordError string) {
+func (s *Service) RegistrationErrors(name, email, password string) (nameError, emailError, passwordError string) {
 	nameError = NameError(name)
-	emailError = validateEmail(email, false)
+	emailError = validateEmail(email, s.domains.Registration)
 	passwordError = PasswordError(password)
 	return
 }

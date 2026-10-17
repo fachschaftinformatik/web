@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/fachschaftinformatik/web/internal/content"
+	"github.com/fachschaftinformatik/web/internal/datetime"
 
 	"github.com/fachschaftinformatik/web/internal/id"
 	"github.com/fachschaftinformatik/web/internal/storage"
@@ -164,15 +165,9 @@ func (s *Service) Save(ctx context.Context, user int64, event string, d Draft, r
 			coverAlt = strings.TrimSpace(cover.Alt)
 		}
 	}
-	// Reuse the established date parser without creating a forum post.
-	date := ""
-	if d.Date != "" {
-		parsed, _ := parseDate(d.Date)
-		clock := strings.TrimSpace(d.Time)
-		date = parsed
-		if clock != "" {
-			date += "T" + clock
-		}
+	date, err := schedule(d)
+	if err != nil {
+		return "", err
 	}
 	if event == "" {
 		event = id.New().String()
@@ -201,17 +196,16 @@ func (s *Service) Save(ctx context.Context, user int64, event string, d Draft, r
 // FindPage returns upcoming events first, then history, with stable tie-breaks.
 // The home page requests only upcoming records with a smaller limit.
 func (s *Service) FindPage(ctx context.Context, now time.Time, page, size int, upcomingOnly bool) ([]Event, int, error) {
-	if zone, err := time.LoadLocation("Europe/Berlin"); err == nil {
-		now = now.In(zone)
-	}
+	now = now.In(datetime.Berlin)
 	today := now.Format("2006-01-02")
+	midnight := datetime.FormatUTC(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, datetime.Berlin))
 	date := `COALESCE(NULLIF(event_date,''),NULLIF(source_published_at,''),'')`
-	upcoming := `(source_status!='cancelled' AND (` + date + `='' OR substr(` + date + `,1,10)>=?))`
+	upcoming := `(source_status!='cancelled' AND (` + date + `='' OR CASE WHEN length(` + date + `)=10 THEN ` + date + `>=? ELSE ` + date + `>=? END))`
 	where := ""
 	args := []any{}
 	if upcomingOnly {
 		where = " AND " + upcoming
-		args = append(args, today)
+		args = append(args, today, midnight)
 	}
 	var total int
 	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM calendar_events WHERE deleted_at IS NULL`+where, args...).Scan(&total); err != nil {
@@ -219,7 +213,7 @@ func (s *Service) FindPage(ctx context.Context, now time.Time, page, size int, u
 	}
 	size = min(100, max(1, size))
 	page = max(1, min(page, max(1, (total+size-1)/size)))
-	args = append(args, today, today, size, (page-1)*size)
+	args = append(args, today, midnight, today, midnight, size, (page-1)*size)
 	rows, err := s.db.QueryContext(ctx, selectEvent+where+` ORDER BY CASE WHEN `+upcoming+` THEN 0 ELSE 1 END,CASE WHEN `+upcoming+` THEN CASE WHEN `+date+`='' THEN '9999' ELSE `+date+` END END ASC,`+date+` DESC,id DESC LIMIT ? OFFSET ?`, args...)
 	if err != nil {
 		return nil, 0, err
@@ -238,11 +232,12 @@ func (s *Service) FindPage(ctx context.Context, now time.Time, page, size int, u
 
 // Group classifies and orders events for the calendar and upcoming lists.
 func Group(records []Event, now time.Time) (upcoming, past []Event) {
-	if zone, err := time.LoadLocation("Europe/Berlin"); err == nil {
-		now = now.In(zone)
-	}
+	now = now.In(datetime.Berlin)
 	for _, event := range records {
 		date := event.SortDate()
+		if stamp, err := time.Parse(time.RFC3339, date); err == nil {
+			date = stamp.In(datetime.Berlin).Format(time.DateOnly)
+		}
 		if event.SourceStatus == "cancelled" || len(date) >= 10 && date[:10] < now.Format("2006-01-02") {
 			past = append(past, event)
 		} else {

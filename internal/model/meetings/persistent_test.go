@@ -281,7 +281,7 @@ func TestPersistentMeetingRestartAndOwnership(t *testing.T) {
 		t.Fatal("foreign owner published draft")
 	}
 	before, err := s.AllWithError()
-	if err != nil || len(before) != len(All()) {
+	if err != nil || len(before) != 0 {
 		t.Fatal("draft became public", err)
 	}
 	if err := s.Publish(p.ID, "42"); err != nil {
@@ -292,7 +292,7 @@ func TestPersistentMeetingRestartAndOwnership(t *testing.T) {
 		t.Fatal("publication is not idempotent", err)
 	}
 	after, err := s.AllWithError()
-	if err != nil || len(after) != len(All())+1 || after[0].Documents[0].File != "first" || !after[0].Documents[0].Stored {
+	if err != nil || len(after) != 1 || after[0].Documents[0].File != "first" || !after[0].Documents[0].Stored {
 		t.Fatal("publication not durable", err)
 	}
 	p.Owner = "42"
@@ -400,7 +400,10 @@ func TestPersistentMeetingCatalogAndMatchingDocuments(t *testing.T) {
 	if err := s.Publish(p.ID, p.Owner); err == nil {
 		t.Fatal("same date accepted for another number")
 	}
-	historical := All()[0]
+	if _, err := s.db.Exec(`INSERT INTO historical_meeting_documents(file,year,number,date,kind,note,bytes,sha256,sources,blob_key) VALUES('old.pdf',2020,1,'2020-01-02','Einladung','',1,'hash','[]','historical')`); err != nil {
+		t.Fatal(err)
+	}
+	historical := Meeting{Date: "2020-01-02", Number: 1}
 	p.ID, p.Date, p.Number = "historical", historical.Date, historical.Number+1
 	if err := s.Save(p); err != nil {
 		t.Fatal(err)

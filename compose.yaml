@@ -10,6 +10,8 @@ services:
       - database:/data
     environment:
       DOMAIN: ${DOMAIN:-http://localhost:8090}
+      ACCOUNT_DOMAINS: ${ACCOUNT_DOMAINS:?set permitted account email domains}
+      REGISTRATION_DOMAINS: ${REGISTRATION_DOMAINS:-}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USERNAME: ${SMTP_USERNAME:-}

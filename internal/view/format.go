@@ -5,6 +5,14 @@ import (
 	"strings"
 )
 
+func DomainLabels(domains []string) string {
+	labels := make([]string, len(domains))
+	for i, d := range domains {
+		labels[i] = "@" + d
+	}
+	return strings.Join(labels, " oder ")
+}
+
 type textPart struct{ Text, URL string }
 
 type textBlock struct {

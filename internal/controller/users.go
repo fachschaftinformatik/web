@@ -64,6 +64,9 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 		a.Success = "Die Einladung wurde zum Versand vorgemerkt."
 	}
 	switch section {
+	case "stammdaten":
+		c.MasterData(w, r, a)
+		return
 	case "einreichungen":
 		if c.archive == nil {
 			c.notFound(w, r)

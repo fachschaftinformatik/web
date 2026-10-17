@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/fachschaftinformatik/web/internal/datetime"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -105,14 +106,11 @@ func (s *Service) Import(ctx context.Context, user int64, input ImportedEvent) (
 	if err := upload(coverKey, cover, "image/jpeg"); err != nil {
 		return "", false, err
 	}
-	date := ""
-	if input.Draft.Date != "" {
-		date, _ = parseDate(input.Draft.Date)
-		if input.Draft.Time != "" {
-			date += "T" + strings.TrimSpace(input.Draft.Time)
-		}
+	date, err := schedule(input.Draft)
+	if err != nil {
+		return "", false, err
 	}
-	published := input.PublishedAt.UTC().Format(time.RFC3339)
+	published := datetime.FormatUTC(input.PublishedAt)
 	album := input.GalleryAlbumID
 	newAlbum := album == ""
 	if newAlbum {
@@ -171,7 +169,7 @@ func (s *Service) Import(ctx context.Context, user int64, input ImportedEvent) (
 			}
 		}
 		// Descending timestamps retain carousel order in the newest-first gallery.
-		photoTime := input.PublishedAt.Add(-time.Duration(position) * time.Second).UTC().Format(time.RFC3339)
+		photoTime := datetime.FormatUTC(input.PublishedAt.Add(-time.Duration(position) * time.Second))
 		if _, err := tx.ExecContext(ctx, `INSERT INTO media(id,event_id,user_id,title,description,access_key,mime_type,nbytes,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)`, photoID, album, user, fmt.Sprintf("%s – Foto %d", input.Draft.Title, position+1), image.Alt, key, mime, len(image.Data), photoTime, photoTime); err != nil {
 			return "", false, err
 		}

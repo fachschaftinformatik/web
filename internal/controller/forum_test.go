@@ -56,7 +56,7 @@ func TestDiscussion(t *testing.T) {
 		{"/d/203823111852785665", `href="https://github.com/LEMMIIX/latex-ba-template"`, 200},
 		{"/d/147381306706100225", `<blockquote`, 200},
 		{"/d/140128508453060609", `govuk-list--bullet`, 200},
-		{"/d/140127153315381249", `30. Januar 2026, 17:00 Uhr`, 200},
+		{"/d/140127153315381249", `30.01.2026, 17:00 Uhr`, 200},
 		{"/d/unknown", `Seite nicht gefunden`, 404},
 	} {
 		t.Run(tc.path, func(t *testing.T) {

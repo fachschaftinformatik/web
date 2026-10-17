@@ -32,7 +32,7 @@ func TestArchiveAssignmentChoicesAndPreferenceDefaults(t *testing.T) {
 	if status, _, _ := b.get("/archive/preferences"); status != 303 {
 		t.Fatal("anonymous account preferences exposed")
 	}
-	session, err := users.NewService(db, "https://example.org").CreateSession(context.Background(), 1)
+	session, err := users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}).CreateSession(context.Background(), 1)
 	if err != nil {
 		t.Fatal(err)
 	}
