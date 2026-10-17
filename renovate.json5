@@ -40,16 +40,6 @@
       "postUpdateOptions": ["gomodTidy", "goGenerate"]
     },
     {
-      "matchManagers": ["gomod", "bun"],
-      "matchFileNames": ["go.mod", "website/**"],
-      "postUpgradeTasks": {
-        "commands": ["cd website && bun install --frozen-lockfile && bun run gen:api"],
-        "fileFilters": ["website/src/lib/api/**"],
-        "executionMode": "branch",
-        "installTools": { "bun": {} }
-      }
-    },
-    {
       "matchUpdateTypes": ["digest", "pinDigest"],
       "commitMessageExtra": "from {{#if currentDigest}}{{{currentDigestShort}}}{{else}}{{{currentValue}}}{{/if}} to {{{newDigestShort}}}"
     }

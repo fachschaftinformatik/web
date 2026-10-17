@@ -1,0 +1,151 @@
+[
+  {
+    "id": "203823111852785665",
+    "updated": "2026-07-17T10:40:16Z",
+    "event_date": null,
+    "location": null,
+    "links": [],
+    "comments": [
+      {
+        "id": "203823361606811649",
+        "post_id": "203823111852785665",
+        "user_id": "140160432949166081",
+        "user_name": "Lennart",
+        "user_avatar_url": "/api/v1/auth/avatars/140160432949166081/generated_v4.svg",
+        "parent_id": null,
+        "text": "ach ja, gibt immernoch kein rendering für Sonderzeichen lol.\nIm repo gibt es die    Beispiel.pdf     - @fsv fixt mal das rendering endlich hallo",
+        "created_at": "2026-07-17T10:41:16Z",
+        "updated_at": "2026-07-17T10:41:16Z",
+        "votes": 4,
+        "user_vote": 0
+      },
+      {
+        "id": "231840997548490753",
+        "post_id": "203823111852785665",
+        "user_id": "141921299940245505",
+        "user_name": "Eliah Hofmann",
+        "user_avatar_url": "/api/v1/auth/avatars/141921299940245505/generated_v4.svg",
+        "parent_id": null,
+        "text": "Ehre kuss aufs nuss",
+        "created_at": "2026-10-02T18:13:21Z",
+        "updated_at": "2026-10-02T18:13:49Z",
+        "votes": 2,
+        "user_vote": 0
+      }
+    ]
+  },
+  {
+    "id": "147381306706100225",
+    "updated": "2026-02-11T16:40:41Z",
+    "event_date": null,
+    "location": null,
+    "links": [],
+    "comments": [
+      {
+        "id": "147989765273157633",
+        "post_id": "147381306706100225",
+        "user_id": "140160432949166081",
+        "user_name": "Lennart",
+        "user_avatar_url": "/api/v1/auth/avatars/140160432949166081/generated_v4.svg",
+        "parent_id": null,
+        "text": "Antwort von Discord:\n&gt; Das ist schwierig zu beantworten, weil jeder hier entweder 0 oder 1 mal bereits ein Kolloquium hatte 😂 Also seine Arbeit in und auswendig zu kennen und zu verstehen ist so die Mindestanforderung. Was noch an Fragen kommt hängt stark vom Prof ab. Manchmal kommen so fragen &#34;Ja Sie haben Technologie XY verwendet. Gibt es einen spezifischen Grund warum Sie sich nicht für etwas anderes entschieden haben?&#34; Das wurd zumindest bei mir gefragt, plus so Fragen über Vor- und nachteile von bestimmen Dingen, die ich in meiner Arbeit erwähnt habe.",
+        "created_at": "2026-02-13T08:58:29Z",
+        "updated_at": "2026-02-13T08:58:29Z",
+        "votes": 5,
+        "user_vote": 0
+      }
+    ]
+  },
+  {
+    "id": "140400616152236033",
+    "updated": "2026-01-23T10:21:55Z",
+    "event_date": null,
+    "location": null,
+    "links": [],
+    "comments": [
+      {
+        "id": "140400708758274049",
+        "post_id": "140400616152236033",
+        "user_id": "140399117464502273",
+        "user_name": "MegaGeil!!",
+        "user_avatar_url": "/api/v1/auth/avatars/140399117464502273/generated_v4.svg",
+        "parent_id": null,
+        "text": "Ich kommentiere hier mit meinem Namen.",
+        "created_at": "2026-01-23T10:22:17Z",
+        "updated_at": "2026-01-23T10:22:17Z",
+        "votes": 2,
+        "user_vote": 0
+      }
+    ]
+  },
+  {
+    "id": "140128508453060609",
+    "updated": "2026-01-30T20:31:21Z",
+    "event_date": null,
+    "location": null,
+    "links": [],
+    "comments": [
+      {
+        "id": "140201184341262337",
+        "post_id": "140128508453060609",
+        "user_id": "140160432949166081",
+        "user_name": "Lennart",
+        "user_avatar_url": "/api/v1/auth/avatars/140160432949166081/generated_v4.svg",
+        "parent_id": null,
+        "text": "nice",
+        "created_at": "2026-01-22T21:09:27Z",
+        "updated_at": "2026-01-22T21:15:54Z",
+        "votes": 3,
+        "user_vote": 0
+      },
+      {
+        "id": "140399485418209281",
+        "post_id": "140128508453060609",
+        "user_id": "140399117464502273",
+        "user_name": "MegaGeil!!",
+        "user_avatar_url": "/api/v1/auth/avatars/140399117464502273/generated_v4.svg",
+        "parent_id": null,
+        "text": "Zweiter!!!!",
+        "created_at": "2026-01-23T10:17:25Z",
+        "updated_at": "2026-01-23T10:17:25Z",
+        "votes": 3,
+        "user_vote": 0
+      },
+      {
+        "id": "143343602821496833",
+        "post_id": "140128508453060609",
+        "user_id": "143318423869325313",
+        "user_name": "Ualid Khalid ",
+        "user_avatar_url": "/api/v1/auth/avatars/143318423869325313/generated_v4.svg",
+        "parent_id": null,
+        "text": "Top danke dir!",
+        "created_at": "2026-01-31T13:16:18Z",
+        "updated_at": "2026-01-31T13:16:18Z",
+        "votes": 0,
+        "user_vote": 0
+      }
+    ]
+  },
+  {
+    "id": "140127153315381249",
+    "updated": "2026-01-30T20:31:23Z",
+    "event_date": "2026-01-30T17:00",
+    "location": "Raum A4.UG.21",
+    "links": [],
+    "comments": [
+      {
+        "id": "140408873327525889",
+        "post_id": "140127153315381249",
+        "user_id": "140399117464502273",
+        "user_name": "MegaGeil!!",
+        "user_avatar_url": "/api/v1/auth/avatars/140399117464502273/generated_v4.svg",
+        "parent_id": null,
+        "text": "🔥💥🎮💥🔥",
+        "created_at": "2026-01-23T10:54:44Z",
+        "updated_at": "2026-01-23T10:54:44Z",
+        "votes": 2,
+        "user_vote": 0
+      }
+    ]
+  }
+]

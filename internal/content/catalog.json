@@ -1,0 +1,700 @@
+[
+  {
+    "year": 2026,
+    "date": "2026-09-24",
+    "number": 9,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2026-09-24-einladung.pdf",
+        "bytes": 260559,
+        "sha256": "5a136145eb552350e30bfad61210aade789945115d5518b18914f45aeff05d7a",
+        "sources": [
+          "Sitzungseinladungen 2026/Einladung zur 9. Sitzung am 24.09.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2026-09-24-protokoll.pdf",
+        "bytes": 209080,
+        "sha256": "f8a1a94ee38d8da4c0968c1e102c18c898f9ec7baed53050e2b2472317ae0d0e",
+        "sources": [
+          "Protokolle 2026/FSV Sitzungsprotokoll 9.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2026,
+    "date": "2026-09-09",
+    "number": 8,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2026-09-09-einladung.pdf",
+        "bytes": 260732,
+        "sha256": "0308ff5122c5d844d5e227ad13db83ba09eee1d7d3ecc433e2d624e884926c8e",
+        "sources": [
+          "Sitzungseinladungen 2026/Einladung zur 8. Sitzung am 09.09.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2026-09-09-protokoll.pdf",
+        "bytes": 99727,
+        "sha256": "246fb2f65f67e6de273f569e5ace6527b10a2e41a92bddffd08a23419bb06410",
+        "sources": [
+          "Protokolle 2026/FSV Sitzungsprotokoll 8.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2026,
+    "date": "2026-08-19",
+    "number": 7,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2026-08-19-einladung.pdf",
+        "bytes": 260128,
+        "sha256": "8198e57489896c83f95a3fd7fdc023831008bb5ba389dbd2ee8ef69f42516890",
+        "sources": [
+          "Sitzungseinladungen 2026/Einladung zur 7. Sitzung am 19.08.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2026-08-19-protokoll.pdf",
+        "bytes": 111006,
+        "sha256": "53661937e7c93752de0d94bf54d801f891d93986535bd02a4e820d41b9bbf867",
+        "sources": [
+          "Protokolle 2026/FSV Sitzungsprotokoll 7.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2026,
+    "date": "2026-07-29",
+    "number": 6,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2026-07-29-einladung.pdf",
+        "bytes": 263633,
+        "sha256": "710f1060c43661882b86801e91e681c78d2c74217d3c33fcbc7f985221454dda",
+        "sources": [
+          "Sitzungseinladungen 2026/Einladung zur 6. Sitzung am 29.07.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2026-07-29-protokoll.pdf",
+        "bytes": 84788,
+        "sha256": "76c1be46a76dc2f286bc052bba9cf803cd1977e33b253818c4168c2d275ff135",
+        "sources": [
+          "Protokolle 2026/FSV Sitzungsprotokoll 6.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2026,
+    "date": "2026-06-18",
+    "number": 4,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2026-06-18-einladung.pdf",
+        "bytes": 270804,
+        "sha256": "a28187278e6ec792b934443808cdad4813c37104c939db664ff16add78c7c275",
+        "sources": [
+          "Sitzungseinladungen 2026/Einladung zur 4. Sitzung am 18.06.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2026,
+    "date": "2026-05-14",
+    "number": 3,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2026-05-14-einladung.pdf",
+        "bytes": 269030,
+        "sha256": "109b29fc6fffb69b2faf693b63b962b1fde0a274fae4a156753fd9aceeb0a452",
+        "sources": [
+          "Sitzungseinladungen 2026/Einladung zur 3. Sitzung am 14.05.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2026-05-14-protokoll.pdf",
+        "bytes": 102208,
+        "sha256": "a49097d8950b317529e0115dda682ede57be32c8881523f75b58a8c0f1175750",
+        "sources": [
+          "Protokolle 2026/FSV Sitzungsprotokoll 3.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2026,
+    "date": "2026-04-16",
+    "number": 2,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "Die Einladung nennt 2025; Ausstellungsdatum und zugehöriges Protokoll nennen 2026. Die Überschrift nennt abweichend die 1. Sitzung.",
+        "file": "2026-04-16-einladung.pdf",
+        "bytes": 237780,
+        "sha256": "736b19345d8ad62eda7c63f1d88f76947d5a0ca95e2b49439bea8af7d5d197ea",
+        "sources": [
+          "Sitzungseinladungen 2026/Einladung zur 2. Sitzung am 16.04.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2026-04-16-protokoll.pdf",
+        "bytes": 121486,
+        "sha256": "05157c6a8344268ee6eab7eecaf46c8e578dfac06bbe0cfc2e1f817f29fb1af4",
+        "sources": [
+          "Protokolle 2026/FSV Sitzungsprotokoll 2.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2026,
+    "date": "2026-04-02",
+    "number": 1,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "Die Einladung nennt 2025; Ausstellungsdatum und zugehöriges Protokoll nennen 2026.",
+        "file": "2026-04-02-einladung.pdf",
+        "bytes": 230019,
+        "sha256": "a73c25b80b68592d44855125f87d8e50d8cf1511a4026f6e6709f21da88b0a78",
+        "sources": [
+          "Sitzungseinladungen 2026/Einladung zur 1. Sitzung am 02.04.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2026-04-02-protokoll.pdf",
+        "bytes": 128469,
+        "sha256": "b39b5eba3c591866077849bf9f28ea145fb69c6848963fd76d9f25e300b3a7be",
+        "sources": [
+          "Protokolle 2026/FSV Sitzungsprotokoll 1.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2025,
+    "date": "",
+    "number": 9,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "Datum uneindeutig: Die Einladung nennt den 23.01.2024, ist aber vom 07.01.2025 und im Ordner 2025 abgelegt.",
+        "file": "2025-einladung.pdf",
+        "bytes": 119785,
+        "sha256": "4003d02ccbb5b41a8018c5a148ee4606e217a6992d2a906e1e5eb1aa206d2e45",
+        "sources": [
+          "Sitzungseinladungen 2025/Einladung 9.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2024,
+    "date": "2024-12-10",
+    "number": 8,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2024-12-10-einladung.pdf",
+        "bytes": 120500,
+        "sha256": "97243de74941a8f5bbf39305e4fd5395bffed9e16a32855a42743608c2804bc2",
+        "sources": [
+          "Sitzungseinladungen 2024/Einladung 8.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2024,
+    "date": "2024-11-15",
+    "number": 7,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2024-11-15-einladung.pdf",
+        "bytes": 121201,
+        "sha256": "97d02eb939107ea0ee366fbe13171ec50c44098ae01dcdf1f1c8a146cb8a2f4a",
+        "sources": [
+          "Sitzungseinladungen 2024/Einladung 7.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2024,
+    "date": "2024-10-25",
+    "number": 6,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2024-10-25-einladung.pdf",
+        "bytes": 122096,
+        "sha256": "bfbd09ea03d2a76982036a198c9e3972a57821faa90dd3a69761ff193c5a5c58",
+        "sources": [
+          "Sitzungseinladungen 2024/Einladung 6.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2024,
+    "date": "2024-07-26",
+    "number": 5,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2024-07-26-einladung.pdf",
+        "bytes": 122694,
+        "sha256": "141686cd25985d6c7a24ea2f2a29a06c7e38f2903a147aa7d12fdf29201fec28",
+        "sources": [
+          "Sitzungseinladungen 2024/Einladung 5.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2024,
+    "date": "2024-06-07",
+    "number": 4,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2024-06-07-einladung.pdf",
+        "bytes": 158100,
+        "sha256": "6f87ccb16f71a13ea2070a313353620ab02b88f6a63d9de2962f15ecf8496e24",
+        "sources": [
+          "Sitzungseinladungen 2024/Einladung 4.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2024-06-07-protokoll.pdf",
+        "bytes": 107802,
+        "sha256": "a55c6d73287bb2b4b9b469afb5aaeec30504035d9035a624a6712077e7bacb80",
+        "sources": [
+          "Protokolle 2024/FSV Sitzungsprotokoll 4.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2024,
+    "date": "2024-05-08",
+    "number": 3,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2024-05-08-einladung.pdf",
+        "bytes": 155440,
+        "sha256": "8b95da1949d026fbcd484dc481a5484cd27e6531e2f12c1a91f157014fad8a71",
+        "sources": [
+          "Sitzungseinladungen 2024/Einladung 3.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2024-05-08-protokoll.pdf",
+        "bytes": 109959,
+        "sha256": "c63d07166d8c0fba8330ec4f8709b4de21c4f62a011547ae2a3059f56c8bc583",
+        "sources": [
+          "Protokolle 2024/FSV Sitzungsprotokoll 3.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2024,
+    "date": "2024-04-11",
+    "number": 2,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2024-04-11-einladung.pdf",
+        "bytes": 118567,
+        "sha256": "e1849247bcb8c60da4177dc3dba1dc8f3549438fd042320febf03373999fefe8",
+        "sources": [
+          "Sitzungseinladungen 2024/Einladung 2.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "Das Protokoll nennt im Begrüßungstext abweichend die 1. Sitzung.",
+        "file": "2024-04-11-protokoll.pdf",
+        "bytes": 132099,
+        "sha256": "c71ee40b165c861952201423d5f89f49f5faf456ba7916f81026de0b7f81415f",
+        "sources": [
+          "Protokolle 2024/FSV Sitzungsprotokoll 2.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2024,
+    "date": "2024-03-14",
+    "number": 1,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2024-03-14-einladung.pdf",
+        "bytes": 124564,
+        "sha256": "52dbe15a027d440b55c98da465dc8e59d624051f3204103e2fe79d389751e87f",
+        "sources": [
+          "Sitzungseinladungen 2024/Einladung 1.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2024-03-14-protokoll.pdf",
+        "bytes": 137018,
+        "sha256": "6726e2fda0b5435de1a59ca77da81630118465ccc1c1c8817aae3594304ee7f4",
+        "sources": [
+          "Protokolle 2024/FSV Sitzungsprotokoll 1.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2023,
+    "date": "2023-01-18",
+    "number": 9,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2023-01-18-einladung.pdf",
+        "bytes": 148506,
+        "sha256": "ce2c25bec963c392d8c4c0bdb98182daf6f7f817f6c7be8c16afd742f2c6c9e7",
+        "sources": [
+          "Archiv/Einladung 9.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2022,
+    "date": "2022-12-21",
+    "number": 8,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2022-12-21-einladung.pdf",
+        "bytes": 145658,
+        "sha256": "115977e48a60bc5c46627b5c982f9c7fa1a3d6e2c9409aacef51307c4e04f0b6",
+        "sources": [
+          "Archiv/Einladung 8.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2022,
+    "date": "2022-11-23",
+    "number": 7,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2022-11-23-einladung.pdf",
+        "bytes": 196338,
+        "sha256": "e0858906e415d9df2d334ff490a0ffabfeedf8bc576ff9e0e7772354ac2df391",
+        "sources": [
+          "Archiv/Einladung 7.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2022,
+    "date": "2022-10-26",
+    "number": 6,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2022-10-26-einladung.pdf",
+        "bytes": 143186,
+        "sha256": "19866f61686b4124c71a78f20146553342241d0b29f88a34ef103ed99f59bd7c",
+        "sources": [
+          "Archiv/Einladung 6.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2022-10-26-protokoll.pdf",
+        "bytes": 135038,
+        "sha256": "0b3b72a3ed7ce2190be69c8cf98a54afce3dd07126b1bd447d6e2b6bc843d4f6",
+        "sources": [
+          "Archiv/FSV Sitzungs Protokoll 6.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2022,
+    "date": "2022-08-31",
+    "number": 5,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2022-08-31-einladung.pdf",
+        "bytes": 106626,
+        "sha256": "0f2488415f52522fa2ada28eec91a042dd0ee662b8324fe5bcce751be9acd74d",
+        "sources": [
+          "Archiv/Einladung 5.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "",
+        "file": "2022-08-31-protokoll.pdf",
+        "bytes": 132081,
+        "sha256": "26ec60f1713d7f9e079e9fb31a2376fd7b4e566aceb35636cad8e4f3eddd7a39",
+        "sources": [
+          "Archiv/FSV Sitzungs Protokoll 5.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2022,
+    "date": "2022-07-13",
+    "number": 4,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2022-07-13-einladung.pdf",
+        "bytes": 238228,
+        "sha256": "2f11c4d7c1b0f914b067c33aa2d2d559e3d492fbabc547e85db99d46f53ac41f",
+        "sources": [
+          "Archiv/Einladung 4.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "Die Dokumentüberschrift nennt 2022, der Begrüßungstext abweichend 2021.",
+        "file": "2022-07-13-protokoll.pdf",
+        "bytes": 130348,
+        "sha256": "7736eefcb288be6030540ab475eb14d12eca51890a41e4a3858eb59164a8ee80",
+        "sources": [
+          "Archiv/FSV Sitzungs Protokoll 4.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2022,
+    "date": "2022-05-18",
+    "number": 3,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2022-05-18-einladung.pdf",
+        "bytes": 145243,
+        "sha256": "712aa4c0f155ac28c66788f3ea0ee991e8949745d9bfe1df355e2097557a3ef5",
+        "sources": [
+          "Archiv/Einladung 3.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "Die Dokumentüberschrift nennt 2022, der Begrüßungstext abweichend 2021.",
+        "file": "2022-05-18-protokoll.pdf",
+        "bytes": 132494,
+        "sha256": "9634b19bccf7b39da619f1cb4c88a2150d5138e8b82c4fc8fd5687ebd098b331",
+        "sources": [
+          "Archiv/FSV Sitzungs Protokoll 3.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2022,
+    "date": "2022-04-13",
+    "number": 2,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2022-04-13-einladung.pdf",
+        "bytes": 105753,
+        "sha256": "daaa9bc50da86368b490d60bf18a3ad3a13887fa15600404877c12c6528dd3f3",
+        "sources": [
+          "Archiv/Einladung 2.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2022,
+    "date": "2022-03-16",
+    "number": 1,
+    "documents": [
+      {
+        "kind": "Protokoll",
+        "note": "Die Dokumentüberschrift nennt 2022, der Begrüßungstext abweichend 2021.",
+        "file": "2022-03-16-protokoll.pdf",
+        "bytes": 133439,
+        "sha256": "33ebb015b1e55e8d2f15f0578b377e8e9371033d750369a9d72a29c1524338a2",
+        "sources": [
+          "Archiv/FSV Sitzungs Protokoll 1.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2021,
+    "date": "2021-01-22",
+    "number": 5,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2021-01-22-einladung.pdf",
+        "bytes": 111447,
+        "sha256": "ddc67368fd9d6b0078fd26a0c00b18e6204584b572b554954c304636a2d3de72",
+        "sources": [
+          "Archiv/Einladung 5_1.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2020,
+    "date": "2020-12-11",
+    "number": 4,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2020-12-11-einladung.pdf",
+        "bytes": 110879,
+        "sha256": "031cd23f4db915a7d3e2c8377f7c4a47d97d33dbdb61e1afaba81aa6fdff58de",
+        "sources": [
+          "Archiv/Einladung 4_1.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2020,
+    "date": "2020-11-13",
+    "number": 3,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2020-11-13-einladung.pdf",
+        "bytes": 111870,
+        "sha256": "2c96503469ffe7314713c290c4a6fced772e7e2ddd713469aa1f129886b7465c",
+        "sources": [
+          "Archiv/Einladung 3_1.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "Der Quelldateiname nennt 4; im Dokument steht die 3. Sitzung vom 13.11.2020.",
+        "file": "2020-11-13-protokoll.pdf",
+        "bytes": 131208,
+        "sha256": "800694950d7c24450b2c846ad23b5d07863b8ef23a81f263609794b85d7b7264",
+        "sources": [
+          "Archiv/FSV Sitzungs Protokoll 4_1.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2020,
+    "date": "2020-06-10",
+    "number": 2,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2020-06-10-einladung.pdf",
+        "bytes": 112580,
+        "sha256": "c049fbe81363b3f45e394eaaa3521a77c4961600af68a4c24974bb46345f0d15",
+        "sources": [
+          "Archiv/Einladung 2_1.pdf"
+        ]
+      }
+    ]
+  },
+  {
+    "year": 2020,
+    "date": "2020-03-06",
+    "number": 1,
+    "documents": [
+      {
+        "kind": "Einladung",
+        "note": "",
+        "file": "2020-03-06-einladung.pdf",
+        "bytes": 111680,
+        "sha256": "4d67513f8fc10d80046e489b9c2f5afc91a8c537ebaa29c7614b6f21ed88454f",
+        "sources": [
+          "Archiv/Einladung 1.pdf"
+        ]
+      },
+      {
+        "kind": "Protokoll",
+        "note": "Die erste Überschrift und der Begrüßungstext nennen den 06.03.2020, eine weitere Überschrift abweichend den 22.01.2020.",
+        "file": "2020-03-06-protokoll.pdf",
+        "bytes": 230427,
+        "sha256": "f36de5265355fefd744fa2878f1b2db79a12ce053938dc31506eb4988490d806",
+        "sources": [
+          "Archiv/FSV Sitzungs Protokoll 1_1.pdf",
+          "Archiv/FSV Sitzungs Protokoll 3_1.pdf"
+        ]
+      }
+    ]
+  }
+]
