@@ -15,7 +15,7 @@ type TokenPage struct {
 // Token displays a confirmation first so mail scanners cannot consume links.
 func (c *Handler) Token(w http.ResponseWriter, r *http.Request) {
 	if c.identity == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")

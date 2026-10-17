@@ -39,7 +39,7 @@ func (u UploadPage) ErrorFields() []string {
 func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	if c.archive == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	catalog, err := c.archive.Catalog(r.Context())
@@ -306,19 +306,19 @@ func uniqueChoice(values []string, value string) []string {
 
 func (c *Handler) archiveWriteError(w http.ResponseWriter, r *http.Request, err error) {
 	if errors.Is(err, files.ErrConflict) {
-		http.Error(w, files.ErrConflict.Error(), http.StatusConflict)
+		c.pageError(w, files.ErrConflict.Error(), http.StatusConflict)
 		return
 	}
 	if errors.Is(err, files.ErrNotFound) {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	if errors.Is(err, files.ErrForbidden) {
-		http.Error(w, err.Error(), http.StatusForbidden)
+		c.pageError(w, err.Error(), http.StatusForbidden)
 		return
 	}
 	if errors.Is(err, files.ErrStorage) {
-		http.Error(w, "Die Dateien konnten nicht gespeichert werden. Versuche es später erneut.", http.StatusServiceUnavailable)
+		c.pageError(w, "Die Dateien konnten nicht gespeichert werden. Versuche es später erneut.", http.StatusServiceUnavailable)
 		return
 	}
 	c.serverError(w, err)

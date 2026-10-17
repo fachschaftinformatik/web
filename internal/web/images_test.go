@@ -29,9 +29,9 @@ func TestImagesNavigation(t *testing.T) {
 		{"/events/140125680309370881", 200, "image-140126291885031425"},
 		{"/events/140125680309370881?page=2", 303, "/events/140125680309370881"},
 		{"/events/140125680309370881/140126279717355521", 200, "/community/events/140125680309370881?page=1#image-140126279717355521"},
-		{"/events/unknown", 404, "404"},
-		{"/events/140125680309370881/unknown", 404, "404"},
-		{"/events/140117348945231873/140126279717355521", 404, "404"},
+		{"/events/unknown", 404, "Seite nicht gefunden"},
+		{"/events/140125680309370881/unknown", 404, "Seite nicht gefunden"},
+		{"/events/140117348945231873/140126279717355521", 404, "Seite nicht gefunden"},
 		{"/events/140125680309370881?page=3", 303, "/events/140125680309370881"},
 		{"/events/140125680309370881?page=-1", 303, "/events/140125680309370881"},
 		{"/events/140125680309370881?page=bad", 303, "/events/140125680309370881"},
@@ -135,9 +135,9 @@ func TestLiveGalleryPaginationAndViewer(t *testing.T) {
 		{"/community/events/10?page=4", 303, "/community/events/10"},
 		{"/community/events/10/115", 200, "/community/events/10?page=3#image-115"},
 		{"/community/events/10/101", 200, `alt="Real alt"`},
-		{"/community/events/20/101", 404, "404"},
-		{"/community/events/10/102", 404, "404"},
-		{"/community/events/30", 404, "404"},
+		{"/community/events/20/101", 404, "Seite nicht gefunden"},
+		{"/community/events/10/102", 404, "Seite nicht gefunden"},
+		{"/community/events/30", 404, "Seite nicht gefunden"},
 	} {
 		r := httptest.NewRecorder()
 		router.ServeHTTP(r, httptest.NewRequest("GET", tc.path, nil))

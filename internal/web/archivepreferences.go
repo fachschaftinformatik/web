@@ -23,7 +23,7 @@ func (c *Handler) preferredArchiveFilter(w http.ResponseWriter, r *http.Request)
 
 func (c *Handler) ArchivePreferences(w http.ResponseWriter, r *http.Request) {
 	if c.archive == nil {
-		http.NotFound(w, r)
+		c.notFound(w, r)
 		return
 	}
 	user := w.(*sessionResponse).session.UserID

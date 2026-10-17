@@ -116,7 +116,7 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 			return
 		}
 		if admin && !(s.CanAdmin() || (review || r.URL.Path == "/verwaltung") && s.CanReview()) {
-			http.Error(w, "Du hast keine Berechtigung für die Verwaltung.", http.StatusForbidden)
+			c.pageError(response, "Du hast keine Berechtigung für die Verwaltung.", http.StatusForbidden)
 			return
 		}
 		if r.Method == http.MethodPost && (admin || archiveWrite || forumWrite || r.URL.Path == "/logout" || c.identity != nil && account) {
@@ -133,16 +133,16 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 			r.Body = http.MaxBytesReader(w, r.Body, limit)
 			if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
 				if err := r.ParseMultipartForm(uploadBodyLimit); err != nil {
-					http.Error(w, "Das Formular ist zu groß oder konnte nicht gelesen werden.", http.StatusBadRequest)
+					c.pageError(response, "Das Formular ist zu groß oder konnte nicht gelesen werden.", http.StatusBadRequest)
 					return
 				}
 				defer r.MultipartForm.RemoveAll()
 			} else if err := r.ParseForm(); err != nil {
-				http.Error(w, "Das Formular konnte nicht gelesen werden.", http.StatusBadRequest)
+				c.pageError(response, "Das Formular konnte nicht gelesen werden.", http.StatusBadRequest)
 				return
 			}
 			if !validCSRF(s, r.PostForm.Get("csrf")) {
-				http.Error(w, "Lade die Seite neu und versuche es noch einmal.", http.StatusForbidden)
+				c.pageError(response, "Lade die Seite neu und versuche es noch einmal.", http.StatusForbidden)
 				return
 			}
 		}
