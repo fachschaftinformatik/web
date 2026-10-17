@@ -82,7 +82,7 @@ func TestMeetingInitialSaveFailureCanRetry(t *testing.T) {
 	if strings.Contains(body, "wird diese Datei beibehalten") || !strings.Contains(body, "Die Datei wurde nicht gespeichert.") {
 		t.Fatal("failed initial save claimed to retain the upload")
 	}
-	action := regexp.MustCompile(`id="admin-form" action="([^"]+)"`).FindStringSubmatch(body)
+	action := regexp.MustCompile(`id="admin-form"\s+action="([^"]+)"`).FindStringSubmatch(body)
 	if action == nil || action[1] != "/verwaltung/sitzungen/neu" {
 		t.Fatalf("failed save left nonretryable action: %v", action)
 	}

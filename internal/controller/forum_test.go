@@ -26,10 +26,10 @@ func TestForumFiltering(t *testing.T) {
 			response := httptest.NewRecorder()
 			handler.ServeHTTP(response, httptest.NewRequest("GET", "/discussions"+tc.query, nil))
 			body := response.Body.String()
-			if response.Code != 200 || !strings.Contains(body, tc.contains) || strings.Contains(body, tc.absent) {
+			if response.Code != 200 || !htmlContains(body, tc.contains) || htmlContains(body, tc.absent) {
 				t.Fatalf("unexpected response: %d %s", response.Code, body)
 			}
-			if !strings.Contains(body, `href="/discussions" aria-current="page"`) {
+			if !htmlContains(body, `href="/discussions" aria-current="page"`) {
 				t.Fatal("forum missing from active Community navigation")
 			}
 		})
@@ -63,7 +63,7 @@ func TestDiscussion(t *testing.T) {
 			response := httptest.NewRecorder()
 			handler.ServeHTTP(response, httptest.NewRequest("GET", tc.path, nil))
 			body := response.Body.String()
-			if response.Code != tc.code || !strings.Contains(body, tc.contains) {
+			if response.Code != tc.code || !htmlContains(body, tc.contains) {
 				t.Fatalf("%d: %s", response.Code, body)
 			}
 			ancestor := "/discussions"
@@ -73,7 +73,7 @@ func TestDiscussion(t *testing.T) {
 			if strings.Contains(tc.path, "140127153315381249") {
 				ancestor = view.EventsURL
 			}
-			if tc.code == 200 && !strings.Contains(body, `href="`+ancestor+`" aria-current="true"`) {
+			if tc.code == 200 && !htmlContains(body, `href="`+ancestor+`" aria-current="true"`) {
 				t.Fatal("missing active forum ancestor")
 			}
 		})

@@ -182,7 +182,7 @@ func TestPublicationReviewAndVisibility(t *testing.T) {
 	if status != 422 || !strings.Contains(body, "beibehalten") {
 		t.Fatal("file was not retained through validation")
 	}
-	match := regexp.MustCompile(`id="admin-form" action="([^"]+)"`).FindStringSubmatch(body)
+	match := regexp.MustCompile(`id="admin-form"\s+action="([^"]+)"`).FindStringSubmatch(body)
 	if match == nil {
 		t.Fatal("draft form missing")
 	}
@@ -268,7 +268,7 @@ func TestUserPaginationKeepsSearchContext(t *testing.T) {
 	b := newAdminBrowser(t, server)
 	b.login()
 	status, body, _ := b.get("/verwaltung/benutzer?q=Beispiel&seite=2")
-	if status != 200 || !strings.Contains(body, "Benutzerkonten – Seite 2 von 3") || !strings.Contains(body, `aria-current="page">2`) || !strings.Contains(body, `q=Beispiel&amp;seite=3`) || !strings.Contains(body, "Beispiel 21") || strings.Contains(body, "Beispiel 01</a>") {
+	if status != 200 || !strings.Contains(body, "Benutzerkonten – Seite 2 von 3") || !htmlContains(body, `aria-current="page">2`) || !strings.Contains(body, `q=Beispiel&amp;seite=3`) || !strings.Contains(body, "Beispiel 21") || strings.Contains(body, "Beispiel 01</a>") {
 		t.Fatal("numbered pagination lost page/search context")
 	}
 	for _, value := range []string{"0", "999", "invalid"} {

@@ -1,44 +1,223 @@
-{{define "sidebar"}}{{end}}
-{{define "content"}}
-{{if .Forum.Comment.Error}}<div class="govuk-error-summary" data-module="govuk-error-summary"><div role="alert"><h2 class="govuk-error-summary__title">Es gibt ein Problem</h2><div class="govuk-error-summary__body"><ul class="govuk-list govuk-error-summary__list"><li><a href="#{{.Forum.Comment.Anchor}}">{{.Forum.Comment.Error}}</a></li></ul></div></div></div>{{end}}
-{{with .Forum.Thread}}
-<article class="app-thread" aria-label="Beitrag">
-  <p class="govuk-body-s">{{if .AuthorURL}}<a class="govuk-link govuk-!-font-weight-bold" href="{{.AuthorURL}}">{{.Author}}</a>{{else}}{{.Author}}{{end}} <time datetime="{{.Created}}" title="{{.PostedLabel}}" aria-label="{{.RelativeTime}}, {{.PostedLabel}}">{{.RelativeTime}}</time>{{if .Edited}} <span title="Bearbeitet um {{.EditedLabel}}">(bearbeitet)<span class="govuk-visually-hidden"> um {{.EditedLabel}}</span></span>{{end}}</p>
-  {{if .EventDate}}<dl class="govuk-summary-list">
-    <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Termin</dt><dd class="govuk-summary-list__value"><time datetime="{{.EventDate}}">{{.EventLabel}}</time></dd></div>
-    {{if .Location}}<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Ort</dt><dd class="govuk-summary-list__value">{{.Location}}</dd></div>{{end}}
-  </dl>{{end}}
-  {{if eq .BodyFormat "html"}}<div class="app-rich-content">{{richHTML .Body}}</div>{{else}}{{template "forum-body" (rawForumText .Body)}}{{end}}
-  <div class="govuk-!-margin-bottom-4" id="post-vote">{{template "vote" (voteControl $ (printf "%s/vote" .URL) (printf "%s#post-vote" .URL) .Title .Votes .UserVote)}}</div>
-  {{if $.Forum.CanEdit}}<a class="govuk-button govuk-button--secondary" href="{{.URL}}/edit" role="button" draggable="false" data-module="govuk-button">Beitrag bearbeiten</a>{{end}}
-</article>
-<section class="app-thread" aria-labelledby="comments-heading">
-  <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
-  <h2 class="govuk-heading-l" id="comments-heading">{{.Comments}} {{if eq .Comments 1}}Kommentar{{else}}Kommentare{{end}}</h2>
-  {{if .Replies}}<ol class="govuk-list app-forum-posts">
-    {{range .Replies}}<li id="comment-{{.ID}}">
-      <article aria-labelledby="comment-heading-{{.ID}}">
-        <div class="app-comment-byline govuk-!-margin-bottom-2">
-          <h3 class="govuk-heading-s govuk-!-margin-bottom-0" id="comment-heading-{{.ID}}">{{if .AuthorURL}}<a class="govuk-link" href="{{.AuthorURL}}">{{.Author}}</a>{{else}}{{.Author}}{{end}}</h3>
-          <p class="govuk-body-s govuk-!-margin-bottom-0"><time datetime="{{.Created}}" title="{{.PostedLabel}}" aria-label="{{.RelativeTime}}, {{.PostedLabel}}">{{.RelativeTime}}</time>{{if .Edited}} <span title="Bearbeitet um {{.EditedLabel}}">(bearbeitet)<span class="govuk-visually-hidden"> um {{.EditedLabel}}</span></span>{{end}}</p>
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  {{ if .Forum.Comment.Error }}
+    <div class="govuk-error-summary" data-module="govuk-error-summary">
+      <div role="alert">
+        <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
+        <div class="govuk-error-summary__body">
+          <ul class="govuk-list govuk-error-summary__list">
+            <li><a href="#{{ .Forum.Comment.Anchor }}">{{ .Forum.Comment.Error }}</a></li>
+          </ul>
         </div>
-        {{template "forum-body" (rawForumText .Text)}}
-        {{template "vote" (voteControl $ (printf "%s/comments/%s/vote" $.Forum.Thread.URL .ID) ($.Forum.CommentURL .ID) (printf "Kommentar von %s" .Author) .Votes .UserVote)}}
-        {{if .CanEdit}}{{$invalid := and $.Forum.Comment.Error (eq $.Forum.Comment.ID .ID)}}<details class="govuk-details" {{if $invalid}}open{{end}}><summary class="govuk-details__summary"><span class="govuk-details__summary-text">Kommentar bearbeiten</span></summary><div class="govuk-details__text"><form method="post" action="{{$.Forum.Thread.URL}}/comments/{{.ID}}/edit" novalidate><input type="hidden" name="csrf" value="{{$.CSRF}}"><div class="govuk-form-group {{if $invalid}}govuk-form-group--error{{end}}"><label class="govuk-label" for="edit-comment-{{.ID}}">Kommentar</label>{{if $invalid}}<p class="govuk-error-message" id="edit-comment-{{.ID}}-error"><span class="govuk-visually-hidden">Fehler:</span> {{$.Forum.Comment.Error}}</p>{{end}}<textarea class="govuk-textarea {{if $invalid}}govuk-textarea--error{{end}}" id="edit-comment-{{.ID}}" name="text" rows="4" {{if $invalid}}aria-invalid="true" aria-describedby="edit-comment-{{.ID}}-error"{{end}}>{{if $invalid}}{{$.Forum.Comment.Text}}{{else}}{{.Text}}{{end}}</textarea></div><button class="govuk-button" type="submit" data-module="govuk-button">Änderungen speichern</button></form></div></details>{{end}}
-      </article>
-    </li>{{end}}
-  </ol>{{else}}<p class="govuk-body">Noch keine Kommentare.</p>{{end}}
-  {{template "list-pagination" $.Forum.Pagination}}
-  {{if $.Forum.CanWrite}}{{$invalid := and $.Forum.Comment.Error (eq $.Forum.Comment.ID "")}}<form method="post" action="{{.URL}}/comments" novalidate><input type="hidden" name="csrf" value="{{$.CSRF}}"><div class="govuk-form-group {{if $invalid}}govuk-form-group--error{{end}}"><label class="govuk-label govuk-label--s" for="comment-text">Kommentar schreiben</label><p class="govuk-hint" id="comment-hint">Höchstens 10.000 Zeichen.</p>{{if $invalid}}<p class="govuk-error-message" id="comment-error"><span class="govuk-visually-hidden">Fehler:</span> {{$.Forum.Comment.Error}}</p>{{end}}<textarea class="govuk-textarea {{if $invalid}}govuk-textarea--error{{end}}" id="comment-text" name="text" rows="5" aria-describedby="comment-hint{{if $invalid}} comment-error{{end}}" {{if $invalid}}aria-invalid="true"{{end}}>{{if eq $.Forum.Comment.ID ""}}{{$.Forum.Comment.Text}}{{end}}</textarea></div><button class="govuk-button" type="submit" data-module="govuk-button">Kommentar veröffentlichen</button></form>{{else}}<p class="govuk-body"><a class="govuk-link" href="/login">Melde dich an</a>, um zu kommentieren.</p>{{end}}
-</section>
-{{end}}
-{{end}}
+      </div>
+    </div>
+  {{ end }}
+  {{ with .Forum.Thread }}
+    <article class="app-thread" aria-label="Beitrag">
+      <p class="govuk-body-s">
+        {{ if .AuthorURL }}
+          <a class="govuk-link govuk-!-font-weight-bold" href="{{ .AuthorURL }}">{{ .Author }}</a>
+        {{ else }}
+          {{ .Author }}
+        {{ end }}
+        <time
+          datetime="{{ .Created }}"
+          title="{{ .PostedLabel }}"
+          aria-label="{{ .RelativeTime }}, {{ .PostedLabel }}"
+          >{{ .RelativeTime }}</time
+        >{{ if .Edited }}
+          <span title="Bearbeitet um {{ .EditedLabel }}"
+            >(bearbeitet)<span class="govuk-visually-hidden"> um {{ .EditedLabel }}</span></span
+          >
+        {{ end }}
+      </p>
+      {{ if .EventDate }}
+        <dl class="govuk-summary-list">
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">Termin</dt>
+            <dd class="govuk-summary-list__value">
+              <time datetime="{{ .EventDate }}">{{ .EventLabel }}</time>
+            </dd>
+          </div>
+          {{ if .Location }}
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key">Ort</dt>
+              <dd class="govuk-summary-list__value">{{ .Location }}</dd>
+            </div>
+          {{ end }}
+        </dl>
+      {{ end }}
+      {{ if eq .BodyFormat "html" }}
+        <div class="app-rich-content">{{ richHTML .Body }}</div>
+      {{ else }}
+        {{ template "forum-body" (rawForumText .Body) }}
+      {{ end }}
+      <div class="govuk-!-margin-bottom-4" id="post-vote">
+        {{ template "vote" (voteControl $ (printf "%s/vote" .URL) (printf "%s#post-vote" .URL) .Title .Votes .UserVote) }}
+      </div>
+      {{ if $.Forum.CanEdit }}
+        <a
+          class="govuk-button govuk-button--secondary"
+          href="{{ .URL }}/edit"
+          role="button"
+          draggable="false"
+          data-module="govuk-button"
+          >Beitrag bearbeiten</a
+        >
+      {{ end }}
+    </article>
+    <section class="app-thread" aria-labelledby="comments-heading">
+      <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible" />
+      <h2 class="govuk-heading-l" id="comments-heading">
+        {{ .Comments }} {{ if eq .Comments 1 }}Kommentar{{ else }}Kommentare{{ end }}
+      </h2>
+      {{ if .Replies }}
+        <ol class="govuk-list app-forum-posts">
+          {{ range .Replies }}
+            <li id="comment-{{ .ID }}">
+              <article aria-labelledby="comment-heading-{{ .ID }}">
+                <div class="app-comment-byline govuk-!-margin-bottom-2">
+                  <h3
+                    class="govuk-heading-s govuk-!-margin-bottom-0"
+                    id="comment-heading-{{ .ID }}"
+                  >
+                    {{ if .AuthorURL }}
+                      <a class="govuk-link" href="{{ .AuthorURL }}">{{ .Author }}</a>
+                    {{ else }}
+                      {{ .Author }}
+                    {{ end }}
+                  </h3>
+                  <p class="govuk-body-s govuk-!-margin-bottom-0">
+                    <time
+                      datetime="{{ .Created }}"
+                      title="{{ .PostedLabel }}"
+                      aria-label="{{ .RelativeTime }}, {{ .PostedLabel }}"
+                      >{{ .RelativeTime }}</time
+                    >{{ if .Edited }}
+                      <span title="Bearbeitet um {{ .EditedLabel }}"
+                        >(bearbeitet)<span class="govuk-visually-hidden">
+                          um {{ .EditedLabel }}</span
+                        ></span
+                      >
+                    {{ end }}
+                  </p>
+                </div>
+                {{ template "forum-body" (rawForumText .Text) }}
+                {{ template "vote" (voteControl $ (printf "%s/comments/%s/vote" $.Forum.Thread.URL .ID) ($.Forum.CommentURL .ID) (printf "Kommentar von %s" .Author) .Votes .UserVote) }}
+                {{ if .CanEdit }}
+                  {{ $invalid := and $.Forum.Comment.Error (eq $.Forum.Comment.ID .ID) }}
+                  <details
+                    class="govuk-details"
+                    {{ if $invalid }}open{{ end }}
+                  >
+                    <summary class="govuk-details__summary">
+                      <span class="govuk-details__summary-text">Kommentar bearbeiten</span>
+                    </summary>
+                    <div class="govuk-details__text">
+                      <form
+                        method="post"
+                        action="{{ $.Forum.Thread.URL }}/comments/{{ .ID }}/edit"
+                        novalidate
+                      >
+                        <input type="hidden" name="csrf" value="{{ $.CSRF }}" />
+                        <div
+                          class="govuk-form-group {{ if $invalid }}govuk-form-group--error{{ end }}"
+                        >
+                          <label class="govuk-label" for="edit-comment-{{ .ID }}">Kommentar</label
+                          >{{ if $invalid }}
+                            <p class="govuk-error-message" id="edit-comment-{{ .ID }}-error">
+                              <span class="govuk-visually-hidden">Fehler:</span>
+                              {{ $.Forum.Comment.Error }}
+                            </p>
+                          {{ end }}<textarea
+                            class="govuk-textarea {{ if $invalid }}govuk-textarea--error{{ end }}"
+                            id="edit-comment-{{ .ID }}"
+                            name="text"
+                            rows="4"
+                            {{ if $invalid }}
+                              aria-invalid="true" aria-describedby="edit-comment-{{ .ID }}-error"
+                            {{ end }}
+                          >
+{{ if $invalid }}{{ $.Forum.Comment.Text }}{{ else }}{{ .Text }}{{ end }}</textarea
+                          >
+                        </div>
+                        <button class="govuk-button" type="submit" data-module="govuk-button">
+                          Änderungen speichern
+                        </button>
+                      </form>
+                    </div>
+                  </details>
+                {{ end }}
+              </article>
+            </li>
+          {{ end }}
+        </ol>
+      {{ else }}
+        <p class="govuk-body">Noch keine Kommentare.</p>
+      {{ end }}
+      {{ template "list-pagination" $.Forum.Pagination }}
+      {{ if $.Forum.CanWrite }}
+        {{ $invalid := and $.Forum.Comment.Error (eq $.Forum.Comment.ID "") }}
+        <form method="post" action="{{ .URL }}/comments" novalidate>
+          <input type="hidden" name="csrf" value="{{ $.CSRF }}" />
+          <div class="govuk-form-group {{ if $invalid }}govuk-form-group--error{{ end }}">
+            <label class="govuk-label govuk-label--s" for="comment-text">Kommentar schreiben</label>
+            <p class="govuk-hint" id="comment-hint">Höchstens 10.000 Zeichen.</p>
+            {{ if $invalid }}
+              <p class="govuk-error-message" id="comment-error">
+                <span class="govuk-visually-hidden">Fehler:</span> {{ $.Forum.Comment.Error }}
+              </p>
+            {{ end }}<textarea
+              class="govuk-textarea {{ if $invalid }}govuk-textarea--error{{ end }}"
+              id="comment-text"
+              name="text"
+              rows="5"
+              aria-describedby="comment-hint{{ if $invalid }}comment-error{{ end }}"
+              {{ if $invalid }}aria-invalid="true"{{ end }}
+            >
+{{ if eq $.Forum.Comment.ID "" }}{{ $.Forum.Comment.Text }}{{ end }}</textarea
+            >
+          </div>
+          <button class="govuk-button" type="submit" data-module="govuk-button">
+            Kommentar veröffentlichen
+          </button>
+        </form>
+      {{ else }}
+        <p class="govuk-body">
+          <a class="govuk-link" href="/login">Melde dich an</a>, um zu kommentieren.
+        </p>
+      {{ end }}
+    </section>
+  {{ end }}
+{{ end }}
 
-{{define "forum-body"}}
-{{range .}}
-  {{if eq .Kind "list"}}<ul class="govuk-list govuk-list--bullet">{{range .Lines}}<li>{{template "forum-parts" .}}</li>{{end}}</ul>
-  {{else if eq .Kind "quote"}}<blockquote class="govuk-inset-text app-thread-quote">{{range $i, $line := .Lines}}{{if $i}}<br>{{end}}{{template "forum-parts" $line}}{{end}}</blockquote>
-  {{else if eq .Kind "paragraph"}}<p class="govuk-body">{{range $i, $line := .Lines}}{{if $i}}<br>{{end}}{{template "forum-parts" $line}}{{end}}</p>{{end}}
-{{end}}
-{{end}}
-{{define "forum-parts"}}{{range .}}{{if .URL}}<a class="govuk-link" href="{{.URL}}">{{.Text}}</a>{{else}}{{.Text}}{{end}}{{end}}{{end}}
+{{ define "forum-body" }}
+  {{ range . }}
+    {{ if eq .Kind "list" }}
+      <ul class="govuk-list govuk-list--bullet">
+        {{ range .Lines }}<li>{{ template "forum-parts" . }}</li>{{ end }}
+      </ul>
+    {{ else if eq .Kind "quote" }}
+      <blockquote class="govuk-inset-text app-thread-quote">
+        {{ range $i, $line := .Lines }}
+          {{ if $i }}<br />{{ end }}{{ template "forum-parts" $line }}
+        {{ end }}
+      </blockquote>
+    {{ else if eq .Kind "paragraph" }}
+      <p class="govuk-body">
+        {{ range $i, $line := .Lines }}
+          {{ if $i }}<br />{{ end }}{{ template "forum-parts" $line }}
+        {{ end }}
+      </p>
+    {{ end }}
+  {{ end }}
+{{ end }}
+{{ define "forum-parts" }}
+  {{ range . }}
+    {{ if .URL }}
+      <a class="govuk-link" href="{{ .URL }}">{{ .Text }}</a>
+    {{ else }}
+      {{ .Text }}
+    {{ end }}
+  {{ end }}
+{{ end }}

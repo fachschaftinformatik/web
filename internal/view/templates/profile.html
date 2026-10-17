@@ -1,14 +1,26 @@
-{{define "sidebar"}}{{end}}
-{{define "content"}}
-<section aria-labelledby="profile-posts">
-  <h2 class="govuk-heading-m" id="profile-posts">Öffentliche Beiträge</h2>
-  {{if .Forum.Posts}}<ul class="govuk-list app-forum-posts" role="list">
-    {{range .Forum.Posts}}<li>
-      <h3 class="govuk-heading-s govuk-!-margin-bottom-2"><a class="govuk-link" href="{{.URL}}">{{.Title}}</a></h3>
-      <p class="govuk-body govuk-!-margin-bottom-2">{{.Summary}}</p>
-      <p class="govuk-body-s govuk-!-margin-bottom-0"><time datetime="{{.Created}}">{{.DateLabel}}</time> · {{.Comments}} {{if eq .Comments 1}}Kommentar{{else}}Kommentare{{end}}</p>
-    </li>{{end}}
-  </ul>{{else}}<p class="govuk-body">Noch keine öffentlichen Beiträge.</p>{{end}}
-</section>
-{{template "list-pagination" .Forum.Pagination}}
-{{end}}
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  <section aria-labelledby="profile-posts">
+    <h2 class="govuk-heading-m" id="profile-posts">Öffentliche Beiträge</h2>
+    {{ if .Forum.Posts }}
+      <ul class="govuk-list app-forum-posts" role="list">
+        {{ range .Forum.Posts }}
+          <li>
+            <h3 class="govuk-heading-s govuk-!-margin-bottom-2">
+              <a class="govuk-link" href="{{ .URL }}">{{ .Title }}</a>
+            </h3>
+            <p class="govuk-body govuk-!-margin-bottom-2">{{ .Summary }}</p>
+            <p class="govuk-body-s govuk-!-margin-bottom-0">
+              <time datetime="{{ .Created }}">{{ .DateLabel }}</time> ·
+              {{ .Comments }}
+              {{ if eq .Comments 1 }}Kommentar{{ else }}Kommentare{{ end }}
+            </p>
+          </li>
+        {{ end }}
+      </ul>
+    {{ else }}
+      <p class="govuk-body">Noch keine öffentlichen Beiträge.</p>
+    {{ end }}
+  </section>
+  {{ template "list-pagination" .Forum.Pagination }}
+{{ end }}

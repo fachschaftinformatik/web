@@ -1,46 +1,165 @@
-{{define "sidebar"}}{{end}}
-{{define "legal-contact"}}
-<p class="govuk-body">{{.Organization.FormalName}}<br>{{.Organization.Institution}}<br>{{.Organization.Street}}<br>{{.Organization.PostalCode}} {{.Organization.City}}<br>{{.Organization.Country}}</p>
-<p class="govuk-body">E-Mail: <a class="govuk-link" href="mailto:{{.Organization.ContactEmail}}">{{.Organization.ContactEmail}}</a>{{if .ChairEmail}}<br>Vorsitz: <a class="govuk-link" href="mailto:{{.ChairEmail}}">{{.ChairEmail}}</a>{{end}}</p>
-{{end}}
-{{define "content"}}
-<p class="govuk-body-s">Zuletzt aktualisiert am {{.LegalUpdatedLabel}}</p>
-{{if eq .Legal.Kind "impressum"}}
-<h2 class="govuk-heading-m">Anbieter</h2>
-{{template "legal-contact" .}}
-<p class="govuk-body">Die {{.Organization.ShortName}} ist Teil der Studierendenschaft ({{.Organization.Institution}}). Die Studierendenschaft ist eine rechtsfähige Gliedkörperschaft der Hochschule (§§ 53 und 56 Hochschulgesetz NRW).</p>
-<h2 class="govuk-heading-m">Vertretung und inhaltliche Verantwortung</h2>
-<p class="govuk-body">Die {{.Organization.ShortName}} wird durch die Fachschaftsvertretung vertreten. Vorsitz und verantwortlich für die redaktionellen Inhalte nach § 18 Absatz 2 MStV: {{range $i, $person := .Legal.Chair}}{{if $i}}, {{end}}{{$person.Name}}{{else}}der <a class="govuk-link" href="/team#team-board">Vorsitz der Fachschaftsvertretung</a>{{end}}. Anschrift und E-Mail wie oben.</p>
-<p class="govuk-body">Die <a class="govuk-link" href="/team">aktuellen Mitglieder und Zuständigkeiten</a> findest du auf der Mitgliederseite.</p>
-<p class="govuk-body">Die Rechtsaufsicht über die Studierendenschaft führt das <a class="govuk-link" href="{{.Organization.SupervisionURL}}">{{.Organization.SupervisionName}}</a>.</p>
-<h2 class="govuk-heading-m">Technischer Betrieb</h2>
-<p class="govuk-body">Hosting und E-Mail-Betrieb: <a class="govuk-link" href="{{.Organization.HostingURL}}">{{.Organization.HostingName}}</a>.</p>
-{{else if eq .Legal.Kind "datenschutz"}}
-<h2 class="govuk-heading-m">Verantwortlich und Kontakt</h2>
-{{template "legal-contact" .}}
-<p class="govuk-body">Bei Fragen zum Datenschutz und zur Ausübung deiner Rechte wende dich an uns. Angaben zum Vorsitz findest du im <a class="govuk-link" href="/impressum">Impressum</a>.</p>
-<h2 class="govuk-heading-m">Website und technischer Betrieb</h2>
-<p class="govuk-body">Beim Aufruf werden technisch notwendige Verbindungsdaten verarbeitet, insbesondere IP-Adresse, angeforderte Seite, Zeitpunkt und Browserinformationen. Das dient der Auslieferung und Sicherheit der Website. Hosting und E-Mail-Betrieb: {{.Organization.HostingName}}. Die mit dem Betrieb betrauten Personen können hierfür auf die erforderlichen Daten zugreifen.</p>
-<p class="govuk-body">Die Website verwendet keine Analyse- oder Werbetracker. Schriften, Skripte und Veranstaltungsbilder werden von dieser Website geladen. Externe Dienste wie Instagram oder Discord werden nur verlinkt; erst wenn du einem solchen Link folgst, gelten die Datenschutzinformationen des jeweiligen Anbieters.</p>
-<h2 class="govuk-heading-m">Benutzerkonto und Beiträge</h2>
-<p class="govuk-body">Für ein Konto speichern wir Anzeigename, E-Mail-Adresse, einen Passwort-Hash, den gewählten Studiengang sowie Konto- und Berechtigungsstatus. Hinzu kommen deine Beiträge, Kommentare, Bewertungen, Archiveinreichungen und gespeicherten Archivfilter, wenn du diese Funktionen nutzt. Bestätigungs- und Passwort-E-Mails werden über die Infrastruktur von {{.Organization.HostingName}} versendet.</p>
-<p class="govuk-body">Öffentliche Beiträge und Kommentare sowie die zugehörigen Zeitangaben sind für alle sichtbar. Bei öffentlichen Profilen erscheint dein Anzeigename; bei privaten Profilen wird er in Beiträgen als „Anonym“ angezeigt. Einzelne Bewertungen werden deinem Konto intern zugeordnet; öffentlich erscheint der Punktestand. Archiveinreichungen sind zunächst für die zuständigen Prüfenden sichtbar. Lade keine personenbezogenen Daten anderer Personen ohne entsprechende Berechtigung hoch.</p>
-<h2 class="govuk-heading-m">Notwendiges Cookie</h2>
-<p class="govuk-body">Für Anmeldung und den Schutz von Formularen nutzen wir das Cookie <code>web-session</code> mit einer Laufzeit von acht Stunden. Es enthält eine zufällige Kennung. Beim Abmelden wird es entfernt. Ohne dieses Cookie kannst du öffentliche Seiten lesen, aber keine kontogebundenen Funktionen nutzen. Die Speicherung ist nach § 25 Absatz 2 Nummer 2 TDDDG für diese ausdrücklich angeforderten Funktionen erforderlich.</p>
-<h2 class="govuk-heading-m">Kontakt und Fotos</h2>
-<p class="govuk-body">Wenn du uns schreibst, verarbeiten wir deine Kontaktdaten und den Inhalt deiner Nachricht zur Bearbeitung deines Anliegens. Auf der Website veröffentlichen wir außerdem Namen und Funktionen der Fachschaftsmitglieder sowie Fotos und Berichte aus dem Fachschaftsleben. Wenn du Fragen zu einem Foto von dir hast oder dessen Entfernung möchtest, schicke uns bitte den Link.</p>
-<h2 class="govuk-heading-m">Rechtsgrundlagen und Speicherdauer</h2>
-<p class="govuk-body">Die Verarbeitung zur Erfüllung der Aufgaben der studentischen Selbstverwaltung beruht auf Artikel 6 Absatz 1 Buchstabe e DSGVO in Verbindung mit §§ 53 und 56 Hochschulgesetz NRW. Soweit eine Verarbeitung auf deiner Einwilligung beruht, gilt Artikel 6 Absatz 1 Buchstabe a DSGVO; du kannst diese Einwilligung jederzeit für die Zukunft widerrufen.</p>
-<p class="govuk-body">Kontodaten speichern wir für die Dauer der Kontonutzung, öffentliche Inhalte für die Dauer ihrer Veröffentlichung. Kontaktanfragen werden aufbewahrt, solange die Bearbeitung und etwaige gesetzliche Aufbewahrungspflichten dies erfordern. Sitzungen laufen nach acht Stunden ab. Daten werden gelöscht oder anonymisiert, wenn der jeweilige Zweck entfällt und keine Aufbewahrungspflicht entgegensteht. Für Löschanfragen wende dich bitte an uns.</p>
-<h2 class="govuk-heading-m">Deine Rechte</h2>
-<p class="govuk-body">Du hast nach Maßgabe der DSGVO Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung und Datenübertragbarkeit. Du kannst aus Gründen deiner besonderen Situation der Verarbeitung nach Artikel 6 Absatz 1 Buchstabe e DSGVO widersprechen. Eine erteilte Einwilligung kannst du jederzeit widerrufen. Es findet keine automatisierte Entscheidungsfindung einschließlich Profiling statt. Ein Konto ist freiwillig; ohne die erforderlichen Angaben stehen dir die kontogebundenen Funktionen nicht zur Verfügung.</p>
-<p class="govuk-body">Du kannst dich bei der <a class="govuk-link" href="{{.Organization.PrivacyAuthorityURL}}">{{.Organization.PrivacyAuthorityName}}</a> beschweren. Den vom Betreiber benannten Datenschutzbeauftragten und dessen Kontaktdaten findest du in den <a class="govuk-link" href="{{.Organization.PrivacyURL}}">Datenschutzinformationen des Betreibers</a>.</p>
-{{else}}
-<p class="govuk-body">Wir möchten diese Website für alle nutzbar machen. Wir verwenden dafür unter anderem beschriftete Formulare, sichtbare Tastaturfokusse und eine Navigation, die auch ohne Maus bedienbar ist.</p>
-<h2 class="govuk-heading-m">Stand der Prüfung</h2>
-<p class="govuk-body">Die Website wurde mit automatisierten Prüfungen und einzelnen Tastaturtests überprüft. Eine vollständige Prüfung nach den geltenden Barrierefreiheitsanforderungen und mit Screenreadern steht noch aus. Eine vollständige Barrierefreiheit können wir deshalb derzeit nicht bestätigen.</p>
-<p class="govuk-body">Insbesondere können ältere Dokumente und importierte Fotos noch unvollständige Textalternativen enthalten.</p>
-<h2 class="govuk-heading-m">Barrieren melden</h2>
-<p class="govuk-body">Wenn du auf eine Barriere stößt oder Inhalte in einer zugänglichen Form benötigst, schreibe an <a class="govuk-link" href="mailto:{{.Organization.ContactEmail}}">{{.Organization.ContactEmail}}</a>. Nenne möglichst die betroffene Seite und beschreibe, wobei du Unterstützung brauchst.</p>
-{{end}}
-{{end}}
+{{ define "sidebar" }}{{ end }}
+{{ define "legal-contact" }}
+  <p class="govuk-body">
+    {{ .Organization.FormalName }}<br />{{ .Organization.Institution }}<br />{{ .Organization.Street }}<br />{{ .Organization.PostalCode }}
+    {{ .Organization.City }}<br />{{ .Organization.Country }}
+  </p>
+  <p class="govuk-body">
+    E-Mail:
+    <a class="govuk-link" href="mailto:{{ .Organization.ContactEmail }}"
+      >{{ .Organization.ContactEmail }}</a
+    >{{ if .ChairEmail }}
+      <br />Vorsitz: <a class="govuk-link" href="mailto:{{ .ChairEmail }}">{{ .ChairEmail }}</a>
+    {{ end }}
+  </p>
+{{ end }}
+{{ define "content" }}
+  <p class="govuk-body-s">Zuletzt aktualisiert am {{ .LegalUpdatedLabel }}</p>
+  {{ if eq .Legal.Kind "impressum" }}
+    <h2 class="govuk-heading-m">Anbieter</h2>
+    {{ template "legal-contact" . }}
+    <p class="govuk-body">
+      Die {{ .Organization.ShortName }} ist Teil der Studierendenschaft
+      ({{ .Organization.Institution }}). Die Studierendenschaft ist eine rechtsfähige
+      Gliedkörperschaft der Hochschule (§§ 53 und 56 Hochschulgesetz NRW).
+    </p>
+    <h2 class="govuk-heading-m">Vertretung und inhaltliche Verantwortung</h2>
+    <p class="govuk-body">
+      Die {{ .Organization.ShortName }} wird durch die Fachschaftsvertretung vertreten. Vorsitz und
+      verantwortlich für die redaktionellen Inhalte nach § 18 Absatz 2 MStV:
+      {{ range $i, $person := .Legal.Chair }}
+        {{ if $i }},{{ end }}{{ $person.Name }}
+      {{ else }}
+        der <a class="govuk-link" href="/team#team-board">Vorsitz der Fachschaftsvertretung</a>
+      {{ end }}.
+      Anschrift und E-Mail wie oben.
+    </p>
+    <p class="govuk-body">
+      Die <a class="govuk-link" href="/team">aktuellen Mitglieder und Zuständigkeiten</a> findest du
+      auf der Mitgliederseite.
+    </p>
+    <p class="govuk-body">
+      Die Rechtsaufsicht über die Studierendenschaft führt das
+      <a class="govuk-link" href="{{ .Organization.SupervisionURL }}"
+        >{{ .Organization.SupervisionName }}</a
+      >.
+    </p>
+    <h2 class="govuk-heading-m">Technischer Betrieb</h2>
+    <p class="govuk-body">
+      Hosting und E-Mail-Betrieb:
+      <a class="govuk-link" href="{{ .Organization.HostingURL }}">{{ .Organization.HostingName }}</a
+      >.
+    </p>
+  {{ else if eq .Legal.Kind "datenschutz" }}
+    <h2 class="govuk-heading-m">Verantwortlich und Kontakt</h2>
+    {{ template "legal-contact" . }}
+    <p class="govuk-body">
+      Bei Fragen zum Datenschutz und zur Ausübung deiner Rechte wende dich an uns. Angaben zum
+      Vorsitz findest du im
+      <a class="govuk-link" href="/impressum">Impressum</a>.
+    </p>
+    <h2 class="govuk-heading-m">Website und technischer Betrieb</h2>
+    <p class="govuk-body">
+      Beim Aufruf werden technisch notwendige Verbindungsdaten verarbeitet, insbesondere IP-Adresse,
+      angeforderte Seite, Zeitpunkt und Browserinformationen. Das dient der Auslieferung und
+      Sicherheit der Website. Hosting und E-Mail-Betrieb: {{ .Organization.HostingName }}. Die mit
+      dem Betrieb betrauten Personen können hierfür auf die erforderlichen Daten zugreifen.
+    </p>
+    <p class="govuk-body">
+      Die Website verwendet keine Analyse- oder Werbetracker. Schriften, Skripte und
+      Veranstaltungsbilder werden von dieser Website geladen. Externe Dienste wie Instagram oder
+      Discord werden nur verlinkt; erst wenn du einem solchen Link folgst, gelten die
+      Datenschutzinformationen des jeweiligen Anbieters.
+    </p>
+    <h2 class="govuk-heading-m">Benutzerkonto und Beiträge</h2>
+    <p class="govuk-body">
+      Für ein Konto speichern wir Anzeigename, E-Mail-Adresse, einen Passwort-Hash, den gewählten
+      Studiengang sowie Konto- und Berechtigungsstatus. Hinzu kommen deine Beiträge, Kommentare,
+      Bewertungen, Archiveinreichungen und gespeicherten Archivfilter, wenn du diese Funktionen
+      nutzt. Bestätigungs- und Passwort-E-Mails werden über die Infrastruktur von
+      {{ .Organization.HostingName }} versendet.
+    </p>
+    <p class="govuk-body">
+      Öffentliche Beiträge und Kommentare sowie die zugehörigen Zeitangaben sind für alle sichtbar.
+      Bei öffentlichen Profilen erscheint dein Anzeigename; bei privaten Profilen wird er in
+      Beiträgen als „Anonym“ angezeigt. Einzelne Bewertungen werden deinem Konto intern zugeordnet;
+      öffentlich erscheint der Punktestand. Archiveinreichungen sind zunächst für die zuständigen
+      Prüfenden sichtbar. Lade keine personenbezogenen Daten anderer Personen ohne entsprechende
+      Berechtigung hoch.
+    </p>
+    <h2 class="govuk-heading-m">Notwendiges Cookie</h2>
+    <p class="govuk-body">
+      Für Anmeldung und den Schutz von Formularen nutzen wir das Cookie <code>web-session</code> mit
+      einer Laufzeit von acht Stunden. Es enthält eine zufällige Kennung. Beim Abmelden wird es
+      entfernt. Ohne dieses Cookie kannst du öffentliche Seiten lesen, aber keine kontogebundenen
+      Funktionen nutzen. Die Speicherung ist nach § 25 Absatz 2 Nummer 2 TDDDG für diese
+      ausdrücklich angeforderten Funktionen erforderlich.
+    </p>
+    <h2 class="govuk-heading-m">Kontakt und Fotos</h2>
+    <p class="govuk-body">
+      Wenn du uns schreibst, verarbeiten wir deine Kontaktdaten und den Inhalt deiner Nachricht zur
+      Bearbeitung deines Anliegens. Auf der Website veröffentlichen wir außerdem Namen und
+      Funktionen der Fachschaftsmitglieder sowie Fotos und Berichte aus dem Fachschaftsleben. Wenn
+      du Fragen zu einem Foto von dir hast oder dessen Entfernung möchtest, schicke uns bitte den
+      Link.
+    </p>
+    <h2 class="govuk-heading-m">Rechtsgrundlagen und Speicherdauer</h2>
+    <p class="govuk-body">
+      Die Verarbeitung zur Erfüllung der Aufgaben der studentischen Selbstverwaltung beruht auf
+      Artikel 6 Absatz 1 Buchstabe e DSGVO in Verbindung mit §§ 53 und 56 Hochschulgesetz NRW.
+      Soweit eine Verarbeitung auf deiner Einwilligung beruht, gilt Artikel 6 Absatz 1 Buchstabe a
+      DSGVO; du kannst diese Einwilligung jederzeit für die Zukunft widerrufen.
+    </p>
+    <p class="govuk-body">
+      Kontodaten speichern wir für die Dauer der Kontonutzung, öffentliche Inhalte für die Dauer
+      ihrer Veröffentlichung. Kontaktanfragen werden aufbewahrt, solange die Bearbeitung und etwaige
+      gesetzliche Aufbewahrungspflichten dies erfordern. Sitzungen laufen nach acht Stunden ab.
+      Daten werden gelöscht oder anonymisiert, wenn der jeweilige Zweck entfällt und keine
+      Aufbewahrungspflicht entgegensteht. Für Löschanfragen wende dich bitte an uns.
+    </p>
+    <h2 class="govuk-heading-m">Deine Rechte</h2>
+    <p class="govuk-body">
+      Du hast nach Maßgabe der DSGVO Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der
+      Verarbeitung und Datenübertragbarkeit. Du kannst aus Gründen deiner besonderen Situation der
+      Verarbeitung nach Artikel 6 Absatz 1 Buchstabe e DSGVO widersprechen. Eine erteilte
+      Einwilligung kannst du jederzeit widerrufen. Es findet keine automatisierte
+      Entscheidungsfindung einschließlich Profiling statt. Ein Konto ist freiwillig; ohne die
+      erforderlichen Angaben stehen dir die kontogebundenen Funktionen nicht zur Verfügung.
+    </p>
+    <p class="govuk-body">
+      Du kannst dich bei der
+      <a class="govuk-link" href="{{ .Organization.PrivacyAuthorityURL }}"
+        >{{ .Organization.PrivacyAuthorityName }}</a
+      >
+      beschweren. Den vom Betreiber benannten Datenschutzbeauftragten und dessen Kontaktdaten
+      findest du in den
+      <a class="govuk-link" href="{{ .Organization.PrivacyURL }}"
+        >Datenschutzinformationen des Betreibers</a
+      >.
+    </p>
+  {{ else }}
+    <p class="govuk-body">
+      Wir möchten diese Website für alle nutzbar machen. Wir verwenden dafür unter anderem
+      beschriftete Formulare, sichtbare Tastaturfokusse und eine Navigation, die auch ohne Maus
+      bedienbar ist.
+    </p>
+    <h2 class="govuk-heading-m">Stand der Prüfung</h2>
+    <p class="govuk-body">
+      Die Website wurde mit automatisierten Prüfungen und einzelnen Tastaturtests überprüft. Eine
+      vollständige Prüfung nach den geltenden Barrierefreiheitsanforderungen und mit Screenreadern
+      steht noch aus. Eine vollständige Barrierefreiheit können wir deshalb derzeit nicht
+      bestätigen.
+    </p>
+    <p class="govuk-body">
+      Insbesondere können ältere Dokumente und importierte Fotos noch unvollständige
+      Textalternativen enthalten.
+    </p>
+    <h2 class="govuk-heading-m">Barrieren melden</h2>
+    <p class="govuk-body">
+      Wenn du auf eine Barriere stößt oder Inhalte in einer zugänglichen Form benötigst, schreibe an
+      <a class="govuk-link" href="mailto:{{ .Organization.ContactEmail }}"
+        >{{ .Organization.ContactEmail }}</a
+      >. Nenne möglichst die betroffene Seite und beschreibe, wobei du Unterstützung brauchst.
+    </p>
+  {{ end }}
+{{ end }}

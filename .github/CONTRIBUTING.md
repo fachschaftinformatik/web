@@ -52,6 +52,10 @@ embedded; rebuild the executable after changing them.
 Run `sh tools/vendor.sh` with curl, tar and Dart Sass installed to refresh the
 pinned GOV.UK, HTMX and TinyMCE browser assets and their licenses.
 
+Format HTML templates with Prettier 3.6.2 and `prettier-plugin-go-template` 0.0.15,
+using the `go-template` parser, CSS whitespace sensitivity and a print width of 100.
+Use whitespace-trimming template actions inside URL and enumerated attributes.
+
 ## Dependency updates
 
 Renovate runs on Mondays at 08:00 Europe/Berlin, with automatic daylight-saving adjustment.

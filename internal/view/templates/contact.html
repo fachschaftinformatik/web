@@ -1,24 +1,62 @@
-{{define "sidebar"}}{{end}}
-{{define "content"}}
-<p class="govuk-body">Du hast eine Frage zum Studium, brauchst Unterstützung oder möchtest etwas anregen? Melde dich bei uns. Hier findest du die {{.Organization.ShortName}}: {{.Organization.Institution}}, {{.Organization.City}}.</p>
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  <p class="govuk-body">
+    Du hast eine Frage zum Studium, brauchst Unterstützung oder möchtest etwas anregen? Melde dich
+    bei uns. Hier findest du die {{ .Organization.ShortName }}: {{ .Organization.Institution }},
+    {{ .Organization.City }}.
+  </p>
 
-<h2 class="govuk-heading-l">Schreib uns</h2>
-<p class="govuk-body">Bei Fragen und Anliegen erreichst du uns per E-Mail:</p>
-<ul class="govuk-list govuk-list--bullet">
-  <li><a class="govuk-link" href="mailto:{{.Organization.ContactEmail}}">{{.Organization.ContactEmail}}</a> für allgemeine Fragen.</li>
-  {{if .ChairEmail}}<li><a class="govuk-link" href="mailto:{{.ChairEmail}}">{{.ChairEmail}}</a> für Anliegen an den Vorstand.</li>{{end}}
-  {{if .PublicityEmail}}<li><a class="govuk-link" href="mailto:{{.PublicityEmail}}">{{.PublicityEmail}}</a> für Öffentlichkeitsarbeit.</li>{{end}}
-</ul>
-<p class="govuk-body">Du suchst eine bestimmte Ansprechperson? Auf der <a class="govuk-link" href="/team">Mitgliederseite</a> findest du den Vorstand, die Referate und die Projektstellen.</p>
+  <h2 class="govuk-heading-l">Schreib uns</h2>
+  <p class="govuk-body">Bei Fragen und Anliegen erreichst du uns per E-Mail:</p>
+  <ul class="govuk-list govuk-list--bullet">
+    <li>
+      <a class="govuk-link" href="mailto:{{ .Organization.ContactEmail }}"
+        >{{ .Organization.ContactEmail }}</a
+      >
+      für allgemeine Fragen.
+    </li>
+    {{ if .ChairEmail }}
+      <li>
+        <a class="govuk-link" href="mailto:{{ .ChairEmail }}">{{ .ChairEmail }}</a> für Anliegen an
+        den Vorstand.
+      </li>
+    {{ end }}
+    {{ if .PublicityEmail }}
+      <li>
+        <a class="govuk-link" href="mailto:{{ .PublicityEmail }}">{{ .PublicityEmail }}</a> für
+        Öffentlichkeitsarbeit.
+      </li>
+    {{ end }}
+  </ul>
+  <p class="govuk-body">
+    Du suchst eine bestimmte Ansprechperson? Auf der
+    <a class="govuk-link" href="/team">Mitgliederseite</a> findest du den Vorstand, die Referate und
+    die Projektstellen.
+  </p>
 
-<h2 class="govuk-heading-l">Bleib in Verbindung</h2>
-<p class="govuk-body">Tausch dich mit anderen Studierenden aus und erfahre, was in der Fachschaft passiert:</p>
-<ul class="govuk-list govuk-list--bullet">
-  {{range .Organization.SocialLinks}}<li><a class="govuk-link" href="{{.URL}}">{{.Title}}</a></li>{{end}}
-</ul>
-<p class="govuk-body">Auch in unserem <a class="govuk-link" href="/discussions">Forum</a> kannst du Fragen stellen, Tipps teilen und eigene Ideen einbringen.</p>
+  <h2 class="govuk-heading-l">Bleib in Verbindung</h2>
+  <p class="govuk-body">
+    Tausch dich mit anderen Studierenden aus und erfahre, was in der Fachschaft passiert:
+  </p>
+  <ul class="govuk-list govuk-list--bullet">
+    {{ range .Organization.SocialLinks }}
+      <li><a class="govuk-link" href="{{ .URL }}">{{ .Title }}</a></li>
+    {{ end }}
+  </ul>
+  <p class="govuk-body">
+    Auch in unserem <a class="govuk-link" href="/discussions">Forum</a> kannst du Fragen stellen,
+    Tipps teilen und eigene Ideen einbringen.
+  </p>
 
-<h2 class="govuk-heading-l">Komm vorbei</h2>
-{{if .Organization.Office}}<p class="govuk-body">Unser Fachschaftsbüro findest du am Campus {{.Organization.City}} in Raum <strong>{{.Organization.Office}}</strong>.</p>{{end}}
-<p class="govuk-body">{{.Organization.Institution}}<br>{{.Organization.Street}}<br>{{.Organization.PostalCode}} {{.Organization.City}}</p>
-{{end}}
+  <h2 class="govuk-heading-l">Komm vorbei</h2>
+  {{ if .Organization.Office }}
+    <p class="govuk-body">
+      Unser Fachschaftsbüro findest du am Campus {{ .Organization.City }} in Raum
+      <strong>{{ .Organization.Office }}</strong>.
+    </p>
+  {{ end }}
+  <p class="govuk-body">
+    {{ .Organization.Institution }}<br />{{ .Organization.Street }}<br />{{ .Organization.PostalCode }}
+    {{ .Organization.City }}
+  </p>
+{{ end }}

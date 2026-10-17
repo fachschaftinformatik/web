@@ -1,122 +1,321 @@
-{{define "sidebar"}}{{end}}
-{{define "content"}}
-<div class="app-archive-intro">
-  <p class="govuk-body">Bereite dich mit Klausurrekonstruktionen auf deine Prüfungen vor. Wir nennen sie kurz Rekos. Du kannst auch eigene Rekos einreichen und anderen beim Lernen helfen.</p>
-  <div class="govuk-button-group">
-    <a class="govuk-button" data-module="govuk-button" href="/archive/new">Reko einreichen</a>
-    {{if .SignedIn}}<a class="govuk-button govuk-button--secondary" data-module="govuk-button" href="/archive/requests">Meine Einreichungen</a>{{end}}
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  <div class="app-archive-intro">
+    <p class="govuk-body">
+      Bereite dich mit Klausurrekonstruktionen auf deine Prüfungen vor. Wir nennen sie kurz Rekos.
+      Du kannst auch eigene Rekos einreichen und anderen beim Lernen helfen.
+    </p>
+    <div class="govuk-button-group">
+      <a class="govuk-button" data-module="govuk-button" href="/archive/new">Reko einreichen</a>
+      {{ if .SignedIn }}
+        <a
+          class="govuk-button govuk-button--secondary"
+          data-module="govuk-button"
+          href="/archive/requests"
+          >Meine Einreichungen</a
+        >
+      {{ end }}
+    </div>
   </div>
-</div>
-<form id="archive-search" class="app-archive-layout" method="get" action="/archive" novalidate
-  hx-get="/archive" hx-target="#archive-results" hx-swap="outerHTML" hx-push-url="true"
-   hx-trigger="submit" hx-sync="this:replace" hx-indicator="#search-progress">
-  <input type="hidden" name="applied" value="1">
-  <div class="app-archive-search">
-    <div class="govuk-form-group">
-      <label class="govuk-label govuk-label--s" for="q">Modul oder Thema suchen</label>
-      <div class="app-archive-search__controls">
-        <input class="govuk-input" id="q" name="q" type="search" value="{{.Archive.Filter.Query}}">
-        <button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" data-module="govuk-button" type="submit">Suchen</button>
+  <form
+    id="archive-search"
+    class="app-archive-layout"
+    method="get"
+    action="/archive"
+    novalidate
+    hx-get="/archive"
+    hx-target="#archive-results"
+    hx-swap="outerHTML"
+    hx-push-url="true"
+    hx-trigger="submit"
+    hx-sync="this:replace"
+    hx-indicator="#search-progress"
+  >
+    <input type="hidden" name="applied" value="1" />
+    <div class="app-archive-search">
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--s" for="q">Modul oder Thema suchen</label>
+        <div class="app-archive-search__controls">
+          <input
+            class="govuk-input"
+            id="q"
+            name="q"
+            type="search"
+            value="{{ .Archive.Filter.Query }}"
+          />
+          <button
+            class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
+            data-module="govuk-button"
+            type="submit"
+          >
+            Suchen
+          </button>
+        </div>
+      </div>
+      <p class="govuk-body-s app-search-progress" id="search-progress" role="status">
+        Suche läuft …
+      </p>
+      <div class="govuk-inset-text" id="search-error" role="alert" hidden>
+        Suche fehlgeschlagen. Bitte erneut suchen oder
+        <a class="govuk-link" href="/archive">das Archiv neu laden</a>.
       </div>
     </div>
-    <p class="govuk-body-s app-search-progress" id="search-progress" role="status">Suche läuft …</p>
-    <div class="govuk-inset-text" id="search-error" role="alert" hidden>Suche fehlgeschlagen. Bitte erneut suchen oder <a class="govuk-link" href="/archive">das Archiv neu laden</a>.</div>
-  </div>
-  <details class="govuk-details app-archive-filters" data-active="{{if .Archive.FilterCount}}true{{else}}false{{end}}" open>
-    <summary class="govuk-details__summary"><span class="govuk-details__summary-text" id="filter-label">Filter{{if .Archive.FilterCount}} ({{.Archive.FilterCount}}){{end}}</span></summary>
-    <div class="app-archive-filters__content">
-      <div class="govuk-form-group">
-        <fieldset class="govuk-fieldset">
-          <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Abschluss</legend>
-          <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
-            {{range .Archive.Degrees}}
-            <div class="govuk-checkboxes__item">
-              <input class="govuk-checkboxes__input" id="degree-{{.Name}}" name="degree" type="checkbox" value="{{.Name}}" {{if .Selected}}checked{{end}}>
-              <label class="govuk-label govuk-checkboxes__label" for="degree-{{.Name}}">{{.Name}}</label>
+    <details
+      class="govuk-details app-archive-filters"
+      data-active="{{ if .Archive.FilterCount }}
+        true
+      {{ else }}
+        false
+      {{ end }}"
+      open
+    >
+      <summary class="govuk-details__summary">
+        <span class="govuk-details__summary-text" id="filter-label"
+          >Filter{{ if .Archive.FilterCount }}({{ .Archive.FilterCount }}){{ end }}</span
+        >
+      </summary>
+      <div class="app-archive-filters__content">
+        <div class="govuk-form-group">
+          <fieldset class="govuk-fieldset">
+            <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Abschluss</legend>
+            <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+              {{ range .Archive.Degrees }}
+                <div class="govuk-checkboxes__item">
+                  <input
+                    class="govuk-checkboxes__input"
+                    id="degree-{{ .Name }}"
+                    name="degree"
+                    type="checkbox"
+                    value="{{ .Name }}"
+                    {{ if .Selected }}checked{{ end }}
+                  />
+                  <label class="govuk-label govuk-checkboxes__label" for="degree-{{ .Name }}"
+                    >{{ .Name }}</label
+                  >
+                </div>
+              {{ end }}
             </div>
-            {{end}}
-          </div>
-        </fieldset>
-      </div>
-      <div class="govuk-form-group">
-        <fieldset class="govuk-fieldset" id="program-filter">
-          <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Studiengang</legend>
-          <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
-            {{range $index, $program := .Archive.Programs}}
-            <div class="govuk-checkboxes__item">
-              <input class="govuk-checkboxes__input" id="program-{{$index}}" name="program" type="checkbox" value="{{.Name}}" {{if .Selected}}checked{{end}}>
-              <label class="govuk-label govuk-checkboxes__label" for="program-{{$index}}">{{.Name}}</label>
+          </fieldset>
+        </div>
+        <div class="govuk-form-group">
+          <fieldset class="govuk-fieldset" id="program-filter">
+            <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Studiengang</legend>
+            <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+              {{ range $index, $program := .Archive.Programs }}
+                <div class="govuk-checkboxes__item">
+                  <input
+                    class="govuk-checkboxes__input"
+                    id="program-{{ $index }}"
+                    name="program"
+                    type="checkbox"
+                    value="{{ .Name }}"
+                    {{ if .Selected }}checked{{ end }}
+                  />
+                  <label class="govuk-label govuk-checkboxes__label" for="program-{{ $index }}"
+                    >{{ .Name }}</label
+                  >
+                </div>
+              {{ end }}
             </div>
-            {{end}}
-          </div>
-        </fieldset>
-      </div>
-      <div class="govuk-form-group">
-        <fieldset class="govuk-fieldset" id="version-filter">
-          <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Prüfungsordnung</legend>
-          <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
-            {{range .Archive.Versions}}
-            <div class="govuk-checkboxes__item">
-              <input class="govuk-checkboxes__input" id="version-{{.Name}}" name="version" type="checkbox" value="{{.Name}}" {{if .Selected}}checked{{end}}>
-               <label class="govuk-label govuk-checkboxes__label" for="version-{{.Name}}">{{poLabel .Name}}</label>
+          </fieldset>
+        </div>
+        <div class="govuk-form-group">
+          <fieldset class="govuk-fieldset" id="version-filter">
+            <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
+              Prüfungsordnung
+            </legend>
+            <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+              {{ range .Archive.Versions }}
+                <div class="govuk-checkboxes__item">
+                  <input
+                    class="govuk-checkboxes__input"
+                    id="version-{{ .Name }}"
+                    name="version"
+                    type="checkbox"
+                    value="{{ .Name }}"
+                    {{ if .Selected }}checked{{ end }}
+                  />
+                  <label class="govuk-label govuk-checkboxes__label" for="version-{{ .Name }}"
+                    >{{ poLabel .Name }}</label
+                  >
+                </div>
+              {{ end }}
             </div>
-            {{end}}
-          </div>
-        </fieldset>
+          </fieldset>
+        </div>
+        <button
+          class="govuk-button govuk-button--secondary govuk-!-margin-bottom-4"
+          data-module="govuk-button"
+          type="submit"
+        >
+          Filter anwenden
+        </button>
+        <p class="govuk-body govuk-!-margin-bottom-0">
+          <a class="govuk-link" href="/archive?applied=1">Alles zurücksetzen</a>
+        </p>
+        {{ if .SignedIn }}
+          <p class="govuk-body govuk-!-margin-top-3 govuk-!-margin-bottom-0">
+            <a class="govuk-link" href="/archive/preferences">Voreinstellungen ändern</a>
+          </p>
+        {{ end }}
       </div>
-      <button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-4" data-module="govuk-button" type="submit">Filter anwenden</button>
-       <p class="govuk-body govuk-!-margin-bottom-0"><a class="govuk-link" href="/archive?applied=1">Alles zurücksetzen</a></p>
-       {{if .SignedIn}}<p class="govuk-body govuk-!-margin-top-3 govuk-!-margin-bottom-0"><a class="govuk-link" href="/archive/preferences">Voreinstellungen ändern</a></p>{{end}}
-    </div>
-  </details>
-  {{template "results" .}}
-</form>
-{{end}}
+    </details>
+    {{ template "results" . }}
+  </form>
+{{ end }}
 
-{{define "results"}}
-<section id="archive-results" class="app-archive-results" aria-labelledby="results-heading" data-document-title="{{if .DocumentTitle}}{{.DocumentTitle}}{{else}}Altklausuren{{end}} · {{.Organization.Name}}">
-  <h2 class="govuk-heading-m" id="results-heading" tabindex="-1">{{if eq .Archive.Total 0}}Keine Module gefunden{{else if eq .Archive.Total 1}}1 Modul gefunden{{else}}{{.Archive.Total}} Module gefunden{{end}}</h2>
-  {{if gt .Archive.Pages 1}}<p class="govuk-body-s">Seite {{.Archive.Page}} von {{.Archive.Pages}}</p>{{end}}
-  {{if .Archive.Modules}}
-  <table class="govuk-table app-archive-table">
-    <caption class="govuk-visually-hidden">Klausurrekonstruktionen nach Modul</caption>
-    <colgroup>
-      <col class="app-archive-table__module">
-      <col class="app-archive-table__documents">
-    </colgroup>
-    <thead class="govuk-table__head">
-      <tr class="govuk-table__row">
-        <th class="govuk-table__header" scope="col">Modul</th>
-        <th class="govuk-table__header" scope="col">Rekos</th>
-      </tr>
-    </thead>
-    <tbody class="govuk-table__body">
-      {{range .Archive.Modules}}
-      {{$title := .Title}}
-      <tr class="govuk-table__row">
-        <th class="govuk-table__header" scope="row">
-          {{$title}}
-        </th>
-        <td class="govuk-table__cell">
-          {{with index .Exams 0}}<a class="govuk-link" href="{{.URL}}">Reko vom {{.Date}}<span class="govuk-visually-hidden"> für {{$title}}</span></a> (PDF, {{.Size}}){{end}}
-          {{if gt (len .Exams) 1}}<p class="govuk-body govuk-!-margin-top-3 govuk-!-margin-bottom-0"><a class="govuk-link" href="{{$.Archive.ModuleURL .}}">Alle {{len .Exams}} Rekos ansehen<span class="govuk-visually-hidden"> für {{$title}}</span></a></p>{{end}}
-        </td>
-      </tr>
-      {{end}}
-    </tbody>
-  </table>
-  {{if gt .Archive.Pages 1}}
-  <nav class="govuk-pagination" aria-label="Ergebnisseiten" hx-target="#archive-results" hx-swap="outerHTML" hx-push-url="true" hx-params="none" hx-trigger="click">
-    {{with .Archive.PreviousURL}}<div class="govuk-pagination__prev"><a class="govuk-link govuk-pagination__link" href="{{.}}" hx-get="{{.}}" rel="prev"><svg class="govuk-pagination__icon govuk-pagination__icon--prev" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13"><path d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"/></svg><span class="govuk-pagination__link-title">Zurück<span class="govuk-visually-hidden"> zur vorherigen Seite</span></span></a></div>{{end}}
-    <ul class="govuk-pagination__list">
-      {{range .Archive.Pagination}}{{if .Ellipsis}}<li class="govuk-pagination__item govuk-pagination__item--ellipsis">⋯</li>{{else}}<li class="govuk-pagination__item {{if .Current}}govuk-pagination__item--current{{end}}"><a class="govuk-link govuk-pagination__link" href="{{.URL}}" hx-get="{{.URL}}" aria-label="Seite {{.Number}}" {{if .Current}}aria-current="page"{{end}}>{{.Number}}</a></li>{{end}}{{end}}
-    </ul>
-    {{with .Archive.NextURL}}<div class="govuk-pagination__next"><a class="govuk-link govuk-pagination__link" href="{{.}}" hx-get="{{.}}" rel="next"><span class="govuk-pagination__link-title">Weiter<span class="govuk-visually-hidden"> zur nächsten Seite</span></span><svg class="govuk-pagination__icon govuk-pagination__icon--next" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13"><path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"/></svg></a></div>{{end}}
-  </nav>
-  {{end}}
-  {{else}}
-  <p class="govuk-body">Versuche einen anderen Suchbegriff oder wähle weniger Filter aus.</p>
-  <p class="govuk-body"><a class="govuk-link" href="/archive">Alle Module anzeigen</a>.</p>
-  {{end}}
-</section>
-{{end}}
+{{ define "results" }}
+  <section
+    id="archive-results"
+    class="app-archive-results"
+    aria-labelledby="results-heading"
+    data-document-title="{{ if .DocumentTitle }}
+      {{ .DocumentTitle }}
+    {{ else }}
+      Altklausuren
+    {{ end }} · {{ .Organization.Name }}"
+  >
+    <h2 class="govuk-heading-m" id="results-heading" tabindex="-1">
+      {{ if eq .Archive.Total 0 }}
+        Keine Module gefunden
+      {{ else if eq .Archive.Total 1 }}
+        1 Modul gefunden
+      {{ else }}
+        {{ .Archive.Total }} Module gefunden
+      {{ end }}
+    </h2>
+    {{ if gt .Archive.Pages 1 }}
+      <p class="govuk-body-s">Seite {{ .Archive.Page }} von {{ .Archive.Pages }}</p>
+    {{ end }}
+    {{ if .Archive.Modules }}
+      <table class="govuk-table app-archive-table">
+        <caption class="govuk-visually-hidden">
+          Klausurrekonstruktionen nach Modul
+        </caption>
+        <colgroup>
+          <col class="app-archive-table__module" />
+          <col class="app-archive-table__documents" />
+        </colgroup>
+        <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th class="govuk-table__header" scope="col">Modul</th>
+            <th class="govuk-table__header" scope="col">Rekos</th>
+          </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+          {{ range .Archive.Modules }}
+            {{ $title := .Title }}
+            <tr class="govuk-table__row">
+              <th class="govuk-table__header" scope="row">
+                {{ $title }}
+              </th>
+              <td class="govuk-table__cell">
+                {{ with index .Exams 0 }}
+                  <a class="govuk-link" href="{{ .URL }}"
+                    >Reko vom {{ .Date }}<span class="govuk-visually-hidden">
+                      für {{ $title }}</span
+                    ></a
+                  >
+                  (PDF, {{ .Size }})
+                {{ end }}
+                {{ if gt (len .Exams) 1 }}
+                  <p class="govuk-body govuk-!-margin-top-3 govuk-!-margin-bottom-0">
+                    <a class="govuk-link" href="{{ $.Archive.ModuleURL . }}"
+                      >Alle {{ len .Exams }} Rekos ansehen<span class="govuk-visually-hidden">
+                        für {{ $title }}</span
+                      ></a
+                    >
+                  </p>
+                {{ end }}
+              </td>
+            </tr>
+          {{ end }}
+        </tbody>
+      </table>
+      {{ if gt .Archive.Pages 1 }}
+        <nav
+          class="govuk-pagination"
+          aria-label="Ergebnisseiten"
+          hx-target="#archive-results"
+          hx-swap="outerHTML"
+          hx-push-url="true"
+          hx-params="none"
+          hx-trigger="click"
+        >
+          {{ with .Archive.PreviousURL }}
+            <div class="govuk-pagination__prev">
+              <a
+                class="govuk-link govuk-pagination__link"
+                href="{{ . }}"
+                hx-get="{{ . }}"
+                rel="prev"
+                ><svg
+                  class="govuk-pagination__icon govuk-pagination__icon--prev"
+                  height="13"
+                  width="15"
+                  aria-hidden="true"
+                  focusable="false"
+                  viewBox="0 0 15 13"
+                >
+                  <path
+                    d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"
+                  /></svg
+                ><span class="govuk-pagination__link-title"
+                  >Zurück<span class="govuk-visually-hidden"> zur vorherigen Seite</span></span
+                ></a
+              >
+            </div>
+          {{ end }}
+          <ul class="govuk-pagination__list">
+            {{ range .Archive.Pagination }}
+              {{ if .Ellipsis }}
+                <li class="govuk-pagination__item govuk-pagination__item--ellipsis">⋯</li>
+              {{ else }}
+                <li
+                  class="govuk-pagination__item {{ if .Current }}
+                    govuk-pagination__item--current
+                  {{ end }}"
+                >
+                  <a
+                    class="govuk-link govuk-pagination__link"
+                    href="{{ .URL }}"
+                    hx-get="{{ .URL }}"
+                    aria-label="Seite {{ .Number }}"
+                    {{ if .Current }}aria-current="page"{{ end }}
+                    >{{ .Number }}</a
+                  >
+                </li>
+              {{ end }}
+            {{ end }}
+          </ul>
+          {{ with .Archive.NextURL }}
+            <div class="govuk-pagination__next">
+              <a
+                class="govuk-link govuk-pagination__link"
+                href="{{ . }}"
+                hx-get="{{ . }}"
+                rel="next"
+                ><span class="govuk-pagination__link-title"
+                  >Weiter<span class="govuk-visually-hidden"> zur nächsten Seite</span></span
+                ><svg
+                  class="govuk-pagination__icon govuk-pagination__icon--next"
+                  height="13"
+                  width="15"
+                  aria-hidden="true"
+                  focusable="false"
+                  viewBox="0 0 15 13"
+                >
+                  <path
+                    d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"
+                  /></svg
+              ></a>
+            </div>
+          {{ end }}
+        </nav>
+      {{ end }}
+    {{ else }}
+      <p class="govuk-body">Versuche einen anderen Suchbegriff oder wähle weniger Filter aus.</p>
+      <p class="govuk-body"><a class="govuk-link" href="/archive">Alle Module anzeigen</a>.</p>
+    {{ end }}
+  </section>
+{{ end }}

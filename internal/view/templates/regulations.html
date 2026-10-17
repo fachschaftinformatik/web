@@ -1,6 +1,15 @@
-{{define "sidebar"}}{{end}}
-{{define "content"}}
-<p class="govuk-body">Hier findest du die Satzung, Wahlordnung und weitere Veröffentlichungen der Studierendenschaft.</p>
-<ul class="govuk-list govuk-list--bullet">{{range .Organization.RegulationLinks}}<li><a class="govuk-link" href="{{.URL}}">{{.Title}}</a></li>{{end}}</ul>
-<p class="govuk-body">Bei Fragen kannst du dich an <a class="govuk-link" href="/team#team-board">unseren Vorstand</a> wenden.</p>
-{{end}}
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  <p class="govuk-body">
+    Hier findest du die Satzung, Wahlordnung und weitere Veröffentlichungen der Studierendenschaft.
+  </p>
+  <ul class="govuk-list govuk-list--bullet">
+    {{ range .Organization.RegulationLinks }}
+      <li><a class="govuk-link" href="{{ .URL }}">{{ .Title }}</a></li>
+    {{ end }}
+  </ul>
+  <p class="govuk-body">
+    Bei Fragen kannst du dich an
+    <a class="govuk-link" href="/team#team-board">unseren Vorstand</a> wenden.
+  </p>
+{{ end }}

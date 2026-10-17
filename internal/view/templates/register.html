@@ -1,58 +1,153 @@
-{{define "sidebar"}}{{end}}
-{{define "content"}}
-{{if or .Register.NameError .Register.EmailError .Register.PasswordError .Register.ProgramError}}
-<div class="govuk-error-summary" data-module="govuk-error-summary">
-  <div role="alert">
-    <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
-    <div class="govuk-error-summary__body">
-      <ul class="govuk-list govuk-error-summary__list">
-        {{if .Register.NameError}}<li><a href="#name">{{.Register.NameError}}</a></li>{{end}}
-        {{if .Register.EmailError}}<li><a href="#email">{{.Register.EmailError}}</a></li>{{end}}
-        {{if .Register.ProgramError}}<li><a href="#program_id">{{.Register.ProgramError}}</a></li>{{end}}
-        {{if .Register.PasswordError}}<li><a href="#password">{{.Register.PasswordError}}</a></li>{{end}}
-      </ul>
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  {{ if or .Register.NameError .Register.EmailError .Register.PasswordError .Register.ProgramError }}
+    <div class="govuk-error-summary" data-module="govuk-error-summary">
+      <div role="alert">
+        <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
+        <div class="govuk-error-summary__body">
+          <ul class="govuk-list govuk-error-summary__list">
+            {{ if .Register.NameError }}
+              <li><a href="#name">{{ .Register.NameError }}</a></li>
+            {{ end }}
+            {{ if .Register.EmailError }}
+              <li><a href="#email">{{ .Register.EmailError }}</a></li>
+            {{ end }}
+            {{ if .Register.ProgramError }}
+              <li><a href="#program_id">{{ .Register.ProgramError }}</a></li>
+            {{ end }}
+            {{ if .Register.PasswordError }}
+              <li><a href="#password">{{ .Register.PasswordError }}</a></li>
+            {{ end }}
+          </ul>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-{{end}}
-{{if .Register.Submitted}}
-<h1 class="govuk-heading-l">Prüfe dein E-Mail-Postfach</h1>
-<p class="govuk-body">Dein Konto wurde erstellt. Du erhältst eine E-Mail mit einem Link zur Bestätigung deiner E-Mail-Adresse.</p>
-{{else}}
-<h1 class="govuk-heading-l">Konto erstellen</h1>
-<form action="/register" method="post" novalidate>
-  <input type="hidden" name="csrf" value="{{.CSRF}}">
-  <div class="govuk-form-group {{if .Register.NameError}}govuk-form-group--error{{end}}">
-    <label class="govuk-label" for="name">Name</label>
-    <div class="govuk-hint" id="name-hint">Wird bei deinen Beiträgen und Kommentaren angezeigt.</div>
-    {{if .Register.NameError}}<p class="govuk-error-message" id="name-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Register.NameError}}</p>{{end}}
-    <input class="govuk-input {{if .Register.NameError}}govuk-input--error{{end}}" id="name" name="name" type="text" autocomplete="name" value="{{.Register.Name}}" aria-describedby="name-hint{{if .Register.NameError}} name-error{{end}}" {{if .Register.NameError}}aria-invalid="true"{{end}}>
-  </div>
-  <div class="govuk-form-group {{if .Register.EmailError}}govuk-form-group--error{{end}}">
-    <label class="govuk-label" for="email">E-Mail-Adresse</label>
-    <div class="govuk-hint" id="email-hint">Nutze deine Hochschul-E-Mail-Adresse ({{.RegistrationDomains}}) und bestätige sie über den Link in unserer E-Mail. So prüfen wir, ob du eingeschrieben bist.</div>
-    {{if .Register.EmailError}}<p class="govuk-error-message" id="email-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Register.EmailError}}</p>{{end}}
-    <input class="govuk-input {{if .Register.EmailError}}govuk-input--error{{end}}" id="email" name="email" type="email" autocomplete="email" spellcheck="false" autocapitalize="none" value="{{.Register.Email}}" aria-describedby="email-hint{{if .Register.EmailError}} email-error{{end}}" {{if .Register.EmailError}}aria-invalid="true"{{end}}>
-  </div>
-  <div class="govuk-form-group {{if .Register.ProgramError}}govuk-form-group--error{{end}}">
-    <label class="govuk-label" for="program_id">Studiengang (optional)</label>
-    {{if .Register.ProgramError}}<p class="govuk-error-message" id="program-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Register.ProgramError}}</p>{{end}}
-    <select class="govuk-select app-register-program {{if .Register.ProgramError}}govuk-select--error{{end}}" id="program_id" name="program_id" {{if .Register.ProgramError}}aria-describedby="program-error" aria-invalid="true"{{end}}>
-      <option value="" {{if not .Register.ProgramID}}selected{{end}}>Keine Angabe</option>
-      {{range .Register.Programs}}<option value="{{.ID}}" {{if eq $.Register.ProgramID .ID}}selected{{end}}>{{.Name}}</option>{{end}}
-    </select>
-  </div>
-  <div class="govuk-form-group govuk-password-input {{if .Register.PasswordError}}govuk-form-group--error{{end}}" data-module="govuk-password-input">
-    <label class="govuk-label" for="password">Passwort festlegen</label>
-    <div class="govuk-hint" id="password-hint">Verwende mindestens 8 Zeichen und ein Passwort, das du nirgendwo sonst nutzt.</div>
-    {{if .Register.PasswordError}}<p class="govuk-error-message" id="password-error"><span class="govuk-visually-hidden">Fehler:</span> {{.Register.PasswordError}}</p>{{end}}
-    <div class="govuk-input__wrapper govuk-password-input__wrapper">
-      <input class="govuk-input govuk-password-input__input govuk-js-password-input-input {{if .Register.PasswordError}}govuk-input--error{{end}}" id="password" name="password" type="password" autocomplete="new-password" spellcheck="false" autocapitalize="none" aria-describedby="password-hint{{if .Register.PasswordError}} password-error{{end}}" {{if .Register.PasswordError}}aria-invalid="true"{{end}}>
-      <button class="govuk-button govuk-button--secondary govuk-password-input__toggle govuk-js-password-input-toggle" type="button" data-module="govuk-button" aria-controls="password" aria-label="Passwort anzeigen" hidden>Anzeigen</button>
-    </div>
-  </div>
-  <button class="govuk-button" type="submit" data-module="govuk-button">Konto erstellen</button>
-</form>
-<p class="govuk-body">Du hast schon ein Konto? <a class="govuk-link" href="/login">Anmelden</a></p>
-{{end}}
-{{end}}
+  {{ end }}
+  {{ if .Register.Submitted }}
+    <h1 class="govuk-heading-l">Prüfe dein E-Mail-Postfach</h1>
+    <p class="govuk-body">
+      Dein Konto wurde erstellt. Du erhältst eine E-Mail mit einem Link zur Bestätigung deiner
+      E-Mail-Adresse.
+    </p>
+  {{ else }}
+    <h1 class="govuk-heading-l">Konto erstellen</h1>
+    <form action="/register" method="post" novalidate>
+      <input type="hidden" name="csrf" value="{{ .CSRF }}" />
+      <div class="govuk-form-group {{ if .Register.NameError }}govuk-form-group--error{{ end }}">
+        <label class="govuk-label" for="name">Name</label>
+        <div class="govuk-hint" id="name-hint">
+          Wird bei deinen Beiträgen und Kommentaren angezeigt.
+        </div>
+        {{ if .Register.NameError }}
+          <p class="govuk-error-message" id="name-error">
+            <span class="govuk-visually-hidden">Fehler:</span> {{ .Register.NameError }}
+          </p>
+        {{ end }}
+        <input
+          class="govuk-input {{ if .Register.NameError }}govuk-input--error{{ end }}"
+          id="name"
+          name="name"
+          type="text"
+          autocomplete="name"
+          value="{{ .Register.Name }}"
+          aria-describedby="name-hint{{ if .Register.NameError }}name-error{{ end }}"
+          {{ if .Register.NameError }}aria-invalid="true"{{ end }}
+        />
+      </div>
+      <div class="govuk-form-group {{ if .Register.EmailError }}govuk-form-group--error{{ end }}">
+        <label class="govuk-label" for="email">E-Mail-Adresse</label>
+        <div class="govuk-hint" id="email-hint">
+          Nutze deine Hochschul-E-Mail-Adresse ({{ .RegistrationDomains }}) und bestätige sie über
+          den Link in unserer E-Mail. So prüfen wir, ob du eingeschrieben bist.
+        </div>
+        {{ if .Register.EmailError }}
+          <p class="govuk-error-message" id="email-error">
+            <span class="govuk-visually-hidden">Fehler:</span> {{ .Register.EmailError }}
+          </p>
+        {{ end }}
+        <input
+          class="govuk-input {{ if .Register.EmailError }}govuk-input--error{{ end }}"
+          id="email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          spellcheck="false"
+          autocapitalize="none"
+          value="{{ .Register.Email }}"
+          aria-describedby="email-hint{{ if .Register.EmailError }}email-error{{ end }}"
+          {{ if .Register.EmailError }}aria-invalid="true"{{ end }}
+        />
+      </div>
+      <div class="govuk-form-group {{ if .Register.ProgramError }}govuk-form-group--error{{ end }}">
+        <label class="govuk-label" for="program_id">Studiengang (optional)</label>
+        {{ if .Register.ProgramError }}
+          <p class="govuk-error-message" id="program-error">
+            <span class="govuk-visually-hidden">Fehler:</span> {{ .Register.ProgramError }}
+          </p>
+        {{ end }}
+        <select
+          class="govuk-select app-register-program {{ if .Register.ProgramError }}
+            govuk-select--error
+          {{ end }}"
+          id="program_id"
+          name="program_id"
+          {{ if .Register.ProgramError }}
+            aria-describedby="program-error" aria-invalid="true"
+          {{ end }}
+        >
+          <option value="" {{ if not .Register.ProgramID }}selected{{ end }}>Keine Angabe</option>
+          {{ range .Register.Programs }}
+            <option value="{{ .ID }}" {{ if eq $.Register.ProgramID .ID }}selected{{ end }}>
+              {{ .Name }}
+            </option>
+          {{ end }}
+        </select>
+      </div>
+      <div
+        class="govuk-form-group govuk-password-input {{ if .Register.PasswordError }}
+          govuk-form-group--error
+        {{ end }}"
+        data-module="govuk-password-input"
+      >
+        <label class="govuk-label" for="password">Passwort festlegen</label>
+        <div class="govuk-hint" id="password-hint">
+          Verwende mindestens 8 Zeichen und ein Passwort, das du nirgendwo sonst nutzt.
+        </div>
+        {{ if .Register.PasswordError }}
+          <p class="govuk-error-message" id="password-error">
+            <span class="govuk-visually-hidden">Fehler:</span> {{ .Register.PasswordError }}
+          </p>
+        {{ end }}
+        <div class="govuk-input__wrapper govuk-password-input__wrapper">
+          <input
+            class="govuk-input govuk-password-input__input govuk-js-password-input-input {{ if .Register.PasswordError }}
+              govuk-input--error
+            {{ end }}"
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            spellcheck="false"
+            autocapitalize="none"
+            aria-describedby="password-hint{{ if .Register.PasswordError }}password-error{{ end }}"
+            {{ if .Register.PasswordError }}aria-invalid="true"{{ end }}
+          />
+          <button
+            class="govuk-button govuk-button--secondary govuk-password-input__toggle govuk-js-password-input-toggle"
+            type="button"
+            data-module="govuk-button"
+            aria-controls="password"
+            aria-label="Passwort anzeigen"
+            hidden
+          >
+            Anzeigen
+          </button>
+        </div>
+      </div>
+      <button class="govuk-button" type="submit" data-module="govuk-button">Konto erstellen</button>
+    </form>
+    <p class="govuk-body">
+      Du hast schon ein Konto? <a class="govuk-link" href="/login">Anmelden</a>
+    </p>
+  {{ end }}
+{{ end }}
