@@ -19,6 +19,9 @@ import (
 // Version is injected by the image build.
 var Version = "dev"
 
+// Revision identifies the source commit independently of the release version.
+var Revision string
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

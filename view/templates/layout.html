@@ -257,7 +257,7 @@
                   <a class="govuk-footer__link" href="/privacy">Datenschutz</a>
                 </li>
                 <li class="govuk-footer__inline-list-item">
-                  <a class="govuk-footer__link" href="/contact">Fachschaft kontaktieren</a>
+                  <a class="govuk-footer__link" href="/contact">Kontakt</a>
                 </li>
               </ul>
               <div class="govuk-footer__meta-custom">
@@ -268,6 +268,9 @@
                 {{ .Organization.City }}
                 {{ if .Organization.Office }}<br />Raum {{ .Organization.Office }}{{ end }}
               </div>
+            </div>
+            <div class="govuk-footer__meta-item">
+              <a class="govuk-footer__link" href="https://github.com/fsiwh/web">Version {{ .BuildLabel }}{{ if .BuildShortRevision }} ({{ .BuildShortRevision }}){{ end }}</a>
             </div>
           </div>
         </div>

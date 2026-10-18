@@ -9,6 +9,7 @@ import (
 type Config struct {
 	RegistrationDomains, AccountDomains []string
 	Domain                              string
+	AppVersion                          string
 	SMTPHost                            string
 	SMTPPort                            string
 	SMTPUser                            string
@@ -27,6 +28,7 @@ func New() *Config {
 		RegistrationDomains: domains(os.Getenv("REGISTRATION_DOMAINS")),
 		AccountDomains:      domains(os.Getenv("ACCOUNT_DOMAINS")),
 		Domain:              getEnv("DOMAIN", "http://localhost:8090"),
+		AppVersion:          getEnv("APP_VERSION", ""),
 		SMTPHost:            getEnv("SMTP_HOST", ""),
 		SMTPPort:            getEnv("SMTP_PORT", "587"),
 		SMTPUser:            getEnv("SMTP_USERNAME", ""),

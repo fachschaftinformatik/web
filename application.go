@@ -91,8 +91,14 @@ func newApplication(ctx context.Context, databasePath, blobPath string) (_ *appl
 	}
 	identity := users.NewService(db, cfg.Domain, users.DomainPolicy{Registration: cfg.RegistrationDomains, Accounts: cfg.AccountDomains})
 	examDocuments := exams.NewService(db, objects)
+	buildVersion := Version
+	if cfg.AppVersion != "" {
+		buildVersion = cfg.AppVersion
+	}
 	app.handler, err = site.New(site.Services{
-		Users: identity, Exams: examDocuments, Members: team, Meetings: publications, Organization: org,
+		BuildVersion:  buildVersion,
+		BuildRevision: Revision,
+		Users:         identity, Exams: examDocuments, Members: team, Meetings: publications, Organization: org,
 		Posts: posts.NewService(db), Media: media.NewService(db, objects), Events: events.NewService(db, objects),
 	}, origin.Scheme == "https")
 	if err != nil {

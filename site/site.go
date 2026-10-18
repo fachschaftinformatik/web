@@ -51,6 +51,8 @@ func (c *Handler) pageError(w http.ResponseWriter, message string, status int) {
 }
 
 type Handler struct {
+	buildVersion  string
+	buildRevision string
 	organization  *organization.Store
 	router        http.Handler
 	views         *view.Renderer
@@ -65,14 +67,16 @@ type Handler struct {
 }
 
 type Services struct {
-	Organization *organization.Store
-	Users        *users.Service
-	Exams        *exams.Service
-	Members      *members.Store
-	Meetings     *meetings.Store
-	Posts        *posts.Service
-	Media        *media.Service
-	Events       *events.Service
+	BuildVersion  string
+	BuildRevision string
+	Organization  *organization.Store
+	Users         *users.Service
+	Exams         *exams.Service
+	Members       *members.Store
+	Meetings      *meetings.Store
+	Posts         *posts.Service
+	Media         *media.Service
+	Events        *events.Service
 }
 
 // New constructs the HTML application with its required dependencies.
@@ -84,7 +88,7 @@ func New(services Services, secureCookies bool) (*Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &Handler{views: views, secureCookies: secureCookies, organization: services.Organization,
+	c := &Handler{buildVersion: services.BuildVersion, buildRevision: services.BuildRevision, views: views, secureCookies: secureCookies, organization: services.Organization,
 		identity: services.Users, exams: services.Exams, members: services.Members,
 		meetings: services.Meetings, posts: services.Posts, media: services.Media, events: services.Events}
 	c.router = c.routes()
@@ -111,6 +115,8 @@ func (c *Handler) serverError(w http.ResponseWriter, err error) {
 }
 
 func (c *Handler) renderStatus(w http.ResponseWriter, page string, fragment bool, data view.Page, status int) {
+	data.BuildVersion = c.buildVersion
+	data.BuildRevision = c.buildRevision
 	if status != http.StatusOK || fragment {
 		data.CanonicalURL = ""
 	} else if response, ok := w.(*sessionResponse); ok && data.CanonicalURL == "" {
