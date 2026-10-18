@@ -30,6 +30,15 @@ func (c *Handler) preferredExamsFilter(w http.ResponseWriter, r *http.Request) (
 func (c *Handler) ExamSettings(w http.ResponseWriter, r *http.Request) {
 
 	user := w.(*sessionResponse).session.UserID
+	if r.Method == http.MethodPost && r.PostForm.Get("intent") == "submission-mail" {
+		if err := c.exams.SaveSubmissionMailPreference(r.Context(), user, r.PostForm.Get("submission_mail") == "on"); err != nil {
+			c.examsWriteError(w, r, err)
+			return
+		}
+		flash(w, "Deine E-Mail-Benachrichtigungen wurden gespeichert.")
+		http.Redirect(w, r, "/exams/settings", http.StatusSeeOther)
+		return
+	}
 	filter, err := c.exams.Settings(r.Context(), user)
 	if err != nil {
 		c.examsWriteError(w, r, err)
@@ -42,6 +51,11 @@ func (c *Handler) ExamSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	status := 200
 	page := view.Page{Title: "Einstellungen für Altklausuren", Active: "exams", Upload: view.UploadPage{Action: r.URL.Path}}
+	page.Upload.SubmissionMail, page.Upload.CanReceiveSubmissionMail, err = c.exams.SubmissionMailPreference(r.Context(), user)
+	if err != nil {
+		c.examsWriteError(w, r, err)
+		return
+	}
 	if r.Method == http.MethodPost {
 		filter = exams.Filter{Programs: slices.DeleteFunc(r.PostForm["program"], func(value string) bool { return value == "" }), Degrees: r.PostForm["degree"], Versions: r.PostForm["version"]}
 		if err := c.exams.SaveSettings(r.Context(), user, filter); err != nil {

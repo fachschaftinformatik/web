@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/config"
+	"github.com/fachschaftinformatik/web/internal/urls"
 	"github.com/fachschaftinformatik/web/model/organization"
 )
 
@@ -71,6 +72,16 @@ func (s *Sender) SendPasswordResetEmail(toEmail, name, link string) error {
 		Action:   "Passwort zurücksetzen",
 		Validity: "Der Link ist eine Stunde gültig.",
 		Note:     "Wenn du kein neues Passwort angefordert hast, kannst du diese E-Mail ignorieren. Dein bisheriges Passwort bleibt gültig.",
+	})
+}
+
+func (s *Sender) SendSubmissionEmail(toEmail, name, submissionID string) error {
+	return s.notify(toEmail, notification{
+		Name: name, Link: s.cfg.Domain + urls.ReviewSubmission(submissionID),
+		Title:  "Neue Einsendung für die Altklausuren",
+		Intro:  "Eine neue Einsendung wartet auf deine Prüfung. Melde dich an, um die Dokumente und Angaben zu prüfen.",
+		Action: "Einsendung prüfen",
+		Note:   "Du erhältst diese E-Mail, weil du Benachrichtigungen über neue Einsendungen aktiviert hast. Du kannst sie in den Einstellungen für Altklausuren deaktivieren.",
 	})
 }
 
