@@ -10,6 +10,7 @@ import (
 	"github.com/fachschaftinformatik/web/internal/content"
 
 	"github.com/fachschaftinformatik/web/internal/model/events"
+	"github.com/fachschaftinformatik/web/internal/urls"
 	"github.com/fachschaftinformatik/web/internal/view"
 )
 
@@ -18,7 +19,7 @@ const eventsPageSize = 6
 func (c *Handler) Events(w http.ResponseWriter, r *http.Request) {
 	page := view.EventsPage{}
 
-	page.CanCreate = c.events.CanPublish(r.Context(), forumUser(w)) == nil
+	page.CanCreate = c.events.CanPublish(r.Context(), postsUser(w)) == nil
 	if id := r.PathValue("event"); id != "" {
 		event, err := c.events.Lookup(r.Context(), id)
 		if err != nil {
@@ -26,7 +27,7 @@ func (c *Handler) Events(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		page.Detail = ptr(view.Event(event))
-		c.render(w, "events", false, view.Page{Title: event.Title, Active: "calendar", Community: true, Events: page})
+		c.render(w, "events", false, view.Page{Title: event.Title, Active: "events", Community: true, Events: page})
 		return
 	}
 	records, total, err := c.events.FindPage(r.Context(), time.Now(), requestedPage(r), eventsPageSize, false)
@@ -35,18 +36,21 @@ func (c *Handler) Events(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	upcoming, past := events.Group(records, time.Now())
+	if !c.validPageRange(w, r, total, eventsPageSize) {
+		return
+	}
 	page.Upcoming, page.Past = view.Events(upcoming), view.Events(past)
 	page.Pagination = listPagination(r, total, eventsPageSize)
 
-	c.render(w, "events", false, view.Page{Title: "Veranstaltungen", Active: "calendar", Community: true, Events: page})
+	c.render(w, "events", false, view.Page{Title: "Veranstaltungen", Active: "events", Community: true, Events: page})
 }
 
 func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 
-	user := forumUser(w)
+	user := postsUser(w)
 	if user == 0 {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, urls.LoginPath, http.StatusSeeOther)
 		return
 	}
 	if err := c.events.CanPublish(r.Context(), user); err != nil {
@@ -54,7 +58,7 @@ func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("event")
-	editor := view.ContentEditor{Event: true, Action: view.EventsURL + "/new", BackURL: view.EventsURL, Draft: view.EditorDraft{Type: "event"}}
+	editor := view.ContentEditor{Event: true, Action: urls.CreateEventPath, BackURL: urls.EventsPath, Draft: view.EditorDraft{Type: "event"}}
 	title := "Veranstaltung erstellen"
 	if id != "" {
 		event, err := c.events.Lookup(r.Context(), id)
@@ -63,8 +67,8 @@ func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		editor.Editing = true
-		editor.Action = view.Event(event).URL() + "/edit"
-		editor.BackURL = view.Event(event).URL()
+		editor.Action = urls.EditEvent(event.ID)
+		editor.BackURL = urls.Event(event.ID)
 		editor.CoverURL, editor.CoverAlt = view.Event(event).CoverURL(), event.CoverAlt
 		editor.Draft = view.EditorDraft{Title: event.Title, Body: event.Body, Type: "event", Location: event.Location}
 		editor.RichBody = view.Event(event).RichBody()
@@ -106,7 +110,7 @@ func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {
 		if len(editor.Errors) == 0 {
 			event, err := c.events.Save(r.Context(), user, id, events.Draft{Title: editor.Draft.Title, Body: editor.Draft.Body, Date: editor.Draft.Date, Time: editor.Draft.Time, Location: editor.Draft.Location}, editor.RichBody, &cover)
 			if err == nil {
-				http.Redirect(w, r, view.EventsURL+"/"+event, http.StatusSeeOther)
+				http.Redirect(w, r, urls.Event(event), http.StatusSeeOther)
 				return
 			}
 			var validation *events.ValidationError
@@ -126,7 +130,7 @@ func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusUnprocessableEntity
 		}
 	}
-	c.renderStatus(w, "editor", false, view.Page{Title: title, Active: "calendar", Community: true, Editor: &editor}, status)
+	c.renderStatus(w, "editor", false, view.Page{Title: title, Active: "events", Community: true, Editor: &editor}, status)
 }
 
 func (c *Handler) eventError(w http.ResponseWriter, r *http.Request, err error) {
@@ -136,7 +140,7 @@ func (c *Handler) eventError(w http.ResponseWriter, r *http.Request, err error) 
 		if errors.Is(err, events.ErrCoverStorage) {
 			c.pageError(w, "Das Titelbild konnte nicht gespeichert oder geladen werden.", http.StatusServiceUnavailable)
 		} else {
-			c.forumError(w, r, err)
+			c.postsError(w, r, err)
 		}
 	}
 }

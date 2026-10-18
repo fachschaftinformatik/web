@@ -23,26 +23,27 @@ func TestResendAccountConfirmationAndMemberInvitation(t *testing.T) {
 	if _, err := db.Exec(`UPDATE people SET user_id=44 WHERE id='1'`); err != nil {
 		t.Fatal(err)
 	}
+	seedPublicRefs(t, db)
 	identity := users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}})
 	session, err := identity.CreateSession(ctx, 42)
 	if err != nil {
 		t.Fatal(err)
 	}
 	b.client.Jar.SetCookies(mustURL(t, b.server.URL), []*http.Cookie{{Name: sessionCookie, Value: session.ID, Path: "/"}})
-	for _, entry := range []struct{ id, label, path string }{{"43", "Bestätigung erneut senden", "/verify"}, {"44", "Einladung erneut senden", "/invite"}} {
-		path := "/verwaltung/benutzer/" + entry.id
+	for _, entry := range []struct{ id, label, path string }{{"43", "Bestätigung erneut senden", "/email/confirm"}, {"44", "Einladung erneut senden", "/invitation/accept"}} {
+		path := "/admin/users/" + publicRef(t, db, "users", entry.id)
 		status, body, _ := b.get(path)
 		if status != 200 || !strings.Contains(body, entry.label) || !strings.Contains(body, "Passwort zurücksetzen") {
 			t.Fatal("account resend action missing")
 		}
 		csrf := csrfFrom(t, body)
-		action := path + "/bestaetigung-senden"
+		action := path + "/confirm"
 		if status, _, _ := b.post(action, url.Values{}); status != 403 {
 			t.Fatal("resend accepted without CSRF")
 		}
 		var previous string
 		for i := 0; i < 2; i++ {
-			if status, _, headers := b.post(action, url.Values{"csrf": {csrf}}); status != 303 || headers.Get("Location") != path+"?bestaetigung=1" {
+			if status, _, headers := b.post(action, url.Values{"csrf": {csrf}}); status != 303 || headers.Get("Location") != path {
 				t.Fatal("resend failed")
 			}
 			var link string
@@ -69,7 +70,7 @@ func TestResendAccountConfirmationAndMemberInvitation(t *testing.T) {
 		if err := db.QueryRow(`SELECT password,verified FROM users WHERE id=?`, entry.id).Scan(&password, &verified); err != nil || password != "unchanged" || verified != 0 {
 			t.Fatal("resend changed account credentials or confirmation")
 		}
-		if entry.path == "/verify" {
+		if entry.path == "/email/confirm" {
 			if err := identity.ConsumeToken(ctx, previous, "verify", ""); err != nil {
 				t.Fatal(err)
 			}
@@ -82,7 +83,7 @@ func TestResendAccountConfirmationAndMemberInvitation(t *testing.T) {
 			}
 		}
 	}
-	if status, _, _ := b.post("/verwaltung/benutzer/999/bestaetigung-senden", url.Values{"csrf": {session.CSRF}}); status != 404 {
+	if status, _, _ := b.post("/admin/users/999/confirm", url.Values{"csrf": {session.CSRF}}); status != 404 {
 		t.Fatal("unknown account accepted")
 	}
 	reviewer, err := identity.CreateSession(ctx, 42)
@@ -93,7 +94,7 @@ func TestResendAccountConfirmationAndMemberInvitation(t *testing.T) {
 		t.Fatal(err)
 	}
 	b.client.Jar.SetCookies(mustURL(t, b.server.URL), []*http.Cookie{{Name: sessionCookie, Value: reviewer.ID, Path: "/"}})
-	if status, _, _ := b.post("/verwaltung/benutzer/43/bestaetigung-senden", url.Values{"csrf": {reviewer.CSRF}}); status != 403 {
+	if status, _, _ := b.post("/admin/users/"+publicRef(t, db, "users", "43")+"/confirm", url.Values{"csrf": {reviewer.CSRF}}); status != 403 {
 		t.Fatal("reviewer can resend account confirmations")
 	}
 }

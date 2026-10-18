@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,18 +11,28 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/model/meetings"
+	"github.com/fachschaftinformatik/web/internal/publicid"
+	"github.com/fachschaftinformatik/web/internal/urls"
 	"github.com/fachschaftinformatik/web/internal/view"
 )
 
 func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *view.AdminPage) {
 	owner := c.publicationOwner(w)
 	id := r.PathValue("id")
-	p := meetings.Publication{ID: id, Owner: owner, Date: r.URL.Query().Get("datum")}
-	p.Number, _ = strconv.Atoi(r.URL.Query().Get("nummer"))
-	if id != "neu" {
+	p := meetings.Publication{ID: id, Owner: owner, Date: r.URL.Query().Get("date")}
+	p.Number, _ = strconv.Atoi(r.URL.Query().Get("number"))
+	if id != "create" {
+		internal, err := c.meetings.ResolvePublicID(r.Context(), id)
+		if errors.Is(err, sql.ErrNoRows) {
+			c.notFound(w, r)
+			return
+		}
+		if err != nil {
+			c.serverError(w, err)
+			return
+		}
 		var ok bool
-		var err error
-		p, ok, err = c.meetings.GetWithError(id)
+		p, ok, err = c.meetings.GetWithError(internal)
 		if err != nil {
 			c.serverError(w, err)
 			return
@@ -40,8 +52,8 @@ func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *vie
 		number = strconv.Itoa(p.Number)
 	}
 	if r.Method == http.MethodPost {
-		if id == "neu" {
-			p.ID = randomToken()
+		if id == "create" {
+			p.ID = publicid.New()
 		}
 		day, month, year = r.PostForm.Get("day"), r.PostForm.Get("month"), r.PostForm.Get("year")
 		d, _ := strconv.Atoi(day)
@@ -78,21 +90,29 @@ func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *vie
 		}
 		if err := c.meetings.Save(p); err != nil {
 			a.Message = err.Error()
-			if id == "neu" {
-				p.ID = "neu"
+			if id == "create" {
+				p.ID = "create"
 				p.Data = nil
 				if errors["file"] == "" {
 					errors["file"] = "Die Datei wurde nicht gespeichert. Wähle sie erneut aus."
 				}
 			}
 		} else {
+			p.PublicID, err = c.meetings.PublicID(r.Context(), p.ID)
+			if err != nil {
+				c.serverError(w, err)
+				return
+			}
 			if len(errors) == 0 {
-				http.Redirect(w, r, "/verwaltung/sitzungen/"+p.ID+"/pruefen", http.StatusSeeOther)
+				http.Redirect(w, r, urls.AdminMeeting(p.PublicID)+"/check", http.StatusSeeOther)
 				return
 			}
 		}
 	}
-	a.View, a.Action, a.Publication = "form", "/verwaltung/sitzungen/"+p.ID, ptr(view.Publication(p))
+	a.View, a.Action, a.Publication = "form", r.URL.Path, ptr(view.Publication(p))
+	if p.ID != "create" {
+		a.Action = urls.EditAdminMeeting(p.PublicID)
+	}
 	a.Fields = []view.AdminField{
 		{ID: "date", Label: "Sitzungsdatum", Kind: "date", Day: day, Month: month, Year: year},
 		view.Field("number", "Sitzungsnummer", number, "text"),
@@ -109,7 +129,16 @@ func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *vie
 
 func (c *Handler) ReviewPublication(w http.ResponseWriter, r *http.Request) {
 	owner := c.publicationOwner(w)
-	p, ok, err := c.meetings.GetWithError(r.PathValue("id"))
+	internal, err := c.meetings.ResolvePublicID(r.Context(), r.PathValue("id"))
+	if errors.Is(err, sql.ErrNoRows) {
+		c.notFound(w, r)
+		return
+	}
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
+	p, ok, err := c.meetings.GetWithError(internal)
 	if err != nil {
 		c.serverError(w, err)
 		return
@@ -118,19 +147,20 @@ func (c *Handler) ReviewPublication(w http.ResponseWriter, r *http.Request) {
 		c.notFound(w, r)
 		return
 	}
-	a := &view.AdminPage{Section: "sitzungen", SectionTitle: "Sitzungen und Protokolle", View: "review", Publication: ptr(view.Publication(p)), Action: r.URL.Path}
+	a := &view.AdminPage{Section: "meetings", SectionTitle: "Sitzungen und Protokolle", View: "review", Publication: ptr(view.Publication(p)), Action: r.URL.Path}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		if err := c.meetings.Publish(p.ID, owner); err != nil {
 			a.Message = err.Error()
 			status = http.StatusUnprocessableEntity
 		} else {
-			http.Redirect(w, r, "/verwaltung/sitzungen?veroeffentlicht=1", http.StatusSeeOther)
+			flash(w, "Das Dokument wurde veröffentlicht.")
+			http.Redirect(w, r, urls.AdminMeetingsPath, http.StatusSeeOther)
 			return
 		}
 	}
 	if p.Published {
-		http.Redirect(w, r, "/verwaltung/sitzungen", http.StatusSeeOther)
+		http.Redirect(w, r, urls.AdminMeetingsPath, http.StatusSeeOther)
 		return
 	}
 	c.adminRender(w, "Veröffentlichung prüfen", a, status)
@@ -167,8 +197,11 @@ func (c *Handler) Meetings(w http.ResponseWriter, r *http.Request) {
 			next = &copy
 		}
 	}
-	year := years[0]
-	if value := r.URL.Query().Get("jahr"); value != "" {
+	year := time.Now().Year()
+	if len(years) > 0 {
+		year = years[0]
+	}
+	if value := r.URL.Query().Get("year"); value != "" {
 		var err error
 		year, err = strconv.Atoi(value)
 		if err != nil {
@@ -182,7 +215,7 @@ func (c *Handler) Meetings(w http.ResponseWriter, r *http.Request) {
 			records = append(records, meeting)
 		}
 	}
-	if len(records) == 0 {
+	if len(records) == 0 && len(all) > 0 || len(records) == 0 && r.URL.Query().Has("year") {
 		c.notFound(w, r)
 		return
 	}
@@ -191,7 +224,7 @@ func (c *Handler) Meetings(w http.ResponseWriter, r *http.Request) {
 		nextMeeting = ptr(view.NewMeeting(*next))
 	}
 	c.render(w, "content", false, view.Page{
-		Title: "Sitzungen und Protokolle", Active: "meetings", Fachschaft: true,
+		Title: "Sitzungen und Protokolle", Active: "meetings", About: true,
 		Meetings: view.MeetingsPage{Year: year, Years: years, Meetings: view.Meetings(records), Next: nextMeeting},
 	})
 }

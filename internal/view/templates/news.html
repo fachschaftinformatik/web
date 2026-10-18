@@ -1,14 +1,14 @@
 {{ define "sidebar" }}{{ end }}
 {{ define "content" }}
   <p class="govuk-body-l">Ankündigungen und Neuigkeiten aus der Fachschaft.</p>
-  {{ if .Forum.CanWrite }}
+  {{ if .Posts.CanWrite }}
     <p class="govuk-body">
-      <a class="govuk-button" href="/community/neuigkeiten/new">Neuigkeit veröffentlichen</a>
+      <a class="govuk-button" href="/posts/create?type=news">Neuigkeit veröffentlichen</a>
     </p>
   {{ end }}
-  {{ if .Forum.Posts }}
-    <ul class="govuk-list app-forum-posts" role="list">
-      {{ range .Forum.Posts }}
+  {{ if .Posts.Posts }}
+    <ul class="govuk-list app-posts-list" role="list">
+      {{ range .Posts.Posts }}
         <li>
           <h2 class="govuk-heading-m govuk-!-margin-bottom-2">
             <a class="govuk-link" href="{{ .URL }}">{{ .Title }}</a>
@@ -23,5 +23,5 @@
   {{ else }}
     <p class="govuk-body">Noch keine Neuigkeiten veröffentlicht.</p>
   {{ end }}
-  {{ template "list-pagination" .Forum.Pagination }}
+  {{ template "list-pagination" .Posts.Pagination }}
 {{ end }}

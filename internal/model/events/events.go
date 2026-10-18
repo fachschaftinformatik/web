@@ -13,7 +13,7 @@ import (
 	"github.com/fachschaftinformatik/web/internal/content"
 	"github.com/fachschaftinformatik/web/internal/datetime"
 
-	"github.com/fachschaftinformatik/web/internal/id"
+	"github.com/fachschaftinformatik/web/internal/publicid"
 	"github.com/fachschaftinformatik/web/internal/storage"
 )
 
@@ -39,12 +39,14 @@ func NewService(db *sql.DB, storage storage.Provider) *Service {
 }
 
 type Event struct {
+	InternalID, LegacyPostPublicID, AlbumPublicID, AlbumCoverPublicID  string
 	ID, Title, Body, BodyFormat, EventDate, Location, Created, Updated string
 	CoverKey, CoverAlt                                                 string
 	CoverWidth, CoverHeight                                            int
 	LegacyPostID                                                       sql.NullInt64
 	SourceURL, SourcePublishedAt, SourceStatus                         string
-	GalleryAlbumID, GalleryCoverID                                     sql.NullInt64
+	AlbumID                                                            sql.NullInt64 `json:"GalleryAlbumID"`
+	AlbumCoverID                                                       sql.NullInt64 `json:"GalleryCoverID"`
 }
 
 type Draft struct{ Title, Body, Date, Time, Location string }
@@ -60,7 +62,7 @@ THEN gallery_album_id END,gallery_cover_id FROM calendar_events WHERE deleted_at
 
 func scan(row interface{ Scan(...any) error }) (Event, error) {
 	var e Event
-	err := row.Scan(&e.ID, &e.Title, &e.Body, &e.BodyFormat, &e.EventDate, &e.Location, &e.Created, &e.Updated, &e.CoverKey, &e.CoverAlt, &e.CoverWidth, &e.CoverHeight, &e.LegacyPostID, &e.SourceURL, &e.SourcePublishedAt, &e.SourceStatus, &e.GalleryAlbumID, &e.GalleryCoverID)
+	err := row.Scan(&e.InternalID, &e.Title, &e.Body, &e.BodyFormat, &e.EventDate, &e.Location, &e.Created, &e.Updated, &e.CoverKey, &e.CoverAlt, &e.CoverWidth, &e.CoverHeight, &e.LegacyPostID, &e.SourceURL, &e.SourcePublishedAt, &e.SourceStatus, &e.AlbumID, &e.AlbumCoverID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return e, ErrNotFound
 	}
@@ -84,11 +86,43 @@ func (s *Service) Find(ctx context.Context) ([]Event, error) {
 		}
 		result = append(result, e)
 	}
-	return result, rows.Err()
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	for i := range result {
+		if err := s.references(ctx, &result[i]); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
 }
 
 func (s *Service) Lookup(ctx context.Context, event string) (Event, error) {
-	return scan(s.db.QueryRowContext(ctx, selectEvent+` AND id=?`, event))
+	internal, err := resolve(ctx, s.db, "events", event)
+	if err != nil {
+		return Event{}, err
+	}
+	e, err := scan(s.db.QueryRowContext(ctx, selectEvent+` AND id=?`, internal))
+	if err == nil {
+		err = s.references(ctx, &e)
+	}
+	return e, err
+}
+
+// ForPost resolves a calendar event through its actual linked post, not by
+// assuming that the two independently addressable records have equal IDs.
+func (s *Service) ForPost(ctx context.Context, post string) (Event, error) {
+	internal, err := resolve(ctx, s.db, "posts", post)
+	if err != nil {
+		return Event{}, err
+	}
+	e, err := scan(s.db.QueryRowContext(ctx, selectEvent+` AND legacy_post_id=?`, internal))
+	if err == nil {
+		err = s.references(ctx, &e)
+	}
+	return e, err
 }
 
 func (e Event) SortDate() string {
@@ -110,6 +144,10 @@ func (s *Service) Save(ctx context.Context, user int64, event string, d Draft, r
 	var oldKey, coverAlt string
 	var width, height int
 	if event != "" {
+		event, err = resolve(ctx, tx, "events", event)
+		if err != nil {
+			return "", err
+		}
 		err = tx.QueryRowContext(ctx, `SELECT cover_key,cover_alt,cover_width,cover_height FROM calendar_events WHERE id=? AND deleted_at IS NULL`, event).Scan(&oldKey, &coverAlt, &width, &height)
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", ErrNotFound
@@ -152,7 +190,7 @@ func (s *Service) Save(ctx context.Context, user int64, event string, d Draft, r
 			if s.storage == nil {
 				return "", ErrCoverStorage
 			}
-			newKey = "calendar/covers/" + id.New().String() + ".jpg"
+			newKey = "calendar/covers/" + publicid.New() + ".jpg"
 			if err := s.storage.Upload(ctx, newKey, bytes.NewReader(photo), int64(len(photo)), "image/jpeg"); err != nil {
 				return "", ErrCoverStorage
 			}
@@ -170,8 +208,11 @@ func (s *Service) Save(ctx context.Context, user int64, event string, d Draft, r
 		return "", err
 	}
 	if event == "" {
-		event = id.New().String()
-		_, err = tx.ExecContext(ctx, `INSERT INTO calendar_events(id,title,body,body_format,event_date,location,user_id,cover_key,cover_alt,cover_width,cover_height) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, event, strings.TrimSpace(d.Title), body, format, date, strings.TrimSpace(d.Location), user, coverKey, coverAlt, width, height)
+		internal, allocateErr := publicid.NextInteger(ctx, tx, "events")
+		if allocateErr != nil {
+			return "", allocateErr
+		}
+		err = tx.QueryRowContext(ctx, `INSERT INTO calendar_events(id,title,body,body_format,event_date,location,user_id,cover_key,cover_alt,cover_width,cover_height) VALUES(?,?,?,?,?,?,?,?,?,?,?) RETURNING id`, internal, strings.TrimSpace(d.Title), body, format, date, strings.TrimSpace(d.Location), user, coverKey, coverAlt, width, height).Scan(&event)
 	} else {
 		_, err = tx.ExecContext(ctx, `UPDATE calendar_events SET title=?,body=?,body_format=?,event_date=?,location=?,cover_key=?,cover_alt=?,cover_width=?,cover_height=?,updated_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id=?`, strings.TrimSpace(d.Title), body, format, date, strings.TrimSpace(d.Location), coverKey, coverAlt, width, height, event)
 	}
@@ -183,6 +224,10 @@ func (s *Service) Save(ctx context.Context, user int64, event string, d Draft, r
 			return "", err
 		}
 	}
+	ref, err := publicid.Ensure(ctx, tx, "events", event)
+	if err != nil {
+		return "", err
+	}
 	if err := tx.Commit(); err != nil {
 		return "", err
 	}
@@ -190,7 +235,7 @@ func (s *Service) Save(ctx context.Context, user int64, event string, d Draft, r
 	if validCoverKey(oldKey) && oldKey != coverKey && s.storage != nil {
 		_ = s.storage.Delete(context.WithoutCancel(ctx), oldKey)
 	}
-	return event, nil
+	return ref, nil
 }
 
 // FindPage returns upcoming events first, then history, with stable tie-breaks.
@@ -227,7 +272,17 @@ func (s *Service) FindPage(ctx context.Context, now time.Time, page, size int, u
 		}
 		result = append(result, e)
 	}
-	return result, total, rows.Err()
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return nil, 0, err
+	}
+	for i := range result {
+		if err := s.references(ctx, &result[i]); err != nil {
+			return nil, 0, err
+		}
+	}
+	return result, total, nil
 }
 
 // Group classifies and orders events for the calendar and upcoming lists.

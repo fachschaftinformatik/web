@@ -3,7 +3,7 @@ package view
 import (
 	"testing"
 
-	"github.com/fachschaftinformatik/web/internal/model/forum"
+	"github.com/fachschaftinformatik/web/internal/model/posts"
 )
 
 func TestPostedLabelUsesGermanLocalTime(t *testing.T) {
@@ -12,7 +12,7 @@ func TestPostedLabelUsesGermanLocalTime(t *testing.T) {
 		{"2026-01-17T12:30:00Z", "13:30 Uhr am 17.01.2026"},
 		{"2026-07-17T23:30:00Z", "01:30 Uhr am 18.07.2026"},
 	} {
-		if got := NewPost(forum.Post{Created: tc.created}).PostedLabel(); got != tc.want {
+		if got := NewPost(posts.Post{Created: tc.created}).PostedLabel(); got != tc.want {
 			t.Fatalf("%s: %s", tc.created, got)
 		}
 	}

@@ -27,7 +27,7 @@
       Hallo {{ .Invite.Name }}. Lege ein Passwort fest, um dein Konto mit der E-Mail-Adresse
       <strong>{{ .Invite.Email }}</strong> zu bestätigen.
     </p>
-    <form action="/invite" method="post" novalidate>
+    <form action="/invitation/accept" method="post" novalidate>
       <input type="hidden" name="csrf" value="{{ .CSRF }}" />
       <input type="hidden" name="token" value="{{ .Invite.Value }}" />
       <div class="govuk-form-group {{ if .Invite.PasswordError }}govuk-form-group--error{{ end }}">

@@ -6,25 +6,24 @@ import (
 	"testing"
 )
 
-func TestArchiveResponses(t *testing.T) {
-	handler, err := testHandler(t)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestExamsResponses(t *testing.T) {
+	handler, db := testApplication(t)
+	seedPublicContent(t, db)
+	program := publicRef(t, db, "programs", "1")
 	for _, tc := range []struct {
 		name, path              string
 		htmx, restore, fullPage bool
 		contains                string
 	}{
-		{"ordinary form", "/archive?q=SQL", false, false, true, "Datenbanken"},
-		{"partial update", "/archive?q=SQL", true, false, false, "Datenbanken"},
-		{"history restore", "/archive?q=SQL", true, true, true, "Datenbanken"},
-		{"empty result", "/archive?q=nonexistent", true, false, false, "Keine Module"},
-		{"escaped input", "/archive?q=%3Cscript%3E", false, false, true, "&lt;script&gt;"},
-		{"multiple PO filters", "/archive?program=Informatik&version=2023&version=2017", false, false, true, "3 Module gefunden"},
-		{"legacy all PO", "/archive?version=", false, false, true, "6 Module gefunden"},
-		{"degree filter", "/archive?degree=Bachelor&program=Informatik&version=2023", false, false, true, "2 Module gefunden"},
-		{"master fixture empty", "/archive?degree=Master", false, false, true, "Keine Module gefunden"},
+		{"ordinary form", "/exams?search=SQL", false, false, true, "Datenbanken"},
+		{"partial update", "/exams?search=SQL", true, false, false, "Datenbanken"},
+		{"history restore", "/exams?search=SQL", true, true, true, "Datenbanken"},
+		{"empty result", "/exams?search=nonexistent", true, false, false, "Keine Module"},
+		{"escaped input", "/exams?search=%3Cscript%3E", false, false, true, "&lt;script&gt;"},
+		{"multiple PO filters", "/exams?program=" + program + "&version=2023&version=2017", false, false, true, "3 Module gefunden"},
+		{"all PO", "/exams", false, false, true, "6 Module gefunden"},
+		{"degree filter", "/exams?degree=bachelor&program=" + program + "&version=2023", false, false, true, "2 Module gefunden"},
+		{"master fixture empty", "/exams?degree=master", false, false, true, "Keine Module gefunden"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", tc.path, nil)
@@ -43,7 +42,7 @@ func TestArchiveResponses(t *testing.T) {
 			if got := strings.Contains(body, "<!doctype html>"); got != tc.fullPage {
 				t.Fatalf("full page = %v, want %v", got, tc.fullPage)
 			}
-			if tc.path == "/archive?q=SQL" && strings.Contains(body, "Mathematik I") {
+			if tc.path == "/exams?search=SQL" && strings.Contains(body, "Mathematik I") {
 				t.Fatal("unmatched exam leaked into results")
 			}
 		})

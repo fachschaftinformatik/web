@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/model/events"
-	"github.com/fachschaftinformatik/web/internal/model/forum"
 	"github.com/fachschaftinformatik/web/internal/model/meetings"
+	"github.com/fachschaftinformatik/web/internal/model/posts"
 	"github.com/fachschaftinformatik/web/internal/view"
 )
 
@@ -25,12 +25,12 @@ func (c *Handler) home(ctx context.Context, viewer ...int64) (view.HomePage, err
 	upcoming, _ = events.Group(calendar, time.Now())
 	upcoming = upcoming[:min(3, len(upcoming))]
 
-	records, _, err := c.forum.FindPage(ctx, forum.Filter{Type: "discussion"}, 1, 2, viewer...)
+	records, _, err := c.posts.FindPage(ctx, posts.Filter{Type: "discussion"}, 1, 2, viewer...)
 	if err != nil {
 		return view.HomePage{}, err
 	}
 	page := view.HomePage{Events: view.Events(upcoming)}
-	news, _, err := c.forum.FindPage(ctx, forum.Filter{Type: "news"}, 1, 1, viewer...)
+	news, _, err := c.posts.FindPage(ctx, posts.Filter{Type: "news"}, 1, 1, viewer...)
 	if err != nil {
 		return view.HomePage{}, err
 	}
@@ -40,8 +40,8 @@ func (c *Handler) home(ctx context.Context, viewer ...int64) (view.HomePage, err
 		if post.Type == "news" && page.News.URL == "" {
 			page.News = item
 		}
-		if post.Type == "discussion" && len(page.Forum) < 2 {
-			page.Forum = append(page.Forum, item)
+		if post.Type == "discussion" && len(page.Posts) < 2 {
+			page.Posts = append(page.Posts, item)
 		}
 	}
 	return page, nil
@@ -49,8 +49,8 @@ func (c *Handler) home(ctx context.Context, viewer ...int64) (view.HomePage, err
 
 func (c *Handler) Legal(w http.ResponseWriter, r *http.Request) {
 	kind := strings.TrimPrefix(r.URL.Path, "/")
-	titles := map[string]string{"impressum": "Impressum", "datenschutz": "Datenschutz", "barrierefreiheit": "Barrierefreiheit"}
-	if err := c.people.Refresh(r.Context()); err != nil {
+	titles := map[string]string{"legal": "Impressum", "privacy": "Datenschutz", "accessibility": "Barrierefreiheit"}
+	if err := c.members.Refresh(r.Context()); err != nil {
 		c.serverError(w, err)
 		return
 	}
@@ -61,9 +61,9 @@ func (c *Handler) Legal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	legal.Updated = org.LegalUpdated
-	for _, role := range c.people.Responsibilities("board") {
-		if role.ID == org.ChairResponsibility {
-			for _, person := range c.people.People() {
+	for _, role := range c.members.Roles("board") {
+		if role.ID == org.ChairRole {
+			for _, person := range c.members.Members() {
 				if slices.Contains(role.MemberIDs, person.ID) {
 					legal.Chair = append(legal.Chair, person)
 				}
@@ -74,11 +74,14 @@ func (c *Handler) Legal(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Handler) Sitemap(w http.ResponseWriter, r *http.Request) {
-	albums, total, err := c.gallery.AlbumPage(r.Context(), requestedPage(r), 100)
+	albums, total, err := c.media.AlbumPage(r.Context(), requestedPage(r), 100)
 	if err != nil {
 		c.serverError(w, err)
 		return
 	}
 
-	c.render(w, "sitemap", false, view.Page{Title: "Seitenübersicht", Active: "sitemap", Images: view.ImagesPage{Albums: view.Albums(albums), Pagination: listPagination(r, total, 100)}})
+	if !c.validPageRange(w, r, total, 100) {
+		return
+	}
+	c.render(w, "sitemap", false, view.Page{Title: "Seitenübersicht", Active: "sitemap", Media: view.MediaPage{Albums: view.Albums(albums), Pagination: listPagination(r, total, 100)}})
 }

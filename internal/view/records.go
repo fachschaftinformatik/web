@@ -2,25 +2,26 @@ package view
 
 import (
 	"fmt"
-	"strconv"
+	"net/url"
 	"strings"
 	"time"
 
-	"github.com/fachschaftinformatik/web/internal/model/people"
+	"github.com/fachschaftinformatik/web/internal/model/members"
 	"github.com/fachschaftinformatik/web/internal/model/users"
+	"github.com/fachschaftinformatik/web/internal/urls"
 
 	"github.com/fachschaftinformatik/web/internal/content"
-	"github.com/fachschaftinformatik/web/internal/model/archive"
 	"github.com/fachschaftinformatik/web/internal/model/events"
-	"github.com/fachschaftinformatik/web/internal/model/forum"
-	"github.com/fachschaftinformatik/web/internal/model/gallery"
+	"github.com/fachschaftinformatik/web/internal/model/exams"
+	"github.com/fachschaftinformatik/web/internal/model/media"
 	"github.com/fachschaftinformatik/web/internal/model/meetings"
+	"github.com/fachschaftinformatik/web/internal/model/posts"
 )
 
 func (a Assignment) VersionLabel() string { return VersionLabel(a.Version) }
 
 func (e Exam) URL() string {
-	return "/archive/files/" + e.ID
+	return urls.ExamDocument(e.ID)
 }
 
 func (e Exam) Size() string {
@@ -43,28 +44,28 @@ func VersionLabel(value string) string {
 
 func (e Exam) VersionLabel() string { return VersionLabel(e.Version) }
 
-func (s RequestStatus) Label() string {
-	switch archive.Status(s) {
-	case archive.Draft:
+func (s SubmissionStatus) Label() string {
+	switch exams.Status(s) {
+	case exams.Draft:
 		return "Entwurf"
-	case archive.Pending:
-		return "Eingereicht"
-	case archive.Approved:
-		return "Bestätigt"
-	case archive.Rejected:
+	case exams.Pending:
+		return "In Prüfung"
+	case exams.Approved:
+		return "Freigegeben"
+	case exams.Rejected:
 		return "Abgelehnt"
 	}
 	return ""
 }
 
-func (r Request) DateLabel() string {
+func (r Submission) DateLabel() string {
 	if date, err := parseDate(r.Date); err == nil {
 		return dateLabel(date.Format(time.DateOnly))
 	}
 	return r.Date
 }
 
-func (r Request) SubmittedLabel() string {
+func (r Submission) SubmittedLabel() string {
 	value := r.CreatedAt
 	if r.SubmittedAt != nil {
 		value = *r.SubmittedAt
@@ -75,18 +76,19 @@ func (r Request) SubmittedLabel() string {
 	return value
 }
 
-func (e Event) URL() string { return "/community/veranstaltungen/" + e.ID }
+func (e Event) URL() string     { return urls.Event(e.ID) }
+func (e Event) EditURL() string { return urls.EditEvent(e.ID) }
 
 func (e Event) CoverURL() string {
 	if e.CoverKey != "" {
-		return e.URL() + "/cover"
+		return urls.EventCover(e.ID)
 	}
 	return ""
 }
 
 func (e Event) LegacyURL() string {
-	if e.LegacyPostID.Valid {
-		return "/d/" + strconv.FormatInt(e.LegacyPostID.Int64, 10)
+	if e.LegacyPostPublicID != "" {
+		return urls.Post(e.LegacyPostPublicID)
 	}
 	return ""
 }
@@ -118,15 +120,15 @@ func (e Event) SourceDateLabel() string {
 }
 
 func (e Event) FullImageURL() string {
-	if e.GalleryCoverID.Valid {
-		return "/media/" + strconv.FormatInt(e.GalleryCoverID.Int64, 10) + "/original"
+	if e.AlbumCoverPublicID != "" {
+		return urls.Image(e.AlbumCoverPublicID, "original")
 	}
 	return e.CoverURL()
 }
 
-func (e Event) GalleryURL() string {
-	if e.GalleryAlbumID.Valid {
-		return "/community/events/" + strconv.FormatInt(e.GalleryAlbumID.Int64, 10)
+func (e Event) AlbumURL() string {
+	if e.AlbumPublicID != "" {
+		return urls.Album(e.AlbumPublicID)
 	}
 	return ""
 }
@@ -141,12 +143,17 @@ func (e Event) StatusLabel() string {
 	return ""
 }
 
-func (p Post) URL() string { return "/d/" + p.ID }
+func (p Post) URL() string                            { return urls.Post(p.ID) }
+func (p Post) EditURL() string                        { return urls.EditPost(p.ID) }
+func (p Post) VoteURL() string                        { return urls.PostVote(p.ID) }
+func (p Post) CommentsURL() string                    { return urls.PostComments(p.ID) }
+func (t Thread) CommentVoteURL(comment string) string { return urls.CommentVote(t.ID, comment) }
+func (t Thread) EditCommentURL(comment string) string { return urls.EditComment(t.ID, comment) }
 
-func (p Post) AuthorURL() string { return authorURL(p.AuthorID, p.AuthorPublic) }
-func authorURL(id int64, public bool) string {
-	if public && id > 0 {
-		return fmt.Sprintf("/users/%d", id)
+func (p Post) AuthorURL() string { return authorURL(p.AuthorPublicID, p.AuthorPublic) }
+func authorURL(id string, public bool) string {
+	if public && id != "" {
+		return urls.User(id)
 	}
 	return ""
 }
@@ -186,7 +193,7 @@ func (p Post) TypeLabel() string {
 func (c Comment) DateLabel() string { return dateLabel(c.Created) }
 
 func (c Comment) AuthorURL() string {
-	return authorURL(c.AuthorID, c.AuthorPublic)
+	return authorURL(c.AuthorPublicID, c.AuthorPublic)
 }
 
 func (c Comment) UpdatedLabel() string { return dateLabel(c.Updated) }
@@ -247,9 +254,9 @@ func (i Image) previewURL(size string) string {
 		return ""
 	}
 	if i.AlbumCover {
-		return "/media/events/" + i.ID + "/cover/" + size
+		return urls.AlbumCover(i.ID, size)
 	}
-	return "/media/" + i.ID + "/" + size
+	return urls.Image(i.ID, size)
 }
 
 func (i Image) ThumbnailSources() string {
@@ -266,21 +273,23 @@ func (a Album) CoverImage() Image {
 	return Image{}
 }
 
-func (a Album) URL() string { return "/community/events/" + a.ID }
+func (a Album) URL() string { return urls.Album(a.ID) }
 
-func (a Album) ImageURL(image Image) string { return a.URL() + "/" + image.ID }
+func (a Album) ImageURL(image Image) string { return urls.MediaItem(image.ID) }
 
-func (a Album) PageURL(page int) string { return fmt.Sprintf("%s?page=%d", a.URL(), page) }
+func (a Album) PageURL(page int) string {
+	if page <= 1 {
+		return a.URL()
+	}
+	return fmt.Sprintf("%s?page=%d", a.URL(), page)
+}
 
 func (a Album) ReturnURL(index int) string {
-	return fmt.Sprintf("%s#image-%s", a.PageURL(index/gallery.PageSize+1), a.Images[index].ID)
+	return fmt.Sprintf("%s#image-%s", a.PageURL(index/media.PageSize+1), a.Images[index].ID)
 }
 
 func (d Document) URL() string {
-	if d.Stored {
-		return "/documents/" + d.File
-	}
-	return "/assets/content/" + d.File
+	return urls.Document(d.PublicID)
 }
 
 func (d Document) Size() string { return fmt.Sprintf("%d kB", (d.Bytes+999)/1000) }
@@ -315,8 +324,8 @@ func (p Publication) DateLabel() string {
 
 // These adapters contain website routes and display formatting. Domain records
 // remain independent of the HTML representation.
-type Post struct{ forum.Post }
-type Comment struct{ forum.Comment }
+type Post struct{ posts.Post }
+type Comment struct{ posts.Comment }
 type Thread struct {
 	Post
 	Updated, EventDate, Location string
@@ -324,32 +333,35 @@ type Thread struct {
 }
 type Event events.Event
 type Exam struct {
-	archive.Exam
+	exams.Exam
 	Assignments []Assignment
 }
 type Module struct {
-	archive.Module
+	exams.Module
 	Exams []Exam
 }
-type Assignment archive.Assignment
-type RequestStatus archive.Status
-type Request struct {
-	archive.Request
+
+func (m Module) URL() string { return urls.ExamModule(m.ID) }
+
+type Assignment exams.Assignment
+type SubmissionStatus exams.Status
+type Submission struct {
+	exams.Submission
 	Documents   []Exam
 	Assignments []Assignment
-	Status      RequestStatus
+	Status      SubmissionStatus
 }
 
-func (r Request) ListTitle() string {
+func (r Submission) ListTitle() string {
 	if r.ModuleCount > 1 {
 		return fmt.Sprintf("%s und %d weitere", r.Title, r.ModuleCount-1)
 	}
 	return r.Title
 }
 
-type Image struct{ gallery.Image }
+type Image struct{ media.Image }
 type Album struct {
-	gallery.Album
+	media.Album
 	Images []Image
 	Cover  Image
 }
@@ -360,37 +372,51 @@ type Meeting struct {
 }
 type Publication meetings.Publication
 
-func NewPost(p forum.Post) Post { return Post{p} }
-func NewThread(t forum.Thread) Thread {
-	return Thread{Post: NewPost(t.Post), Updated: t.Updated, EventDate: t.EventDate, Location: t.Location, Replies: mapRecords(t.Replies, func(c forum.Comment) Comment { return Comment{c} })}
+func (p Publication) URL() string      { return urls.Document(p.PublicID) }
+func (p Publication) EditURL() string  { return urls.AdminMeeting(p.PublicID) + "/edit" }
+func (p Publication) CheckURL() string { return urls.AdminMeeting(p.PublicID) + "/check" }
+
+func (r Submission) URL() string       { return urls.Submission(r.ID) }
+func (r Submission) CheckURL() string  { return urls.CheckSubmission(r.ID) }
+func (r Submission) ReviewURL() string { return urls.ReviewSubmission(r.ID) }
+func (r Submission) AdminURL() string  { return urls.AdminSubmission(r.ID) }
+func (r Submission) UserURL() string   { return urls.AdminUser(r.UserPublicID) }
+
+func (e Exam) RevisionURL() string {
+	return "/exams/submissions/create?" + url.Values{"revision": {e.ID}}.Encode()
+}
+
+func NewPost(p posts.Post) Post { return Post{p} }
+func NewThread(t posts.Thread) Thread {
+	return Thread{Post: NewPost(t.Post), Updated: t.Updated, EventDate: t.EventDate, Location: t.Location, Replies: mapRecords(t.Replies, func(c posts.Comment) Comment { return Comment{c} })}
 }
 func (t Thread) Edited() bool { return t.Updated != "" && t.Updated != t.Created }
-func NewExam(e archive.Exam) Exam {
-	return Exam{Exam: e, Assignments: mapRecords(e.Assignments, func(a archive.Assignment) Assignment { return Assignment(a) })}
+func NewExam(e exams.Exam) Exam {
+	return Exam{Exam: e, Assignments: mapRecords(e.Assignments, func(a exams.Assignment) Assignment { return Assignment(a) })}
 }
-func NewModule(m archive.Module) Module {
+func NewModule(m exams.Module) Module {
 	return Module{Module: m, Exams: mapRecords(m.Exams, NewExam)}
 }
-func NewRequest(r archive.Request) Request {
-	return Request{Request: r, Documents: mapRecords(r.Documents, NewExam), Assignments: mapRecords(r.Assignments, func(a archive.Assignment) Assignment { return Assignment(a) }), Status: RequestStatus(r.Status)}
+func NewSubmission(r exams.Submission) Submission {
+	return Submission{Submission: r, Documents: mapRecords(r.Documents, NewExam), Assignments: mapRecords(r.Assignments, func(a exams.Assignment) Assignment { return Assignment(a) }), Status: SubmissionStatus(r.Status)}
 }
-func NewImage(i gallery.Image) Image { return Image{i} }
-func NewAlbum(a gallery.Album) Album {
+func NewImage(i media.Image) Image { return Image{i} }
+func NewAlbum(a media.Album) Album {
 	return Album{Album: a, Images: mapRecords(a.Images, NewImage), Cover: NewImage(a.Cover)}
 }
 func NewMeeting(m meetings.Meeting) Meeting {
 	return Meeting{Meeting: m, Documents: mapRecords(m.Documents, func(d meetings.Document) Document { return Document(d) })}
 }
-func Posts(v []forum.Post) []Post { return mapRecords(v, NewPost) }
+func Posts(v []posts.Post) []Post { return mapRecords(v, NewPost) }
 func Events(v []events.Event) []Event {
 	return mapRecords(v, func(e events.Event) Event { return Event(e) })
 }
-func Exams(v []archive.Exam) []Exam           { return mapRecords(v, NewExam) }
-func Modules(v []archive.Module) []Module     { return mapRecords(v, NewModule) }
-func Requests(v []archive.Request) []Request  { return mapRecords(v, NewRequest) }
-func Images(v []gallery.Image) []Image        { return mapRecords(v, NewImage) }
-func Albums(v []gallery.Album) []Album        { return mapRecords(v, NewAlbum) }
-func Meetings(v []meetings.Meeting) []Meeting { return mapRecords(v, NewMeeting) }
+func Exams(v []exams.Exam) []Exam                   { return mapRecords(v, NewExam) }
+func Modules(v []exams.Module) []Module             { return mapRecords(v, NewModule) }
+func Submissions(v []exams.Submission) []Submission { return mapRecords(v, NewSubmission) }
+func Images(v []media.Image) []Image                { return mapRecords(v, NewImage) }
+func Albums(v []media.Album) []Album                { return mapRecords(v, NewAlbum) }
+func Meetings(v []meetings.Meeting) []Meeting       { return mapRecords(v, NewMeeting) }
 func mapRecords[T, U any](values []T, convert func(T) U) []U {
 	if values == nil {
 		return nil
@@ -429,9 +455,14 @@ func parseDate(value string) (time.Time, error) {
 	return time.Time{}, err
 }
 
-type Person struct{ people.Person }
+type Member struct{ members.Member }
 
-func (p Person) Status() string {
+func (m Member) URL() string       { return urls.AdminMember(m.PublicID) }
+func (m Member) EditURL() string   { return m.URL() + "/edit" }
+func (m Member) InviteURL() string { return m.URL() + "/invite" }
+func (m Member) UserURL() string   { return urls.AdminUser(m.UserPublicID) }
+
+func (p Member) Status() string {
 	if p.UserID == 0 {
 		return "Ohne Benutzerkonto"
 	}
@@ -442,6 +473,10 @@ func (p Person) Status() string {
 }
 
 type User struct{ users.User }
+
+func (u User) URL() string        { return urls.AdminUser(u.PublicID) }
+func (u User) ResetURL() string   { return u.URL() + "/reset" }
+func (u User) ConfirmURL() string { return u.URL() + "/confirm" }
 
 func (u User) Permission() string {
 	switch u.Role {

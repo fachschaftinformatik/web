@@ -9,6 +9,7 @@
         {{ if .DocumentTitle }}{{ .DocumentTitle }}{{ else }}{{ .Title }}{{ end }} ·
         {{ .Organization.Name }}
       </title>
+      {{ if .CanonicalURL }}<link rel="canonical" href="{{ .CanonicalURL }}" />{{ end }}
       <link rel="stylesheet" href="/assets/govuk.css" />
       <link rel="stylesheet" href="/assets/site.css" />
       <script src="/assets/htmx.js" defer></script>
@@ -43,7 +44,7 @@
               <div class="app-account-actions">
                 {{ if .SignedIn }}
                   {{ if .CanAdmin }}
-                    <a class="govuk-button govuk-button--inverse app-login" href="/verwaltung"
+                    <a class="govuk-button govuk-button--inverse app-login" href="/admin"
                       >Verwaltung</a
                     >
                   {{ end }}
@@ -88,24 +89,24 @@
               </button>
               <ul class="govuk-service-navigation__list" id="navigation">
                 <li
-                  class="govuk-service-navigation__item {{ if .Fachschaft }}
+                  class="govuk-service-navigation__item {{ if .About }}
                     govuk-service-navigation__item--active
                   {{ end }}"
                 >
                   <a
                     class="govuk-service-navigation__link"
-                    href="/fachschaft"
-                    {{ if .Fachschaft }}
-                      aria-current="{{- if eq .Active "fachschaft" -}}
+                    href="/about"
+                    {{ if .About }}
+                      aria-current="{{- if eq .Active "about" -}}
                         page
                       {{- else -}}
                         true
                       {{- end -}}"
                     {{ end }}
-                    >{{ if .Fachschaft }}
-                      <strong class="govuk-service-navigation__active-fallback">Fachschaft</strong>
+                    >{{ if .About }}
+                      <strong class="govuk-service-navigation__active-fallback">Über uns</strong>
                     {{ else }}
-                      Fachschaft
+                      Über uns
                     {{ end }}</a
                   >
                 </li>
@@ -132,15 +133,15 @@
                   >
                 </li>
                 <li
-                  class="govuk-service-navigation__item {{ if eq .Active "archive" }}
+                  class="govuk-service-navigation__item {{ if eq .Active "exams" }}
                     govuk-service-navigation__item--active
                   {{ end }}"
                 >
                   <a
                     class="govuk-service-navigation__link"
-                    href="/archive"
-                    {{ if eq .Active "archive" }}aria-current="page"{{ end }}
-                    >{{ if eq .Active "archive" }}
+                    href="/exams"
+                    {{ if eq .Active "exams" }}aria-current="page"{{ end }}
+                    >{{ if eq .Active "exams" }}
                       <strong class="govuk-service-navigation__active-fallback"
                         >Altklausuren</strong
                       >
@@ -156,16 +157,16 @@
       </div>
       {{ if eq .Active "home" }}
         <main id="main-content" tabindex="-1">{{ template "content" . }}</main>
-      {{ else if eq .Active "archive" }}
+      {{ else if eq .Active "exams" }}
         <div class="govuk-width-container">
           {{ template "breadcrumbs" . }}
           <main class="govuk-main-wrapper" id="main-content" tabindex="-1">
-            {{ if or .Upload.Action .Request }}
+            {{ if or .Upload.Action .Submission }}
               <div class="govuk-grid-row">
-                <div class="govuk-grid-column-two-thirds">{{ template "archive-content" . }}</div>
+                <div class="govuk-grid-column-two-thirds">{{ template "exams-content" . }}</div>
               </div>
             {{ else }}
-              {{ template "archive-content" . }}
+              {{ template "exams-content" . }}
             {{ end }}
           </main>
         </div>
@@ -196,15 +197,15 @@
             class="app-sidebar"
             aria-label="{{- if .Admin -}}
               Verwaltungsnavigation
-            {{- else if eq .Active "archive" -}}
+            {{- else if eq .Active "exams" -}}
               Klausurfilter
-            {{- else if .Fachschaft -}}
-              Navigation der Fachschaft
+            {{- else if .About -}}
+              Navigation Über uns
             {{- else -}}
               Community-Navigation
             {{- end -}}"
           >
-            {{ if .Fachschaft }}{{ template "fachschaft-navigation" . }}{{ end }}
+            {{ if .About }}{{ template "about-navigation" . }}{{ end }}
             {{ if .Community }}{{ template "community-navigation" . }}{{ end }}
             {{ template "sidebar" . }}
           </aside>
@@ -212,7 +213,7 @@
             {{ template "breadcrumbs" . }}
             <main
               id="main-content"
-              class="{{ if eq .Active "events" }}app-gallery{{ end }}"
+              class="{{ if eq .Active "media" }}app-media{{ end }}"
               tabindex="-1"
             >
               <div class="app-page-heading"><h1 class="govuk-heading-xl">{{ .Title }}</h1></div>
@@ -228,16 +229,16 @@
               <h2 class="govuk-visually-hidden">Weiterführende Links</h2>
               <ul class="govuk-footer__inline-list">
                 <li class="govuk-footer__inline-list-item">
-                  <a class="govuk-footer__link" href="/impressum">Impressum</a>
+                  <a class="govuk-footer__link" href="/legal">Impressum</a>
                 </li>
                 <li class="govuk-footer__inline-list-item">
-                  <a class="govuk-footer__link" href="/barrierefreiheit">Barrierefreiheit</a>
+                  <a class="govuk-footer__link" href="/accessibility">Barrierefreiheit</a>
                 </li>
                 <li class="govuk-footer__inline-list-item">
                   <a class="govuk-footer__link" href="/sitemap">Seitenübersicht</a>
                 </li>
                 <li class="govuk-footer__inline-list-item">
-                  <a class="govuk-footer__link" href="/datenschutz">Datenschutz</a>
+                  <a class="govuk-footer__link" href="/privacy">Datenschutz</a>
                 </li>
                 <li class="govuk-footer__inline-list-item">
                   <a class="govuk-footer__link" href="/contact">Fachschaft kontaktieren</a>
@@ -255,8 +256,8 @@
   </html>
 {{ end }}
 
-{{ define "archive-content" }}
-  {{ if and .Request (not .Request.Reviewing) (eq .Request.Entry.Status "pending") }}
+{{ define "exams-content" }}
+  {{ if and .Submission (not .Submission.Reviewing) (eq .Submission.Entry.Status "pending") }}
     <div class="govuk-panel govuk-panel--confirmation">
       <h1 class="govuk-panel__title">{{ .Title }}</h1>
     </div>
@@ -287,19 +288,19 @@
       <li>
         <a
           class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/discussions"
-          {{ if eq .Active "forum" }}
-            aria-current="{{- if or .Forum.Thread .Editor -}}true{{- else -}}page{{- end -}}"
+          href="/posts"
+          {{ if eq .Active "posts" }}
+            aria-current="{{- if or .Posts.Thread .Editor -}}true{{- else -}}page{{- end -}}"
           {{ end }}
-          >Beiträge</a
+          >Forum</a
         >
       </li>
       <li>
         <a
           class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/community/neuigkeiten"
+          href="/news"
           {{ if eq .Active "news" }}
-            aria-current="{{- if or .Forum.Thread .Editor -}}true{{- else -}}page{{- end -}}"
+            aria-current="{{- if or .Posts.Thread .Editor -}}true{{- else -}}page{{- end -}}"
           {{ end }}
           >Neuigkeiten</a
         >
@@ -310,32 +311,32 @@
       <li>
         <a
           class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/community/veranstaltungen"
-          {{ if eq .Active "calendar" }}
-            aria-current="{{- if or .Events.Detail .Forum.Thread .Editor -}}
+          href="/events"
+          {{ if eq .Active "events" }}
+            aria-current="{{- if or .Events.Detail .Posts.Thread .Editor -}}
               true
             {{- else -}}
               page
             {{- end -}}"
           {{ end }}
-          >Termine</a
+          >Veranstaltungen</a
         >
       </li>
       <li>
         <a
           class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/community/events"
-          {{ if eq .Active "events" }}
-            aria-current="{{- if .Images.Detail -}}true{{- else -}}page{{- end -}}"
+          href="/media"
+          {{ if eq .Active "media" }}
+            aria-current="{{- if .Media.Detail -}}true{{- else -}}page{{- end -}}"
           {{ end }}
-          >Fotos</a
+          >Medien</a
         >
       </li>
     </ul>
   </nav>
 {{ end }}
 
-{{ define "fachschaft-navigation" }}
+{{ define "about-navigation" }}
   <nav class="app-section-nav" aria-label="Seiten der Fachschaft">
     <h2 class="govuk-visually-hidden">Seiten der Fachschaft</h2>
     <h3 class="app-subnav-theme">Die Fachschaft</h3>
@@ -343,8 +344,8 @@
       <li>
         <a
           class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/fachschaft"
-          {{ if eq .Active "fachschaft" }}aria-current="page"{{ end }}
+          href="/about"
+          {{ if eq .Active "about" }}aria-current="page"{{ end }}
           >Über uns</a
         >
       </li>
@@ -353,7 +354,7 @@
           class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
           href="/team"
           {{ if eq .Active "team" }}aria-current="page"{{ end }}
-          >Mitglieder</a
+          >Team</a
         >
         {{ if eq .Active "team" }}
           <ul class="govuk-list app-subnav app-subnav--nested">
@@ -372,7 +373,7 @@
       <li>
         <a
           class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/fachschaft/wahlen"
+          href="/elections"
           {{ if eq .Active "elections" }}aria-current="page"{{ end }}
           >Wahlen</a
         >
@@ -380,7 +381,7 @@
       <li>
         <a
           class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/fachschaft/sitzungen"
+          href="/meetings"
           {{ if eq .Active "meetings" }}aria-current="page"{{ end }}
           >Sitzungen und Protokolle</a
         >
@@ -388,7 +389,7 @@
       <li>
         <a
           class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/fachschaft/ordnungen"
+          href="/regulations"
           {{ if eq .Active "regulations" }}aria-current="page"{{ end }}
           >Satzung und Ordnungen</a
         >

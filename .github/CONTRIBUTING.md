@@ -212,6 +212,9 @@ and creates the GitHub Release automatically. See [release operations](release/R
 for dry runs, recovery, and the release-tooling security patch.
 
 Relevant documentation:
+- [URL convention and canonical tree](urls.md)
+- [Canonical code and UI naming](naming.md)
+- [Temporary proxy redirect plan](url-redirects.md)
 - [Conventional Commits 1.0.0][2]
 - [Code Review Comments][1]
 - [Effective Go](https://go.dev/doc/effective_go)

@@ -18,7 +18,7 @@ import (
 
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/model/events"
-	"github.com/fachschaftinformatik/web/internal/model/forum"
+	"github.com/fachschaftinformatik/web/internal/model/posts"
 	"github.com/fachschaftinformatik/web/internal/model/users"
 	"github.com/fachschaftinformatik/web/internal/storage/disk"
 )
@@ -37,6 +37,7 @@ func TestEventPublicationWorkflow(t *testing.T) {
 	if _, err = db.Exec(`INSERT INTO users(id,email,name,password,active,verified,role) VALUES(1,'editor@fsv-wh.de','Editor','unused',1,1,'editor'),(2,'member@fsv-wh.de','Member','unused',1,1,'user')`); err != nil {
 		t.Fatal(err)
 	}
+	seedPublicRefs(t, db)
 	storage, err := disk.New(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -46,17 +47,18 @@ func TestEventPublicationWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := &Handler{views: views, identity: users.NewService(db, "http://example.test", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}), events: events.NewService(db, storage), forum: forum.NewService(db)}
+	c := &Handler{views: views, identity: users.NewService(db, "http://example.test", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}), events: events.NewService(db, storage), posts: posts.NewService(db)}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/community/veranstaltungen/new", c.EditEvent)
-	mux.HandleFunc("/community/veranstaltungen/{event}/edit", c.EditEvent)
-	mux.HandleFunc("/community/veranstaltungen/{event}/cover", c.CalendarCover)
-	mux.HandleFunc("/community/veranstaltungen/{event}", c.Events)
-	mux.HandleFunc("/community/veranstaltungen", c.Events)
-	mux.HandleFunc("/community/neuigkeiten/new", c.EditDiscussion)
-	mux.HandleFunc("/community/neuigkeiten", c.News)
-	mux.HandleFunc("/discussions", c.Forum)
-	handler := c.withSession(mux)
+	write := routePolicy{authenticated: true, csrf: true, bodyLimit: 8 << 20}
+	mux.Handle("/events/create", c.withSession(write, http.HandlerFunc(c.EditEvent)))
+	mux.Handle("/events/{event}/edit", c.withSession(write, http.HandlerFunc(c.EditEvent)))
+	mux.Handle("/events/{event}/cover", c.withSession(routePolicy{}, http.HandlerFunc(c.CalendarCover)))
+	mux.Handle("/events/{event}", c.withSession(routePolicy{}, http.HandlerFunc(c.Events)))
+	mux.Handle("/events", c.withSession(routePolicy{}, http.HandlerFunc(c.Events)))
+	mux.Handle("/posts/create", c.withSession(write, http.HandlerFunc(c.EditDiscussion)))
+	mux.Handle("/news", c.withSession(routePolicy{}, http.HandlerFunc(c.News)))
+	mux.Handle("/posts", c.withSession(routePolicy{}, http.HandlerFunc(c.Posts)))
+	handler := mux
 	staff, err := c.identity.CreateSession(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
@@ -86,7 +88,7 @@ func TestEventPublicationWorkflow(t *testing.T) {
 		s    *session
 		code int
 	}{{nil, 303}, {member, 403}, {staff, 200}} {
-		w := request("GET", view.EventsURL+"/new", tc.s, nil, "")
+		w := request("GET", view.EventsURL+"/create", tc.s, nil, "")
 		if w.Code != tc.code {
 			t.Fatalf("editor access: %d %s", w.Code, w.Body.String())
 		}
@@ -112,11 +114,11 @@ func TestEventPublicationWorkflow(t *testing.T) {
 		return &body, form.FormDataContentType()
 	}
 	body, kind := upload("invalid")
-	if w := request("POST", view.EventsURL+"/new", staff, body, kind); w.Code != 403 {
+	if w := request("POST", view.EventsURL+"/create", staff, body, kind); w.Code != 403 {
 		t.Fatal("event accepted without CSRF")
 	}
 	body, kind = upload(staff.CSRF)
-	w := request("POST", view.EventsURL+"/new", staff, body, kind)
+	w := request("POST", view.EventsURL+"/create", staff, body, kind)
 	if w.Code != 303 {
 		t.Fatalf("upload: %d %s", w.Code, w.Body.String())
 	}
@@ -134,13 +136,13 @@ func TestEventPublicationWorkflow(t *testing.T) {
 	if w = request("GET", view.EventsURL, nil, nil, ""); !strings.Contains(w.Body.String(), location) {
 		t.Fatal("event absent from list")
 	}
-	if w = request("GET", "/discussions", nil, nil, ""); strings.Contains(w.Body.String(), "Sommergrillen") {
+	if w = request("GET", "/posts", nil, nil, ""); strings.Contains(w.Body.String(), "Sommergrillen") {
 		t.Fatal("event leaked into forum")
 	}
-	if w = request("GET", view.NewsURL+"/new", member, nil, ""); w.Code != 403 {
+	if w = request("GET", "/posts/create?type=news", member, nil, ""); w.Code != 403 {
 		t.Fatal("member could publish news")
 	}
-	if w = request("GET", view.NewsURL+"/new", staff, nil, ""); w.Code != 200 || strings.Contains(w.Body.String(), `name="type"`) {
+	if w = request("GET", "/posts/create?type=news", staff, nil, ""); w.Code != 200 || strings.Contains(w.Body.String(), `name="type"`) {
 		t.Fatal("dedicated news editor unavailable")
 	}
 }

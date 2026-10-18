@@ -5,21 +5,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fachschaftinformatik/web/internal/model/forum"
+	"github.com/fachschaftinformatik/web/internal/model/posts"
 	xhtml "golang.org/x/net/html"
 )
 
-func TestForumLiteralTextEscaping(t *testing.T) {
+func TestPostLiteralTextEscaping(t *testing.T) {
 	renderer, err := NewRenderer()
 	if err != nil {
 		t.Fatal(err)
 	}
 	const source = "Beispiel <script> und & https://example.org/?a=1&b=2"
 	const decoded = "Beispiel <script> und & https://example.org/?a=1&b=2"
-	thread := forum.Thread{Post: forum.Post{ID: "1", Body: source}, Replies: []forum.Comment{{ID: "2", Text: source}}}
+	thread := posts.Thread{Post: posts.Post{ID: "1", Body: source}, Replies: []posts.Comment{{ID: "2", Text: source}}}
 	var output bytes.Buffer
 	display := NewThread(thread)
-	if err := renderer.Render(&output, "thread", false, Page{Forum: ForumPage{Thread: &display}}); err != nil {
+	if err := renderer.Render(&output, "thread", false, Page{Posts: PostsPage{Thread: &display}}); err != nil {
 		t.Fatal(err)
 	}
 	doc, err := xhtml.Parse(strings.NewReader(output.String()))
@@ -27,21 +27,21 @@ func TestForumLiteralTextEscaping(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, node := range []*xhtml.Node{
-		forumTestElement(t, doc, "article", "aria-label", "Beitrag"),
-		forumTestElement(t, doc, "li", "id", "comment-2"),
+		postTestElement(t, doc, "article", "aria-label", "Beitrag"),
+		postTestElement(t, doc, "li", "id", "comment-2"),
 	} {
-		paragraph := forumTestElement(t, node, "p", "class", "govuk-body")
-		if got := strings.Join(strings.Fields(forumTestText(paragraph)), " "); got != decoded {
+		paragraph := postTestElement(t, node, "p", "class", "govuk-body")
+		if got := strings.Join(strings.Fields(postTestText(paragraph)), " "); got != decoded {
 			t.Fatalf("legacy text = %q, want %q", got, decoded)
 		}
-		forumTestElement(t, paragraph, "a", "href", "https://example.org/?a=1&b=2")
+		postTestElement(t, paragraph, "a", "href", "https://example.org/?a=1&b=2")
 	}
 	if strings.Contains(output.String(), "<script> und") {
 		t.Fatal("legacy text became executable HTML")
 	}
 }
 
-func forumTestElement(t *testing.T, root *xhtml.Node, tag, key, value string) *xhtml.Node {
+func postTestElement(t *testing.T, root *xhtml.Node, tag, key, value string) *xhtml.Node {
 	t.Helper()
 	var find func(*xhtml.Node) *xhtml.Node
 	find = func(node *xhtml.Node) *xhtml.Node {
@@ -66,13 +66,13 @@ func forumTestElement(t *testing.T, root *xhtml.Node, tag, key, value string) *x
 	return nil
 }
 
-func forumTestText(node *xhtml.Node) string {
+func postTestText(node *xhtml.Node) string {
 	if node.Type == xhtml.TextNode {
 		return node.Data
 	}
 	var text strings.Builder
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		text.WriteString(forumTestText(child))
+		text.WriteString(postTestText(child))
 	}
 	return text.String()
 }

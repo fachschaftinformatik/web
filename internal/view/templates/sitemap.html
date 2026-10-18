@@ -2,26 +2,26 @@
 {{ define "content" }}
   <nav aria-label="Alle Bereiche der Website">
     <p class="govuk-body"><a class="govuk-link" href="/">Startseite</a></p>
-    <h2 class="govuk-heading-m">Fachschaft</h2>
+    <h2 class="govuk-heading-m">Über uns</h2>
     <ul class="govuk-list govuk-list--spaced">
-      <li><a class="govuk-link" href="/fachschaft">Über uns</a></li>
-      <li><a class="govuk-link" href="/team">Mitglieder</a></li>
-      <li><a class="govuk-link" href="/fachschaft/wahlen">Wahlen</a></li>
-      <li><a class="govuk-link" href="/fachschaft/sitzungen">Sitzungen und Protokolle</a></li>
-      <li><a class="govuk-link" href="/fachschaft/ordnungen">Satzung und Ordnungen</a></li>
+      <li><a class="govuk-link" href="/about">Über uns</a></li>
+      <li><a class="govuk-link" href="/team">Team</a></li>
+      <li><a class="govuk-link" href="/elections">Wahlen</a></li>
+      <li><a class="govuk-link" href="/meetings">Sitzungen und Protokolle</a></li>
+      <li><a class="govuk-link" href="/regulations">Satzung und Ordnungen</a></li>
       <li><a class="govuk-link" href="/contact">Kontakt</a></li>
     </ul>
     <h2 class="govuk-heading-m govuk-!-margin-top-7">Community</h2>
     <ul class="govuk-list govuk-list--spaced">
       <li><a class="govuk-link" href="/community">Community im Überblick</a></li>
-      <li><a class="govuk-link" href="/discussions">Forum</a></li>
-      <li><a class="govuk-link" href="/community/neuigkeiten">Neuigkeiten</a></li>
-      <li><a class="govuk-link" href="/community/veranstaltungen">Veranstaltungen</a></li>
+      <li><a class="govuk-link" href="/posts">Forum</a></li>
+      <li><a class="govuk-link" href="/news">Neuigkeiten</a></li>
+      <li><a class="govuk-link" href="/events">Veranstaltungen</a></li>
       <li>
-        <a class="govuk-link" href="/community/events">Fotos</a>
-        {{ if .Images.Albums }}
+        <a class="govuk-link" href="/media">Medien</a>
+        {{ if .Media.Albums }}
           <ul class="govuk-list govuk-list--bullet govuk-!-margin-top-2">
-            {{ range .Images.Albums }}
+            {{ range .Media.Albums }}
               <li><a class="govuk-link" href="{{ .URL }}">{{ .Title }}</a></li>
             {{ end }}
           </ul>
@@ -30,11 +30,11 @@
     </ul>
     <h2 class="govuk-heading-m govuk-!-margin-top-7">Altklausuren</h2>
     <ul class="govuk-list govuk-list--spaced">
-      <li><a class="govuk-link" href="/archive">Altklausuren finden</a></li>
-      <li><a class="govuk-link" href="/archive/new">Reko einreichen</a></li>
+      <li><a class="govuk-link" href="/exams">Altklausuren finden</a></li>
+      <li><a class="govuk-link" href="/exams/submissions/create">Altklausur einreichen</a></li>
       {{ if .SignedIn }}
-        <li><a class="govuk-link" href="/archive/requests">Meine Einreichungen</a></li>
-        <li><a class="govuk-link" href="/archive/preferences">Voreinstellungen</a></li>
+        <li><a class="govuk-link" href="/exams/submissions">Meine Einreichungen</a></li>
+        <li><a class="govuk-link" href="/exams/settings">Einstellungen für Altklausuren</a></li>
       {{ end }}
     </ul>
     {{ if not .SignedIn }}
@@ -42,19 +42,19 @@
       <ul class="govuk-list govuk-list--spaced">
         <li><a class="govuk-link" href="/login">Anmelden</a></li>
         <li><a class="govuk-link" href="/register">Konto erstellen</a></li>
-        <li><a class="govuk-link" href="/forgot">Passwort vergessen</a></li>
+        <li><a class="govuk-link" href="/password/forgot">Passwort vergessen</a></li>
       </ul>
     {{ end }}
     {{ if .CanAdmin }}
       <h2 class="govuk-heading-m govuk-!-margin-top-7">Verwaltung</h2>
-      <p class="govuk-body"><a class="govuk-link" href="/verwaltung">Zur Verwaltung</a></p>
+      <p class="govuk-body"><a class="govuk-link" href="/admin">Zur Verwaltung</a></p>
     {{ end }}
     <h2 class="govuk-heading-m govuk-!-margin-top-7">Über diese Website</h2>
     <ul class="govuk-list govuk-list--spaced">
-      <li><a class="govuk-link" href="/impressum">Impressum</a></li>
-      <li><a class="govuk-link" href="/datenschutz">Datenschutz</a></li>
-      <li><a class="govuk-link" href="/barrierefreiheit">Barrierefreiheit</a></li>
+      <li><a class="govuk-link" href="/legal">Impressum</a></li>
+      <li><a class="govuk-link" href="/privacy">Datenschutz</a></li>
+      <li><a class="govuk-link" href="/accessibility">Barrierefreiheit</a></li>
     </ul>
   </nav>
-  {{ template "list-pagination" .Images.Pagination }}
+  {{ template "list-pagination" .Media.Pagination }}
 {{ end }}

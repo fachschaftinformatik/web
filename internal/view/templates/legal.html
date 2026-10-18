@@ -15,7 +15,7 @@
 {{ end }}
 {{ define "content" }}
   <p class="govuk-body-s">Zuletzt aktualisiert am {{ .LegalUpdatedLabel }}</p>
-  {{ if eq .Legal.Kind "impressum" }}
+  {{ if eq .Legal.Kind "legal" }}
     <h2 class="govuk-heading-m">Anbieter</h2>
     {{ template "legal-contact" . }}
     <p class="govuk-body">
@@ -50,13 +50,13 @@
       <a class="govuk-link" href="{{ .Organization.HostingURL }}">{{ .Organization.HostingName }}</a
       >.
     </p>
-  {{ else if eq .Legal.Kind "datenschutz" }}
+  {{ else if eq .Legal.Kind "privacy" }}
     <h2 class="govuk-heading-m">Verantwortlich und Kontakt</h2>
     {{ template "legal-contact" . }}
     <p class="govuk-body">
       Bei Fragen zum Datenschutz und zur Ausübung deiner Rechte wende dich an uns. Angaben zum
       Vorsitz findest du im
-      <a class="govuk-link" href="/impressum">Impressum</a>.
+      <a class="govuk-link" href="/legal">Impressum</a>.
     </p>
     <h2 class="govuk-heading-m">Website und technischer Betrieb</h2>
     <p class="govuk-body">
@@ -75,15 +75,15 @@
     <p class="govuk-body">
       Für ein Konto speichern wir Anzeigename, E-Mail-Adresse, einen Passwort-Hash, den gewählten
       Studiengang sowie Konto- und Berechtigungsstatus. Hinzu kommen deine Beiträge, Kommentare,
-      Bewertungen, Archiveinreichungen und gespeicherten Archivfilter, wenn du diese Funktionen
-      nutzt. Bestätigungs- und Passwort-E-Mails werden über die Infrastruktur von
+      Bewertungen, Einreichungen und gespeicherten Altklausurfilter, wenn du diese Funktionen nutzt.
+      Bestätigungs- und Passwort-E-Mails werden über die Infrastruktur von
       {{ .Organization.HostingName }} versendet.
     </p>
     <p class="govuk-body">
       Öffentliche Beiträge und Kommentare sowie die zugehörigen Zeitangaben sind für alle sichtbar.
       Bei öffentlichen Profilen erscheint dein Anzeigename; bei privaten Profilen wird er in
       Beiträgen als „Anonym“ angezeigt. Einzelne Bewertungen werden deinem Konto intern zugeordnet;
-      öffentlich erscheint der Punktestand. Archiveinreichungen sind zunächst für die zuständigen
+      öffentlich erscheint der Punktestand. Einreichungen sind zunächst für die zuständigen
       Prüfenden sichtbar. Lade keine personenbezogenen Daten anderer Personen ohne entsprechende
       Berechtigung hoch.
     </p>

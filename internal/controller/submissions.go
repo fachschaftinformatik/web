@@ -8,133 +8,133 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fachschaftinformatik/web/internal/model/archive"
+	"github.com/fachschaftinformatik/web/internal/model/exams"
 	"github.com/fachschaftinformatik/web/internal/model/meetings"
+	"github.com/fachschaftinformatik/web/internal/urls"
 	"github.com/fachschaftinformatik/web/internal/view"
 )
 
-func selectedAssignments(values []string) []archive.Assignment {
-	var result []archive.Assignment
+func selectedAssignments(values []string) []exams.Assignment {
+	var result []exams.Assignment
 	for _, value := range values {
 		module, version, ok := strings.Cut(value, "|")
 		if ok {
-			result = append(result, archive.Assignment{ModuleID: module, Version: version})
+			result = append(result, exams.Assignment{ModuleID: module, Version: version})
 		}
 	}
 	return result
 }
 
-func (c *Handler) ArchiveRequests(w http.ResponseWriter, r *http.Request) {
+func (c *Handler) ExamsSubmissions(w http.ResponseWriter, r *http.Request) {
 
-	requests, err := c.archive.Requests(r.Context(), w.(*sessionResponse).session.UserID, false)
+	submissions, err := c.exams.Submissions(r.Context(), w.(*sessionResponse).session.UserID, false)
 	if err != nil {
-		c.archiveWriteError(w, r, err)
+		c.examsWriteError(w, r, err)
 		return
 	}
-	c.render(w, "requests", false, view.Page{Title: "Meine Einreichungen", Active: "archive", RequestList: view.RequestListPage{Requests: view.Requests(requests)}})
+	c.render(w, "submissions", false, view.Page{Title: "Meine Einreichungen", Active: "exams", SubmissionList: view.SubmissionListPage{Submissions: view.Submissions(submissions)}})
 }
 
-func (c *Handler) ArchiveRequest(w http.ResponseWriter, r *http.Request) {
+func (c *Handler) ExamsSubmission(w http.ResponseWriter, r *http.Request) {
 
 	userID := w.(*sessionResponse).session.UserID
-	request, err := c.archive.Request(r.Context(), userID, r.PathValue("request"), false)
+	submission, err := c.exams.Submission(r.Context(), userID, r.PathValue("submission"), false)
 	if err != nil {
-		c.archiveWriteError(w, r, err)
+		c.examsWriteError(w, r, err)
 		return
 	}
 	if r.Method == http.MethodPost {
-		if err := c.archive.SendRequest(r.Context(), userID, request.ID); err != nil {
-			c.archiveWriteError(w, r, err)
+		if err := c.exams.Submit(r.Context(), userID, submission.ID); err != nil {
+			c.examsWriteError(w, r, err)
 			return
 		}
-		http.Redirect(w, r, "/archive/requests/"+request.ID, http.StatusSeeOther)
+		http.Redirect(w, r, urls.Submission(submission.ID), http.StatusSeeOther)
 		return
 	}
 	title := "Deine Einreichung"
-	if request.Status == archive.Draft {
+	if submission.Status == exams.Draft {
 		title = "Prüfe deine Angaben"
 	}
-	if request.Status == archive.Pending {
+	if submission.Status == exams.Pending {
 		title = "Einreichung eingegangen"
 	}
-	c.render(w, "request", false, view.Page{Title: title, Active: "archive", Request: &view.RequestPage{Entry: view.NewRequest(request), EditURL: "/archive/requests/" + request.ID + "/edit"}})
+	c.render(w, "submission", false, view.Page{Title: title, Active: "exams", Submission: &view.SubmissionPage{Entry: view.NewSubmission(submission), EditURL: urls.EditSubmission(submission.ID)}})
 }
 
-func (c *Handler) ReviewArchiveRequest(w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(r.URL.Path, "/verwaltung/antraege/") {
-		http.Redirect(w, r, "/verwaltung/einreichungen/"+r.PathValue("request"), http.StatusTemporaryRedirect)
-		return
-	}
+func (c *Handler) ReviewExamsSubmission(w http.ResponseWriter, r *http.Request) {
 
 	session := w.(*sessionResponse).session
-	request, err := c.archive.Request(r.Context(), session.UserID, r.PathValue("request"), true)
+	submission, err := c.exams.Submission(r.Context(), session.UserID, r.PathValue("submission"), true)
 	if err != nil {
-		c.archiveWriteError(w, r, err)
+		c.examsWriteError(w, r, err)
 		return
 	}
-	page := view.Page{Title: "Einreichung prüfen", Active: "admin", Admin: &view.AdminPage{Section: "einreichungen", SectionTitle: "Einreichungen", View: "review", ReviewerOnly: !session.CanAdmin()}, Request: &view.RequestPage{Entry: view.NewRequest(request), Reviewing: true, EditURL: "/verwaltung/einreichungen/" + request.ID + "/edit"}}
+	page := view.Page{Title: "Einreichung prüfen", Active: "admin", Admin: &view.AdminPage{Section: "submissions", SectionTitle: "Einreichungen", View: "review", ReviewerOnly: !session.CanAdmin()}, Submission: &view.SubmissionPage{Entry: view.NewSubmission(submission), Reviewing: true, EditURL: urls.AdminSubmission(submission.ID) + "/edit"}}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		decision := r.PostForm.Get("decision")
 		if decision != "approve" && decision != "reject" {
-			c.pageError(w, "Wähle Bestätigen oder Ablehnen aus.", http.StatusBadRequest)
+			c.pageError(w, "Wähle Freigeben oder Ablehnen aus.", http.StatusBadRequest)
 			return
 		}
-		err := c.archive.Review(r.Context(), session.UserID, request.ID, decision == "approve")
-		if errors.Is(err, archive.ErrConflict) {
-			page.Request.Error = "Die Einreichung oder die bisherige Revision wurde bereits geändert. Lade die Seite neu und prüfe den aktuellen Stand."
+		err := c.exams.ReviewVersion(r.Context(), session.UserID, submission.ID, decision == "approve", r.PostForm.Get("edit_token"))
+		if errors.Is(err, exams.ErrConflict) {
+			page.Submission.Error = "Die Einreichung oder die bisherige Revision wurde bereits geändert. Lade die Seite neu und prüfe den aktuellen Stand."
 			page.DocumentTitle = "Fehler: Einreichung prüfen"
 			status = http.StatusConflict
 		} else {
 			if err != nil {
-				c.archiveWriteError(w, r, err)
+				c.examsWriteError(w, r, err)
 				return
 			} else {
-				http.Redirect(w, r, "/verwaltung/einreichungen/"+request.ID, http.StatusSeeOther)
+				http.Redirect(w, r, urls.AdminSubmission(submission.ID), http.StatusSeeOther)
 				return
 			}
 		}
 	}
-	c.renderStatus(w, "request", false, page, status)
+	c.renderStatus(w, "submission", false, page, status)
 }
 
-func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
+func (c *Handler) UploadExams(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 
-	catalog, err := c.archive.Catalog(r.Context())
+	catalog, err := c.exams.Catalog(r.Context())
 	if err != nil {
 		c.serverError(w, err)
 		return
 	}
-	page := view.Page{Title: "Reko einreichen", Active: "archive", Upload: view.UploadPage{Action: r.URL.Path, Errors: map[string]string{}}}
+	page := view.Page{Title: "Altklausur einreichen", Active: "exams", Upload: view.UploadPage{Action: r.URL.Path, Errors: map[string]string{}}}
 	form := &page.Upload
-	form.ReviewEditing = strings.HasPrefix(r.URL.Path, "/verwaltung/einreichungen/")
+	form.ReviewEditing = r.PathValue("section") == "submissions"
 	if form.ReviewEditing {
 		page.Title, page.Active = "Einreichung bearbeiten", "admin"
-		page.Admin = &view.AdminPage{Section: "einreichungen", SectionTitle: "Einreichungen", View: "review", ReviewerOnly: !w.(*sessionResponse).session.CanAdmin()}
+		page.Admin = &view.AdminPage{Section: "submissions", SectionTitle: "Einreichungen", View: "review", ReviewerOnly: !w.(*sessionResponse).session.CanAdmin()}
 	}
 	userID := w.(*sessionResponse).session.UserID
-	revisionOf, requestID := r.PathValue("id"), r.PathValue("request")
-	var selected []archive.Assignment
-	if requestID != "" {
-		request, err := c.archive.Request(r.Context(), userID, requestID, form.ReviewEditing)
+	revisionOf, submissionID := r.URL.Query().Get("revision"), r.PathValue("submission")
+	if r.Method == http.MethodPost {
+		revisionOf = r.PostForm.Get("revision")
+	}
+	var selected []exams.Assignment
+	if submissionID != "" {
+		submission, err := c.exams.Submission(r.Context(), userID, submissionID, form.ReviewEditing)
 		if err != nil {
-			c.archiveWriteError(w, r, err)
+			c.examsWriteError(w, r, err)
 			return
 		}
-		if !form.ReviewEditing && request.Status != archive.Draft {
-			c.archiveWriteError(w, r, archive.ErrConflict)
+		if !form.ReviewEditing && submission.Status != exams.Draft {
+			c.examsWriteError(w, r, exams.ErrConflict)
 			return
 		}
-		form.RequestID, form.Existing = request.ID, view.Exams(request.Documents)
-		form.EditToken = request.EditToken
-		form.Date, form.Comment = view.NewRequest(request).DateLabel(), request.Comment
-		selected, revisionOf = request.Assignments, request.RevisionOf
+		form.SubmissionID, form.Existing = submission.ID, view.Exams(submission.Documents)
+		form.EditToken = submission.EditToken
+		form.Date, form.Comment = view.NewSubmission(submission).DateLabel(), submission.Comment
+		selected, revisionOf = submission.Assignments, submission.RevisionOf
 	} else {
 		if revisionOf != "" {
-			base, err := c.archive.Revision(r.Context(), userID, revisionOf)
+			base, err := c.exams.Revision(r.Context(), userID, revisionOf)
 			if err != nil {
-				c.archiveWriteError(w, r, err)
+				c.examsWriteError(w, r, err)
 				return
 			}
 			selected = base.Assignments
@@ -146,55 +146,40 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	form.Revision = revisionOf != ""
-	form.Scope = archive.Scope(selected)
+	form.RevisionID = revisionOf
+	form.Scope = exams.Scope(selected)
 	if len(selected) == 0 {
-		preferred, err := c.archive.Preferences(r.Context(), userID)
+		preferred, err := c.exams.Settings(r.Context(), userID)
 		if err != nil {
-			c.archiveWriteError(w, r, err)
+			c.examsWriteError(w, r, err)
 			return
 		}
 		form.Scope = preferred
 	}
 	query := r.URL.Query()
-	if form.ReviewEditing {
-		if r.Method == http.MethodPost {
-			form.EditToken = r.PostForm.Get("edit_token")
-		} else {
-			if query.Has("edit_token") {
-				form.EditToken = query.Get("edit_token")
-			}
-		}
+	if form.ReviewEditing && r.Method == http.MethodPost {
+		form.EditToken = r.PostForm.Get("edit_token")
 	}
-	explicitScope := query.Get("scope") == "1" || r.Method == http.MethodPost
+	explicitScope := query.Has("program") || query.Has("degree") || query.Has("version") || r.Method == http.MethodPost
 	if explicitScope {
 		values := query
 		if r.Method == http.MethodPost {
 			values = r.PostForm
 		}
-		form.Scope = archive.Filter{Programs: values["program"], Degrees: values["degree"], Versions: values["version"]}
+		form.Scope = exams.Filter{Programs: slices.DeleteFunc(values["program"], func(value string) bool { return value == "all" || value == "" }), Degrees: values["degree"], Versions: values["version"]}
 	}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		form.Date, form.Comment = strings.TrimSpace(r.PostForm.Get("date")), strings.TrimSpace(r.PostForm.Get("comment"))
 		selected = selectedAssignments(r.PostForm["assignment"])
-		// Keep older clients functional; the rendered form selects module titles.
-		if r.PostForm.Get("scope") == "" && r.PostForm.Get("module_id") != "" {
-			selected = []archive.Assignment{{ModuleID: r.PostForm.Get("module_id"), Version: r.PostForm.Get("version")}}
-			for _, m := range catalog.Modules() {
-				if m.ID == selected[0].ModuleID {
-					program, degree := archive.ProgramName(m.Program)
-					form.Scope = archive.Filter{Programs: []string{program}, Degrees: []string{degree}, Versions: []string{selected[0].Version}}
-				}
-			}
-		}
 	}
 	if date, err := time.Parse("02.01.2006", form.Date); err == nil {
-		form.DateInput = archive.DateInput{Day: date.Format("2"), Month: date.Format("1"), Year: date.Format("2006")}
+		form.DateInput = exams.DateInput{Day: date.Format("2"), Month: date.Format("1"), Year: date.Format("2006")}
 	}
 	if r.Method == http.MethodPost && (r.PostForm.Has("date-day") || r.PostForm.Has("date-month") || r.PostForm.Has("date-year")) {
-		form.DateInput = archive.DateInput{Day: strings.TrimSpace(r.PostForm.Get("date-day")), Month: strings.TrimSpace(r.PostForm.Get("date-month")), Year: strings.TrimSpace(r.PostForm.Get("date-year"))}
+		form.DateInput = exams.DateInput{Day: strings.TrimSpace(r.PostForm.Get("date-day")), Month: strings.TrimSpace(r.PostForm.Get("date-month")), Year: strings.TrimSpace(r.PostForm.Get("date-year"))}
 	}
-	form.ChooseScope = len(selected) == 0 && !explicitScope || query.Get("choose_scope") == "1"
+	form.ChooseScope = len(selected) == 0 && !explicitScope
 	if explicitScope {
 		for _, item := range []struct {
 			field         string
@@ -217,8 +202,14 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 	form.Programs = view.UploadOptions(catalog.Programs(), form.Scope.Programs)
 	form.Degrees = view.UploadOptions(catalog.Degrees(), form.Scope.Degrees)
 	form.Versions = view.UploadOptions(catalog.Versions(), form.Scope.Versions)
+	for i := range form.Programs {
+		form.Programs[i].Label = catalog.ProgramLabel(form.Programs[i].Name)
+	}
+	for i := range form.Degrees {
+		form.Degrees[i].Label = exams.DegreeLabel(form.Degrees[i].Name)
+	}
 	available := catalog.Assignments(form.Scope)
-	allowed := make(map[string]archive.Assignment, len(available))
+	allowed := make(map[string]exams.Assignment, len(available))
 	for _, a := range available {
 		allowed[a.Key()] = a
 	}
@@ -245,21 +236,21 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 		form.Groups[i].Selected = slices.Contains(form.Modules, form.Groups[i].Title)
 	}
 	if moduleSelection {
-		var fields archive.ValidationErrors
-		selected, fields = archive.ResolveModules(available, form.Modules)
+		var fields exams.ValidationErrors
+		selected, fields = exams.ResolveModules(available, form.Modules)
 		for field, message := range fields {
 			form.Errors[field] = message
 		}
 	}
 
 	if r.Method == http.MethodPost && !form.ChooseScope {
-		submission := archive.Submission{Comment: form.Comment, RevisionOf: revisionOf, RequestID: requestID}
+		submission := exams.SubmissionDraft{Comment: form.Comment, RevisionOf: revisionOf, SubmissionID: submissionID}
 		var dateError string
 		submission.Date, dateError = form.DateInput.Parse()
 		if dateError != "" {
 			form.Errors["date"] = dateError
 		}
-		if len(selected) == 0 || !moduleSelection && len(selected) != len(r.PostForm["assignment"]) && r.PostForm.Get("scope") != "" {
+		if len(selected) == 0 || !moduleSelection && len(selected) != len(r.PostForm["assignment"]) {
 			if form.Errors["module_id"] == "" {
 				form.Errors["module_id"] = "Wähle mindestens ein passendes Modul aus."
 			}
@@ -292,7 +283,7 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				total += len(value)
-				if total > archive.MaxUploadBytes {
+				if total > exams.MaxUploadBytes {
 					form.Errors["files"] = "Wähle genau eine Datei aus."
 					break
 				}
@@ -308,24 +299,24 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if len(form.Errors) == 0 {
-			var result archive.UploadResult
+			var result exams.UploadResult
 			var err error
 			if form.ReviewEditing {
-				result, err = c.archive.EditRequest(r.Context(), userID, submission, form.EditToken)
+				result, err = c.exams.EditSubmission(r.Context(), userID, submission, form.EditToken)
 			} else {
-				result, err = c.archive.SaveDraft(r.Context(), userID, submission)
+				result, err = c.exams.SaveDraft(r.Context(), userID, submission)
 			}
-			var fields archive.ValidationErrors
+			var fields exams.ValidationErrors
 			if errors.As(err, &fields) {
 				form.Errors = fields
 			} else {
 				if err != nil {
-					c.archiveWriteError(w, r, err)
+					c.examsWriteError(w, r, err)
 					return
 				} else {
-					next := "/archive/requests/" + result.RequestID + "/review"
+					next := urls.CheckSubmission(result.SubmissionID)
 					if form.ReviewEditing {
-						next = "/verwaltung/einreichungen/" + result.RequestID
+						next = urls.AdminSubmission(result.SubmissionID)
 					}
 					if r.Header.Get("HX-Request") == "true" {
 						w.Header().Set("HX-Redirect", next)
@@ -348,20 +339,20 @@ func (c *Handler) UploadArchive(w http.ResponseWriter, r *http.Request) {
 	c.renderStatus(w, "upload", false, page, status)
 }
 
-func (c *Handler) archiveWriteError(w http.ResponseWriter, r *http.Request, err error) {
-	if errors.Is(err, archive.ErrConflict) {
-		c.pageError(w, archive.ErrConflict.Error(), http.StatusConflict)
+func (c *Handler) examsWriteError(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, exams.ErrConflict) {
+		c.pageError(w, exams.ErrConflict.Error(), http.StatusConflict)
 		return
 	}
-	if errors.Is(err, archive.ErrNotFound) {
+	if errors.Is(err, exams.ErrNotFound) {
 		c.notFound(w, r)
 		return
 	}
-	if errors.Is(err, archive.ErrForbidden) {
+	if errors.Is(err, exams.ErrForbidden) {
 		c.pageError(w, err.Error(), http.StatusForbidden)
 		return
 	}
-	if errors.Is(err, archive.ErrStorage) {
+	if errors.Is(err, exams.ErrStorage) {
 		c.pageError(w, "Die Dateien konnten nicht gespeichert werden. Versuche es später erneut.", http.StatusServiceUnavailable)
 		return
 	}

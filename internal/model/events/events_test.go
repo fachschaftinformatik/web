@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/publicid"
 	"github.com/fachschaftinformatik/web/internal/storage"
 	"github.com/fachschaftinformatik/web/internal/storage/disk"
 )
@@ -59,6 +60,59 @@ func coverPhoto(t *testing.T) []byte {
 	return b.Bytes()
 }
 
+func TestDeletedHighestEventKeyIsNeverReused(t *testing.T) {
+	s, db, _ := eventService(t)
+	ctx := context.Background()
+	d := Draft{Title: "An event", Body: "An event description."}
+	first, err := s.Save(ctx, 1, "", d, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	old, err := s.Lookup(ctx, first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`DELETE FROM calendar_events WHERE id=?`, old.InternalID); err != nil {
+		t.Fatal(err)
+	}
+	next, err := s.Save(ctx, 1, "", d, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	current, err := s.Lookup(ctx, next)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first == next || old.InternalID == current.InternalID {
+		t.Fatal("deleted event identity was reused")
+	}
+	if _, err := s.Save(ctx, 1, next, d, "", nil); err != nil {
+		t.Fatal("existing event update:", err)
+	}
+}
+
+func TestLinkedPostResolvesItsEventRatherThanEqualID(t *testing.T) {
+	s, db, _ := eventService(t)
+	if _, err := db.Exec(`INSERT INTO discussion_posts(id,title,body,type,user_id) VALUES(50,'Original post','Body','event',1);
+		INSERT INTO calendar_events(id,title,body,user_id,legacy_post_id) VALUES
+		(60,'Linked event','Body',1,50),(50,'Unrelated event','Body',1,NULL)`); err != nil {
+		t.Fatal(err)
+	}
+	postRef := reference(t, db, "posts", "50")
+	event, err := s.ForPost(context.Background(), postRef)
+	if err != nil || event.ID != reference(t, db, "events", "60") {
+		t.Fatalf("linked event = %q, %v", event.ID, err)
+	}
+	if _, err := db.Exec(`UPDATE calendar_events SET deleted_at='2026-10-18T00:00:00Z' WHERE id=60`); err != nil {
+		t.Fatal(err)
+	}
+	for _, post := range []string{postRef, "999"} {
+		if _, err := s.ForPost(context.Background(), post); !errors.Is(err, ErrNotFound) {
+			t.Fatalf("post %s: %v", post, err)
+		}
+	}
+}
+
 func TestStandaloneEventsPersistCoversAndRestrictPublishing(t *testing.T) {
 	s, db, _ := eventService(t)
 	ctx := context.Background()
@@ -76,12 +130,24 @@ func TestStandaloneEventsPersistCoversAndRestrictPublishing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if !publicid.Valid(value) {
+		t.Fatalf("noncanonical public event ID %q", value)
+	}
+	if _, err := s.Lookup(ctx, e.InternalID); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("decimal event lookup alias: %v", err)
+	}
+	if _, err := s.Save(ctx, 1, e.InternalID, d, "", nil); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("decimal event edit alias: %v", err)
+	}
+	if _, err := s.OpenCover(ctx, e.InternalID); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("decimal cover alias: %v", err)
+	}
 	if strings.Contains(e.Body, "bad()") || e.EventDate != "2027-01-30T16:00:00Z" || e.CoverWidth != 711 || e.CoverHeight != 1600 || e.LegacyPostID.Valid {
 		t.Fatalf("event: %+v", e)
 	}
 	var count int
 	if err := db.QueryRow(`SELECT COUNT(*) FROM discussion_posts`).Scan(&count); err != nil || count != 0 {
-		t.Fatalf("created forum posts: %d %v", count, err)
+		t.Fatalf("created discussion posts: %d %v", count, err)
 	}
 	object, err := s.OpenCover(ctx, value)
 	if err != nil {
@@ -123,7 +189,7 @@ func TestStandaloneEventsPersistCoversAndRestrictPublishing(t *testing.T) {
 	if _, err := s.OpenCover(ctx, value); !errors.Is(err, ErrNotFound) {
 		t.Fatal("removed image still public")
 	}
-	if _, err := db.Exec(`UPDATE calendar_events SET deleted_at='2026-01-01T00:00:00Z' WHERE id=?`, value); err != nil {
+	if _, err := db.Exec(`UPDATE calendar_events SET deleted_at='2026-01-01T00:00:00Z' WHERE id=?`, e.InternalID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.Lookup(ctx, value); !errors.Is(err, ErrNotFound) {

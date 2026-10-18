@@ -43,9 +43,9 @@
             {{ end }}
           </dl>
           <div class="app-rich-content">{{ richHTML .RichBody }}</div>
-          {{ if .GalleryURL }}
+          {{ if .AlbumURL }}
             <p class="govuk-body">
-              <a class="govuk-link" href="{{ .GalleryURL }}">Alle Fotos ansehen</a>
+              <a class="govuk-link" href="{{ .AlbumURL }}">Album ansehen</a>
             </p>
           {{ end }}
           {{ if .SourceURL }}
@@ -59,7 +59,7 @@
           {{ end }}
           {{ if $.Events.CanCreate }}
             <p class="govuk-body">
-              <a class="govuk-button govuk-button--secondary" href="{{ .URL }}/edit"
+              <a class="govuk-button govuk-button--secondary" href="{{ .EditURL }}"
                 >Veranstaltung bearbeiten</a
               >
             </p>
@@ -92,7 +92,7 @@
   {{ else }}
     {{ if .Events.CanCreate }}
       <p class="govuk-body">
-        <a class="govuk-button" href="/community/veranstaltungen/new">Veranstaltung erstellen</a>
+        <a class="govuk-button" href="/events/create">Veranstaltung hinzufügen</a>
       </p>
     {{ end }}
     {{ if or .Events.Upcoming (le .Events.Pagination.Page 1) }}
@@ -118,7 +118,7 @@
     {{ template "list-pagination" .Events.Pagination }}
     <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible" />
     <p class="govuk-body">
-      <a class="govuk-link" href="/community/events">Fotos von unseren Veranstaltungen ansehen</a>
+      <a class="govuk-link" href="/media">Medien von unseren Veranstaltungen ansehen</a>
     </p>
   {{ end }}
 {{ end }}

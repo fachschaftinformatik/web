@@ -23,15 +23,16 @@ func TestRegistrationPreview(t *testing.T) {
 		{"Name", "name@sub.fsv-wh.de", "private-test-password", "Verwende eine E-Mail-Adresse mit", 422},
 		{"Name", "Name <name@fsv-wh.de>", "private-test-password", "Gib eine vollständige E-Mail-Adresse ein", 422},
 		{"Name", "name@studmail.w-hs.de", "short", "Das Passwort muss mindestens 8 Zeichen lang sein.", 422},
-		{"Name", "name@studmail.w-hs.de", strings.Repeat("x", 73), "Prüfe dein E-Mail-Postfach", 200},
+		{"Name", "name@studmail.w-hs.de", strings.Repeat("x", 73), "", 303},
 		{"Name", "name@studmail.w-hs.de", "äöüßéèñ", "Das Passwort muss mindestens 8 Zeichen lang sein.", 422},
-		{"Name", "name@studmail.w-hs.de", "äöüßéèñø", "Prüfe dein E-Mail-Postfach", 200},
-		{"Name", "name@studmail.w-hs.de", " a b c d", "Prüfe dein E-Mail-Postfach", 200},
-		{"  Name  ", "  Name@STUDMAIL.W-HS.DE  ", "private-test-password", "Prüfe dein E-Mail-Postfach", 200},
+		{"Name", "name@studmail.w-hs.de", "äöüßéèñø", "", 303},
+		{"Name", "name@studmail.w-hs.de", " a b c d", "", 303},
+		{"  Name  ", "  Name@STUDMAIL.W-HS.DE  ", "private-test-password", "", 303},
 		{"Name", "name@fsv-wh.de", "private-test-password", "Verwende eine E-Mail-Adresse mit @studmail.w-hs.de.", 422},
 	} {
-		handler, _ := testHandler(t)
-		form := url.Values{"name": {tc.name}, "email": {tc.email}, "password": {tc.password}, "program_id": {"1"}}
+		handler, db := testApplication(t)
+		seedPublicContent(t, db)
+		form := url.Values{"name": {tc.name}, "email": {tc.email}, "password": {tc.password}, "program_id": {publicRef(t, db, "programs", "1")}}
 		req := httptest.NewRequest(http.MethodPost, "/register", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		response := httptest.NewRecorder()
@@ -47,7 +48,7 @@ func TestRegistrationPreview(t *testing.T) {
 			t.Fatal("missing accessible validation errors")
 		}
 	}
-	for _, program := range []string{"", "unknown-program"} {
+	for _, program := range []string{"", "unknown-program", "1"} {
 		handler, _ := testHandler(t)
 		form := url.Values{"name": {"Testperson"}, "email": {"test@studmail.w-hs.de"}, "password": {"private-test-password"}, "program_id": {program}}
 		req := httptest.NewRequest(http.MethodPost, "/register", strings.NewReader(form.Encode()))
@@ -55,7 +56,7 @@ func TestRegistrationPreview(t *testing.T) {
 		response := httptest.NewRecorder()
 		handler.Register(response, req)
 		if program == "" {
-			if response.Code != http.StatusOK {
+			if response.Code != http.StatusSeeOther {
 				t.Fatal("omitting the optional programme must pass validation")
 			}
 		} else if response.Code != 422 || !strings.Contains(response.Body.String(), `href="#program_id"`) || !strings.Contains(response.Body.String(), "Bitte wähle deinen Studiengang aus.") {

@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/fachschaftinformatik/web/internal/datetime"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/database"
-	"github.com/fachschaftinformatik/web/internal/id"
+	"github.com/fachschaftinformatik/web/internal/publicid"
+	"github.com/fachschaftinformatik/web/internal/urls"
 )
 
 // Invite uses the caller's transaction so the membership and queued mail commit
@@ -29,15 +31,18 @@ func (s *Service) Invite(ctx context.Context, tx *sql.Tx, name, email string) (d
 		if existing != 0 {
 			return database.User{}, ErrEmailExists
 		}
-		user, err = q.CreateUser(ctx, database.CreateUserParams{ID: int64(id.New()), Email: email, Name: strings.TrimSpace(name), Password: "!", Role: "editor", Active: 1})
+		user, err = CreateUserTx(ctx, tx, database.CreateUserParams{Email: email, Name: strings.TrimSpace(name), Password: "!", Role: "editor", Active: 1})
 	} else if err == nil && user.Role == "user" {
 		user, err = q.SetUserRole(ctx, database.SetUserRoleParams{ID: user.ID, Role: "editor"})
 	}
 	if err != nil {
 		return database.User{}, err
 	}
+	if _, err := publicid.Ensure(ctx, tx, "users", strconv.FormatInt(user.ID, 10)); err != nil {
+		return database.User{}, err
+	}
 	if user.Verified != 1 {
-		if err := s.queueLink(ctx, tx, user.ID, email, name, "verify", "/invite"); err != nil {
+		if err := s.queueLink(ctx, tx, user.ID, email, name, "verify", urls.AcceptInvitationPath); err != nil {
 			return database.User{}, err
 		}
 	}
@@ -121,9 +126,9 @@ func (s *Service) ResendConfirmation(ctx context.Context, userID int64) (bool, e
 	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM people WHERE user_id=?)`, userID).Scan(&member); err != nil {
 		return false, err
 	}
-	path := "/verify"
+	path := urls.ConfirmEmailPath
 	if member {
-		path = "/invite"
+		path = urls.AcceptInvitationPath
 	}
 	if err := s.queueLink(ctx, tx, user.ID, user.Email, user.Name, "verify", path); err != nil {
 		return false, err

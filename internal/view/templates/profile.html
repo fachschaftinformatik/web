@@ -2,9 +2,9 @@
 {{ define "content" }}
   <section aria-labelledby="profile-posts">
     <h2 class="govuk-heading-m" id="profile-posts">Öffentliche Beiträge</h2>
-    {{ if .Forum.Posts }}
-      <ul class="govuk-list app-forum-posts" role="list">
-        {{ range .Forum.Posts }}
+    {{ if .Posts.Posts }}
+      <ul class="govuk-list app-posts-list" role="list">
+        {{ range .Posts.Posts }}
           <li>
             <h3 class="govuk-heading-s govuk-!-margin-bottom-2">
               <a class="govuk-link" href="{{ .URL }}">{{ .Title }}</a>
@@ -22,5 +22,5 @@
       <p class="govuk-body">Noch keine öffentlichen Beiträge.</p>
     {{ end }}
   </section>
-  {{ template "list-pagination" .Forum.Pagination }}
+  {{ template "list-pagination" .Posts.Pagination }}
 {{ end }}

@@ -2,138 +2,179 @@ package controller
 
 import (
 	"net/http"
-	"strings"
 
+	"github.com/fachschaftinformatik/web/internal/model/exams"
+	"github.com/fachschaftinformatik/web/internal/urls"
 	"github.com/fachschaftinformatik/web/internal/view"
 )
 
+// section fixes the dispatcher input at registration time; arbitrary URL sections
+// must never grant access to the administrative dispatcher.
+func section(name string, handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.SetPathValue("section", name)
+		handler(w, r)
+	}
+}
+
 func (c *Handler) routes() http.Handler {
 	router := http.NewServeMux()
-	router.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+	register := func(pattern string, policy routePolicy, handler http.HandlerFunc) {
+		router.Handle(pattern, c.validateRoute(c.withSession(policy, handler)))
+	}
+	registerPages(c, register)
+	registerPosts(c, register)
+	registerEvents(c, register)
+	registerMedia(c, register)
+	registerExams(c, register)
+	registerAccounts(c, register)
+	registerAdmin(c, register)
+	register("GET "+urls.DocumentPattern, routePolicy{}, c.Document)
+	register("GET "+urls.AssetsPath, routePolicy{}, http.StripPrefix(urls.AssetsPath, http.FileServerFS(view.Assets())).ServeHTTP)
+	// Unknown routes do not run authentication or CSRF middleware.
+	router.HandleFunc("/", c.notFound)
+	return c.canonicalize(router)
+}
+
+type routeRegister func(string, routePolicy, http.HandlerFunc)
+
+func forms(register routeRegister, path string, policy routePolicy, handler http.HandlerFunc) {
+	register("GET "+path, policy, handler)
+	register("POST "+path, policy, handler)
+}
+
+func registerPages(c *Handler, register routeRegister) {
+	public := routePolicy{}
+	register("GET "+urls.HealthPath, public, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = w.Write([]byte("ok\n"))
 	})
-	router.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		home, err := c.home(r.Context(), forumUser(w))
+	register("GET "+urls.HomePattern, public, func(w http.ResponseWriter, r *http.Request) {
+		home, err := c.home(r.Context(), postsUser(w))
 		if err != nil {
 			c.serverError(w, err)
 			return
 		}
-		albums, _, err := c.gallery.AlbumPage(r.Context(), 1, 6)
+		albums, _, err := c.media.AlbumPage(r.Context(), 1, 6)
 		if err != nil {
 			c.serverError(w, err)
 			return
 		}
-
-		c.render(w, "home", false, view.Page{Title: "Startseite", Active: "home", Home: home, Images: view.ImagesPage{Albums: view.Albums(albums)}})
+		c.render(w, "home", false, view.Page{Title: "Startseite", Active: "home", Home: home, Media: view.MediaPage{Albums: view.Albums(albums)}})
 	})
-	router.HandleFunc("GET /team", c.Team)
-	router.HandleFunc("GET /assets/content/{file}", c.HistoricalDocument)
-	router.HandleFunc("GET /sitemap", c.Sitemap)
-	router.HandleFunc("GET /impressum", c.Legal)
-	router.HandleFunc("GET /datenschutz", c.Legal)
-	router.HandleFunc("GET /barrierefreiheit", c.Legal)
-	router.HandleFunc("GET /contact", func(w http.ResponseWriter, r *http.Request) {
+	register("GET "+urls.TeamPath, public, c.Team)
+	register("GET "+urls.SitemapPath, public, c.Sitemap)
+	for _, path := range []string{urls.LegalPath, urls.PrivacyPath, urls.AccessibilityPath} {
+		register("GET "+path, public, c.Legal)
+	}
+	register("GET "+urls.ContactPath, public, func(w http.ResponseWriter, r *http.Request) {
 		c.render(w, "contact", false, view.Page{Title: "Kontakt", Active: "contact"})
 	})
-	router.HandleFunc("GET /fachschaft", func(w http.ResponseWriter, r *http.Request) {
-		c.render(w, "fachschaft", false, view.Page{Title: "Fachschaft", Active: "fachschaft", Fachschaft: true})
-	})
-	router.HandleFunc("GET /fachschaft/sitzungen", c.Meetings)
-	router.HandleFunc("GET /fachschaft/wahlen", func(w http.ResponseWriter, r *http.Request) {
-		c.render(w, "elections", false, view.Page{Title: "Wahlen", Active: "elections", Fachschaft: true})
-	})
-	router.HandleFunc("GET /fachschaft/ordnungen", func(w http.ResponseWriter, r *http.Request) {
-		c.render(w, "regulations", false, view.Page{Title: "Satzung und Ordnungen", Active: "regulations", Fachschaft: true})
-	})
-	router.HandleFunc("GET /archive", c.Archive)
-	router.HandleFunc("GET /archive/{module}", c.ArchiveModule)
-	router.HandleFunc("GET /archive/new", c.UploadArchive)
-	router.HandleFunc("POST /archive/new", c.UploadArchive)
-	router.HandleFunc("GET /archive/preferences", c.ArchivePreferences)
-	router.HandleFunc("POST /archive/preferences", c.ArchivePreferences)
-	router.HandleFunc("GET /archive/files/{id}/revision", c.UploadArchive)
-	router.HandleFunc("POST /archive/files/{id}/revision", c.UploadArchive)
-	router.HandleFunc("GET /archive/requests", c.ArchiveRequests)
-	router.HandleFunc("GET /archive/requests/{request}", c.ArchiveRequest)
-	router.HandleFunc("GET /archive/requests/{request}/review", c.ArchiveRequest)
-	router.HandleFunc("POST /archive/requests/{request}/review", c.ArchiveRequest)
-	router.HandleFunc("GET /archive/requests/{request}/edit", c.UploadArchive)
-	router.HandleFunc("POST /archive/requests/{request}/edit", c.UploadArchive)
-	router.HandleFunc("GET /archive/files/{id}", c.ArchiveFile)
-	router.HandleFunc("GET /api/v1/archive/{id}/file", c.ArchiveFile)
-	router.HandleFunc("GET /archive/{module}/{entry}", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/archive/"+r.PathValue("module"), http.StatusSeeOther)
-	})
-	router.HandleFunc("GET /discussions", c.Forum)
-	router.HandleFunc("GET /community/veranstaltungen", c.Events)
-	router.HandleFunc("GET /community/veranstaltungen/new", c.EditEvent)
-	router.HandleFunc("POST /community/veranstaltungen/new", c.EditEvent)
-	router.HandleFunc("GET /community/veranstaltungen/{event}", c.Events)
-	router.HandleFunc("GET /community/veranstaltungen/{event}/edit", c.EditEvent)
-	router.HandleFunc("POST /community/veranstaltungen/{event}/edit", c.EditEvent)
-	router.HandleFunc("GET /community/veranstaltungen/{event}/cover", c.CalendarCover)
-	router.HandleFunc("GET /community/neuigkeiten", c.News)
-	router.HandleFunc("GET /community/neuigkeiten/new", c.EditDiscussion)
-	router.HandleFunc("POST /community/neuigkeiten/new", c.EditDiscussion)
-	router.HandleFunc("GET /d/{post}", c.Discussion)
-	router.HandleFunc("GET /users/{id}", c.PublicProfile)
-	router.HandleFunc("GET /d/new", c.EditDiscussion)
-	router.HandleFunc("POST /d/new", c.EditDiscussion)
-	router.HandleFunc("GET /d/{post}/edit", c.EditDiscussion)
-	router.HandleFunc("POST /d/{post}/edit", c.EditDiscussion)
-	router.HandleFunc("POST /d/{post}/comments", c.Comment)
-	router.HandleFunc("POST /d/{post}/comments/{comment}/edit", c.Comment)
-	router.HandleFunc("POST /d/{post}/vote", c.Vote)
-	router.HandleFunc("POST /d/{post}/comments/{comment}/vote", c.Vote)
-	router.HandleFunc("GET /media/{id}/{size}", c.MediaFile)
-	router.HandleFunc("GET /media/events/{id}/cover/{size}", c.EventCover)
-	router.HandleFunc("GET /login", c.Login)
-	router.HandleFunc("POST /login", c.Login)
-	router.HandleFunc("POST /logout", c.Logout)
-	router.HandleFunc("GET /verwaltung", c.Admin)
-	router.HandleFunc("GET /verwaltung/{section}", c.Admin)
-	router.HandleFunc("GET /verwaltung/{section}/{id}", c.Admin)
-	router.HandleFunc("POST /verwaltung/{section}/{id}", c.Admin)
-	router.HandleFunc("POST /verwaltung/mitglieder/{id}/einladen", c.ResendInvitation)
-	router.HandleFunc("GET /verwaltung/antraege/{request}", c.ReviewArchiveRequest)
-	router.HandleFunc("POST /verwaltung/antraege/{request}", c.ReviewArchiveRequest)
-	router.HandleFunc("GET /verwaltung/einreichungen/{request}", c.ReviewArchiveRequest)
-	router.HandleFunc("POST /verwaltung/einreichungen/{request}", c.ReviewArchiveRequest)
-	router.HandleFunc("GET /verwaltung/einreichungen/{request}/edit", c.UploadArchive)
-	router.HandleFunc("POST /verwaltung/einreichungen/{request}/edit", c.UploadArchive)
-	router.HandleFunc("GET /verwaltung/sitzungen/{id}/pruefen", c.ReviewPublication)
-	router.HandleFunc("POST /verwaltung/sitzungen/{id}/pruefen", c.ReviewPublication)
-	router.HandleFunc("GET /verwaltung/benutzer/{id}/passwort-zuruecksetzen", c.ResetUserPassword)
-	router.HandleFunc("POST /verwaltung/benutzer/{id}/passwort-zuruecksetzen", c.ResetUserPassword)
-	router.HandleFunc("POST /verwaltung/benutzer/{id}/bestaetigung-senden", c.ResendUserConfirmation)
-	router.HandleFunc("GET /documents/{id}", c.Document)
-	router.HandleFunc("GET /register", c.Register)
-	router.HandleFunc("POST /register", c.Register)
-	router.HandleFunc("GET /forgot", c.ForgotPassword)
-	router.HandleFunc("POST /forgot", c.ForgotPassword)
-	router.HandleFunc("GET /verify", c.Token)
-	router.HandleFunc("POST /verify", c.Token)
-	router.HandleFunc("GET /reset", c.Token)
-	router.HandleFunc("POST /reset", c.Token)
-	router.HandleFunc("GET /invite", c.Invitation)
-	router.HandleFunc("POST /invite", c.Invitation)
-	router.HandleFunc("GET /community", func(w http.ResponseWriter, r *http.Request) {
+	for _, page := range []struct{ path, title, template string }{{urls.AboutPath, "Über uns", "about"}, {urls.ElectionsPath, "Wahlen", "elections"}, {urls.RegulationsPath, "Satzung und Ordnungen", "regulations"}} {
+		register("GET "+page.path, public, func(w http.ResponseWriter, r *http.Request) {
+			c.render(w, page.template, false, view.Page{Title: page.title, Active: page.template, About: true})
+		})
+	}
+	register("GET "+urls.MeetingsPath, public, c.Meetings)
+	register("GET "+urls.CommunityPath, public, func(w http.ResponseWriter, r *http.Request) {
 		c.render(w, "community", false, view.Page{Title: "Community", Active: "community", Community: true})
 	})
-	router.HandleFunc("GET /community/events", c.Images)
-	router.HandleFunc("GET /community/events/{album}", c.Images)
-	router.HandleFunc("GET /community/events/{album}/{image}", c.Images)
-	legacyEvents := func(w http.ResponseWriter, r *http.Request) {
-		target := "/community/events" + strings.TrimPrefix(r.URL.Path, "/events")
-		if r.URL.RawQuery != "" {
-			target += "?" + r.URL.RawQuery
-		}
-		http.Redirect(w, r, target, http.StatusSeeOther)
+}
+
+func registerExams(c *Handler, register routeRegister) {
+	public := routePolicy{}
+	exam := routePolicy{authenticated: true, csrf: true, private: true, bodyLimit: exams.MaxUploadBytes + 1<<20}
+	register("GET "+urls.ExamsPath, public, c.Exams)
+	register("GET "+urls.ExamModulePattern, public, c.ExamsModule)
+	register("GET "+urls.ExamDocumentPattern, exam, c.ExamsFile)
+	forms(register, urls.ExamSettingsPath, exam, c.ExamSettings)
+	forms(register, urls.CreateSubmissionPath, exam, c.UploadExams)
+	register("GET "+urls.SubmissionsPath, exam, c.ExamsSubmissions)
+	register("GET "+urls.SubmissionPattern, exam, c.ExamsSubmission)
+	forms(register, urls.CheckSubmissionPattern, exam, c.ExamsSubmission)
+	forms(register, urls.EditSubmissionPattern, exam, c.UploadExams)
+}
+
+func registerPosts(c *Handler, register routeRegister) {
+	public := routePolicy{}
+	member := routePolicy{authenticated: true, csrf: true, bodyLimit: 8 << 20}
+	register("GET "+urls.PostsPath, public, c.Posts)
+	register("GET "+urls.NewsPath, public, c.News)
+	forms(register, urls.CreatePostPath, member, c.EditDiscussion)
+	register("GET "+urls.PostPattern, public, c.Discussion)
+	forms(register, urls.EditPostPattern, member, c.EditDiscussion)
+	register("POST "+urls.PostCommentsPattern, member, c.Comment)
+	register("POST "+urls.EditCommentPattern, member, c.Comment)
+	register("POST "+urls.PostVotePattern, member, c.Vote)
+	register("POST "+urls.CommentVotePattern, member, c.Vote)
+}
+
+func registerEvents(c *Handler, register routeRegister) {
+	public := routePolicy{}
+	member := routePolicy{authenticated: true, csrf: true, bodyLimit: 8 << 20}
+	register("GET "+urls.EventsPath, public, c.Events)
+	forms(register, urls.CreateEventPath, member, c.EditEvent)
+	register("GET "+urls.EventPattern, public, c.Events)
+	forms(register, urls.EditEventPattern, member, c.EditEvent)
+	register("GET "+urls.EventCoverPattern, public, c.CalendarCover)
+}
+
+func registerMedia(c *Handler, register routeRegister) {
+	public := routePolicy{}
+	register("GET "+urls.MediaPath, public, c.Media)
+	register("GET "+urls.AlbumPattern, public, c.Media)
+	register("GET "+urls.AlbumCoverPattern, public, c.AlbumCover)
+	register("GET "+urls.MediaItemPattern, public, c.Media)
+	register("GET "+urls.ImagePattern, public, c.MediaFile)
+}
+
+func registerAccounts(c *Handler, register routeRegister) {
+	account := routePolicy{session: true, csrf: true, bodyLimit: 64 << 10}
+	member := routePolicy{authenticated: true, csrf: true, bodyLimit: 8 << 20}
+	register("GET "+urls.UserPattern, routePolicy{}, c.PublicProfile)
+	forms(register, urls.LoginPath, account, c.Login)
+	register("POST "+urls.LogoutPath, member, c.Logout)
+	forms(register, urls.RegisterPath, account, c.Register)
+	forms(register, urls.ForgotPasswordPath, account, c.ForgotPassword)
+	forms(register, urls.ResetPasswordPath, account, c.Token)
+	forms(register, urls.ConfirmEmailPath, account, func(w http.ResponseWriter, r *http.Request) { r.SetPathValue("tokenKind", "verify"); c.Token(w, r) })
+	forms(register, urls.AcceptInvitationPath, account, c.Invitation)
+}
+
+func registerAdmin(c *Handler, register routeRegister) {
+	admin := routePolicy{authenticated: true, admin: true, csrf: true, bodyLimit: uploadBodyLimit}
+	reviewer := routePolicy{authenticated: true, reviewer: true, csrf: true, bodyLimit: exams.MaxUploadBytes + 1<<20}
+	form := func(path string, policy routePolicy, handler http.HandlerFunc) {
+		forms(register, path, policy, handler)
 	}
-	router.HandleFunc("GET /events", legacyEvents)
-	router.HandleFunc("GET /events/{rest...}", legacyEvents)
-	router.Handle("GET /assets/", http.StripPrefix("/assets/", http.FileServerFS(view.Assets())))
-	router.HandleFunc("/", c.notFound)
-	return c.withSession(router)
+	register("GET "+urls.AdminPath, reviewer, c.Admin)
+	for _, item := range []struct{ name, path string }{{"settings", urls.AdminSettingsPath}, {"members", urls.AdminMembersPath}, {"roles", urls.AdminRolesPath}, {"meetings", urls.AdminMeetingsPath}, {"users", urls.AdminUsersPath}} {
+		register("GET "+item.path, admin, section(item.name, c.Admin))
+	}
+	for _, name := range []string{"identity", "contact", "legal", "links"} {
+		handler := func(w http.ResponseWriter, r *http.Request) {
+			r.SetPathValue("id", name)
+			section("settings", c.Admin)(w, r)
+		}
+		form(urls.AdminSettingsPath+"/"+name, admin, handler)
+	}
+	for _, item := range []struct{ name, create, edit string }{{"members", urls.CreateAdminMemberPath, urls.EditAdminMemberPattern}, {"roles", urls.CreateAdminRolePath, urls.EditAdminRolePattern}, {"meetings", urls.CreateAdminMeetingPath, urls.EditAdminMeetingPattern}} {
+		handler := func(w http.ResponseWriter, r *http.Request) {
+			r.SetPathValue("id", "create")
+			section(item.name, c.Admin)(w, r)
+		}
+		form(item.create, admin, handler)
+		form(item.edit, admin, section(item.name, c.Admin))
+	}
+	register("GET "+urls.AdminMemberPattern, admin, section("members", c.Admin))
+	register("POST "+urls.AdminMemberPattern+"/invite", admin, c.ResendInvitation)
+	register("GET "+urls.AdminMeetingPattern, admin, section("meetings", c.Admin))
+	form(urls.AdminMeetingPattern+"/check", admin, c.ReviewPublication)
+	register("GET "+urls.AdminSubmissionsPath, reviewer, section("submissions", c.Admin))
+	register("GET "+urls.AdminSubmissionPattern, reviewer, c.ReviewExamsSubmission)
+	form(urls.ReviewSubmissionPattern, reviewer, c.ReviewExamsSubmission)
+	form(urls.EditAdminSubmissionPattern, reviewer, section("submissions", c.UploadExams))
+	register("GET "+urls.AdminUserPattern, admin, section("users", c.Admin))
+	form(urls.AdminUserPattern+"/reset", admin, c.ResetUserPassword)
+	register("POST "+urls.AdminUserPattern+"/confirm", admin, c.ResendUserConfirmation)
 }

@@ -19,14 +19,16 @@ import (
 type Link struct{ Title, URL string }
 
 type Details struct {
-	Name, FormalName, ShortName, Institution                   string
-	City, Street, PostalCode, Country, Office                  string
-	ContactEmail, ChairResponsibility, PublicityResponsibility string
-	LegalUpdated                                               string
-	HostingName, HostingURL, PrivacyURL                        string
-	SupervisionName, SupervisionURL                            string
-	PrivacyAuthorityName, PrivacyAuthorityURL                  string
-	SocialLinks, ElectionLinks, RegulationLinks                []Link
+	Name, FormalName, ShortName, Institution    string
+	City, Street, PostalCode, Country, Office   string
+	ContactEmail                                string
+	ChairRole                                   string `json:"ChairResponsibility"`
+	PublicityRole                               string `json:"PublicityResponsibility"`
+	LegalUpdated                                string
+	HostingName, HostingURL, PrivacyURL         string
+	SupervisionName, SupervisionURL             string
+	PrivacyAuthorityName, PrivacyAuthorityURL   string
+	SocialLinks, ElectionLinks, RegulationLinks []Link
 }
 
 func Load(ctx context.Context, db *sql.DB) (Details, error) {
@@ -143,9 +145,9 @@ func (s *Store) Save(ctx context.Context, user int64, d Details) (map[string]str
 		d.LegalUpdated = time.Now().UTC().Format(time.DateOnly)
 	}
 	fields := d.Validate()
-	for key, value := range map[string]string{"ChairResponsibility": d.ChairResponsibility, "PublicityResponsibility": d.PublicityResponsibility} {
+	for key, value := range map[string]string{"ChairRole": d.ChairRole, "PublicityRole": d.PublicityRole} {
 		group := "board"
-		if key == "PublicityResponsibility" {
+		if key == "PublicityRole" {
 			group = "departments"
 		}
 		if value == "" {

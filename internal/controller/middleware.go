@@ -6,14 +6,21 @@ import (
 	"encoding/hex"
 	"net/http"
 	"strings"
+	"sync"
 
-	"github.com/fachschaftinformatik/web/internal/model/archive"
 	"github.com/fachschaftinformatik/web/internal/model/users"
 )
 
 const sessionCookie = "web-session"
 
 type session = users.Session
+
+// Policies are attached to concrete registrations, before session processing.
+// There is deliberately no pathname-based security classification.
+type routePolicy struct {
+	session, authenticated, admin, reviewer, csrf, private bool
+	bodyLimit                                              int64
+}
 
 func randomToken() string {
 	var value [32]byte
@@ -25,80 +32,93 @@ func randomToken() string {
 
 type sessionResponse struct {
 	http.ResponseWriter
-	session *session
+	session      *session
+	canonicalURL string
+}
+
+// Transient UI state is process-local and is never written to account storage.
+var transient = struct {
+	sync.Mutex
+	flash map[string]string
+}{flash: make(map[string]string)}
+
+func flash(w http.ResponseWriter, message string) {
+	if response, ok := w.(*sessionResponse); ok && response.session != nil {
+		transient.Lock()
+		defer transient.Unlock()
+		transient.flash[response.session.ID] = message
+	}
+}
+
+func takeFlash(w http.ResponseWriter) string {
+	if response, ok := w.(*sessionResponse); ok && response.session != nil {
+		transient.Lock()
+		defer transient.Unlock()
+		message := transient.flash[response.session.ID]
+		delete(transient.flash, response.session.ID)
+		return message
+	}
+	return ""
 }
 
 func (c *Handler) setSessionCookie(w http.ResponseWriter, r *http.Request, s *session) {
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: s.ID, Path: "/", HttpOnly: true, Secure: c.secureCookies || r.TLS != nil, SameSite: http.SameSiteLaxMode, MaxAge: 8 * 60 * 60})
 }
 
-func (c *Handler) withSession(next http.Handler) http.Handler {
+func (c *Handler) withSession(policy routePolicy, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var s *session
 		if cookie, err := r.Cookie(sessionCookie); err == nil {
-
 			var err error
 			s, err = c.identity.Session(r.Context(), cookie.Value)
 			if err != nil {
 				c.serverError(w, err)
 				return
 			}
-
 		}
-		account := r.URL.Path == "/login" || r.URL.Path == "/register" || r.URL.Path == "/forgot" || r.URL.Path == "/reset" || r.URL.Path == "/verify" || r.URL.Path == "/invite"
-		archiveWrite := r.URL.Path == "/archive/new" || r.URL.Path == "/archive/preferences" || strings.HasPrefix(r.URL.Path, "/archive/requests") || strings.HasPrefix(r.URL.Path, "/archive/files/") && strings.HasSuffix(r.URL.Path, "/revision")
-		forumWrite := r.URL.Path == "/community/neuigkeiten/new" || r.URL.Path == "/d/new" || strings.HasPrefix(r.URL.Path, "/d/") && (strings.HasSuffix(r.URL.Path, "/edit") || r.Method == http.MethodPost) || strings.HasPrefix(r.URL.Path, "/community/veranstaltungen/") && (strings.HasSuffix(r.URL.Path, "/new") || strings.HasSuffix(r.URL.Path, "/edit"))
-		if s == nil && (r.URL.Path == "/login" || account) && r.Method == http.MethodGet {
-
+		if s == nil && policy.session && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
 			var err error
 			s, err = c.identity.CreateSession(r.Context(), 0)
 			if err != nil {
 				c.serverError(w, err)
 				return
 			}
-
 			c.setSessionCookie(w, r, s)
 		}
 		response := &sessionResponse{ResponseWriter: w, session: s}
-		admin := r.URL.Path == "/verwaltung" || strings.HasPrefix(r.URL.Path, "/verwaltung/")
-		review := r.URL.Path == "/verwaltung/einreichungen" || strings.HasPrefix(r.URL.Path, "/verwaltung/einreichungen/") || r.URL.Path == "/verwaltung/antraege" || strings.HasPrefix(r.URL.Path, "/verwaltung/antraege/")
-		if admin || r.URL.Path == "/login" || r.URL.Path == "/logout" || s != nil {
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			response.canonicalURL = canonicalURL(r)
+		}
+		if policy.authenticated || policy.session || s != nil {
 			w.Header().Set("Cache-Control", "no-store")
 		}
+		if policy.private {
+			w.Header().Set("Cache-Control", "private, no-store")
+		}
 		w.Header().Add("Vary", "Cookie")
-		if (admin || archiveWrite || forumWrite) && (s == nil || !s.Authenticated) {
+		if policy.authenticated && (s == nil || !s.Authenticated) {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
-		if admin && !(s.CanAdmin() || (review || r.URL.Path == "/verwaltung") && s.CanReview()) {
+		if policy.admin && !s.CanAdmin() || policy.reviewer && !s.CanReview() {
 			c.pageError(response, "Du hast keine Berechtigung für die Verwaltung.", http.StatusForbidden)
 			return
 		}
-		if r.Method == http.MethodPost && (admin || archiveWrite || forumWrite || r.URL.Path == "/logout" || account) {
-			limit := int64(uploadBodyLimit)
-			if account {
-				limit = 64 << 10
+		if r.Method == http.MethodPost {
+			if policy.bodyLimit > 0 {
+				r.Body = http.MaxBytesReader(w, r.Body, policy.bodyLimit)
 			}
-			if archiveWrite {
-				limit = archive.MaxUploadBytes + 1<<20
-			}
-			if forumWrite {
-				limit = 8 << 20
-			}
-			r.Body = http.MaxBytesReader(w, r.Body, limit)
 			if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
-				if err := r.ParseMultipartForm(uploadBodyLimit); err != nil {
+				if err := r.ParseMultipartForm(policy.bodyLimit); err != nil {
 					c.pageError(response, "Das Formular ist zu groß oder konnte nicht gelesen werden.", http.StatusBadRequest)
 					return
 				}
 				defer r.MultipartForm.RemoveAll()
-			} else {
-				if err := r.ParseForm(); err != nil {
-					c.pageError(response, "Das Formular konnte nicht gelesen werden.", http.StatusBadRequest)
-					return
-				}
+			} else if err := r.ParseForm(); err != nil {
+				c.pageError(response, "Das Formular konnte nicht gelesen werden.", http.StatusBadRequest)
+				return
 			}
-			if !validCSRF(s, r.PostForm.Get("csrf")) {
+			if policy.csrf && !validCSRF(s, r.PostForm.Get("csrf")) {
 				c.pageError(response, "Lade die Seite neu und versuche es noch einmal.", http.StatusForbidden)
 				return
 			}
@@ -108,17 +128,18 @@ func (c *Handler) withSession(next http.Handler) http.Handler {
 }
 
 func validCSRF(s *session, value string) bool {
-	return s != nil && subtle.ConstantTimeCompare([]byte(s.CSRF), []byte(value)) == 1
+	return s != nil && value != "" && subtle.ConstantTimeCompare([]byte(s.CSRF), []byte(value)) == 1
 }
 
 func (c *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if response := w.(*sessionResponse); response.session != nil {
-
 		if err := c.identity.DeleteSession(r.Context(), response.session.ID); err != nil {
 			c.serverError(w, err)
 			return
 		}
-
+		transient.Lock()
+		delete(transient.flash, response.session.ID)
+		transient.Unlock()
 	}
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Path: "/", MaxAge: -1, HttpOnly: true, Secure: c.secureCookies || r.TLS != nil, SameSite: http.SameSiteLaxMode})
 	http.Redirect(w, r, "/login", http.StatusSeeOther)

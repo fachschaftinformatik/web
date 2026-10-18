@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/publicid"
 	"github.com/fachschaftinformatik/web/internal/storage"
 )
 
@@ -24,7 +25,11 @@ func NewStore(db *sql.DB, provider storage.Provider) (*Store, error) {
 	if _, err := db.ExecContext(context.Background(), "SELECT id FROM meeting_publications LIMIT 0"); err != nil {
 		return nil, err
 	}
-	return &Store{db: db, blobs: provider}, nil
+	files, err := historicalFiles(context.Background(), db)
+	if err != nil {
+		return nil, err
+	}
+	return &Store{db: db, blobs: provider, historicalFiles: files}, nil
 }
 
 func (s *Store) Save(p Publication) (err error) {
@@ -82,6 +87,9 @@ func (s *Store) Save(p Publication) (err error) {
 	if err != nil {
 		return err
 	}
+	if _, err = publicid.Ensure(ctx, tx, "publications", p.ID); err != nil {
+		return err
+	}
 	if upload && oldKey != "" {
 		if _, err = tx.ExecContext(ctx, "INSERT INTO meeting_blob_cleanup(blob_key) VALUES(?)", oldKey); err != nil {
 			return err
@@ -137,7 +145,25 @@ func (s *Store) GetWithError(id string) (Publication, bool, error) {
 	if _, err := tx.Exec("UPDATE meeting_publications SET id=id WHERE id=?", id); err != nil {
 		return Publication{}, false, err
 	}
-	return s.readPublication(tx.QueryRow("SELECT "+publicationColumns+" FROM meeting_publications WHERE id=?", id))
+	p, ok, err := s.readPublication(tx.QueryRow("SELECT "+publicationColumns+" FROM meeting_publications WHERE id=?", id))
+	if err == nil && ok {
+		p.PublicID, err = publicid.Ensure(context.Background(), tx, "publications", p.ID)
+	}
+	if err == nil {
+		err = tx.Commit()
+	}
+	return p, ok, err
+}
+
+func (s *Store) ResolvePublicID(ctx context.Context, value string) (string, error) {
+	if !publicid.Valid(value) {
+		return "", sql.ErrNoRows
+	}
+	return publicid.Resolve(ctx, s.db, "publications", value)
+}
+
+func (s *Store) PublicID(ctx context.Context, internal string) (string, error) {
+	return publicid.Lookup(ctx, s.db, "publications", internal)
 }
 
 func (s *Store) Publish(id, owner string) error {
@@ -209,16 +235,27 @@ func (s *Store) AllWithError() ([]Meeting, error) {
 		return nil, err
 	}
 	defer rows.Close()
+	var publications []Publication
+	var sizes []int
 	for rows.Next() {
 		var p Publication
 		var size int
 		if err := rows.Scan(&p.ID, &p.Date, &p.Number, &p.Kind, &size); err != nil {
 			return nil, err
 		}
-		records = appendPublication(records, p, size)
+		publications = append(publications, p)
+		sizes = append(sizes, size)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	rows.Close()
+	for i, p := range publications {
+		p.PublicID, err = publicid.Ensure(context.Background(), s.db, "publications", p.ID)
+		if err != nil {
+			return nil, err
+		}
+		records = appendPublication(records, p, sizes[i])
 	}
 	sortMeetings(records)
 	return records, nil

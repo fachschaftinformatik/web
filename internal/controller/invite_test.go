@@ -16,20 +16,21 @@ func TestMemberInvitationRegistrationJourney(t *testing.T) {
 	if _, err := db.Exec(`INSERT INTO users(id,email,name,password,role,active,verified) VALUES (42,'admin@fsv-wh.de','Admin','unused','admin',1,1)`); err != nil {
 		t.Fatal(err)
 	}
+	seedPublicRefs(t, db)
 	session, err := users.NewService(db, "http://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}).CreateSession(context.Background(), 42)
 	if err != nil {
 		t.Fatal(err)
 	}
 	b.client.Jar.SetCookies(mustURL(t, b.server.URL), []*http.Cookie{{Name: sessionCookie, Value: session.ID, Path: "/"}})
-	status, body, _ := b.get("/verwaltung/mitglieder/neu")
+	status, body, _ := b.get("/admin/members/create")
 	if status != 200 || strings.Contains(body, "Aufgabe im Vorstand") {
 		t.Fatal("invitation form unavailable or still asks for board role")
 	}
 	csrf := csrfFrom(t, body)
-	if status, _, _ := b.post("/verwaltung/mitglieder/neu", url.Values{"csrf": {csrf}, "name": {"Neue Person"}, "email": {"new@studmail.w-hs.de"}}); status != 303 {
+	if status, _, _ := b.post("/admin/members/create", url.Values{"csrf": {csrf}, "name": {"Neue Person"}, "email": {"new@studmail.w-hs.de"}}); status != 303 {
 		t.Fatal("invitation failed")
 	}
-	if status, body, _ := b.get("/verwaltung/mitglieder"); status != 200 || !strings.Contains(body, "new@studmail.w-hs.de") || !strings.Contains(body, "Eingeladen") {
+	if status, body, _ := b.get("/admin/members"); status != 200 || !strings.Contains(body, "new@studmail.w-hs.de") || !strings.Contains(body, "Eingeladen") {
 		t.Fatal("pending invitation not visible")
 	}
 	var link string
@@ -50,17 +51,20 @@ func TestMemberInvitationRegistrationJourney(t *testing.T) {
 		t.Fatal("GET consumed invitation")
 	}
 	form := url.Values{"csrf": {csrfFrom(t, body)}, "token": {target.Query().Get("token")}, "password": {"secure 🔐🔐🔐"}}
-	if status, body, _ := invitee.post("/invite", form); status != 200 || !strings.Contains(body, "Dein Konto ist bestätigt") {
+	if status, _, h := invitee.post("/invitation/accept", form); status != 303 || h.Get("Location") != "/invitation/accept" {
 		t.Fatal("invitation confirmation failed")
 	}
+	if status, body, _ := invitee.get("/invitation/accept"); status != 200 || !strings.Contains(body, "Dein Konto ist bestätigt") {
+		t.Fatal("invitation receipt missing")
+	}
 	_, body, _ = invitee.get("/login")
-	if status, _, headers := invitee.post("/login", url.Values{"csrf": {csrfFrom(t, body)}, "email": {"new@studmail.w-hs.de"}, "password": {"secure 🔐🔐🔐"}}); status != 303 || headers.Get("Location") != "/verwaltung" {
+	if status, _, headers := invitee.post("/login", url.Values{"csrf": {csrfFrom(t, body)}, "email": {"new@studmail.w-hs.de"}, "password": {"secure 🔐🔐🔐"}}); status != 303 || headers.Get("Location") != "/admin" {
 		t.Fatal("confirmed member could not log in as reviewer")
 	}
-	if status, _, _ := invitee.get("/verwaltung/einreichungen"); status != 200 {
+	if status, _, _ := invitee.get("/admin/submissions"); status != 200 {
 		t.Fatal("reviewer cannot access submissions")
 	}
-	for _, path := range []string{"/verwaltung/benutzer", "/verwaltung/mitglieder", "/verwaltung/funktionen", "/verwaltung/funktionen/neu", "/verwaltung/sitzungen"} {
+	for _, path := range []string{"/admin/users", "/admin/members", "/admin/roles", "/admin/roles/create", "/admin/meetings"} {
 		if status, _, _ := invitee.get(path); status != 403 {
 			t.Fatalf("invitation granted administration of %s", path)
 		}
@@ -72,20 +76,22 @@ func TestMemberInvitationRegistrationJourney(t *testing.T) {
 
 func TestExistingMemberInvitationAndAccountEditing(t *testing.T) {
 	b, db := identityBrowser(t)
+	memberPath := "/admin/members/" + publicRef(t, db, "members", "1") + "/edit"
 	if _, err := db.Exec(`INSERT INTO users(id,email,name,password,role,active,verified) VALUES (42,'admin@fsv-wh.de','Admin','unused','admin',1,1)`); err != nil {
 		t.Fatal(err)
 	}
+	seedPublicRefs(t, db)
 	session, err := users.NewService(db, "http://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}).CreateSession(context.Background(), 42)
 	if err != nil {
 		t.Fatal(err)
 	}
 	b.client.Jar.SetCookies(mustURL(t, b.server.URL), []*http.Cookie{{Name: sessionCookie, Value: session.ID, Path: "/"}})
-	status, body, _ := b.get("/verwaltung/mitglieder/1")
+	status, body, _ := b.get(memberPath)
 	if status != 200 || !strings.Contains(body, "E-Mail-Adresse des Benutzerkontos") {
 		t.Fatal("existing member cannot be linked to an account")
 	}
 	csrf := csrfFrom(t, body)
-	if status, _, _ := b.post("/verwaltung/mitglieder/1", url.Values{"csrf": {csrf}, "name": {"Linked Member"}, "email": {"linked@studmail.w-hs.de"}}); status != 303 {
+	if status, _, _ := b.post(memberPath, url.Values{"csrf": {csrf}, "name": {"Linked Member"}, "email": {"linked@studmail.w-hs.de"}}); status != 303 {
 		t.Fatal("existing member invitation failed")
 	}
 	var userID int64
@@ -99,15 +105,15 @@ func TestExistingMemberInvitationAndAccountEditing(t *testing.T) {
 	if status, body, _ := b.get("/team"); status != 200 || !strings.Contains(body, "Linked Member") {
 		t.Fatal("pending confirmation hid the public member")
 	}
-	status, body, _ = b.get("/verwaltung/mitglieder/1")
-	accountPath := fmt.Sprintf("/verwaltung/benutzer/%d", userID)
+	status, body, _ = b.get(memberPath)
+	accountPath := "/admin/users/" + publicRef(t, db, "users", fmt.Sprint(userID))
 	if status != 200 || !strings.Contains(body, accountPath) || strings.Contains(body, `name="email"`) {
 		t.Fatal("linked member is not using the account identity")
 	}
-	if status, _, _ := b.post("/verwaltung/mitglieder/1", url.Values{"csrf": {csrfFrom(t, body)}, "name": {"Updated Member"}, "email": {"unexpected@studmail.w-hs.de"}}); status != 303 {
+	if status, _, _ := b.post(memberPath, url.Values{"csrf": {csrfFrom(t, body)}, "name": {"Updated Member"}, "email": {"unexpected@studmail.w-hs.de"}}); status != 303 {
 		t.Fatal("linked member name edit failed")
 	}
-	if status, body, _ := b.get(accountPath); status != 200 || !strings.Contains(body, "Updated Member") || !strings.Contains(body, "linked@studmail.w-hs.de") || !strings.Contains(body, `href="/verwaltung/mitglieder/1"`) {
+	if status, body, _ := b.get(accountPath); status != 200 || !strings.Contains(body, "Updated Member") || !strings.Contains(body, "linked@studmail.w-hs.de") || !strings.Contains(body, `href="`+memberPath+`"`) {
 		t.Fatal("account and membership are not connected")
 	}
 }

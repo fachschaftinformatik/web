@@ -11,14 +11,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/fachschaftinformatik/web/internal/model/archive"
 	"github.com/fachschaftinformatik/web/internal/model/events"
-	"github.com/fachschaftinformatik/web/internal/model/gallery"
+	"github.com/fachschaftinformatik/web/internal/model/exams"
+	"github.com/fachschaftinformatik/web/internal/model/media"
 	"github.com/fachschaftinformatik/web/internal/storage"
 )
 
 func (c *Handler) HistoricalDocument(w http.ResponseWriter, r *http.Request) {
-	object, err := c.meetings.HistoricalDocument(r.Context(), r.PathValue("file"))
+	object, err := c.meetings.HistoricalDocumentByID(r.Context(), r.PathValue("id"))
 	if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
 		return
@@ -31,7 +31,7 @@ func (c *Handler) HistoricalDocument(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	if seeker, ok := object.ReadCloser.(io.ReadSeeker); ok {
-		http.ServeContent(w, r, r.PathValue("file"), time.Time{}, seeker)
+		http.ServeContent(w, r, "dokument.pdf", time.Time{}, seeker)
 		return
 	}
 	w.Header().Set("Content-Length", strconv.FormatInt(object.Info.Size, 10))
@@ -43,9 +43,22 @@ func (c *Handler) HistoricalDocument(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Handler) Document(w http.ResponseWriter, r *http.Request) {
-	p, ok, err := c.meetings.GetWithError(r.PathValue("id"))
+	internal, err := c.meetings.ResolvePublicID(r.Context(), r.PathValue("id"))
+	if errors.Is(err, sql.ErrNoRows) {
+		c.HistoricalDocument(w, r)
+		return
+	}
 	if err != nil {
 		c.serverError(w, err)
+		return
+	}
+	p, ok, err := c.meetings.GetWithError(internal)
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
+	if !ok {
+		http.NotFound(w, r)
 		return
 	}
 	s := w.(*sessionResponse).session
@@ -60,7 +73,7 @@ func (c *Handler) Document(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, "dokument.pdf", time.Time{}, bytes.NewReader(p.Data))
 }
 
-func (c *Handler) ArchiveFile(w http.ResponseWriter, r *http.Request) {
+func (c *Handler) ExamsFile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "private, no-store")
 	response := w.(*sessionResponse)
 	if response.session == nil || !response.session.Authenticated {
@@ -68,17 +81,17 @@ func (c *Handler) ArchiveFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	object, err := c.archive.Open(r.Context(), response.session.UserID, r.PathValue("id"))
-	if errors.Is(err, archive.ErrNotFound) {
+	object, err := c.exams.Open(r.Context(), response.session.UserID, r.PathValue("id"))
+	if errors.Is(err, exams.ErrNotFound) {
 		http.NotFound(w, r)
 		return
 	}
-	if errors.Is(err, archive.ErrForbidden) {
+	if errors.Is(err, exams.ErrForbidden) {
 		http.Error(w, "Melde dich mit einem aktiven, bestätigten Konto an.", http.StatusForbidden)
 		return
 	}
-	if errors.Is(err, archive.ErrStorage) {
-		log.Printf("Archive storage: %v", err)
+	if errors.Is(err, exams.ErrStorage) {
+		log.Printf("Exams storage: %v", err)
 		http.Error(w, "Die Datei konnte nicht geladen werden. Versuche es später erneut.", http.StatusServiceUnavailable)
 		return
 	}
@@ -89,9 +102,9 @@ func (c *Handler) ArchiveFile(w http.ResponseWriter, r *http.Request) {
 	defer object.Close()
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("Content-Disposition", `inline; filename="reko.pdf"`)
+	w.Header().Set("Content-Disposition", `inline; filename="altklausur.pdf"`)
 	if seeker, ok := object.ReadCloser.(io.ReadSeeker); ok {
-		http.ServeContent(w, r, "reko.pdf", time.Time{}, seeker)
+		http.ServeContent(w, r, "altklausur.pdf", time.Time{}, seeker)
 		return
 	}
 	w.Header().Set("Content-Length", strconv.FormatInt(object.Info.Size, 10))
@@ -99,7 +112,7 @@ func (c *Handler) ArchiveFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, err := io.CopyN(w, object, object.Info.Size); err != nil {
-		log.Printf("Archive download: %v", err)
+		log.Printf("Exams download: %v", err)
 	}
 }
 
@@ -115,31 +128,31 @@ func (c *Handler) CalendarCover(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	c.serveGalleryObject(w, r, object)
+	c.serveMediaObject(w, r, object)
 }
 
-// MediaFile serves only database-backed gallery images, never raw storage keys.
+// MediaFile serves only database-backed images, never raw storage keys.
 func (c *Handler) MediaFile(w http.ResponseWriter, r *http.Request) {
-	c.galleryImageFile(w, r, false)
+	c.mediaImageFile(w, r, false)
 }
 
-func (c *Handler) EventCover(w http.ResponseWriter, r *http.Request) {
-	c.galleryImageFile(w, r, true)
+func (c *Handler) AlbumCover(w http.ResponseWriter, r *http.Request) {
+	c.mediaImageFile(w, r, true)
 }
 
-func (c *Handler) galleryImageFile(w http.ResponseWriter, r *http.Request, cover bool) {
+func (c *Handler) mediaImageFile(w http.ResponseWriter, r *http.Request, cover bool) {
 	w.Header().Set("Cache-Control", "no-store")
 
-	open := c.gallery.Open
+	open := c.media.Open
 	if cover {
-		open = c.gallery.OpenCover
+		open = c.media.OpenCover
 	}
 	object, err := open(r.Context(), r.PathValue("id"), r.PathValue("size"))
-	if errors.Is(err, gallery.ErrNotFound) {
+	if errors.Is(err, media.ErrNotFound) {
 		http.NotFound(w, r)
 		return
 	}
-	if errors.Is(err, gallery.ErrStorage) {
+	if errors.Is(err, media.ErrStorage) {
 		http.Error(w, "Das Bild konnte nicht geladen werden.", http.StatusServiceUnavailable)
 		return
 	}
@@ -147,16 +160,16 @@ func (c *Handler) galleryImageFile(w http.ResponseWriter, r *http.Request, cover
 		c.serverError(w, err)
 		return
 	}
-	c.serveGalleryObject(w, r, object)
+	c.serveMediaObject(w, r, object)
 }
 
-func (c *Handler) serveGalleryObject(w http.ResponseWriter, r *http.Request, object *storage.Object) {
+func (c *Handler) serveMediaObject(w http.ResponseWriter, r *http.Request, object *storage.Object) {
 	defer object.Close()
 	seeker, ok := object.ReadCloser.(io.ReadSeeker)
 	if !ok {
 		// Providers may return streaming bodies. Spool those to a bounded
 		// temporary file so ServeContent still supports HEAD and byte ranges.
-		file, err := os.CreateTemp("", "gallery")
+		file, err := os.CreateTemp("", "media")
 		if err != nil {
 			c.serverError(w, err)
 			return

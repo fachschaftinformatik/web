@@ -68,14 +68,13 @@ func (b *adminBrowser) login() {
 }
 
 func TestAdminAuthenticationAndMutations(t *testing.T) {
-	handler, err := testHandler(t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	handler, db := testApplication(t)
+	seedPublicContent(t, db)
+	member := publicRef(t, db, "members", "1")
 	server := httptest.NewServer(handler)
 	defer server.Close()
 	b := newAdminBrowser(t, server)
-	for _, path := range []string{"/verwaltung", "/verwaltung/benutzer", "/verwaltung/mitglieder/1", "/verwaltung/sitzungen/neu"} {
+	for _, path := range []string{"/admin", "/admin/users", "/admin/members/" + member + "/edit", "/admin/meetings/create"} {
 		if status, _, headers := b.get(path); status != 303 || headers.Get("Location") != "/login" {
 			t.Fatalf("unprotected route: %s", path)
 		}
@@ -89,34 +88,39 @@ func TestAdminAuthenticationAndMutations(t *testing.T) {
 		t.Fatal("login CSRF accepted")
 	}
 	b.login()
-	if status, body, headers := b.get("/verwaltung/benutzer?q=kim"); status != 200 || !strings.Contains(body, "Kim Muster") || strings.Contains(body, "Alex Beispiel") || headers.Get("Cache-Control") != "no-store" {
+	for _, alias := range []string{"/admin/users/42", "/admin/members/1/edit", "/admin/roles/1/edit"} {
+		if status, _, headers := b.get(alias); status != 404 || headers.Get("Location") != "" {
+			t.Fatalf("numeric admin alias accepted: %s (%d)", alias, status)
+		}
+	}
+	if status, body, headers := b.get("/admin/users?search=kim"); status != 200 || !strings.Contains(body, "Kim Muster") || strings.Contains(body, "Alex Beispiel") || headers.Get("Cache-Control") != "no-store" {
 		t.Fatal("user search/cache control failed")
 	}
-	if status, _, _ := b.get("/verwaltung/benutzer/missing"); status != 404 {
+	if status, _, _ := b.get("/admin/users/missing"); status != 404 {
 		t.Fatal("unknown user accepted")
 	}
-	if status, _, _ := b.post("/verwaltung/mitglieder/1", url.Values{"name": {"Changed"}}); status != 403 {
+	if status, _, _ := b.post("/admin/members/"+member+"/edit", url.Values{"name": {"Changed"}}); status != 403 {
 		t.Fatal("write without CSRF accepted")
 	}
-	if status, body, _ := b.post("/verwaltung/mitglieder/1", url.Values{"csrf": {b.csrf}, "name": {""}, "email": {"not-email"}}); status != 422 || !strings.Contains(body, "govuk-error-summary") {
+	if status, body, _ := b.post("/admin/members/"+member+"/edit", url.Values{"csrf": {b.csrf}, "name": {""}, "email": {"not-email"}}); status != 422 || !strings.Contains(body, "govuk-error-summary") {
 		t.Fatal("invalid member accepted")
 	}
-	if status, _, _ := b.post("/verwaltung/mitglieder/1", url.Values{"csrf": {b.csrf}, "name": {"Demo-Vorsitz"}, "role": {"Vorsitz"}, "email": {"demo@studmail.w-hs.de"}}); status != 303 {
+	if status, _, _ := b.post("/admin/members/"+member+"/edit", url.Values{"csrf": {b.csrf}, "name": {"Demo-Vorsitz"}, "role": {"Vorsitz"}, "email": {"demo@studmail.w-hs.de"}}); status != 303 {
 		t.Fatal("member edit failed")
 	}
 	if _, body, _ := b.get("/team"); !strings.Contains(body, "Demo-Vorsitz") {
 		t.Fatal("public team did not reflect edit")
 	}
-	if status, _, headers := b.post("/verwaltung/funktionen/neu", url.Values{"csrf": {b.csrf}, "title": {"Demo-Referat"}, "group": {"departments"}, "members": {"1"}}); status != 303 || headers.Get("Location") != "/verwaltung/funktionen?gespeichert=1" {
+	if status, _, headers := b.post("/admin/roles/create", url.Values{"csrf": {b.csrf}, "title": {"Demo-Referat"}, "group": {"departments"}, "members": {member}}); status != 303 || headers.Get("Location") != "/admin/roles" {
 		t.Fatal("responsibility add failed")
 	}
 	if _, body, _ := b.get("/team"); !strings.Contains(body, "Demo-Referat") {
 		t.Fatal("public responsibility missing")
 	}
-	if status, body, _ := b.get("/verwaltung/mitglieder"); status != 200 || !strings.Contains(body, "Demo-Vorsitz") || !strings.Contains(body, "Demo-Referat (Referat)") {
+	if status, body, _ := b.get("/admin/members"); status != 200 || !strings.Contains(body, "Demo-Vorsitz") || !strings.Contains(body, "Demo-Referat (Referat)") {
 		t.Fatal("member overview lost assignments")
 	}
-	if status, body, _ := b.get("/verwaltung/funktionen"); status != 200 || !strings.Contains(body, "Demo-Referat") || !strings.Contains(body, "Demo-Vorsitz") {
+	if status, body, _ := b.get("/admin/roles"); status != 200 || !strings.Contains(body, "Demo-Referat") || !strings.Contains(body, "Demo-Vorsitz") {
 		t.Fatal("function overview lost member assignments")
 	}
 	oldCookies := b.client.Jar.Cookies(mustURL(t, server.URL))
@@ -124,7 +128,7 @@ func TestAdminAuthenticationAndMutations(t *testing.T) {
 		t.Fatal("logout failed")
 	}
 	b.client.Jar.SetCookies(mustURL(t, server.URL), oldCookies)
-	if status, _, _ := b.get("/verwaltung"); status != 303 {
+	if status, _, _ := b.get("/admin"); status != 303 {
 		t.Fatal("logged-out session replayed")
 	}
 }
@@ -174,11 +178,11 @@ func TestPublicationReviewAndVisibility(t *testing.T) {
 		t.Fatal(err)
 	}
 	fields := map[string]string{"csrf": b.csrf, "day": "28", "month": "10", "year": "2027", "number": "45", "kind": "Einladung"}
-	if status, _, _ := b.upload("/verwaltung/sitzungen/neu", fields, []byte("not a PDF")); status != 422 {
+	if status, _, _ := b.upload("/admin/meetings/create", fields, []byte("not a PDF")); status != 422 {
 		t.Fatal("invalid file accepted")
 	}
 	fields["day"] = "32"
-	status, body, _ := b.upload("/verwaltung/sitzungen/neu", fields, pdf)
+	status, body, _ := b.upload("/admin/meetings/create", fields, pdf)
 	if status != 422 || !strings.Contains(body, "beibehalten") {
 		t.Fatal("file was not retained through validation")
 	}
@@ -196,7 +200,7 @@ func TestPublicationReviewAndVisibility(t *testing.T) {
 	if status, body, _ := b.get(review); status != 200 || !strings.Contains(body, "Veröffentlichung prüfen") {
 		t.Fatal("review unavailable")
 	}
-	document := "/documents/" + strings.TrimPrefix(editPath, "/verwaltung/sitzungen/")
+	document := "/documents/" + strings.TrimSuffix(strings.TrimPrefix(editPath, "/admin/meetings/"), "/edit")
 	if status, _, _ := other.get(review); status != 404 {
 		t.Fatal("another admin can access private draft")
 	}
@@ -206,13 +210,13 @@ func TestPublicationReviewAndVisibility(t *testing.T) {
 	if status, _, _ := b.get(document); status != 200 {
 		t.Fatal("owner cannot preview draft")
 	}
-	if _, body, _ := other.get("/fachschaft/sitzungen"); strings.Contains(body, document) {
+	if _, body, _ := other.get("/meetings"); strings.Contains(body, document) {
 		t.Fatal("draft published before confirmation")
 	}
 	if status, _, _ := b.post(review, url.Values{"csrf": {b.csrf}}); status != 303 {
 		t.Fatal("publication failed")
 	}
-	if status, body, _ := other.get("/fachschaft/sitzungen?jahr=2027"); status != 200 || !strings.Contains(body, document) {
+	if status, body, _ := other.get("/meetings?year=2027"); status != 200 || !strings.Contains(body, document) {
 		t.Fatal("published document missing from public archive")
 	}
 	guest := newAdminBrowser(t, server)
@@ -220,26 +224,27 @@ func TestPublicationReviewAndVisibility(t *testing.T) {
 		t.Fatal("published PDF not publicly readable")
 	}
 	// Repeated publish is idempotent rather than adding another document.
-	_, body, _ = guest.get("/fachschaft/sitzungen?jahr=2027")
+	_, body, _ = guest.get("/meetings?year=2027")
 	count := strings.Count(body, document)
 	b.post(review, url.Values{"csrf": {b.csrf}})
-	_, body, _ = guest.get("/fachschaft/sitzungen?jahr=2027")
+	_, body, _ = guest.get("/meetings?year=2027")
 	if count == 0 || strings.Count(body, document) != count {
 		t.Fatal("duplicate publication")
 	}
 }
 
 func TestPasswordResetConfirmationPreview(t *testing.T) {
-	handler, _ := testApplication(t, []users.User{{ID: "42", Name: "Kim Beispiel", Email: "Kim@STUDMAIL.W-HS.DE", Role: "editor", Active: true}}...)
+	handler, db := testApplication(t, []users.User{{ID: 42, Name: "Kim Beispiel", Email: "Kim@STUDMAIL.W-HS.DE", Role: "editor", Active: true}}...)
+	account := "/admin/users/" + publicRef(t, db, "users", "42")
 	server := httptest.NewServer(handler)
 	defer server.Close()
 	b := newAdminBrowser(t, server)
-	path := "/verwaltung/benutzer/42/passwort-zuruecksetzen"
+	path := account + "/reset"
 	if status, _, _ := b.get(path); status != 303 {
 		t.Fatal("unprotected password reset")
 	}
 	b.login()
-	if status, body, _ := b.get("/verwaltung/benutzer/42"); status != 200 || !strings.Contains(body, "kim@studmail.w-hs.de") || strings.Contains(body, "Kim@STUDMAIL") || !strings.Contains(body, `<dialog`) {
+	if status, body, _ := b.get(account); status != 200 || !strings.Contains(body, "kim@studmail.w-hs.de") || strings.Contains(body, "Kim@STUDMAIL") || !strings.Contains(body, `<dialog`) {
 		t.Fatal("user email normalization/dialog failed")
 	}
 	if status, body, _ := b.get(path); status != 200 || !strings.Contains(body, "Link zum Zurücksetzen senden") {
@@ -252,7 +257,7 @@ func TestPasswordResetConfirmationPreview(t *testing.T) {
 	if status != 303 {
 		t.Fatalf("reset was not queued: %d %s", status, body)
 	}
-	if status, _, _ := b.get("/verwaltung/benutzer/missing/passwort-zuruecksetzen"); status != 404 {
+	if status, _, _ := b.get("/admin/users/missing/reset"); status != 404 {
 		t.Fatal("unknown reset user accepted")
 	}
 }
@@ -260,24 +265,27 @@ func TestPasswordResetConfirmationPreview(t *testing.T) {
 func TestUserPaginationKeepsSearchContext(t *testing.T) {
 	var records []users.User
 	for i := 1; i <= 45; i++ {
-		records = append(records, users.User{ID: fmt.Sprint(i), Name: fmt.Sprintf("Beispiel %02d", i), Email: fmt.Sprintf("user%d@studmail.w-hs.de", i), Verified: i%2 == 0, Active: true})
+		records = append(records, users.User{ID: int64(i), Name: fmt.Sprintf("Beispiel %02d", i), Email: fmt.Sprintf("user%d@studmail.w-hs.de", i), Verified: i%2 == 0, Active: true})
 	}
 	handler, _ := testApplication(t, records...)
 	server := httptest.NewServer(handler)
 	defer server.Close()
 	b := newAdminBrowser(t, server)
 	b.login()
-	status, body, _ := b.get("/verwaltung/benutzer?q=Beispiel&seite=2")
-	if status != 200 || !strings.Contains(body, "Benutzerkonten – Seite 2 von 3") || !htmlContains(body, `aria-current="page">2`) || !strings.Contains(body, `q=Beispiel&amp;seite=3`) || !strings.Contains(body, "Beispiel 21") || strings.Contains(body, "Beispiel 01</a>") {
+	status, body, _ := b.get("/admin/users?search=Beispiel&page=2")
+	if status != 200 || !strings.Contains(body, "Benutzerkonten – Seite 2 von 3") || !htmlContains(body, `aria-current="page">2`) || !strings.Contains(body, `page=3&amp;search=Beispiel`) || !strings.Contains(body, "Beispiel 21") || strings.Contains(body, "Beispiel 01</a>") {
 		t.Fatal("numbered pagination lost page/search context")
 	}
-	for _, value := range []string{"0", "999", "invalid"} {
-		status, _, headers := b.get("/verwaltung/benutzer?q=Beispiel&seite=" + value)
-		if status != 303 || headers.Get("Location") != "/verwaltung/benutzer?q=Beispiel" {
-			t.Fatal("invalid page did not redirect to first search page")
+	for _, tc := range []struct {
+		value  string
+		status int
+	}{{"0", 400}, {"999", 404}, {"invalid", 400}} {
+		status, _, headers := b.get("/admin/users?search=Beispiel&page=" + tc.value)
+		if status != tc.status || headers.Get("Location") != "" {
+			t.Fatalf("invalid page %q: status %d, location %q", tc.value, status, headers.Get("Location"))
 		}
 	}
-	_, body, _ = b.get("/verwaltung/benutzer?q=absent")
+	_, body, _ = b.get("/admin/users?search=absent")
 	if strings.Contains(body, `aria-label="Benutzerseiten"`) {
 		t.Fatal("pagination shown for empty results")
 	}
