@@ -196,10 +196,11 @@ jobs:
             > "$RUNNER_TEMP/release/image-digest"
       - name: Scan application image
         run: |
-          docker run --rm -v "$RUNNER_TEMP/release:/release:ro" \
+          docker run --rm -v "$RUNNER_TEMP/release:/release" \
             -v "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" "$TRIVY_IMAGE" \
             image --input /release/image --scanners vuln --severity HIGH,CRITICAL \
-            --ignore-unfixed --exit-code 1
+            --ignore-unfixed --exit-code 1 --format json \
+            --output /release/vulnerabilities.json
       - name: Generate image SBOM
         run: |
           docker run --rm -v "$RUNNER_TEMP/release:/release" \
@@ -301,6 +302,18 @@ jobs:
           # Publish coverage first: the badge reads the first release asset's label.
           gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/coverage/coverage.json#$coverage" --clobber
           test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.assets[0].name')" = coverage.json
+      - name: Publish vulnerability report
+        if: steps.aliases.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.aliases.outputs.tag }}
+        run: |
+          report="$RUNNER_TEMP/release/vulnerabilities.json"
+          count=$(jq -er '[.Results[]?.Vulnerabilities[]?] | length' "$report")
+          test "$count" = 0
+          # Publish second: the vulnerability badge reads this asset's label.
+          gh release upload "$RELEASE_TAG" "$report#$count" --clobber
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.assets[1].name')" = vulnerabilities.json
       - name: Attach release SBOM
         if: steps.aliases.outputs.tag != ''
         env:
@@ -312,6 +325,7 @@ jobs:
           cp "$RUNNER_TEMP/release/web.sbom.spdx.json" "$SBOM_FILE"
           jq -e '.spdxVersion and .SPDXID == "SPDXRef-DOCUMENT"' "$SBOM_FILE" > /dev/null
           gh release upload "$RELEASE_TAG" "$SBOM_FILE" --clobber
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/release/web.sbom.spdx.json" --clobber
       - name: Promote latest image alias
         if: steps.aliases.outputs.tag != ''
         env:

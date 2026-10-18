@@ -220,6 +220,9 @@ and badge JSON. Successful release publishing attaches `coverage.json` as the
 first release asset, with the measured percentage in its asset label. The README
 badge reads that label through the releases API; clicking it opens the CI runs
 where the full reports can be downloaded. Dry runs do not publish badge changes.
+The second release asset is the Trivy `vulnerabilities.json` report; its label
+contains the fixable High/Critical finding count for the security badge. Releases
+also include `web.sbom.spdx.json` for a stable latest-release SBOM download URL.
 
 ### Submission notifications
 
