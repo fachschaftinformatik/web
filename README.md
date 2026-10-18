@@ -5,7 +5,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/fsiwh/web/ci.yaml?branch=main&label=CI)](https://github.com/fsiwh/web/actions/workflows/ci.yaml)
 [![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Ffsiwh%2Fweb%2Freleases%2Flatest&query=%24.assets%5B0%5D.label&label=Coverage&color=blue)](https://github.com/fsiwh/web/actions/workflows/ci.yaml)
 
-Website for the computer science student council.
+A portal for news, events and past exams.
 
 ```text
            site
