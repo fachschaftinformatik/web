@@ -6,15 +6,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log"
 	"net/http/httptest"
 	"net/url"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/testdb"
 	"github.com/fachschaftinformatik/web/model/events"
 	"github.com/fachschaftinformatik/web/model/exams"
 	"github.com/fachschaftinformatik/web/model/media"
@@ -34,10 +32,7 @@ func identityBrowser(t *testing.T) (*adminBrowser, *sql.DB) {
 
 func identityBrowserWithStorage(t *testing.T, storage exams.Storage) (*adminBrowser, *sql.DB) {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "sqlite.db")
-	if err := database.Migrate(path, log.New(io.Discard, "", 0)); err != nil {
-		t.Fatal(err)
-	}
+	path := testdb.Path(t)
 	db, err := database.NewConnection(path)
 	if err != nil {
 		t.Fatal(err)

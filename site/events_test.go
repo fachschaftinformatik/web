@@ -6,18 +6,17 @@ import (
 	"image"
 	"image/png"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/fachschaftinformatik/web/view"
 
 	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/testdb"
 	"github.com/fachschaftinformatik/web/model/events"
 	"github.com/fachschaftinformatik/web/model/posts"
 	"github.com/fachschaftinformatik/web/model/users"
@@ -26,10 +25,7 @@ import (
 
 func TestEventPublicationWorkflow(t *testing.T) {
 	ctx := context.Background()
-	path := filepath.Join(t.TempDir(), "events.db")
-	if err := database.Migrate(path, log.New(io.Discard, "", 0)); err != nil {
-		t.Fatal(err)
-	}
+	path := testdb.Path(t)
 	db, err := database.NewConnection(path)
 	if err != nil {
 		t.Fatal(err)

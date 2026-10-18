@@ -9,8 +9,6 @@ import (
 	"image/color"
 	"image/jpeg"
 	"image/png"
-	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,16 +16,14 @@ import (
 
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/publicid"
+	"github.com/fachschaftinformatik/web/internal/testdb"
 	"github.com/fachschaftinformatik/web/storage"
 	"github.com/fachschaftinformatik/web/storage/disk"
 )
 
 func eventService(t *testing.T) (*Service, *sql.DB, string) {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "events.db")
-	if err := database.Migrate(path, log.New(io.Discard, "", 0)); err != nil {
-		t.Fatal(err)
-	}
+	path := testdb.Path(t)
 	db, err := database.NewConnection(path)
 	if err != nil {
 		t.Fatal(err)
@@ -51,8 +47,13 @@ func eventService(t *testing.T) (*Service, *sql.DB, string) {
 }
 func coverPhoto(t *testing.T) []byte {
 	t.Helper()
+	return eventPhoto(t, 800, 1800)
+}
+
+func eventPhoto(t *testing.T, width, height int) []byte {
+	t.Helper()
 	var b bytes.Buffer
-	i := image.NewNRGBA(image.Rect(0, 0, 800, 1800))
+	i := image.NewNRGBA(image.Rect(0, 0, width, height))
 	i.Set(0, 0, color.NRGBA{R: 255, A: 255})
 	if err := png.Encode(&b, i); err != nil {
 		t.Fatal(err)
@@ -177,7 +178,7 @@ func TestStandaloneEventsPersistCoversAndRestrictPublishing(t *testing.T) {
 	if e.CoverKey != oldKey {
 		t.Fatal("invalid upload changed registered image")
 	}
-	if _, err := s.Save(ctx, 2, value, d, "", &CoverUpload{Data: coverPhoto(t), Alt: "Neues Titelbild"}); err != nil {
+	if _, err := s.Save(ctx, 2, value, d, "", &CoverUpload{Data: eventPhoto(t, 16, 24), Alt: "Neues Titelbild"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.storage.GetObject(ctx, oldKey); !errors.Is(err, storage.ErrNotFound) {
@@ -204,7 +205,8 @@ func TestInvalidUploadsAndFailedTransactionsPreserveStorage(t *testing.T) {
 	s, db, root := eventService(t)
 	ctx := context.Background()
 	d := Draft{Title: "Party", Body: "Ein Abend mit Musik und Spielen."}
-	for _, cover := range []CoverUpload{{Data: []byte("not an image"), Alt: "Test"}, {Data: bytes.Repeat([]byte{'x'}, MaxCoverBytes+1), Alt: "Test"}, {Data: coverPhoto(t)}, {Data: coverPhoto(t), Remove: true, Alt: "Test"}} {
+	photo := eventPhoto(t, 16, 24)
+	for _, cover := range []CoverUpload{{Data: []byte("not an image"), Alt: "Test"}, {Data: bytes.Repeat([]byte{'x'}, MaxCoverBytes+1), Alt: "Test"}, {Data: photo}, {Data: photo, Remove: true, Alt: "Test"}} {
 		if _, err := s.Save(ctx, 1, "", d, "", &cover); err == nil {
 			t.Fatal("invalid upload saved")
 		}
@@ -212,7 +214,7 @@ func TestInvalidUploadsAndFailedTransactionsPreserveStorage(t *testing.T) {
 	if _, err := db.Exec(`CREATE TRIGGER fail_event BEFORE INSERT ON calendar_events BEGIN SELECT RAISE(ABORT,'test rollback'); END;`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.Save(ctx, 1, "", d, "", &CoverUpload{Data: coverPhoto(t), Alt: "Test"}); err == nil {
+	if _, err := s.Save(ctx, 1, "", d, "", &CoverUpload{Data: photo, Alt: "Test"}); err == nil {
 		t.Fatal("failed transaction succeeded")
 	}
 	files := 0

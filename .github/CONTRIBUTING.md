@@ -186,6 +186,12 @@ and build tools. Cache keys include the platform, locked inputs and commit, with
 fallbacks to reuse dependencies between commits. Nix still rebuilds the application
 when its source identity changes; publishing reuses the scanned image artifact.
 
+CI gives the tests a stable `TMPDIR` so Nix's per-invocation temporary directory
+does not invalidate cached test results. Database-backed site, event and exam
+tests copy a schema migrated once per test process into isolated database files;
+migration tests exercise the migrations directly. The `test:go` job summary shows
+total coverage, and its `coverage` artifact contains the HTML report and raw profile.
+
 ### Security checks
 
 GitHub secret scanning checks repository history and new commits; push protection

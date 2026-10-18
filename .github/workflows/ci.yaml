@@ -54,7 +54,25 @@ jobs:
         run: |
           nix develop -c go generate ./internal/database
           git diff --exit-code -- internal/database
-      - run: nix develop -c go test -race ./...
+      - name: Race tests and coverage
+        run: nix develop -c env TMPDIR="$RUNNER_TEMP" go test -race -coverprofile="$RUNNER_TEMP/coverage.out" ./...
+      - name: Report coverage
+        run: |
+          nix develop -c go tool cover -html="$RUNNER_TEMP/coverage.out" -o "$RUNNER_TEMP/coverage.html"
+          {
+            echo '## Coverage'
+            echo 'Download the coverage artifact for the HTML report and profile.'
+            echo '```text'
+            nix develop -c go tool cover -func="$RUNNER_TEMP/coverage.out" | tail -n 1
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage
+          path: |
+            ${{ runner.temp }}/coverage.out
+            ${{ runner.temp }}/coverage.html
+          if-no-files-found: error
       - run: nix develop -c go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
   test-assets:
@@ -106,7 +124,7 @@ jobs:
   security-dependencies:
     name: security:dependencies
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -121,7 +139,7 @@ jobs:
 
   security-release:
     name: security:release
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -189,7 +207,7 @@ jobs:
     name: release:check
     if: always()
     needs: [test-go, test-assets, codeql, security-dependencies, security-release, build-go]
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Require all applicable checks

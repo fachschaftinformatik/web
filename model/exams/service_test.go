@@ -5,22 +5,18 @@ import (
 	"database/sql"
 	"errors"
 	"io"
-	"log"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/publicid"
+	"github.com/fachschaftinformatik/web/internal/testdb"
 	"github.com/fachschaftinformatik/web/storage/disk"
 )
 
 func examsService(t *testing.T) (*Service, *sql.DB) {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "sqlite.db")
-	if err := database.Migrate(path, log.New(io.Discard, "", 0)); err != nil {
-		t.Fatal(err)
-	}
+	path := testdb.Path(t)
 	db, err := database.NewConnection(path)
 	if err != nil {
 		t.Fatal(err)

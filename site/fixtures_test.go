@@ -7,17 +7,15 @@ import (
 	"fmt"
 	"github.com/fachschaftinformatik/web/internal/datetime"
 	"html"
-	"io"
-	"log"
 	"net/url"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/publicid"
+	"github.com/fachschaftinformatik/web/internal/testdb"
 	"github.com/fachschaftinformatik/web/model/posts"
 	"github.com/fachschaftinformatik/web/model/users"
 	"golang.org/x/crypto/bcrypt"
@@ -78,10 +76,7 @@ func htmlContains(body, snippet string) bool {
 // testApplication always uses the same migrated SQLite runtime as production.
 func testApplication(t *testing.T, records ...users.User) (*Handler, *sql.DB) {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "sqlite.db")
-	if err := database.Migrate(path, log.New(io.Discard, "", 0)); err != nil {
-		t.Fatal(err)
-	}
+	path := testdb.Path(t)
 	db, err := database.NewConnection(path)
 	if err != nil {
 		t.Fatal(err)
