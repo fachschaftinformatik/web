@@ -133,40 +133,50 @@ jobs:
       - run: bun run audit
         working-directory: .github/release
 
-  build-app:
-    name: build:app
-    if: github.event_name != 'push'
+  build-go:
+    name: build:go
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-      - name: Expose Buildx cache credentials
-        uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4
-      - name: Validate application image
-        run: >-
-          docker buildx build --platform linux/amd64 --sbom=true
-          --build-arg VERSION=v0.0.0-test
-          --label org.opencontainers.image.version=v0.0.0-test
-          --tag ghcr.io/fachschaftinformatik/web:v0.0.0-test
-          --cache-from type=gha,scope=app-amd64
-          --cache-to type=gha,mode=max,scope=app-amd64
-          --output type=oci,tar=false,dest=${{ runner.temp }}/web-image .
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - name: Build application image once
+        run: |
+          mkdir -p "$RUNNER_TEMP/release"
+          nix build .#image --out-link "$RUNNER_TEMP/image"
+          nix shell --inputs-from . nixpkgs#skopeo -c skopeo copy --format oci --dest-compress \
+            "docker-archive:$RUNNER_TEMP/image" "oci:$RUNNER_TEMP/release/image:web"
+          nix shell --inputs-from . nixpkgs#skopeo -c skopeo inspect \
+            --format '{{.Digest}}' "oci:$RUNNER_TEMP/release/image:web" \
+            > "$RUNNER_TEMP/release/image-digest"
       - name: Scan application image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          input: ${{ runner.temp }}/web-image
+          input: ${{ runner.temp }}/release/image
           scanners: vuln
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: '1'
+      - name: Generate image SBOM
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          input: ${{ runner.temp }}/release/image
+          format: spdx-json
+          output: ${{ runner.temp }}/release/web.sbom.spdx.json
+          scanners: vuln
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-image
+          path: ${{ runner.temp }}/release/
+          if-no-files-found: error
+          retention-days: 7
 
   check:
     name: release:check
     if: always()
-    needs: [test-go, test-assets, codeql, security-dependencies, security-release, build-app]
+    needs: [test-go, test-assets, codeql, security-dependencies, security-release, build-go]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -202,21 +212,24 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-      - name: Expose Buildx cache credentials
-        uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-image
+          path: ${{ runner.temp }}/release
       - name: Publish release
         id: semantic-release
         working-directory: .github/release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+          RELEASE_ARTIFACT: ${{ runner.temp }}/release
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run && 'true' || 'false' }}
         run: |
           if [[ "$DRY_RUN" == true ]]; then
-            bun run release --dry-run
+            nix shell --inputs-from ../.. nixpkgs#skopeo nixpkgs#oras -c bun run release --dry-run
           else
-            bun run release
+            nix shell --inputs-from ../.. nixpkgs#skopeo nixpkgs#oras -c bun run release
           fi
       - name: Select published release for image aliases
         id: aliases
@@ -239,8 +252,7 @@ jobs:
           RELEASE_TAG: ${{ steps.aliases.outputs.tag }}
         run: |
           SBOM_FILE="$RUNNER_TEMP/${GITHUB_REPOSITORY##*/}-$RELEASE_TAG.sbom.spdx.json"
-          docker buildx imagetools inspect "$IMAGE_PREFIX:$RELEASE_TAG" \
-            --format '{{ json .SBOM.SPDX }}' > "$SBOM_FILE"
+          cp "$RUNNER_TEMP/release/web.sbom.spdx.json" "$SBOM_FILE"
           jq -e '.spdxVersion and .SPDXID == "SPDXRef-DOCUMENT"' "$SBOM_FILE" > /dev/null
           gh release upload "$RELEASE_TAG" "$SBOM_FILE" --clobber
       - name: Promote latest image alias
@@ -249,5 +261,6 @@ jobs:
           IMAGE_PREFIX: ghcr.io/${{ github.repository }}
           RELEASE_TAG: ${{ steps.aliases.outputs.tag }}
         run: |
-          docker buildx imagetools inspect "$IMAGE_PREFIX:$RELEASE_TAG"
-          docker buildx imagetools create --tag "$IMAGE_PREFIX:latest" "$IMAGE_PREFIX:$RELEASE_TAG"
+          nix shell --inputs-from . nixpkgs#skopeo -c skopeo copy --preserve-digests \
+            --authfile "$HOME/.docker/config.json" \
+            "docker://$IMAGE_PREFIX:$RELEASE_TAG" "docker://$IMAGE_PREFIX:latest"

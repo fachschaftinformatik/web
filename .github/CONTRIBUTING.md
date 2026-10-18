@@ -159,12 +159,12 @@ to `main`. It uses these job names:
 - `test:assets` (locked Nix asset build with verified source hashes)
 - `security:dependencies`, `security:release`
 - `security:codeql` (weekly and manual scans for Go, JavaScript/TypeScript and Actions)
-- `build:app`
+- `build:go`
 - `release:check`, `release:publish`
 
 Independent jobs run in parallel. Dependency review runs only for pull requests.
-Container validation runs on pull requests, scheduled and manual runs. Pushes to
-`main` build the container during release publication instead of building it twice.
+The image is built and scanned on every run, including pushes to `main`.
+Release publication downloads that run's image artifact instead of rebuilding it.
 
 `release:check` rejects any failed or cancelled check. Branch protection should require `release:check` and
 `lint:commit`. The latter runs in the separate `ci:lint` workflow so editing a PR
@@ -177,7 +177,8 @@ The dependency-update workflow is named `ci:renovate`, with the job
 `test:go` uses the locked Nix development environment, verifies database query
 generation and runs the Go tests with race detection. Production images build
 the committed generated SQLC files and Nix-generated browser assets;
-`build:app` validates the complete application image.
+`build:go` builds and scans the complete application image with Nix. Publishing
+uploads the same workflow artifact without rebuilding it.
 
 ### Security checks
 

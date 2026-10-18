@@ -16,32 +16,50 @@ the next version:
 
 Standard SemVer applies below 1.0 too: a feature after 0.1.18 produces 0.2.0,
 and a breaking change produces 1.0.0. No source version bump or release commit is
-needed. The image build injects the release tag into `main.Version`.
+needed. The Nix build injects the source commit into `main.Version`; release tags
+are aliases for the already-built image, so assigning a version never rebuilds it.
 
-During semantic-release's `prepare` step, Docker Bake builds and pushes the
-amd64 application image, `ghcr.io/fachschaftinformatik/web:<version>`. Only after the
-build succeeds does semantic-release push the tag and publish an empty GitHub
+`build:go` builds the amd64 application image with `nix build .#image`, scans it,
+and uploads it as an immutable workflow artifact. During semantic-release's
+`prepare` step, `release:publish` downloads that same artifact and pushes it to
+`ghcr.io/fachschaftinformatik/web:<version>`, preserving and verifying its manifest
+digest. It does not compile or package the application. Only after the
+push succeeds does semantic-release push the tag and publish an empty GitHub
 Release. The workflow then promotes the `latest` alias. Consumers should deploy
 the versioned image or its digest. The release job exposes `released` and `tag`
 outputs for subsequent deployment jobs.
 
 ## Application image
 
-Published images include a BuildKit-generated SPDX SBOM as an OCI attestation
-in GHCR. It describes the final runtime image and is published by the existing
-Docker Bake release build. The same SPDX document is also attached to the GitHub
+Trivy generates an SPDX SBOM from the built image. Publishing attaches it to that
+image digest as an OCI referrer in GHCR. The same SPDX document is attached to the GitHub
 Release as `web-<version>.sbom.spdx.json` (for example,
 `web-v0.1.22.sbom.spdx.json`) for direct download. Inspect a version's SBOM with:
 
 ```sh
-docker buildx imagetools inspect ghcr.io/fachschaftinformatik/web:<version> \
-  --format '{{ json .SBOM.SPDX }}'
+oras discover ghcr.io/fachschaftinformatik/web:<version>
 ```
 
-One Alpine runtime contains a stripped, path-trimmed static Go executable with
-embedded templates and browser assets. The builder keeps sources and generation
+The Nix image contains a stripped, path-trimmed static Go executable with
+embedded templates and browser assets, CA certificates and timezone data. It has
+no distribution base image, shell, compiler or Nix runtime. The builder keeps sources and generation
 tools out of the runtime. `test:go` verifies committed SQLC query generation and
 tests all Go packages with race detection. Node and Bun are release tools only.
+
+`flake.lock` pins the compiler, asset tools and runtime data; Go dependencies have
+a fixed vendor hash, and asset downloads have fixed hashes. Nix builds without
+network access after fetching those inputs and gives image layers fixed timestamps.
+On Linux, reproduce an image from a clean checkout of its source commit with:
+
+```sh
+nix build .#image
+docker load --input result
+```
+
+`nix build .#web` builds just the binary on Linux or macOS. Race tests compile a
+separate instrumented test executable; the release binary is built only once per
+workflow. Pull requests and their squash-merge commits have distinct source
+identities and therefore distinct builds.
 
 The application is PID 1, runs as UID 1001 on port 8080 and owns `/data`.
 SIGTERM initiates graceful HTTP shutdown. The container health command checks
