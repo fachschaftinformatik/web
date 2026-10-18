@@ -10,9 +10,11 @@ import (
 	"mime/multipart"
 	"mime/quotedprintable"
 	"net"
+	"net/mail"
 	"net/smtp"
 	"net/textproto"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/config"
@@ -106,13 +108,27 @@ func (s *Sender) message(to string, n notification) ([]byte, error) {
 	if s.organization != nil {
 		n.Organization = s.organization.Current()
 	}
+	from, err := mail.ParseAddress(s.cfg.SMTPFrom)
+	if err != nil || strings.ContainsAny(s.cfg.SMTPFrom, "\r\n") {
+		return nil, fmt.Errorf("invalid SMTP_FROM address")
+	}
+	from.Name = n.Organization.ShortName
+	var replyTo string
+	if s.cfg.SMTPReplyTo != "" {
+		address, err := mail.ParseAddress(s.cfg.SMTPReplyTo)
+		if err != nil || strings.ContainsAny(s.cfg.SMTPReplyTo, "\r\n") {
+			return nil, fmt.Errorf("invalid SMTP_REPLY_TO address")
+		}
+		address.Name = n.Organization.ShortName
+		replyTo = "Reply-To: " + address.String() + "\r\n"
+	}
 	var body bytes.Buffer
 	if err := s.tpl.ExecuteTemplate(&body, "notification.html", n); err != nil {
 		return nil, fmt.Errorf("failed to execute email template: %w", err)
 	}
 	var message bytes.Buffer
 	parts := multipart.NewWriter(&message)
-	fmt.Fprintf(&message, "From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=%q\r\n\r\n", s.cfg.SMTPFrom, to, mime.QEncoding.Encode("utf-8", n.Title), parts.Boundary())
+	fmt.Fprintf(&message, "From: %s\r\n%sTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=%q\r\n\r\n", from.String(), replyTo, to, mime.QEncoding.Encode("utf-8", n.Title), parts.Boundary())
 	plain := fmt.Sprintf("%s\n\n%s\n\nHallo %s,\n\n%s\n\n%s:\n%s\n\n%s\n\n%s\n\nDeine %s\n\n%s · %s\nFachschaft kontaktieren: %s/contact\n", n.Organization.Name, n.Title, n.Name, n.Intro, n.Action, n.Link, n.Validity, n.Note, n.Organization.ShortName, n.Organization.ShortName, n.Organization.Institution, n.Domain)
 	for _, part := range []struct{ kind, body string }{{"text/plain", plain}, {"text/html", body.String()}} {
 		header := textproto.MIMEHeader{"Content-Type": {part.kind + "; charset=UTF-8"}, "Content-Transfer-Encoding": {"quoted-printable"}}

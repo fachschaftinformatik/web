@@ -101,6 +101,12 @@ reused. Token pages disable caching and referrers. The mail outbox necessarily
 contains usable links until delivery; protect the database and backups accordingly.
 SMTP requires STARTTLS except for a loopback development relay.
 
+Set `SMTP_FROM` to the automated sender mailbox address (production:
+`portal@fsi-wh.de`). An optional `SMTP_REPLY_TO` routes replies to the monitored
+contact address (`team@fsi-wh.de`). Email headers use the organization short name.
+The SMTP provider must authorize the sending domain; a sending-only address does
+not require its own inbox. The reply address must receive mail.
+
 Production's HTTPS proxy must handle TLS/HSTS, request throttling (especially
 login, registration and password reset), and access logs without query strings or
 credentials. Set `DOMAIN` to the public HTTPS URL so session cookies are secure.
