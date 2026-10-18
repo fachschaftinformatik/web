@@ -119,13 +119,20 @@
       "enabled": true
     },
     {
+      "description": "Indirect major module-path migrations must come from the dependency that imports them.",
       "matchManagers": ["gomod"],
-      "postUpdateOptions": ["gomodTidy", "goGenerate"],
+      "matchDepTypes": ["indirect"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["gomod"],
+      "postUpdateOptions": ["gomodUpdateImportPaths", "gomodTidy", "goGenerate"],
       "postUpgradeTasks": {
         "commands": ["node .github/renovate/update-locks.mjs --go"],
         "installTools": { "nix": {}, "golang": {} },
         "executionMode": "branch",
-        "fileFilters": ["flake.nix", "go.mod", "go.sum", "Dockerfile", "internal/database/**"]
+        "fileFilters": ["flake.nix", "go.mod", "go.sum", "Dockerfile", "**/*.go"]
       }
     },
     {
