@@ -21,7 +21,7 @@
           # renovate: datasource=npm depName=govuk-frontend
           govukVersion = "6.6.0";
           # renovate: datasource=npm depName=htmx.org
-          htmxVersion = "2.0.8";
+          htmxVersion = "2.0.11";
           # renovate: datasource=npm depName=tinymce
           tinymceVersion = "8.10.0";
           # renovate: datasource=npm depName=tinymce-i18n
@@ -41,7 +41,7 @@
           };
           htmx = pkgs.fetchurl {
             url = "https://registry.npmjs.org/htmx.org/-/htmx.org-${htmxVersion}.tgz";
-            hash = "sha256-UTUbKsSzvAZWkqTdE0moL5C/fFJhNJN8yyXTkyyM6VQ=";
+            hash = "sha256-FlomVQc+nm5V4wenx06OvNt2r7dwH5wWz9EGoTrdQI4=";
           };
           tinymce = pkgs.fetchurl {
             url = "https://registry.npmjs.org/tinymce/-/tinymce-${tinymceVersion}.tgz";
@@ -137,7 +137,7 @@
             pname = "web";
             version = revision;
             src = pkgs.lib.cleanSource ./.;
-            vendorHash = "sha256-ANSZ6zJVjyTC2P8P7I3siSXmAJnCOds0cVFm4egHSfE=";
+            vendorHash = "sha256-vrFr/zrjvkIDRwn+gG33RPZKk2EVESTgPrWbfZ9Nl0g=";
             subPackages = [ "." ];
             env.CGO_ENABLED = "0";
             preBuild = ''

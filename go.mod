@@ -37,14 +37,14 @@ require (
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/klauspost/compress v1.20.3 // indirect
-	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.4.1 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/minio/crc64nvme v1.1.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/ncruces/go-sqlite3 v0.35.6 // indirect
-	github.com/ncruces/go-sqlite3-wasm/v6 v6.3.35304 // indirect
+	github.com/ncruces/go-sqlite3-wasm/v6 v6.3.35401 // indirect
 	github.com/ncruces/go-strftime v1.1.0 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/pganalyze/pg_query_go/v6 v6.2.5 // indirect
