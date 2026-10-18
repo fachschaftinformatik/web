@@ -9,12 +9,78 @@ import (
 	"mime/multipart"
 	"net"
 	"net/mail"
+	"net/textproto"
 	"strings"
 	"testing"
 
 	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/model/organization"
 )
+
+func TestSubmissionEmailContainsAuthenticatedReviewLink(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	received := make(chan []byte, 1)
+	go func() {
+		conn, err := listener.Accept()
+		if err != nil {
+			received <- nil
+			return
+		}
+		defer conn.Close()
+		reader := bufio.NewReader(conn)
+		fmt.Fprint(conn, "220 localhost ESMTP\r\n")
+		var message []byte
+		defer func() { received <- message }()
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				return
+			}
+			switch {
+			case strings.HasPrefix(line, "DATA"):
+				fmt.Fprint(conn, "354 Send message\r\n")
+				message, _ = textproto.NewReader(reader).ReadDotBytes()
+				fmt.Fprint(conn, "250 Accepted\r\n")
+			case strings.HasPrefix(line, "QUIT"):
+				fmt.Fprint(conn, "221 Bye\r\n")
+				return
+			default:
+				fmt.Fprint(conn, "250 localhost\r\n")
+			}
+		}
+	}()
+	host, port, _ := net.SplitHostPort(listener.Addr().String())
+	sender := NewSender(&config.Config{Domain: "https://fsi-wh.de", SMTPHost: host, SMTPPort: port, SMTPFrom: "web@example.org"}, nil)
+	if err := sender.SendSubmissionEmail("reviewer@example.org", "Reviewer", "AbCdEfGhIjK"); err != nil {
+		t.Fatal(err)
+	}
+	message, err := mail.ReadMessage(bytes.NewReader(<-received))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, params, err := mime.ParseMediaType(message.Header.Get("Content-Type"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	parts := multipart.NewReader(message.Body, params["boundary"])
+	for range 2 {
+		part, err := parts.NextPart()
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, err := io.ReadAll(part)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(body), "https://fsi-wh.de/admin/submissions/AbCdEfGhIjK") || !strings.Contains(string(body), "Einsendung") || !strings.Contains(string(body), "deaktivieren") || strings.Contains(string(body), "token=") {
+			t.Fatal("submission notification lost its review link or preference instructions", string(body))
+		}
+	}
+}
 
 func TestRemoteSMTPWithoutTLSDoesNotReceiveMessage(t *testing.T) {
 	client, server := net.Pipe()

@@ -115,6 +115,9 @@ func newApplication(ctx context.Context, databasePath, blobPath string) (_ *appl
 			var err error
 			if cfg.SMTPHost != "" {
 				err = identity.DeliverMail(maintenanceCtx, sender)
+				if err := examDocuments.DeliverSubmissionMail(maintenanceCtx, sender); err != nil && maintenanceCtx.Err() == nil {
+					log.Printf("Submission mail maintenance: %v", err)
+				}
 			} else {
 				err = identity.PurgeExpired(maintenanceCtx)
 			}

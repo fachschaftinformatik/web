@@ -379,18 +379,19 @@ func (s Submission) DisplayScope() ExamsFilter {
 }
 
 type UploadPage struct {
-	SubmissionID, Date, Comment, Action string
-	RevisionID                          string
-	Existing                            []Exam
-	Revision, ChooseScope               bool
-	ReviewEditing                       bool
-	EditToken                           string
-	Modules                             []string
-	DateInput                           DateInput
-	Scope                               ExamsFilter
-	Programs, Degrees, Versions         []FilterOption
-	Groups                              []AssignmentGroup
-	Errors                              map[string]string
+	SubmissionID, Date, Comment, Action      string
+	RevisionID                               string
+	Existing                                 []Exam
+	Revision, ChooseScope                    bool
+	ReviewEditing                            bool
+	SubmissionMail, CanReceiveSubmissionMail bool
+	EditToken                                string
+	Modules                                  []string
+	DateInput                                DateInput
+	Scope                                    ExamsFilter
+	Programs, Degrees, Versions              []FilterOption
+	Groups                                   []AssignmentGroup
+	Errors                                   map[string]string
 }
 
 func (u UploadPage) CancelURL() string {

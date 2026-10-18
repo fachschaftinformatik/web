@@ -32,7 +32,7 @@ func TestIntegerSequencePreservesDeletedAndExplicitKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := provider.Up(ctx); err != nil {
+	if _, err := provider.UpTo(ctx, 17); err != nil {
 		t.Fatal(err)
 	}
 	const legacy int64 = 987654321012345

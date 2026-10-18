@@ -33,7 +33,7 @@ The application does not seed members or organization content. Legacy content
 imports and data conversion are managed outside this repository.
 Start the application from the repository root with explicit account-domain policy:
 ```bash
-export ACCOUNT_DOMAINS=studmail.w-hs.de,fsv-wh.de
+export ACCOUNT_DOMAINS=studmail.w-hs.de,fsv-wh.de,fsi-wh.de
 export REGISTRATION_DOMAINS=studmail.w-hs.de
 nix develop -c go run . -database .dev-data/local/sqlite.db -blobs .dev-data/local/blobs
 ```
@@ -213,6 +213,16 @@ total coverage, and its `coverage` artifact contains the HTML report, raw profil
 and badge JSON. Successful main-branch publishing updates the `coverage` branch
 with the measured percentage for the README badge; clicking it opens the CI runs
 where the full reports can be downloaded. Dry runs do not publish badge changes.
+
+### Submission notifications
+
+Administrators and editors can opt in to new submission emails under
+`/exams/settings`. The exams model queues notifications in the same transaction
+that changes a draft to pending. The background maintenance worker uses the
+configured SMTP sender, retries failed messages, and checks current reviewer
+permissions, subscription and account address before delivery. Disabling the
+preference removes queued messages; reviewed submissions are no longer emailed.
+The email links to the authenticated reviewer page using the permanent public ID.
 
 ### Security checks
 

@@ -342,6 +342,15 @@ type StudyProgram struct {
 	Name string `json:"name"`
 }
 
+type SubmissionMailOutbox struct {
+	SubmissionID string `json:"submission_id"`
+	UserID       int64  `json:"user_id"`
+}
+
+type SubmissionMailSubscription struct {
+	UserID int64 `json:"user_id"`
+}
+
 type User struct {
 	ID                   int64   `json:"id"`
 	Email                string  `json:"email"`

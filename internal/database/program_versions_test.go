@@ -29,7 +29,7 @@ func TestProgramVersionsMigrationStoresNumericYears(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := provider.Up(ctx); err != nil {
+	if _, err := provider.UpTo(ctx, 19); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.Exec(`INSERT INTO programs(id,name) VALUES(1,'Informatik');
