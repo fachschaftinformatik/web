@@ -1,11 +1,14 @@
 package content
 
 import (
+	"bytes"
 	"html"
 	"io"
 	"strings"
 
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/yuin/goldmark"
+	markdownhtml "github.com/yuin/goldmark/renderer/html"
 	xhtml "golang.org/x/net/html"
 )
 
@@ -76,4 +79,17 @@ func richTextPlain(source string, includeLinks bool) string {
 // PlainRichText treats literal HTML as text when enhancing a plain textarea.
 func PlainRichText(source string) string {
 	return "<p>" + strings.ReplaceAll(html.EscapeString(strings.ReplaceAll(source, "\r\n", "\n")), "\n", "<br>") + "</p>"
+}
+
+var markdown = goldmark.New(goldmark.WithRendererOptions(markdownhtml.WithHardWraps()))
+
+// MarkdownRichText renders text-based event descriptions without changing their
+// original source. Raw HTML is disabled; generated HTML uses the same allowlist
+// as descriptions authored in the rich-text editor.
+func MarkdownRichText(source string) string {
+	var out bytes.Buffer
+	if err := markdown.Convert([]byte(source), &out); err != nil {
+		return PlainRichText(source)
+	}
+	return SanitizeRichText(out.String())
 }

@@ -91,7 +91,7 @@ func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {
 			c.pageError(w, "Das Formular konnte nicht gelesen werden. Das Titelbild darf höchstens 6 MB groß sein.", http.StatusBadRequest)
 			return
 		}
-		editor.Draft = view.EditorDraft{Type: "event", Title: r.PostForm.Get("title"), Body: r.PostForm.Get("body"), Date: r.PostForm.Get("date"), Time: r.PostForm.Get("time"), Location: r.PostForm.Get("location")}
+		editor.Draft = view.EditorDraft{Type: "event", Title: r.PostForm.Get("title"), Body: r.PostForm.Get("body"), Date: eventFormDate(r), Time: r.PostForm.Get("time"), Location: r.PostForm.Get("location")}
 		editor.RichBody = content.PlainRichText(editor.Draft.Body)
 		if r.PostForm.Has("rich_body") {
 			editor.RichBody = content.SanitizeRichText(r.PostForm.Get("rich_body"))
@@ -131,6 +131,19 @@ func (c *Handler) EditEvent(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	c.renderStatus(w, "editor", false, view.Page{Title: title, Active: "events", Community: true, Editor: &editor}, status)
+}
+
+func eventFormDate(r *http.Request) string {
+	if !r.PostForm.Has("date-day") && !r.PostForm.Has("date-month") && !r.PostForm.Has("date-year") {
+		return r.PostForm.Get("date")
+	}
+	day := strings.TrimSpace(r.PostForm.Get("date-day"))
+	month := strings.TrimSpace(r.PostForm.Get("date-month"))
+	year := strings.TrimSpace(r.PostForm.Get("date-year"))
+	if day == "" && month == "" && year == "" {
+		return ""
+	}
+	return day + "." + month + "." + year
 }
 
 func (c *Handler) eventError(w http.ResponseWriter, r *http.Request, err error) {

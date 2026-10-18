@@ -97,18 +97,17 @@ func (e Event) EventLabel() string {
 	return eventLabel(e.EventDate)
 }
 
+func (e Event) DateLabel() string { return dateLabel(e.EventDate) }
+
 func (e Event) RichBody() string {
 	if e.BodyFormat == "html" {
 		return content.SanitizeRichText(e.Body)
 	}
-	return content.PlainRichText(e.Body)
+	return content.MarkdownRichText(e.Body)
 }
 
 func (e Event) Summary() string {
-	text := e.Body
-	if e.BodyFormat == "html" {
-		text = content.RichTextVisible(text)
-	}
+	text := content.RichTextVisible(e.RichBody())
 	if r := []rune(text); len(r) > 240 {
 		return string(r[:240]) + "…"
 	}
@@ -135,8 +134,6 @@ func (e Event) AlbumURL() string {
 
 func (e Event) StatusLabel() string {
 	switch e.SourceStatus {
-	case "cancelled":
-		return "Abgesagt"
 	case "rescheduled":
 		return "Termin geändert"
 	}
@@ -152,9 +149,8 @@ func (t Thread) EditCommentURL(comment string) string { return urls.EditComment(
 
 func (p Post) AuthorURL() string { return authorURL(p.AuthorPublicID, p.AuthorPublic) }
 func authorURL(id string, public bool) string {
-	if public && id != "" {
-		return urls.User(id)
-	}
+	// Public account profiles are not currently exposed. Keep author names
+	// subject to the existing account visibility rules without linking them.
 	return ""
 }
 
@@ -182,7 +178,7 @@ func dateLabel(value string) string {
 func (p Post) TypeLabel() string {
 	switch p.Type {
 	case "news":
-		return "Neuigkeit"
+		return "Ankündigung"
 	case "event":
 		return "Veranstaltung"
 	default:
@@ -432,8 +428,18 @@ func summary(body, format string) string {
 	if format == "html" {
 		body = content.RichTextVisible(body)
 	}
+	body = strings.Join(strings.Fields(body), " ")
 	if r := []rune(body); len(r) > 240 {
-		return string(r[:240]) + "…"
+		end := 240
+		if r[end] != ' ' {
+			for i := end - 1; i > 0; i-- {
+				if r[i] == ' ' {
+					end = i
+					break
+				}
+			}
+		}
+		return strings.TrimSpace(string(r[:end])) + "…"
 	}
 	return body
 }

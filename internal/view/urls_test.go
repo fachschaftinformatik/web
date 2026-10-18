@@ -45,7 +45,7 @@ func TestCanonicalJourneyFormsAndNavigation(t *testing.T) {
 		{"forgot", Page{}, []string{`action="/password/forgot"`}},
 		{"upload", Page{Upload: UploadPage{Action: "/admin/submissions/42/edit", SubmissionID: "42", ReviewEditing: true, EditToken: "synthetic-concurrency-token"}}, []string{`method="post"`, `name="edit_token" value="synthetic-concurrency-token"`, `href="/admin/submissions/42/review"`}},
 		{"upload", Page{Upload: UploadPage{Action: "/exams/submissions/create", ChooseScope: true, RevisionID: "23"}}, []string{`method="get"`, `name="revision" value="23"`}},
-		{"media", Page{Active: "media", Community: true, Media: MediaPage{Albums: []Album{NewAlbum(media.Album{ID: "42", Title: "Synthetic album", Cover: media.Image{ID: "42", AlbumCover: true}})}}}, []string{`href="/media/albums/42"`, `/media/albums/42/cover/400`, `>Medien`}},
+		{"media", Page{Active: "media", Community: true, Media: MediaPage{Albums: []Album{NewAlbum(media.Album{ID: "42", Title: "Synthetic album", Cover: media.Image{ID: "42", AlbumCover: true}})}}}, []string{`href="/media/albums/42"`, `/media/albums/42/cover/400`, `>Fotos`}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var out strings.Builder

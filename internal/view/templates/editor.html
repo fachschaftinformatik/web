@@ -274,7 +274,7 @@
           beim Absenden entfernt.
         </p>
       </div>
-      {{ if not .Event }}
+      {{ if and (not .Event) (not .Announcement) }}
         <div class="govuk-form-group">
           <label class="govuk-label" for="tags">Schlagwörter, mit Komma getrennt</label
           ><input class="govuk-input" id="tags" name="tags" value="{{ .Draft.Tags }}" />
@@ -284,27 +284,78 @@
         <fieldset class="govuk-fieldset govuk-!-margin-bottom-6">
           <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">Termin und Ort</legend>
           <div class="govuk-form-group {{ if .Error "date" }}govuk-form-group--error{{ end }}">
-            <label class="govuk-label" for="date">Datum (optional)</label>
-            <div class="govuk-hint" id="date-hint">Zum Beispiel 30.01.2027.</div>
-            {{ if .Error "date" }}
-              <p class="govuk-error-message" id="date-error">
-                <span class="govuk-visually-hidden">Fehler:</span> {{ .Error "date" }}
-              </p>
-            {{ end }}
-            <input
-              class="govuk-input govuk-input--width-10 {{ if .Error "date" }}
-                govuk-input--error
-              {{ end }}"
-              id="date"
-              name="date"
-              value="{{ .Draft.Date }}"
-              aria-describedby="date-hint{{ if .Error "date" }}date-error{{ end }}"
-              {{ if .Error "date" }}aria-invalid="true"{{ end }}
-            />
+            <fieldset
+              class="govuk-fieldset"
+              role="group"
+              aria-describedby="date-hint{{ if .Error "date" }}{{ " date-error" }}{{ end }}"
+            >
+              <legend class="govuk-fieldset__legend">Datum (optional)</legend>
+              <div class="govuk-hint" id="date-hint">Zum Beispiel 30 1 2027</div>
+              {{ if .Error "date" }}
+                <p class="govuk-error-message" id="date-error">
+                  <span class="govuk-visually-hidden">Fehler:</span> {{ .Error "date" }}
+                </p>
+              {{ end }}
+              <div class="govuk-date-input" id="date">
+                <div class="govuk-date-input__item">
+                  <div class="govuk-form-group">
+                    <label class="govuk-label govuk-date-input__label" for="date-day">Tag</label>
+                    <input
+                      class="govuk-input govuk-date-input__input govuk-input--width-2 {{ if .Error "date" }}
+                        govuk-input--error
+                      {{ end }}"
+                      id="date-day"
+                      name="date-day"
+                      type="text"
+                      inputmode="numeric"
+                      value="{{ .DateDay }}"
+                      {{ if .Error "date" }}aria-invalid="true"{{ end }}
+                    />
+                  </div>
+                </div>
+                <div class="govuk-date-input__item">
+                  <div class="govuk-form-group">
+                    <label class="govuk-label govuk-date-input__label" for="date-month"
+                      >Monat</label
+                    >
+                    <input
+                      class="govuk-input govuk-date-input__input govuk-input--width-2 {{ if .Error "date" }}
+                        govuk-input--error
+                      {{ end }}"
+                      id="date-month"
+                      name="date-month"
+                      type="text"
+                      inputmode="numeric"
+                      value="{{ .DateMonth }}"
+                      {{ if .Error "date" }}aria-invalid="true"{{ end }}
+                    />
+                  </div>
+                </div>
+                <div class="govuk-date-input__item">
+                  <div class="govuk-form-group">
+                    <label class="govuk-label govuk-date-input__label" for="date-year">Jahr</label>
+                    <input
+                      class="govuk-input govuk-date-input__input govuk-input--width-4 {{ if .Error "date" }}
+                        govuk-input--error
+                      {{ end }}"
+                      id="date-year"
+                      name="date-year"
+                      type="text"
+                      inputmode="numeric"
+                      value="{{ .DateYear }}"
+                      {{ if .Error "date" }}aria-invalid="true"{{ end }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </fieldset>
           </div>
           <div class="govuk-form-group {{ if .Error "time" }}govuk-form-group--error{{ end }}">
             <label class="govuk-label" for="time">Uhrzeit (optional)</label>
-            <div class="govuk-hint" id="time-hint">Zum Beispiel 17:00.</div>
+            <div class="govuk-hint" id="time-hint">
+              Im 24-Stunden-Format, zum Beispiel 17:00. Ortszeit Berlin. Eine Uhrzeit benötigt ein
+              Datum.
+            </div>
             {{ if .Error "time" }}
               <p class="govuk-error-message" id="time-error">
                 <span class="govuk-visually-hidden">Fehler:</span> {{ .Error "time" }}
@@ -316,8 +367,10 @@
               {{ end }}"
               id="time"
               name="time"
+              type="text"
+              spellcheck="false"
               value="{{ .Draft.Time }}"
-              aria-describedby="time-hint{{ if .Error "time" }}time-error{{ end }}"
+              aria-describedby="time-hint{{ if .Error "time" }}{{ " time-error" }}{{ end }}"
               {{ if .Error "time" }}aria-invalid="true"{{ end }}
             />
           </div>
@@ -334,8 +387,8 @@
         <div class="govuk-form-group {{ if .Error "cover" }}govuk-form-group--error{{ end }}">
           <label class="govuk-label govuk-label--s" for="cover">Titelbild (optional)</label>
           <p class="govuk-hint" id="cover-hint">
-            JPEG, PNG oder WebP, höchstens 6 MB. Die Karten zeigen einen 3:2-Ausschnitt, die
-            Detailseite das vollständige Bild. Bei einem Fehler bitte das Bild erneut auswählen.
+            JPEG, PNG oder WebP, höchstens 6 MB. Das Bild wird vollständig angezeigt. Bei einem
+            Fehler bitte das Bild erneut auswählen.
           </p>
           {{ if .CoverURL }}
             <img
@@ -400,7 +453,7 @@
           {{ else if .Event }}
             Veranstaltung veröffentlichen
           {{ else if .Announcement }}
-            Neuigkeit veröffentlichen
+            Ankündigung veröffentlichen
           {{ else }}
             Beitrag veröffentlichen
           {{ end }}

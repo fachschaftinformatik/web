@@ -103,7 +103,7 @@ additional read-only detail page.
 │           ├── edit
 │           └── check                   check and submit
 │
-├── users/{user}                        public profile
+├── users/{user}                        reserved; public profiles currently unavailable (404)
 ├── login
 ├── logout
 ├── register
@@ -202,7 +202,7 @@ names; a route accepts only parameters it actually supports.
 
 | Name | Meaning | Example |
 | --- | --- | --- |
-| `search` | Search text | `/posts?search=welcome` |
+| `search` | Search text | `/posts?search=welcome`, `/news?search=welcome` |
 | `page` | Page number starting at 1 | `/media?page=2` |
 | `program` | Study program public ID, or explicit `all` | `/exams?program=m7Qp2Vx9aK4` |
 | `degree` | Degree filter | `/exams?degree=bachelor` |

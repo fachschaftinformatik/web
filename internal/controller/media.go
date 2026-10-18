@@ -16,7 +16,7 @@ func (c *Handler) Media(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	g := view.MediaPage{Albums: view.Albums(albums), Pagination: listPagination(r, total, 12)}
-	data := view.Page{Title: "Medien", Active: "media", Community: true}
+	data := view.Page{Title: "Fotos", Active: "media", Community: true}
 	if r.PathValue("image") == "" && r.PathValue("album") == "" && !c.validPageRange(w, r, total, 12) {
 		return
 	}

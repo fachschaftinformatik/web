@@ -24,11 +24,11 @@ translating only the navigation or changing only route registration.
 | `/community` | `Community` | Community |
 | `/posts` discussion listing | `Post`, `Posts` | Forum |
 | A post | `Post` | Beitrag / Beiträge |
-| `/news` | `News` | Neuigkeiten |
+| `/news` | `News` | Ankündigungen |
 | `/events` | `Event` | Veranstaltung / Veranstaltungen |
-| `/media` | `Media` | Medien |
+| `/media` | `Media` | Fotos |
 | A media album | `Album` | Album / Alben |
-| An individual media item | `Item`, qualified as `MediaItem` where needed | Medium / Medien |
+| An individual media item | `Item`, qualified as `MediaItem` where needed | Foto / Fotos |
 | An actual photograph | `Photo` | Foto / Fotos |
 | An actual video | `Video` | Video / Videos |
 | `/exams` | `Exam`, `Exams` | Altklausur / Altklausuren |
@@ -56,9 +56,10 @@ Where a document's provenance matters, explain that it is a reconstruction, not
 an official exam paper. A factual document-type description is not a second name
 for the section. Do not imply that reconstructed documents are official papers.
 
-Use "Medien" for the media section even while it contains only photos. Use
-"Foto" or "Video" when describing the actual item type, not as interchangeable
-names for the whole section. No video implementation is implied by this naming.
+Use "Fotos" consistently for the current photo section, with "Fotoalbum" for
+an album. The permanent `/media` namespace and English `media` package stay
+independent of the German display label. If video is introduced, choose an
+equally explicit label such as "Fotos und Videos" without moving existing URLs.
 
 Keep organizational membership, organizational functions and account permissions
 distinct. A `MemberRole` is a function such as chair; it is not an account access

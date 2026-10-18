@@ -6,13 +6,30 @@
         <div>
           <h1 class="govuk-heading-xl app-masthead__title">Deine {{ .Organization.ShortName }}</h1>
           <p class="govuk-body app-masthead__description">
-            Wir vertreten deine Interessen und helfen dir bei Fragen rund ums Informatikstudium.
+            Wir vertreten deine Interessen, helfen dir bei Fragen rund ums Informatikstudium und
+            organisieren Events.
           </p>
           <div class="govuk-button-group app-masthead__actions">
-            <a class="govuk-link govuk-link--inverse govuk-!-font-weight-bold" href="/posts"
-              >Zum Forum</a
+            <a
+              class="govuk-button govuk-button--inverse govuk-button--start govuk-!-margin-bottom-0"
+              href="/posts"
+              role="button"
+              draggable="false"
+              data-module="govuk-button"
             >
-            <a class="govuk-link govuk-link--inverse" href="/media">Zu den Medien</a>
+              Zum Forum
+              <svg
+                class="govuk-button__start-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="17.5"
+                height="19"
+                viewBox="0 0 33 40"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path fill="currentColor" d="M0 0h13l20 20-20 20H0l20-20z" />
+              </svg>
+            </a>
           </div>
         </div>
         <div>
@@ -117,7 +134,9 @@
                           fetchpriority="high"
                         {{ end }}
                         decoding="async"
-                      /><span class="govuk-visually-hidden">Album ansehen: {{ .Title }}</span></a
+                      /><span class="govuk-visually-hidden"
+                        >Fotoalbum ansehen: {{ .Title }}</span
+                      ></a
                     >
                   </div>
                 {{ end }}
@@ -141,11 +160,11 @@
               </h3>
               <p class="govuk-body">{{ .Summary }}</p>
             {{ else }}
-              <p class="govuk-body">Noch keine Neuigkeiten veröffentlicht.</p>
+              <p class="govuk-body">Noch keine Ankündigungen veröffentlicht.</p>
             {{ end }}
           {{ end }}
           <p class="govuk-body">
-            <a class="govuk-link" href="/news">Alle Neuigkeiten lesen</a>
+            <a class="govuk-link" href="/news">Alle Ankündigungen lesen</a>
           </p>
         </section>
         <section class="govuk-grid-column-full govuk-!-margin-top-6" aria-labelledby="home-events">

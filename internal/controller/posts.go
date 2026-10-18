@@ -36,7 +36,7 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 		editor.Draft.Type = "news"
 		editor.Action = urls.CreatePostPath + "?type=news"
 		editor.BackURL = urls.NewsPath
-		title = "Neuigkeit veröffentlichen"
+		title = "Ankündigung veröffentlichen"
 	}
 	if id := r.PathValue("post"); id != "" {
 		thread, err := c.posts.Lookup(r.Context(), id)
@@ -70,7 +70,7 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 			title = "Veranstaltung bearbeiten"
 		}
 		if editor.Announcement {
-			title = "Neuigkeit bearbeiten"
+			title = "Ankündigung bearbeiten"
 		}
 	}
 	if editor.Event || editor.Announcement {
@@ -90,7 +90,14 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 			c.pageError(w, "Das Formular konnte nicht gelesen werden. Versuche es mit einem kürzeren Beitrag erneut.", http.StatusBadRequest)
 			return
 		}
-		editor.Draft = view.EditorDraft{Title: r.PostForm.Get("title"), Body: r.PostForm.Get("body"), Type: editor.Draft.Type, Tags: r.PostForm.Get("tags"), Date: r.PostForm.Get("date"), Time: r.PostForm.Get("time"), Location: r.PostForm.Get("location")}
+		tags := r.PostForm.Get("tags")
+		if editor.Announcement {
+			tags = editor.Draft.Tags
+		}
+		editor.Draft = view.EditorDraft{Title: r.PostForm.Get("title"), Body: r.PostForm.Get("body"), Type: editor.Draft.Type, Tags: tags, Date: r.PostForm.Get("date"), Time: r.PostForm.Get("time"), Location: r.PostForm.Get("location")}
+		if editor.Event {
+			editor.Draft.Date = eventFormDate(r)
+		}
 		if r.PostForm.Has("rich_body") {
 			editor.RichBody = content.SanitizeRichText(r.PostForm.Get("rich_body"))
 			editor.Draft.Body = content.RichTextPlain(editor.RichBody)
@@ -216,6 +223,13 @@ func (c *Handler) Posts(w http.ResponseWriter, r *http.Request) {
 	if filter.Query != "" {
 		data.DocumentTitle = "Forum – Suchergebnisse"
 	}
+	if data.Posts.Pagination.Pages > 1 {
+		title := data.DocumentTitle
+		if title == "" {
+			title = data.Title
+		}
+		data.DocumentTitle = title + " – Seite " + strconv.Itoa(data.Posts.Pagination.Page) + " von " + strconv.Itoa(data.Posts.Pagination.Pages)
+	}
 	c.render(w, "posts", false, data)
 }
 
@@ -272,11 +286,12 @@ func (c *Handler) Comment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Handler) News(w http.ResponseWriter, r *http.Request) {
-	page := view.PostsPage{}
+	filter := posts.Filter{Type: "news", Query: strings.TrimSpace(r.URL.Query().Get("search"))}
+	page := view.PostsPage{Filter: filter}
 
-	records, total, err := c.posts.FindPage(r.Context(), posts.Filter{Type: "news"}, requestedPage(r), 20, postsUser(w))
+	records, total, err := c.posts.FindPage(r.Context(), filter, requestedPage(r), 20, postsUser(w))
 	page.Posts = view.Posts(records)
-	page.Pagination = listPagination(r, total, 20)
+	page.Pagination = listPagination(r, total, 20, "search")
 	if err != nil {
 		c.serverError(w, err)
 		return
@@ -286,7 +301,18 @@ func (c *Handler) News(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c.render(w, "news", false, view.Page{Title: "Neuigkeiten", Active: "news", Community: true, Posts: page})
+	data := view.Page{Title: "Ankündigungen", Active: "news", Community: true, Posts: page}
+	if filter.Query != "" {
+		data.DocumentTitle = "Ankündigungen – Suchergebnisse"
+	}
+	if page.Pagination.Pages > 1 {
+		title := data.DocumentTitle
+		if title == "" {
+			title = data.Title
+		}
+		data.DocumentTitle = title + " – Seite " + strconv.Itoa(page.Pagination.Page) + " von " + strconv.Itoa(page.Pagination.Pages)
+	}
+	c.render(w, "news", false, data)
 }
 
 func (c *Handler) Vote(w http.ResponseWriter, r *http.Request) {

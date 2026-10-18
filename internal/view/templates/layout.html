@@ -216,7 +216,23 @@
               class="{{ if eq .Active "media" }}app-media{{ end }}"
               tabindex="-1"
             >
-              <div class="app-page-heading"><h1 class="govuk-heading-xl">{{ .Title }}</h1></div>
+              <div class="app-page-heading">
+                <h1
+                  class="govuk-heading-xl {{ if and .Events.Detail .Events.Detail.SourcePublishedAt }}
+                    govuk-!-margin-bottom-2
+                  {{ end }}"
+                >
+                  {{ .Title }}
+                </h1>
+                {{ with .Events.Detail }}
+                  {{ if .SourcePublishedAt }}
+                    <p class="govuk-body-s app-publication-date">
+                      Veröffentlicht am
+                      <time datetime="{{ .SourcePublishedAt }}">{{ .SourceDateLabel }}</time>
+                    </p>
+                  {{ end }}
+                {{ end }}
+              </div>
               <div class="app-content">{{ template "content" . }}</div>
             </main>
           </div>
@@ -302,11 +318,11 @@
           {{ if eq .Active "news" }}
             aria-current="{{- if or .Posts.Thread .Editor -}}true{{- else -}}page{{- end -}}"
           {{ end }}
-          >Neuigkeiten</a
+          >Ankündigungen</a
         >
       </li>
     </ul>
-    <h2 class="app-subnav-theme">Fachschaftsleben</h2>
+    <h2 class="app-subnav-theme">Events</h2>
     <ul class="govuk-list app-subnav">
       <li>
         <a
@@ -329,7 +345,7 @@
           {{ if eq .Active "media" }}
             aria-current="{{- if .Media.Detail -}}true{{- else -}}page{{- end -}}"
           {{ end }}
-          >Medien</a
+          >Fotos</a
         >
       </li>
     </ul>

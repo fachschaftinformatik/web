@@ -142,11 +142,11 @@ func canonicalURL(r *http.Request) string {
 		urls.MediaItemPattern:
 	case urls.MeetingsPath:
 		keys = []string{"year"}
-	case urls.PostsPath:
+	case urls.PostsPath, urls.NewsPath:
 		keys = []string{"page", "search"}
 	case urls.PostPattern:
 		keys = []string{"page"}
-	case urls.NewsPath, urls.EventsPath, urls.MediaPath, urls.AlbumPattern, urls.SitemapPath:
+	case urls.EventsPath, urls.MediaPath, urls.AlbumPattern, urls.SitemapPath:
 		keys = []string{"page"}
 	case urls.ExamsPath:
 		keys = []string{"page", "search", "program", "degree", "version"}

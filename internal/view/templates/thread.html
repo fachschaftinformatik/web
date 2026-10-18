@@ -62,7 +62,7 @@
           role="button"
           draggable="false"
           data-module="govuk-button"
-          >Beitrag bearbeiten</a
+          >{{ if eq .Type "news" }}Ankündigung bearbeiten{{ else }}Beitrag bearbeiten{{ end }}</a
         >
       {{ end }}
     </article>

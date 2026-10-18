@@ -1,7 +1,7 @@
 {{ define "event-list" }}
   <ul class="govuk-list app-image-cards" role="list">
     {{ range . }}
-      <li class="app-image-card">
+      <li class="app-image-card app-event-card">
         <div class="app-image-card__image">
           {{ if .CoverURL }}
             <img
@@ -26,43 +26,18 @@
         <div class="app-image-card__content">
           {{ if .StatusLabel }}
             <p class="govuk-body-s govuk-!-margin-bottom-2">
-              <strong
-                class="govuk-tag {{ if eq .SourceStatus "cancelled" }}
-                  govuk-tag--red
-                {{ else }}
-                  govuk-tag--grey
-                {{ end }}"
-                >{{ .StatusLabel }}</strong
-              >
+              <strong class="govuk-tag govuk-tag--grey">{{ .StatusLabel }}</strong>
             </p>
           {{ end }}
           <h3 class="govuk-heading-s govuk-!-margin-bottom-2">
             <a class="govuk-link app-image-card__link" href="{{ .URL }}">{{ .Title }}</a>
           </h3>
+          {{ if .EventDate }}
+            <p class="govuk-body-s app-image-card__date govuk-!-margin-bottom-2">
+              <time datetime="{{ .EventDate }}">{{ .DateLabel }}</time>
+            </p>
+          {{ end }}
           <p class="govuk-body-s app-image-card__summary govuk-!-margin-bottom-3">{{ .Summary }}</p>
-          <dl class="app-image-card__meta govuk-body-s">
-            <div>
-              <dt class="govuk-visually-hidden">
-                {{ if .EventDate }}Termin{{ else }}Veröffentlichung{{ end }}
-              </dt>
-              <dd>
-                {{ if .EventDate }}
-                  <time datetime="{{ .EventDate }}">{{ .EventLabel }}</time>
-                {{ else if .SourcePublishedAt }}
-                  Veröffentlicht am
-                  <time datetime="{{ .SourcePublishedAt }}">{{ .SourceDateLabel }}</time>
-                {{ else }}
-                  Termin folgt
-                {{ end }}
-              </dd>
-            </div>
-            {{ if .Location }}
-              <div>
-                <dt class="govuk-visually-hidden">Ort</dt>
-                <dd>{{ .Location }}</dd>
-              </div>
-            {{ end }}
-          </dl>
         </div>
       </li>
     {{ end }}
