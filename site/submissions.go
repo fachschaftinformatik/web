@@ -168,6 +168,7 @@ func (c *Handler) UploadExams(w http.ResponseWriter, r *http.Request) {
 		}
 		form.Scope = view.ExamsFilter{Programs: slices.DeleteFunc(values["program"], func(value string) bool { return value == "all" || value == "" }), Degrees: values["degree"], Versions: values["version"]}
 	}
+	form.Scope = examsFilterView(catalog.NormalizeFilter(examsFilterModel(form.Scope)))
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		form.Date, form.Comment = strings.TrimSpace(r.PostForm.Get("date")), strings.TrimSpace(r.PostForm.Get("comment"))

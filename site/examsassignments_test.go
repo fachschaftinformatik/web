@@ -30,9 +30,13 @@ func TestExamsAssignmentChoicesAndSettingsDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 	seedExamPublicIDs(t, db)
-	program1 := examPublicID(t, db, "programs", "1")
-	program2 := examPublicID(t, db, "programs", "2")
-	program3 := examPublicID(t, db, "programs", "3")
+	if _, err := db.Exec(`INSERT INTO study_programs(id,name) VALUES(1,'Informatik'),(2,'Wirtschaftsinformatik');
+		INSERT INTO program_qualifications(legacy_program_id,study_program_id,degree) VALUES(1,1,'Bachelor'),(2,2,'Bachelor'),(3,1,'Master');
+		UPDATE programs SET name=CASE WHEN id=2 THEN 'Wirtschaftsinformatik' ELSE 'Informatik' END`); err != nil {
+		t.Fatal(err)
+	}
+	program1 := publicRef(t, db, "study_programs", "1")
+	program2 := publicRef(t, db, "study_programs", "2")
 	document1 := "/exams/documents/" + examPublicID(t, db, "documents", "100")
 	document2 := "/exams/documents/" + examPublicID(t, db, "documents", "200")
 	if status, _, _ := b.get("/exams/settings"); status != 303 {
@@ -67,7 +71,14 @@ func TestExamsAssignmentChoicesAndSettingsDefaults(t *testing.T) {
 	if status, body, _ := b.get("/exams?program=" + program1 + "&degree=bachelor&version=2016"); status != 200 || !strings.Contains(body, `href="`+document1+`"`) {
 		t.Fatal("explicit filter does not override preferences")
 	}
-	scope := url.Values{"program": {program1, program2, program3}, "degree": {"bachelor", "master"}, "version": {"2016", "2023"}}
+	for _, path := range []string{"/exams?program=all", "/exams/settings", "/exams/submissions/create"} {
+		status, body, _ := b.get(path)
+		controls := strings.Join(strings.Fields(body), " ")
+		if status != 200 || strings.Count(controls, `name="program" type="checkbox"`) != 2 || !strings.Contains(body, `value="`+program1+`"`) || !strings.Contains(body, `value="`+program2+`"`) {
+			t.Fatalf("%s must show two canonical programme choices: %d", path, status)
+		}
+	}
+	scope := url.Values{"program": {program1, program2}, "degree": {"bachelor", "master"}, "version": {"2016", "2023"}}
 	if status, body, _ := b.get("/exams/submissions/create?" + scope.Encode()); status != 200 || !htmlContains(body, `name="module" type="checkbox" value="Mathematik"`) || strings.Contains(body, `name="assignment"`) {
 		t.Fatal("upload does not offer a single module choice")
 	}

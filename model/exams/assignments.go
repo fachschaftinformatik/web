@@ -54,13 +54,21 @@ func (r Submission) Scope() Filter {
 
 // Assignments returns only catalogue-backed combinations within the scope.
 func (c Catalog) Assignments(scope Filter) []Assignment {
+	scope = c.NormalizeFilter(scope)
 	var result []Assignment
 	for _, module := range c.Modules() {
 		program, degree := module.Qualification()
+		if !c.matchesLegacyProgram(scope, module.ProgramID, degree) {
+			continue
+		}
 		if !slices.Contains(scope.Programs, "all") && !slices.Contains(scope.Programs, module.ProgramID) || !slices.Contains(scope.Degrees, DegreeValue(degree)) {
 			continue
 		}
-		for _, version := range c.ProgramVersions(module.ProgramID) {
+		versions := module.versions
+		if c.qualifications == nil {
+			versions = c.ProgramVersions(module.ProgramID)
+		}
+		for _, version := range versions {
 			if slices.Contains(scope.Versions, version) {
 				result = append(result, Assignment{ModuleID: module.ID, ProgramID: module.ProgramID, Version: version, Title: module.Title, Program: program, Degree: degree})
 			}
@@ -123,7 +131,7 @@ func assignments(ctx context.Context, db database.DBTX, entryID int64) ([]Assign
 		if err := db.QueryRowContext(ctx, "SELECT program_id FROM modules WHERE id=?", result[i].ModuleID).Scan(&programID); err != nil {
 			return nil, err
 		}
-		result[i].ProgramID, err = lookupID(ctx, db, "programs", programID)
+		result[i].ProgramID, err = studyProgramID(ctx, db, programID)
 		if err != nil {
 			return nil, err
 		}
@@ -196,7 +204,7 @@ func (s *Service) Settings(ctx context.Context, userID int64) (Filter, error) {
 	if err := s.db.QueryRowContext(ctx, "SELECT program_id FROM users WHERE id=?", userID).Scan(&programID); err != nil {
 		return Filter{}, err
 	}
-	id, err := lookupID(ctx, s.db, "programs", programID)
+	id, err := studyProgramID(ctx, s.db, programID)
 	if err != nil {
 		return Filter{}, err
 	}
@@ -215,6 +223,7 @@ func (s *Service) SaveSettings(ctx context.Context, userID int64, filter Filter)
 	if err != nil {
 		return err
 	}
+	filter = catalog.NormalizeFilter(filter)
 	for _, group := range []struct{ values, known []string }{{filter.Programs, append(catalog.Programs(), "all")}, {filter.Degrees, catalog.Degrees()}, {filter.Versions, catalog.Versions()}} {
 		if len(group.values) > 100 || slices.ContainsFunc(group.values, func(value string) bool { return !slices.Contains(group.known, value) }) {
 			return ValidationErrors{"settings": "Wähle gültige Studiengänge, Abschlüsse und Prüfungsordnungen aus."}
@@ -234,30 +243,10 @@ func (s *Service) SaveSettings(ctx context.Context, userID int64, filter Filter)
 	return err
 }
 
-// publicFilter translates historical display-name preferences at the boundary.
 func (s *Service) publicFilter(ctx context.Context, f Filter) (Filter, error) {
-	c, err := s.Catalog(ctx)
-	if err != nil {
+	var c Catalog
+	if err := c.loadPrograms(ctx, s.db); err != nil {
 		return Filter{}, err
 	}
-	var programs []string
-	for _, value := range f.Programs {
-		if value == "all" || publicid.Valid(value) {
-			programs = appendUnique(programs, value)
-			continue
-		}
-		value, _ = ProgramName(value)
-		for _, id := range c.Programs() {
-			label := c.ProgramLabel(id)
-			base, _ := ProgramName(label)
-			if value == label || value == base {
-				programs = appendUnique(programs, id)
-			}
-		}
-	}
-	f.Programs = programs
-	for i := range f.Degrees {
-		f.Degrees[i] = DegreeValue(f.Degrees[i])
-	}
-	return f, nil
+	return c.NormalizeFilter(f), nil
 }

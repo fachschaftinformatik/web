@@ -134,8 +134,12 @@ func TestRegistrationSeparatesStudyProgramAndDegree(t *testing.T) {
 					t.Fatal(err)
 				}
 				settings, err := handler.exams.Settings(context.Background(), userID)
-				if err != nil || len(settings.Versions) != 1 || settings.Versions[0] != tc.version || len(settings.Degrees) != 1 || settings.Degrees[0] != tc.degree || len(settings.Programs) != 1 || settings.Programs[0] != publicRef(t, db, "programs", fmt.Sprint(tc.wantProgram)) {
+				if err != nil || len(settings.Versions) != 1 || settings.Versions[0] != tc.version || len(settings.Degrees) != 1 || settings.Degrees[0] != tc.degree || len(settings.Programs) != 1 || settings.Programs[0] != tc.program {
 					t.Fatal("registration qualification did not initialize exam preferences", settings, err)
+				}
+				var stored string
+				if err := db.QueryRow(`SELECT json_extract(programs,'$[0]') FROM user_archive_preferences WHERE user_id=?`, userID).Scan(&stored); err != nil || stored != tc.program {
+					t.Fatal("registration must store a canonical study program", stored, err)
 				}
 			}
 		} else if w.Code != 422 || count != 0 || !strings.Contains(w.Body.String(), `href="#`+tc.errorAnchor+`"`) || !strings.Contains(w.Body.String(), `name="degree"`) {

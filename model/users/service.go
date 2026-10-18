@@ -286,13 +286,7 @@ func (s *Service) Register(ctx context.Context, name, email, password, programID
 		return err
 	}
 	if version != "" {
-		// Exam preferences use the preserved qualification's public program ID,
-		// whereas registration selects a degree-independent study-program ID.
-		programRef, err := publicid.Lookup(ctx, tx, "programs", strconv.FormatInt(*program, 10))
-		if err != nil {
-			return err
-		}
-		programs, _ := json.Marshal([]string{programRef})
+		programs, _ := json.Marshal([]string{programID})
 		degrees, _ := json.Marshal([]string{degree})
 		versions, _ := json.Marshal([]string{version})
 		if _, err := tx.ExecContext(ctx, `INSERT INTO user_archive_preferences(user_id,programs,degrees,versions) VALUES(?,?,?,?)`, user.ID, string(programs), string(degrees), string(versions)); err != nil {
