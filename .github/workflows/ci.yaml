@@ -106,7 +106,7 @@ jobs:
   security-dependencies:
     name: security:dependencies
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -121,7 +121,7 @@ jobs:
 
   security-release:
     name: security:release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -177,7 +177,7 @@ jobs:
     name: release:check
     if: always()
     needs: [test-go, test-assets, codeql, security-dependencies, security-release, build-go]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 2
     steps:
       - name: Require all applicable checks
