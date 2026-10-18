@@ -52,6 +52,8 @@ jobs:
       - run: nix develop -c go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
       - name: Verify generated database queries
         run: |
+          nix develop -c go mod tidy
+          git diff --exit-code -- go.mod go.sum
           nix develop -c go generate ./internal/database
           git diff --exit-code -- internal/database
       - name: Verify dependency hashes
