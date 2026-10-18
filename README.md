@@ -20,8 +20,8 @@ Server-rendered website for the computer science student representatives at West
 nix develop -c go run . -database sqlite.db
 ```
 
-[Contributing](.github/CONTRIBUTING.md)<br>
-[Releases](https://github.com/fsiwh/web/releases)
+To contribute, see the [contributing guide](.github/CONTRIBUTING.md) for setup,
+development and checks. Published versions are listed in [Releases](https://github.com/fsiwh/web/releases).
 
 ## Security
 
