@@ -540,9 +540,6 @@
       <a class="govuk-button" data-module="govuk-button" href="/admin/meetings/create"
         >Dokument hinzufügen</a
       >
-      <p class="govuk-body">
-        Veröffentliche eine Einladung zur Sitzung oder ein Sitzungsprotokoll.
-      </p>
       <table class="govuk-table app-admin-table">
         <caption class="govuk-visually-hidden">
           Sitzungen und veröffentlichte Dokumente
@@ -557,19 +554,9 @@
           {{ range .Meetings }}
             <tr class="govuk-table__row">
               <th class="govuk-table__header" scope="row">
-                {{ .DateLabel }}<br /><span class="govuk-!-font-weight-regular"
-                  >{{ .Number }}. Sitzung</span
-                >{{ if .Date }}
-                  <p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">
-                    <a
-                      class="govuk-link"
-                      href="/admin/meetings/create?date={{ .Date }}&amp;number={{ .Number }}"
-                      >Dokument hinzufügen<span class="govuk-visually-hidden">
-                        zur {{ .Number }}. Sitzung vom {{ .DateLabel }}</span
-                      ></a
-                    >
-                  </p>
-                {{ end }}
+                {{ .Number }}. Sitzung<br /><span class="govuk-!-font-weight-regular"
+                  >{{ .DateLabel }}</span
+                >
               </th>
               <td class="govuk-table__cell">
                 <ul class="govuk-list govuk-!-margin-bottom-0">
