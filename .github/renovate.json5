@@ -20,6 +20,10 @@
   "lockFileMaintenance": { "enabled": false },
   "packageRules": [
     {
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "pinDigests": true
+    },
+    {
       "matchManagers": ["bun"],
       "matchFileNames": [".github/release/**"],
       "semanticCommitScope": "ci"

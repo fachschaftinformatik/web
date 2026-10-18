@@ -130,6 +130,10 @@ func send(addr, host string, auth smtp.Auth, from, to string, message []byte) er
 		return err
 	}
 	defer conn.Close()
+	return sendMessage(conn, host, auth, from, to, message)
+}
+
+func sendMessage(conn net.Conn, host string, auth smtp.Auth, from, to string, message []byte) error {
 	if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
 		return err
 	}
@@ -142,6 +146,8 @@ func send(addr, host string, auth smtp.Auth, from, to string, message []byte) er
 		if err := client.StartTLS(&tls.Config{ServerName: host, MinVersion: tls.VersionTLS12}); err != nil {
 			return err
 		}
+	} else if peer, ok := conn.RemoteAddr().(*net.TCPAddr); !ok || !peer.IP.IsLoopback() {
+		return fmt.Errorf("SMTP server must support STARTTLS outside loopback")
 	}
 	if auth != nil {
 		if err := client.Auth(auth); err != nil {

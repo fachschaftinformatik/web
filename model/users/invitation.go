@@ -34,6 +34,12 @@ func (s *Service) Invite(ctx context.Context, tx *sql.Tx, name, email string) (d
 		user, err = CreateUserTx(ctx, tx, database.CreateUserParams{Email: email, Name: strings.TrimSpace(name), Password: "!", Role: "editor", Active: 1})
 	} else if err == nil && user.Role == "user" {
 		user, err = q.SetUserRole(ctx, database.SetUserRoleParams{ID: user.ID, Role: "editor"})
+		if err == nil {
+			_, err = tx.ExecContext(ctx, `DELETE FROM web_sessions WHERE user_id=?`, user.ID)
+		}
+		if err == nil {
+			err = q.DeleteUserSessions(ctx, user.ID)
+		}
 	}
 	if err != nil {
 		return database.User{}, err

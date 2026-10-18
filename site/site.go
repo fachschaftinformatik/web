@@ -92,6 +92,12 @@ func New(services Services, secureCookies bool) (*Handler, error) {
 }
 
 func (c *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Apply defaults before routing so redirects and error pages are covered too.
+	// SAMEORIGIN keeps the editor's same-origin iframe working.
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+	w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+	w.Header().Set("Content-Security-Policy", "base-uri 'none'; object-src 'none'; frame-ancestors 'self'; form-action 'self'")
 	c.router.ServeHTTP(w, r)
 }
 
