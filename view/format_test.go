@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fachschaftinformatik/web/model/posts"
 	xhtml "golang.org/x/net/html"
 )
 
@@ -16,10 +15,9 @@ func TestPostLiteralTextEscaping(t *testing.T) {
 	}
 	const source = "Beispiel <script> und & https://example.org/?a=1&b=2"
 	const decoded = "Beispiel <script> und & https://example.org/?a=1&b=2"
-	thread := posts.Thread{Post: posts.Post{ID: "1", Body: source}, Replies: []posts.Comment{{ID: "2", Text: source}}}
+	thread := Thread{Post: Post{ID: "1", Body: source}, Replies: []Comment{{ID: "2", Text: source}}}
 	var output bytes.Buffer
-	display := NewThread(thread)
-	if err := renderer.Render(&output, "thread", false, Page{Posts: PostsPage{Thread: &display}}); err != nil {
+	if err := renderer.Render(&output, "thread", false, Page{Posts: PostsPage{Thread: &thread}}); err != nil {
 		t.Fatal(err)
 	}
 	doc, err := xhtml.Parse(strings.NewReader(output.String()))

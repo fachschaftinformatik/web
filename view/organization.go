@@ -1,10 +1,19 @@
 package view
 
 import (
-	"github.com/fachschaftinformatik/web/model/members"
-	"github.com/fachschaftinformatik/web/model/organization"
 	"strings"
 )
+
+type Link struct{ Title, URL string }
+type Organization struct {
+	Name, FormalName, ShortName, Institution             string
+	City, Street, PostalCode, Country, Office            string
+	ContactEmail, ChairRole, PublicityRole, LegalUpdated string
+	HostingName, HostingURL, PrivacyURL                  string
+	SupervisionName, SupervisionURL                      string
+	PrivacyAuthorityName, PrivacyAuthorityURL            string
+	SocialLinks, ElectionLinks, RegulationLinks          []Link
+}
 
 type OrganizationSettingsSection struct{ ID, Title, Description string }
 
@@ -21,8 +30,7 @@ type OrganizationSettingsTask struct {
 
 // OrganizationSettingsTasks derives completeness from saved values, rather than visits to
 // an edit page. Optional office details do not affect completeness.
-func OrganizationSettingsTasks(d organization.Details, roles []members.MemberRole) []OrganizationSettingsTask {
-	errors := d.Validate()
+func OrganizationSettingsTasks(d Organization, roles []MemberRole, errors map[string]string) []OrganizationSettingsTask {
 	var tasks []OrganizationSettingsTask
 	for _, section := range OrganizationSettingsSections {
 		task := OrganizationSettingsTask{ID: section.ID, Title: section.Title}
@@ -52,7 +60,7 @@ func OrganizationSettingsTasks(d organization.Details, roles []members.MemberRol
 	return tasks
 }
 
-func OrganizationSettingsFields(section string, d organization.Details, roles []members.MemberRole) []AdminField {
+func OrganizationSettingsFields(section string, d Organization, roles []MemberRole) []AdminField {
 	var fields []AdminField
 	switch section {
 	case "identity":
@@ -76,9 +84,9 @@ func OrganizationSettingsFields(section string, d organization.Details, roles []
 	case "links":
 		for _, group := range []struct {
 			id, label string
-			links     []organization.Link
+			links     []Link
 		}{{"SocialLinks", "Soziale Kanäle", d.SocialLinks}, {"ElectionLinks", "Wahlen und Selbstverwaltung", d.ElectionLinks}} {
-			fields = append(fields, AdminField{ID: group.id, Label: group.label, Kind: "links", Links: append(append([]organization.Link{}, group.links...), organization.Link{})})
+			fields = append(fields, AdminField{ID: group.id, Label: group.label, Kind: "links", Links: append(append([]Link{}, group.links...), Link{})})
 		}
 	}
 	return fields

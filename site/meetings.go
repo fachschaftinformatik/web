@@ -109,7 +109,7 @@ func (c *Handler) EditPublication(w http.ResponseWriter, r *http.Request, a *vie
 			}
 		}
 	}
-	a.View, a.Action, a.Publication = "form", r.URL.Path, ptr(view.Publication(p))
+	a.View, a.Action, a.Publication = "form", r.URL.Path, ptr(publicationView(p))
 	if p.ID != "create" {
 		a.Action = urls.EditAdminMeeting(p.PublicID)
 	}
@@ -147,7 +147,7 @@ func (c *Handler) ReviewPublication(w http.ResponseWriter, r *http.Request) {
 		c.notFound(w, r)
 		return
 	}
-	a := &view.AdminPage{Section: "meetings", SectionTitle: "Sitzungen und Protokolle", View: "review", Publication: ptr(view.Publication(p)), Action: r.URL.Path}
+	a := &view.AdminPage{Section: "meetings", SectionTitle: "Sitzungen und Protokolle", View: "review", Publication: ptr(publicationView(p)), Action: r.URL.Path}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		if err := c.meetings.Publish(p.ID, owner); err != nil {
@@ -221,10 +221,10 @@ func (c *Handler) Meetings(w http.ResponseWriter, r *http.Request) {
 	}
 	var nextMeeting *view.Meeting
 	if next != nil {
-		nextMeeting = ptr(view.NewMeeting(*next))
+		nextMeeting = ptr(meetingView(*next))
 	}
 	c.render(w, "content", false, view.Page{
 		Title: "Sitzungen und Protokolle", Active: "meetings", About: true,
-		Meetings: view.MeetingsPage{Year: year, Years: years, Meetings: view.Meetings(records), Next: nextMeeting},
+		Meetings: view.MeetingsPage{Year: year, Years: years, Meetings: mapRecords(records, meetingView), Next: nextMeeting},
 	})
 }

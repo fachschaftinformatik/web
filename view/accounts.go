@@ -1,9 +1,5 @@
 package view
 
-import (
-	"github.com/fachschaftinformatik/web/model/users"
-)
-
 type ForgotPage struct {
 	Email, EmailError string
 	Submitted         bool
@@ -26,7 +22,7 @@ type RegisterPage struct {
 	Degree, DegreeError                               string
 	Version, VersionError                             string
 	Versions                                          []string
-	Programs                                          []users.Program
+	Programs                                          []Program
 	Submitted                                         bool
 }
 

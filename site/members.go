@@ -61,7 +61,7 @@ func (c *Handler) EditMember(w http.ResponseWriter, r *http.Request, a *view.Adm
 		a.Action = urls.EditAdminMember(id)
 	}
 	if id != "create" {
-		a.Member = ptr(view.Member{Member: p})
+		a.Member = ptr(memberView(p))
 	}
 	a.Fields = []view.AdminField{view.Field("name", "Name", p.Name, "text")}
 	if a.Inviting {
@@ -147,5 +147,5 @@ func (c *Handler) Team(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
-	c.render(w, "team", false, view.Page{Title: "Mitglieder", Active: "team", About: true, Team: c.members.Groups()})
+	c.render(w, "team", false, view.Page{Title: "Mitglieder", Active: "team", About: true, Team: mapRecords(c.members.Groups(), teamGroupView)})
 }

@@ -2,9 +2,6 @@ package view
 
 import (
 	"time"
-
-	"github.com/fachschaftinformatik/web/model/members"
-	"github.com/fachschaftinformatik/web/model/organization"
 )
 
 func (p Page) LegalUpdatedLabel() string {
@@ -94,14 +91,14 @@ const EventsURL = "/events"
 type LegalPage struct {
 	Updated string
 	Kind    string
-	Chair   []members.Member
+	Chair   []Member
 }
 
 const NewsURL = "/news"
 
 type Page struct {
 	CanonicalURL                                                    string
-	Organization                                                    organization.Details
+	Organization                                                    Organization
 	RegistrationDomains, AccountDomains, ChairEmail, PublicityEmail string
 	Title, Active                                                   string
 	DocumentTitle                                                   string
@@ -109,7 +106,7 @@ type Page struct {
 	Legal                                                           LegalPage
 	Community                                                       bool
 	About                                                           bool
-	Team                                                            []members.Group
+	Team                                                            []TeamGroup
 	Exams                                                           ExamsPage
 	Media                                                           MediaPage
 	Home                                                            HomePage

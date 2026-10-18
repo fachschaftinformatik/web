@@ -1,7 +1,5 @@
 package view
 
-import "github.com/fachschaftinformatik/web/model/organization"
-
 type AdminOption struct {
 	Value, Label string
 	Selected     bool
@@ -12,7 +10,7 @@ type AdminField struct {
 	Day, Month, Year                    string
 	InvalidDateParts                    map[string]bool
 	Options                             []AdminOption
-	Links                               []organization.Link
+	Links                               []Link
 	FixedLinkTitles                     bool
 }
 

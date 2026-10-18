@@ -15,7 +15,7 @@ func (c *Handler) Media(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
-	g := view.MediaPage{Albums: view.Albums(albums), Pagination: listPagination(r, total, 12)}
+	g := view.MediaPage{Albums: mapRecords(albums, albumView), Pagination: listPagination(r, total, 12), PageSize: media.PageSize}
 	data := view.Page{Title: "Fotos", Active: "media", Community: true}
 	if r.PathValue("image") == "" && r.PathValue("album") == "" && !c.validPageRange(w, r, total, 12) {
 		return
@@ -42,7 +42,7 @@ func (c *Handler) Media(w http.ResponseWriter, r *http.Request) {
 			c.serverError(w, err)
 			return
 		}
-		album := view.NewAlbum(a)
+		album := albumView(a)
 		g.Album, g.Detail, g.Total = album, true, a.OriginalCount
 		data.Title = a.Title
 		if imageID := r.PathValue("image"); imageID != "" {
@@ -65,13 +65,13 @@ func (c *Handler) Media(w http.ResponseWriter, r *http.Request) {
 				c.notFound(w, r)
 				return
 			}
-			g.Image, g.Viewer, g.Number = view.NewImage(photos[index-start]), true, index+1
+			g.Image, g.Viewer, g.Number = imageView(photos[index-start]), true, index+1
 			g.Return = album.PageURL(index/media.PageSize+1) + "#image-" + imageID
 			if index > 0 {
-				g.Previous = album.ImageURL(view.NewImage(photos[0]))
+				g.Previous = album.ImageURL(imageView(photos[0]))
 			}
 			if index+1 < g.Total && index-start+1 < len(photos) {
-				g.Next = album.ImageURL(view.NewImage(photos[index-start+1]))
+				g.Next = album.ImageURL(imageView(photos[index-start+1]))
 			}
 			data.DocumentTitle = a.Title + " – Bild " + strconv.Itoa(g.Number) + " von " + strconv.Itoa(g.Total)
 		} else {
@@ -89,7 +89,7 @@ func (c *Handler) Media(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			g.PageNumbers = view.MediaPageNumbers(g.Page, g.Pages)
-			g.Images = view.Images(photos)
+			g.Images = mapRecords(photos, imageView)
 			g.Previous, g.Next = g.Pagination.PreviousURL(), g.Pagination.NextURL()
 		}
 	}

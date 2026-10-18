@@ -42,7 +42,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 			c.examsWriteError(w, r, err)
 			return
 		}
-		a.View, a.Submissions = "submissions", view.Submissions(submissions)
+		a.View, a.Submissions = "submissions", mapRecords(submissions, submissionView)
 	case "users":
 		directory, err := c.identity.Directory(r.Context())
 		if err != nil {
@@ -55,10 +55,10 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 				c.notFound(w, r)
 				return
 			}
-			a.View, a.User = "user", ptr(view.User{User: user})
+			a.View, a.User = "user", ptr(userView(user))
 			for _, member := range c.members.Members() {
 				if member.UserID != 0 && member.UserID == user.ID {
-					a.Member = ptr(view.Member{Member: member})
+					a.Member = ptr(memberView(member))
 					break
 				}
 			}
@@ -75,7 +75,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 			c.notFound(w, r)
 			return
 		}
-		a.Users, a.Total, a.Pages = view.Users(page.Users), page.Total, page.Pages
+		a.Users, a.Total, a.Pages = mapRecords(page.Users, userView), page.Total, page.Pages
 		if a.Page > 1 {
 			a.PreviousURL = a.UserPageURL(a.Page - 1)
 		}
@@ -99,7 +99,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 		roles := append(c.members.Roles("board"), c.members.Roles("departments")...)
 		roles = append(roles, c.members.Roles("project")...)
 		for _, member := range members {
-			row := view.AdminMemberRow{Member: view.Member{Member: member}}
+			row := view.AdminMemberRow{Member: memberView(member)}
 			for _, role := range roles {
 				if slices.Contains(role.MemberIDs, member.ID) {
 					row.Roles = append(row.Roles, role.Title+" ("+view.MemberRoleKind(role.Group)+")")
@@ -127,7 +127,7 @@ func (c *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 			c.serverError(w, err)
 			return
 		}
-		a.Meetings = view.Meetings(records)
+		a.Meetings = mapRecords(records, meetingView)
 	default:
 		c.notFound(w, r)
 		return
@@ -156,7 +156,7 @@ func (c *Handler) ResetUserPassword(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, urls.AdminUser(user.PublicID), http.StatusSeeOther)
 		return
 	}
-	c.adminRender(w, "Passwort zurücksetzen", &view.AdminPage{Section: "users", SectionTitle: "Benutzerkonten", View: "reset", User: ptr(view.User{User: user})}, http.StatusOK)
+	c.adminRender(w, "Passwort zurücksetzen", &view.AdminPage{Section: "users", SectionTitle: "Benutzerkonten", View: "reset", User: ptr(userView(user))}, http.StatusOK)
 }
 
 func (c *Handler) PublicProfile(w http.ResponseWriter, r *http.Request) {
@@ -178,5 +178,5 @@ func (c *Handler) PublicProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pagination := listPagination(r, total, 20)
-	c.render(w, "profile", false, view.Page{Title: profile.Name, CanonicalURL: pagination.PageURL(pagination.Page), Active: "posts", Community: true, Posts: view.PostsPage{Posts: view.Posts(records), Pagination: pagination}})
+	c.render(w, "profile", false, view.Page{Title: profile.Name, CanonicalURL: pagination.PageURL(pagination.Page), Active: "posts", Community: true, Posts: view.PostsPage{Posts: mapRecords(records, postView), Pagination: pagination}})
 }

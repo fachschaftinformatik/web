@@ -3,13 +3,11 @@ package view
 import (
 	"net/url"
 	"testing"
-
-	"github.com/fachschaftinformatik/web/model/exams"
 )
 
 func TestExamsLinksPreserveEffectiveFilters(t *testing.T) {
-	p := ExamsPage{Filter: exams.Filter{Query: "Math & logic", Programs: []string{"12", "34"}, Degrees: []string{"bachelor"}, Versions: []string{"2025"}}}
-	for _, raw := range []string{p.SearchURL(), p.ModuleURL(Module{Module: exams.Module{ID: "42"}}), p.PageURL(2)} {
+	p := ExamsPage{Filter: ExamsFilter{Query: "Math & logic", Programs: []string{"12", "34"}, Degrees: []string{"bachelor"}, Versions: []string{"2025"}}}
+	for _, raw := range []string{p.SearchURL(), p.ModuleURL(Module{ID: "42"}), p.PageURL(2)} {
 		u, err := url.Parse(raw)
 		if err != nil {
 			t.Fatal(err)
@@ -30,13 +28,13 @@ func TestExamsLinksPreserveEffectiveFilters(t *testing.T) {
 	if (ExamsPage{}).PageURL(1) != "/exams?program=all" {
 		t.Fatal("cleared filters must override saved preferences")
 	}
-	if (ExamsPage{}).ModuleURL(Module{Module: exams.Module{ID: "42"}}) != "/exams/modules/42?program=all" {
+	if (ExamsPage{}).ModuleURL(Module{ID: "42"}) != "/exams/modules/42?program=all" {
 		t.Fatal("incorrect module route")
 	}
 }
 
 func TestSubmissionStatusVocabulary(t *testing.T) {
-	for status, label := range map[exams.Status]string{exams.Draft: "Entwurf", exams.Pending: "In Prüfung", exams.Approved: "Freigegeben", exams.Rejected: "Abgelehnt"} {
+	for status, label := range map[SubmissionStatus]string{"draft": "Entwurf", "pending": "In Prüfung", "approved": "Freigegeben", "rejected": "Abgelehnt"} {
 		if got := SubmissionStatus(status).Label(); got != label {
 			t.Fatalf("%s: got %q, want %q", status, got, label)
 		}

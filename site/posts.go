@@ -175,7 +175,7 @@ func (c *Handler) discussion(w http.ResponseWriter, r *http.Request, draft view.
 	if len(values) > 0 {
 		back += "?" + values.Encode()
 	}
-	page := view.PostsPage{Thread: ptr(view.NewThread(thread)), BackURL: back, Pagination: listPagination(r, total, 20, "search"), Comment: draft}
+	page := view.PostsPage{Thread: ptr(threadView(thread)), BackURL: back, Pagination: listPagination(r, total, 20, "search"), Comment: draft}
 
 	if user := postsUser(w); user != 0 {
 		page.CanWrite = c.posts.CanWrite(r.Context(), user, 0, false) == nil
@@ -206,11 +206,11 @@ func (c *Handler) Posts(w http.ResponseWriter, r *http.Request) {
 	filter := posts.Filter{Query: strings.TrimSpace(query.Get("search")), Type: "discussion"}
 	data := view.Page{
 		Title: "Forum", Active: "posts", Community: true,
-		Posts: view.PostsPage{Filter: filter},
+		Posts: view.PostsPage{Filter: view.PostsFilter{Query: filter.Query}},
 	}
 
 	records, total, err := c.posts.FindPage(r.Context(), filter, requestedPage(r), 20, postsUser(w))
-	data.Posts.Posts = view.Posts(records)
+	data.Posts.Posts = mapRecords(records, postView)
 	data.Posts.Pagination = listPagination(r, total, 20, "search")
 	if err != nil {
 		c.serverError(w, err)
@@ -287,10 +287,10 @@ func (c *Handler) Comment(w http.ResponseWriter, r *http.Request) {
 
 func (c *Handler) News(w http.ResponseWriter, r *http.Request) {
 	filter := posts.Filter{Type: "news", Query: strings.TrimSpace(r.URL.Query().Get("search"))}
-	page := view.PostsPage{Filter: filter}
+	page := view.PostsPage{Filter: view.PostsFilter{Query: filter.Query}}
 
 	records, total, err := c.posts.FindPage(r.Context(), filter, requestedPage(r), 20, postsUser(w))
-	page.Posts = view.Posts(records)
+	page.Posts = mapRecords(records, postView)
 	page.Pagination = listPagination(r, total, 20, "search")
 	if err != nil {
 		c.serverError(w, err)

@@ -11,3 +11,14 @@
 **/*.db
 **/*.db-shm
 **/*.db-wal
+view/assets/community
+view/assets/fonts
+view/assets/icons
+view/assets/tinymce
+view/assets/govuk.css
+view/assets/site.css
+view/assets/editor.css
+view/assets/govuk.js
+view/assets/htmx.js
+view/assets/GOVUK-LICENSE.txt
+view/assets/HTMX-LICENSE.txt

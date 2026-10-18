@@ -107,7 +107,7 @@ func (c *Handler) Exams(w http.ResponseWriter, r *http.Request) {
 	}
 	data := view.Page{
 		Title: "Altklausuren", Active: "exams",
-		Exams: view.ExamsPage{Filter: filter, Programs: programs, Versions: versions, Degrees: degrees, Modules: view.Modules(catalog.FindModules(filter))},
+		Exams: view.ExamsPage{Filter: examsFilterView(filter), Programs: programs, Versions: versions, Degrees: degrees, Modules: mapRecords(catalog.FindModules(filter), moduleView)},
 	}
 
 	data.Exams.Total = total
@@ -146,7 +146,14 @@ func (c *Handler) ExamsModule(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
-	page := view.ExamsPage{Module: ptr(view.NewModule(module)), Filter: filter, ListPagination: listPagination(r, total, 20)}
+	presented := moduleView(module)
+	session := w.(*sessionResponse).session
+	for i, exam := range module.Exams {
+		if session != nil {
+			presented.Exams[i].CanRevise = exam.CanRevise(session.UserID, session.Role)
+		}
+	}
+	page := view.ExamsPage{Module: &presented, Filter: examsFilterView(filter), ListPagination: listPagination(r, total, 20)}
 	if !c.validPageRange(w, r, total, 20) {
 		return
 	}

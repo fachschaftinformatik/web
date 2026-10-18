@@ -19,12 +19,13 @@ If in doubt, reach out to us. You can [open an issue](https://github.com/fachsch
 
 ## Building
 
-The application needs [Go](https://go.dev/) 1.27.2. Node (pinned in the CI
-workflow) and Bun are needed only when working on `.github/release`.
+Use [Nix](https://nixos.org/download/) with flakes enabled for Go 1.27.2 and
+browser-asset generation. Node (pinned in the CI workflow) and Bun are needed
+only when working on `.github/release`.
 
 Make sure you have the required Go version by running:
 ```
-go version
+nix develop -c go version
 ```
 
 Use a writable copy of the production database and object storage for development.
@@ -34,23 +35,41 @@ Start the application from the repository root with explicit account-domain poli
 ```bash
 export ACCOUNT_DOMAINS=studmail.w-hs.de,fsv-wh.de
 export REGISTRATION_DOMAINS=studmail.w-hs.de
-go run . -database .dev-data/local/sqlite.db -blobs .dev-data/local/blobs
+nix develop -c go run . -database .dev-data/local/sqlite.db -blobs .dev-data/local/blobs
 ```
 
 Open <http://127.0.0.1:8090/>. Alternatively, use `docker compose up --build`.
-Garage is optional through the `storage` Compose profile.
+Garage is optional through the `storage` Compose profile; its configuration is
+embedded in `compose.yaml` using inline configs (Docker Compose 2.23.1 or newer).
 
 When changing SQL queries, regenerate the committed SQLC code before building:
 ```bash
-go generate ./internal/database
-go build -o /path/to/output/web .
+nix develop -c go generate ./internal/database
+nix develop -c go build -o /path/to/output/web .
 ```
+
+Use `nix develop` for the locked Go toolchain, or prefix a command with
+`nix develop -c`, for example `nix develop -c go test -race ./...`. Its Go version
+must match `go.mod`, which also selects the version in CI; keep Docker aligned.
+The shell supplies development account-domain defaults when those variables are
+unset, preserving explicit values (including empty registration domains).
 
 Run `go test -race ./...` and `go vet ./...`. Templates and browser assets are
 embedded; rebuild the executable after changing them.
 
-Run `sh tools/vendor.sh` with curl, tar and Dart Sass installed to refresh the
-pinned GOV.UK, HTMX and TinyMCE browser assets and their licenses.
+`nix develop` prepares the GOV.UK, HTMX, TinyMCE, language-pack and GDS illustration
+assets automatically for Go's `embed`. Run `nix run .#vendor` to prepare them
+separately when using your own Go installation. Generated files are ignored by
+Git; handwritten SCSS in `view/styles/`, JavaScript and the event placeholder remain
+source-controlled. Nix compiles the SCSS to CSS for embedding.
+`flake.lock` pins the Nix toolchain, including Dart Sass; `flake.nix` pins
+upstream versions/revisions and verifies every download with a SHA-256 hash.
+Use `nix build .#assets` to build without modifying the working tree. Updating an
+asset requires changing its version/revision and hash, then checking the build.
+Update the toolchain with `nix flake update nixpkgs`. `nix flake check` builds the
+hash-verified assets. Docker generates the same assets in a separate Nix build
+stage, so building an image does not require a host Nix installation. Runtime
+images contain the Go executable with embedded assets, without Nix.
 
 Format HTML templates with Prettier 3.6.2 and `prettier-plugin-go-template` 0.0.15,
 using the `go-template` parser, CSS whitespace sensitivity and a print width of 100.
@@ -65,11 +84,14 @@ The application keeps its MVC responsibilities in separate packages:
 - `view/`: presentation types, display formatting, embedded templates and assets.
 - `storage/`: object-storage interfaces and disk/S3 implementations.
 - `internal/`: shared implementation helpers, configuration and database migrations.
-- `tools/`: development scripts.
+- `flake.nix` and `flake.lock`: development environment and pinned browser-asset build.
 
 `main.go` and `application.go` handle startup and dependency wiring. Models must
-not depend on `site` or `view`. Views must not invoke services or access storage
-or the database; HTTP orchestration belongs in `site`.
+not depend on `site` or `view`. Views have independent presentation structs and
+must not depend on `model`, `site`, storage or the database. Model-to-view mapping,
+validation calls and authorization decisions belong in `site`; formatting stays
+in `view`. `internal/architecture` checks these import boundaries, including
+transitive local dependencies and test files, during `go test ./...`.
 
 ## Dependency updates
 
@@ -97,7 +119,8 @@ digest-pinned images receive digest updates.
 The `ci:app` workflow in [ci.yaml](workflows/ci.yaml) runs on pull requests and pushes
 to `main`. It uses these job names:
 
-- `test:go` (formatting, vet, workflow/shell lint, query generation, race tests and govulncheck)
+- `test:go` (formatting, vet, workflow lint, query generation, race tests and govulncheck)
+- `test:assets` (locked Nix asset build with verified source hashes)
 - `security:dependencies`, `security:release`
 - `security:codeql` (weekly and manual scans for Go, JavaScript/TypeScript and Actions)
 - `build:app`
@@ -115,10 +138,10 @@ when renaming jobs.
 The dependency-update workflow is named `ci:renovate`, with the job
 `maintenance:dependencies`. Deployment is managed separately from CI.
 
-Go setup and caching use the standard `actions/setup-go` action. Production
-images build the committed generated files; `test:go` verifies database query
-generation and runs the Go tests with race detection. `build:app` builds the
-Go application image.
+`test:go` uses the locked Nix development environment, verifies database query
+generation and runs the Go tests with race detection. Production images build
+the committed generated SQLC files and Nix-generated browser assets;
+`build:app` validates the complete application image.
 
 ### Security checks
 

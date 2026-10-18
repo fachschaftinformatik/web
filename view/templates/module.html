@@ -62,7 +62,7 @@
                     ></a
                   >
                   (PDF,
-                  {{ .Size }}){{ if .CanRevise $.UserID $.Role }}
+                  {{ .Size }}){{ if .CanRevise }}
                     <p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">
                       <a class="govuk-link" href="{{ .RevisionURL }}"
                         >Neue Revision einreichen<span class="govuk-visually-hidden">

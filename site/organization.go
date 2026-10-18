@@ -14,7 +14,8 @@ func (c *Handler) OrganizationSettings(w http.ResponseWriter, r *http.Request, a
 	if id == "" {
 		a.View = "settings"
 		roles := append(c.members.Roles("board"), c.members.Roles("departments")...)
-		a.OrganizationSettings = view.OrganizationSettingsTasks(c.organization.Current(), roles)
+		details := c.organization.Current()
+		a.OrganizationSettings = view.OrganizationSettingsTasks(organizationView(details), mapRecords(roles, memberRoleView), details.Validate())
 		c.adminRender(w, "Stammdaten", a, http.StatusOK)
 		return
 	}
@@ -89,7 +90,7 @@ func (c *Handler) OrganizationSettings(w http.ResponseWriter, r *http.Request, a
 	}
 	roles := append(c.members.Roles("board"), c.members.Roles("departments")...)
 	a.View, a.Action = "form", r.URL.Path
-	a.Fields = view.OrganizationSettingsFields(id, d, roles)
+	a.Fields = view.OrganizationSettingsFields(id, organizationView(d), mapRecords(roles, memberRoleView))
 	view.AttachErrors(a.Fields, fields)
 	status := http.StatusOK
 	if len(fields) > 0 {
