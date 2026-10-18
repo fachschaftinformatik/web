@@ -20,16 +20,12 @@
         {{ else }}
           {{ .Author }}
         {{ end }}
-        {{ if eq .Type "news" }}
-          Veröffentlicht am <time datetime="{{ .Created }}">{{ .DateLabel }}</time>
-        {{ else }}
-          <time
-            datetime="{{ .Created }}"
-            title="{{ .PostedLabel }}"
-            aria-label="{{ .RelativeTime }}, {{ .PostedLabel }}"
-            >{{ .RelativeTime }}</time
-          >
-        {{ end }}{{ if .Edited }}
+        <time
+          datetime="{{ .Created }}"
+          title="{{ .PostedLabel }}"
+          aria-label="{{ .RelativeTime }}, {{ .PostedLabel }}"
+          >{{ .RelativeTime }}</time
+        >{{ if .Edited }}
           <span title="Bearbeitet um {{ .EditedLabel }}"
             >(bearbeitet)<span class="govuk-visually-hidden"> um {{ .EditedLabel }}</span></span
           >

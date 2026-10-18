@@ -48,15 +48,19 @@
           <h3 class="govuk-heading-m govuk-!-margin-bottom-2">
             <a class="govuk-link" href="{{ .URL }}">{{ .Title }}</a>
           </h3>
-          <p class="govuk-body-s app-publication-date govuk-!-margin-bottom-2">
-            Veröffentlicht am
-            <time datetime="{{ .Created }}">{{ .DateLabel }}</time>
-          </p>
           {{ if .Summary }}
             <p class="govuk-body govuk-!-margin-bottom-2">{{ .Summary }}</p>
           {{ end }}
           <div class="app-post-meta">
             {{ template "vote" (voteControl $ .VoteURL ($.Posts.Pagination.PageURL $.Posts.Pagination.Page) .Title .Votes .UserVote) }}
+            <p class="govuk-body-s govuk-!-margin-bottom-0">
+              <time
+                datetime="{{ .Created }}"
+                title="{{ .PostedLabel }}"
+                aria-label="{{ .RelativeTime }}, {{ .PostedLabel }}"
+                >{{ .RelativeTime }}</time
+              >
+            </p>
             <a
               class="app-comment-link"
               href="{{ .URL }}#comments-heading"
