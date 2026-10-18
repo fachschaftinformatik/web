@@ -203,3 +203,41 @@ func TestOutboxRetriesAndExpiredTokens(t *testing.T) {
 		t.Fatal("expired link was sent")
 	}
 }
+
+func TestInvalidResetLinkRejectedBeforePasswordWork(t *testing.T) {
+	s, _ := testService(t)
+	// An invalid link takes precedence even over invalid password input.
+	if err := s.ConsumeToken(context.Background(), strings.Repeat("a", 64), "reset", ""); !errors.Is(err, ErrToken) {
+		t.Fatalf("unknown link reached password handling: %v", err)
+	}
+}
+
+func TestInvitationPromotionRevokesExistingSessions(t *testing.T) {
+	s, db := testService(t)
+	ctx := context.Background()
+	if _, err := db.Exec(`INSERT INTO users (id,email,name,password,role,active,verified) VALUES (42,'existing@fsv-wh.de','Existing','!','user',1,1)`); err != nil {
+		t.Fatal(err)
+	}
+	session, err := s.CreateSession(ctx, 42)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	user, err := s.Invite(ctx, tx, "Existing", "existing@fsv-wh.de")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if user.Role != "editor" {
+		t.Fatal("invitation did not promote member")
+	}
+	if loaded, err := s.Session(ctx, session.ID); err != nil || loaded != nil {
+		t.Fatalf("old session gained editor privileges: %+v %v", loaded, err)
+	}
+}

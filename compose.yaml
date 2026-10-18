@@ -4,6 +4,12 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=128m,mode=1777
     ports:
       - "127.0.0.1:8090:8080"
     volumes:

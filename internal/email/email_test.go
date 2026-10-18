@@ -1,10 +1,13 @@
 package email
 
 import (
+	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"mime"
 	"mime/multipart"
+	"net"
 	"net/mail"
 	"strings"
 	"testing"
@@ -12,6 +15,32 @@ import (
 	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/model/organization"
 )
+
+func TestRemoteSMTPWithoutTLSDoesNotReceiveMessage(t *testing.T) {
+	client, server := net.Pipe()
+	defer client.Close()
+	done := make(chan string, 1)
+	go func() {
+		defer server.Close()
+		reader := bufio.NewReader(server)
+		fmt.Fprint(server, "220 mail.example.org ESMTP\r\n")
+		line, _ := reader.ReadString('\n')
+		if !strings.HasPrefix(line, "EHLO ") {
+			done <- line
+			return
+		}
+		fmt.Fprint(server, "250 mail.example.org\r\n")
+		line, _ = reader.ReadString('\n')
+		done <- line
+	}()
+	err := sendMessage(client, "mail.example.org", nil, "web@example.org", "user@example.org", []byte("secret reset link"))
+	if err == nil || !strings.Contains(err.Error(), "STARTTLS") {
+		t.Fatalf("unencrypted remote mail accepted: %v", err)
+	}
+	if command := <-done; command != "" {
+		t.Fatalf("sent a command after discovering TLS was unavailable: %q", command)
+	}
+}
 
 func TestNotificationMIMEPreservesUnicodeAndActionLinks(t *testing.T) {
 	sender := NewSender(&config.Config{SMTPFrom: "web@example.org"}, nil)

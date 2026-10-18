@@ -75,6 +75,34 @@ Format HTML templates with Prettier 3.6.2 and `prettier-plugin-go-template` 0.0.
 using the `go-template` parser, CSS whitespace sensitivity and a print width of 100.
 Use whitespace-trimming template actions inside URL and enumerated attributes.
 
+## Security defaults
+
+Keep authorization in models and route policies, use parameterized SQL, and pass
+untrusted text through `html/template` or the rich-text allowlist. Browser headers
+disable MIME sniffing, cross-origin framing, foreign form targets and base URLs.
+The CSP is deliberately limited to those protections; it is not a script allowlist.
+Compose runs the non-root app with a read-only root filesystem, no capabilities,
+no privilege escalation, and bounded temporary storage; `/data` remains writable.
+Container bases and CI actions are pinned; image scans block fixable high/critical
+OS and library vulnerabilities. Renovate maintains the pins.
+
+Sessions use random cookie-only IDs with hashed database verifiers, an eight-hour
+server-side expiry, login rotation, and revocation on password reset or promotion.
+Email links expire, are consumed only by a CSRF-protected POST, and cannot be
+reused. Token pages disable caching and referrers. The mail outbox necessarily
+contains usable links until delivery; protect the database and backups accordingly.
+SMTP requires STARTTLS except for a loopback development relay.
+
+Production's HTTPS proxy must handle TLS/HSTS, request throttling (especially
+login, registration and password reset), and access logs without query strings or
+credentials. Set `DOMAIN` to the public HTTPS URL so session cookies are secure.
+These defaults follow the [OWASP Top 10](https://owasp.org/Top10/2025/),
+[headers](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html),
+[containers](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html)
+and [supply chain](https://cheatsheetseries.owasp.org/cheatsheets/Software_Supply_Chain_Security_Cheat_Sheet.html) guidance,
+plus the [session](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
+and [password reset](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html) guidance.
+
 ## Source layout
 
 The application keeps its MVC responsibilities in separate packages:

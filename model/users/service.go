@@ -368,6 +368,15 @@ func (s *Service) ConsumeToken(ctx context.Context, value, kind, password string
 	}
 	var hash string
 	if kind == "reset" {
+		// Reject invalid or expired links before doing memory-hard password work.
+		// The transactional DELETE below still decides single-use consumption.
+		var valid bool
+		if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM user_tokens t JOIN users u ON u.id=t.user_id WHERE t.id=? AND t.kind='reset' AND t.expires_at>? AND u.deleted_at IS NULL)`, digest(value), datetime.FormatUTC(time.Now())).Scan(&valid); err != nil {
+			return err
+		}
+		if !valid {
+			return ErrToken
+		}
 		message := PasswordError(password)
 		if message != "" {
 			return errors.New(message)
