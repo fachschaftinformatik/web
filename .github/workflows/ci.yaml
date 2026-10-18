@@ -32,6 +32,19 @@ jobs:
         with:
           persist-credentials: false
       - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - name: Configure Go caches
+        run: |
+          printf 'GOCACHE=%s/go-build\nGOMODCACHE=%s/go-mod\n' "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Cache Go modules and builds
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: |
+            ${{ runner.temp }}/go-build
+            ${{ runner.temp }}/go-mod
+          key: ${{ runner.os }}-${{ runner.arch }}-go-v1-${{ hashFiles('go.mod', 'go.sum', 'flake.lock') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-go-v1-${{ hashFiles('go.mod', 'go.sum', 'flake.lock') }}-
+            ${{ runner.os }}-${{ runner.arch }}-go-v1-
       - run: |
           formatting=$(nix develop -c gofmt -l ./*.go internal model site storage view)
           test -z "$formatting"
