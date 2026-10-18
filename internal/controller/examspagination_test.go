@@ -17,7 +17,7 @@ func TestExamsPaginationKeepsFiltersAndGroupsModules(t *testing.T) {
 	}
 	defer storage.Close()
 	b, db := identityBrowserWithStorage(t, storage)
-	if _, err := db.Exec(`INSERT INTO programs(id,name) VALUES(1,'Informatik (B. Sc.)'); INSERT INTO program_versions(program_id,name) VALUES(1,'PO2023'); INSERT INTO users(id,email,name,password) VALUES(1,'pagination@fsv-wh.de','Person','unused')`); err != nil {
+	if _, err := db.Exec(`INSERT INTO programs(id,name) VALUES(1,'Informatik (B. Sc.)'); INSERT INTO program_versions(program_id,name) VALUES(1,2023); INSERT INTO users(id,email,name,password) VALUES(1,'pagination@fsv-wh.de','Person','unused')`); err != nil {
 		t.Fatal(err)
 	}
 	for i := 1; i <= 45; i++ {
@@ -26,14 +26,14 @@ func TestExamsPaginationKeepsFiltersAndGroupsModules(t *testing.T) {
 		}
 		for j := 0; j < 2; j++ {
 			id := i*10 + j
-			if _, err := db.Exec(`INSERT INTO archive(id,group_id,user_id,module_id,version,exam_date,access_key,mime_type,nbytes,checksum) VALUES(?,?,1,?,'PO2023','2026-01-01',?,'application/pdf',5,?)`, id, id, i, fmt.Sprint(id), fmt.Sprint(id)); err != nil {
+			if _, err := db.Exec(`INSERT INTO archive(id,group_id,user_id,module_id,version,exam_date,access_key,mime_type,nbytes,checksum) VALUES(?,?,1,?,2023,'2026-01-01',?,'application/pdf',5,?)`, id, id, i, fmt.Sprint(id), fmt.Sprint(id)); err != nil {
 				t.Fatal(err)
 			}
 		}
 	}
 	seedExamPublicIDs(t, db)
 	programID := examPublicID(t, db, "programs", "1")
-	query := "?degree=bachelor&program=" + programID + "&version=PO2023&search=Modul"
+	query := "?degree=bachelor&program=" + programID + "&version=2023&search=Modul"
 	for _, tc := range []struct {
 		page, rows      int
 		present, absent string

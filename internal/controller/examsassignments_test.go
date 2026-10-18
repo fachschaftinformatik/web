@@ -22,11 +22,11 @@ func TestExamsAssignmentChoicesAndSettingsDefaults(t *testing.T) {
 	defer storage.Close()
 	b, db := identityBrowserWithStorage(t, storage)
 	if _, err := db.Exec(`INSERT INTO programs(id,name) VALUES(1,'Informatik (B. Sc.)'),(2,'Wirtschaftsinformatik (B. Sc.)'),(3,'Informatik (M. Sc.)');
-    INSERT INTO program_versions(program_id,name) VALUES(1,'PO2016'),(1,'PO2023'),(2,'PO2023'),(3,'PO2016');
+    INSERT INTO program_versions(program_id,name) VALUES(1,2016),(1,2023),(2,2023),(3,2016);
     INSERT INTO modules(id,program_id,name) VALUES(10,1,'Mathematik'),(20,2,'Mathematik'),(30,3,'Mathematik');
     INSERT INTO users(id,email,name,password,active,verified,program_id) VALUES(1,'preferences@fsv-wh.de','Person','unused',1,1,1);
     INSERT INTO archive(id,group_id,user_id,module_id,version,exam_date,access_key,mime_type,nbytes,checksum) VALUES
-    (100,100,1,10,'PO2016','2026-01-01','a','application/pdf',5,'one'),(200,200,1,20,'PO2023','2026-02-01','b','application/pdf',5,'two');`); err != nil {
+    (100,100,1,10,2016,'2026-01-01','a','application/pdf',5,'one'),(200,200,1,20,2023,'2026-02-01','b','application/pdf',5,'two');`); err != nil {
 		t.Fatal(err)
 	}
 	seedExamPublicIDs(t, db)
@@ -58,16 +58,16 @@ func TestExamsAssignmentChoicesAndSettingsDefaults(t *testing.T) {
 	if status, _, _ := b.post("/exams/settings", url.Values{}); status != 403 {
 		t.Fatal("preferences accept missing CSRF")
 	}
-	if status, _, _ := b.post("/exams/settings", url.Values{"csrf": {session.CSRF}, "program": {program2}, "degree": {"bachelor"}, "version": {"PO2023"}}); status != 303 {
+	if status, _, _ := b.post("/exams/settings", url.Values{"csrf": {session.CSRF}, "program": {program2}, "degree": {"bachelor"}, "version": {"2023"}}); status != 303 {
 		t.Fatal("preferences could not be saved")
 	}
 	if status, body, _ := b.get("/exams"); status != 200 || !strings.Contains(body, `href="`+document2+`"`) || strings.Contains(body, `href="`+document1+`"`) {
 		t.Fatal("stored preferences not applied")
 	}
-	if status, body, _ := b.get("/exams?program=" + program1 + "&degree=bachelor&version=PO2016"); status != 200 || !strings.Contains(body, `href="`+document1+`"`) {
+	if status, body, _ := b.get("/exams?program=" + program1 + "&degree=bachelor&version=2016"); status != 200 || !strings.Contains(body, `href="`+document1+`"`) {
 		t.Fatal("explicit filter does not override preferences")
 	}
-	scope := url.Values{"program": {program1, program2, program3}, "degree": {"bachelor", "master"}, "version": {"PO2016", "PO2023"}}
+	scope := url.Values{"program": {program1, program2, program3}, "degree": {"bachelor", "master"}, "version": {"2016", "2023"}}
 	if status, body, _ := b.get("/exams/submissions/create?" + scope.Encode()); status != 200 || !htmlContains(body, `name="module" type="checkbox" value="Mathematik"`) || strings.Contains(body, `name="assignment"`) {
 		t.Fatal("upload does not offer a single module choice")
 	}
@@ -126,7 +126,7 @@ func TestExamsAssignmentChoicesAndSettingsDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 	rows.Close()
-	if strings.Join(placements, ",") != "10|PO2016,10|PO2023,20|PO2023,30|PO2016" {
+	if strings.Join(placements, ",") != "10|2016,10|2023,20|2023,30|2016" {
 		t.Fatalf("module scope produced invalid assignments: %v", placements)
 	}
 	if status, body, _ := b.get(review); status != 200 || !strings.Contains(body, "Wirtschaftsinformatik") || !strings.Contains(body, "Master") || !strings.Contains(body, "Prüfungsordnungen") || strings.Contains(body, "Reko 2") {

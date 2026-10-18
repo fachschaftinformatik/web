@@ -246,6 +246,7 @@ func (s *Service) publicFilter(ctx context.Context, f Filter) (Filter, error) {
 			programs = appendUnique(programs, value)
 			continue
 		}
+		value, _ = ProgramName(value)
 		for _, id := range c.Programs() {
 			label := c.ProgramLabel(id)
 			base, _ := ProgramName(label)

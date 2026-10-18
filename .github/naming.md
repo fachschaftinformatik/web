@@ -137,6 +137,35 @@ because both URLs contain `documents`.
 
 ## UI acceptance criteria
 
+Study-program names contain only the subject, for example `Informatik`, never
+`Informatik (B. Sc.)`. `Abschluss` (`Bachelor` / `Master`) and `Prüfungsordnung`
+are separate qualification dimensions. Migration 19 normalizes the stored
+`programs.name` from `study_programs.name` while preserving legacy relationship
+keys and public IDs. Multiple qualifications may share a program name.
+
+Registration lists each `study_programs` record once using its public ID and
+submits the degree separately as `bachelor` / `master`. The server resolves that
+pair through `program_qualifications` to the existing account `program_id`.
+Both optional fields may be omitted together; partial and unavailable pairs
+produce field errors. Account management also displays program and degree
+separately.
+
+Registration optionally accepts a `version` from `program_versions` for the
+selected study-program/degree pair. It initializes `user_archive_preferences`
+in the account-creation transaction, using the qualification's public program
+ID, English degree value and exact stored version. An omitted PO is never
+guessed. `Abschluss` and `Prüfungsordnung` share a responsive two-column row.
+
+Migration 20 stores PO years as four-digit SQLite integers in
+`program_versions.name`, `archive.version` and `archive_assignments.version`.
+Values such as `PO2023` become `2023`; no `PO` prefix is part of the stored
+identity. Matching saved filter values are normalized in the same transaction.
+HTML forms, query values and filter JSON use the corresponding decimal strings
+(`"2023"`), and server validation checks that the chosen PO exists for the
+selected qualification. Document edit/review versions are separate counters and
+must not be changed by PO normalization. Historical source snapshots and original
+file/storage identities remain untouched.
+
 - Each section has the same canonical German name in the main navigation,
   sidenav, page heading, document title, breadcrumbs, home cards and sitemap.
 - Links, forms, empty states, error/success messages, review screens and emails

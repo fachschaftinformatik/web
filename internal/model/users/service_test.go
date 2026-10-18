@@ -95,7 +95,7 @@ func TestRegistrationVerificationAndSingleUseReset(t *testing.T) {
 	s, db := testService(t)
 	ctx := context.Background()
 	password := strings.Repeat("🔐", 40)
-	if err := s.Register(ctx, "Kim Beispiel", "KIM@studmail.w-hs.de", password, ""); err != nil {
+	if err := s.Register(ctx, "Kim Beispiel", "KIM@studmail.w-hs.de", password, "", "", ""); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.Login(ctx, "kim@studmail.w-hs.de", password); !errors.Is(err, ErrUnverified) {
@@ -164,7 +164,7 @@ func TestOutboxRetriesAndExpiredTokens(t *testing.T) {
 	s, db := testService(t)
 	ctx := context.Background()
 	for _, email := range []string{"first@studmail.w-hs.de", "second@studmail.w-hs.de"} {
-		if err := s.Register(ctx, "Test Person", email, "valid password", ""); err != nil {
+		if err := s.Register(ctx, "Test Person", email, "valid password", "", "", ""); err != nil {
 			t.Fatal(err)
 		}
 	}
