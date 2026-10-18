@@ -201,17 +201,18 @@ type MailOutbox struct {
 }
 
 type Medium struct {
-	ID          int64   `json:"id"`
-	EventID     int64   `json:"event_id"`
-	UserID      int64   `json:"user_id"`
-	Title       *string `json:"title"`
-	Description *string `json:"description"`
-	AccessKey   string  `json:"access_key"`
-	MimeType    string  `json:"mime_type"`
-	Nbytes      int64   `json:"nbytes"`
-	CreatedAt   string  `json:"created_at"`
-	UpdatedAt   string  `json:"updated_at"`
-	DeletedAt   *string `json:"deleted_at"`
+	ID             int64   `json:"id"`
+	EventID        int64   `json:"event_id"`
+	UserID         int64   `json:"user_id"`
+	Title          *string `json:"title"`
+	Description    *string `json:"description"`
+	AccessKey      string  `json:"access_key"`
+	MimeType       string  `json:"mime_type"`
+	Nbytes         int64   `json:"nbytes"`
+	CreatedAt      string  `json:"created_at"`
+	UpdatedAt      string  `json:"updated_at"`
+	DeletedAt      *string `json:"deleted_at"`
+	GalleryVisible int64   `json:"gallery_visible"`
 }
 
 type MeetingBlobCleanup struct {

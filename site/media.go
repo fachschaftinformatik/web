@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/fachschaftinformatik/web/internal/urls"
 	"github.com/fachschaftinformatik/web/model/media"
 	"github.com/fachschaftinformatik/web/view"
 )
@@ -16,6 +17,7 @@ func (c *Handler) Media(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	g := view.MediaPage{Albums: mapRecords(albums, albumView), Pagination: listPagination(r, total, 12), PageSize: media.PageSize}
+	g.CanManage = c.media.CanManage(r.Context(), postsUser(w)) == nil
 	data := view.Page{Title: "Fotos", Active: "media", Community: true}
 	if r.PathValue("image") == "" && r.PathValue("album") == "" && !c.validPageRange(w, r, total, 12) {
 		return
@@ -95,4 +97,46 @@ func (c *Handler) Media(w http.ResponseWriter, r *http.Request) {
 	}
 	data.Media = g
 	c.render(w, "media", false, data)
+}
+
+func (c *Handler) ManageMedia(w http.ResponseWriter, r *http.Request) {
+	items, total, err := c.media.GalleryPage(r.Context(), postsUser(w), requestedPage(r), 12)
+	if err != nil {
+		c.mediaManagementError(w, r, err)
+		return
+	}
+	if !c.validPageRange(w, r, total, 12) {
+		return
+	}
+	g := view.MediaPage{Managing: true, Saved: r.URL.Query().Get("saved") == "1", Pagination: listPagination(r, total, 12)}
+	for _, item := range items {
+		g.GalleryItems = append(g.GalleryItems, view.GalleryItem{Image: imageView(item.Image), AlbumTitle: item.AlbumTitle, Visible: item.Visible})
+	}
+	c.render(w, "media", false, view.Page{Title: "Galerie verwalten", Active: "media", Community: true, Media: g})
+}
+
+func (c *Handler) MediaVisibility(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		c.pageError(w, "Das Formular konnte nicht gelesen werden.", http.StatusBadRequest)
+		return
+	}
+	page, err := strconv.Atoi(r.PostForm.Get("page"))
+	value := r.PostForm.Get("gallery_visible")
+	if err != nil || page < 1 || (value != "" && value != "1") {
+		c.pageError(w, "Prüfe die Galerieauswahl.", http.StatusBadRequest)
+		return
+	}
+	if err := c.media.SetGalleryVisibility(r.Context(), postsUser(w), r.PathValue("image"), value == "1"); err != nil {
+		c.mediaManagementError(w, r, err)
+		return
+	}
+	http.Redirect(w, r, urls.ManageMediaPath+"?page="+strconv.Itoa(page)+"&saved=1", http.StatusSeeOther)
+}
+
+func (c *Handler) mediaManagementError(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, media.ErrNotFound) {
+		c.notFound(w, r)
+	} else {
+		c.postsError(w, r, err)
+	}
 }

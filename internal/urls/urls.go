@@ -35,6 +35,8 @@ const (
 	EditEventPattern           = EventPattern + "/edit"
 	EventCoverPattern          = EventPattern + "/cover"
 	MediaPath                  = "/media"
+	ManageMediaPath            = MediaPath + "/manage"
+	MediaVisibilityPattern     = MediaItemPattern + "/visibility"
 	MediaItemPattern           = "/media/{image}"
 	AlbumPattern               = "/media/albums/{album}"
 	AlbumCoverPattern          = "/media/albums/{id}/cover/{size}"
@@ -95,6 +97,7 @@ func Event(id string) string               { return EventsPath + "/" + segment(i
 func EditEvent(id string) string           { return Event(id) + "/edit" }
 func EventCover(id string) string          { return Event(id) + "/cover" }
 func MediaItem(id string) string           { return MediaPath + "/" + segment(id) }
+func MediaVisibility(id string) string     { return MediaItem(id) + "/visibility" }
 func Album(id string) string               { return MediaPath + "/albums/" + segment(id) }
 func AlbumCover(id, size string) string    { return Album(id) + "/cover/" + segment(size) }
 func Image(id, size string) string         { return "/images/" + segment(id) + "/" + segment(size) }

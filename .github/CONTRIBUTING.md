@@ -228,6 +228,17 @@ also include `web.sbom.spdx.json` for a stable latest-release SBOM download URL.
 This fourth asset's label contains the number of unique package URLs in the SBOM
 for the README dependency badge.
 
+### Gallery selection
+
+Active, verified administrators and editors can select **Galerie verwalten** on
+`/media`. Each photograph has an **In der Galerie anzeigen** checkbox and an
+explicit **Speichern** button, using the GOV.UK small-checkbox pattern. The
+management view includes excluded images so they can be restored.
+
+Existing images remain selected after migration. Gallery counts, navigation and
+fallback cover selection use only selected photographs; albums still require at
+least three. Selection changes preserve stored files and permanent image IDs.
+
 ### Submission notifications
 
 Administrators and editors can opt in to new submission emails under
