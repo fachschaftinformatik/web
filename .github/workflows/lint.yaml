@@ -10,7 +10,7 @@ permissions:
 jobs:
   title:
     name: lint:commit
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Validate Conventional Commit title
