@@ -1,7 +1,52 @@
 {{ define "sidebar" }}{{ end }}
 {{ define "content" }}
   {{ $g := .Media }}
-  {{ if not $g.Detail }}
+  {{ if $g.Managing }}
+    {{ if $g.Saved }}
+      <div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="gallery-success-title" data-module="govuk-notification-banner">
+        <div class="govuk-notification-banner__header">
+          <h2 class="govuk-notification-banner__title" id="gallery-success-title">Erfolgreich</h2>
+        </div>
+        <div class="govuk-notification-banner__content">
+          <p class="govuk-notification-banner__heading">Galerieauswahl gespeichert.</p>
+        </div>
+      </div>
+    {{ end }}
+    <p class="govuk-body"><a class="govuk-link" href="/media">Zur Galerie</a></p>
+    <p class="govuk-body">Wähle aus, welche Bilder in der Galerie erscheinen. Alben werden ab drei ausgewählten Bildern angezeigt.</p>
+    <ul class="govuk-list app-image-cards" role="list">
+      {{ range $g.GalleryItems }}
+        <li class="app-image-card" id="image-{{ .ID }}">
+          <div class="app-image-card__image">
+            <img src="{{ .Thumbnail }}" alt="{{ .Description }}" loading="lazy" decoding="async" />
+          </div>
+          <div class="app-image-card__content">
+            <h2 class="govuk-heading-s">{{ .Title }}</h2>
+            <p class="govuk-body-s">{{ .AlbumTitle }}</p>
+            <form method="post" action="{{ .VisibilityURL }}">
+              <input type="hidden" name="csrf" value="{{ $.CSRF }}" />
+              <input type="hidden" name="page" value="{{ $g.Pagination.Page }}" />
+              <div class="govuk-form-group">
+                <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+                  <div class="govuk-checkboxes__item">
+                    <input class="govuk-checkboxes__input" id="gallery-{{ .ID }}" name="gallery_visible" type="checkbox" value="1" {{ if .Visible }}checked{{ end }} />
+                    <label class="govuk-label govuk-checkboxes__label" for="gallery-{{ .ID }}">In der Galerie anzeigen<span class="govuk-visually-hidden">: {{ .Title }}</span></label>
+                  </div>
+                </div>
+              </div>
+              <button class="govuk-button govuk-button--secondary" type="submit" data-module="govuk-button">Speichern<span class="govuk-visually-hidden">: {{ .Title }}</span></button>
+            </form>
+          </div>
+        </li>
+      {{ else }}
+        <li>Keine Bilder vorhanden.</li>
+      {{ end }}
+    </ul>
+    {{ template "list-pagination" $g.Pagination }}
+  {{ else if not $g.Detail }}
+    {{ if $g.CanManage }}
+      <p class="govuk-body"><a class="govuk-link" href="/media/manage">Galerie verwalten</a></p>
+    {{ end }}
     <p class="govuk-body">Fotos von unseren Veranstaltungen.</p>
     <ul class="govuk-list app-image-cards" role="list">
       {{ range $g.Albums }}

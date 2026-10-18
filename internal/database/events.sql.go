@@ -40,7 +40,7 @@ INSERT INTO media (
 ) VALUES (
   ?1, ?2, ?3, ?4, 
   ?5, ?6, ?7, ?8
-) RETURNING id, event_id, user_id, title, description, access_key, mime_type, nbytes, created_at, updated_at, deleted_at
+) RETURNING id, event_id, user_id, title, description, access_key, mime_type, nbytes, created_at, updated_at, deleted_at, gallery_visible
 `
 
 type CreateMediaParams struct {
@@ -78,6 +78,7 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Mediu
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.GalleryVisible,
 	)
 	return i, err
 }
@@ -110,25 +111,26 @@ func (q *Queries) GetEvent(ctx context.Context, id int64) (Event, error) {
 }
 
 const getMedia = `-- name: GetMedia :one
-SELECT m.id, m.event_id, m.user_id, m.title, m.description, m.access_key, m.mime_type, m.nbytes, m.created_at, m.updated_at, m.deleted_at, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name 
+SELECT m.id, m.event_id, m.user_id, m.title, m.description, m.access_key, m.mime_type, m.nbytes, m.created_at, m.updated_at, m.deleted_at, m.gallery_visible, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name
 FROM media m
 JOIN users u ON m.user_id = u.id
 WHERE m.id = ?1 AND m.deleted_at IS NULL LIMIT 1
 `
 
 type GetMediaRow struct {
-	ID           int64   `json:"id"`
-	EventID      int64   `json:"event_id"`
-	UserID       int64   `json:"user_id"`
-	Title        *string `json:"title"`
-	Description  *string `json:"description"`
-	AccessKey    string  `json:"access_key"`
-	MimeType     string  `json:"mime_type"`
-	Nbytes       int64   `json:"nbytes"`
-	CreatedAt    string  `json:"created_at"`
-	UpdatedAt    string  `json:"updated_at"`
-	DeletedAt    *string `json:"deleted_at"`
-	UploaderName string  `json:"uploader_name"`
+	ID             int64   `json:"id"`
+	EventID        int64   `json:"event_id"`
+	UserID         int64   `json:"user_id"`
+	Title          *string `json:"title"`
+	Description    *string `json:"description"`
+	AccessKey      string  `json:"access_key"`
+	MimeType       string  `json:"mime_type"`
+	Nbytes         int64   `json:"nbytes"`
+	CreatedAt      string  `json:"created_at"`
+	UpdatedAt      string  `json:"updated_at"`
+	DeletedAt      *string `json:"deleted_at"`
+	GalleryVisible int64   `json:"gallery_visible"`
+	UploaderName   string  `json:"uploader_name"`
 }
 
 func (q *Queries) GetMedia(ctx context.Context, id int64) (GetMediaRow, error) {
@@ -146,6 +148,7 @@ func (q *Queries) GetMedia(ctx context.Context, id int64) (GetMediaRow, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.GalleryVisible,
 		&i.UploaderName,
 	)
 	return i, err
@@ -186,7 +189,7 @@ func (q *Queries) ListEvents(ctx context.Context) ([]Event, error) {
 }
 
 const listMediaByEvent = `-- name: ListMediaByEvent :many
-SELECT m.id, m.event_id, m.user_id, m.title, m.description, m.access_key, m.mime_type, m.nbytes, m.created_at, m.updated_at, m.deleted_at, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name 
+SELECT m.id, m.event_id, m.user_id, m.title, m.description, m.access_key, m.mime_type, m.nbytes, m.created_at, m.updated_at, m.deleted_at, m.gallery_visible, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name
 FROM media m
 JOIN users u ON m.user_id = u.id
 WHERE event_id = ?1 AND m.deleted_at IS NULL
@@ -194,18 +197,19 @@ ORDER BY m.created_at DESC
 `
 
 type ListMediaByEventRow struct {
-	ID           int64   `json:"id"`
-	EventID      int64   `json:"event_id"`
-	UserID       int64   `json:"user_id"`
-	Title        *string `json:"title"`
-	Description  *string `json:"description"`
-	AccessKey    string  `json:"access_key"`
-	MimeType     string  `json:"mime_type"`
-	Nbytes       int64   `json:"nbytes"`
-	CreatedAt    string  `json:"created_at"`
-	UpdatedAt    string  `json:"updated_at"`
-	DeletedAt    *string `json:"deleted_at"`
-	UploaderName string  `json:"uploader_name"`
+	ID             int64   `json:"id"`
+	EventID        int64   `json:"event_id"`
+	UserID         int64   `json:"user_id"`
+	Title          *string `json:"title"`
+	Description    *string `json:"description"`
+	AccessKey      string  `json:"access_key"`
+	MimeType       string  `json:"mime_type"`
+	Nbytes         int64   `json:"nbytes"`
+	CreatedAt      string  `json:"created_at"`
+	UpdatedAt      string  `json:"updated_at"`
+	DeletedAt      *string `json:"deleted_at"`
+	GalleryVisible int64   `json:"gallery_visible"`
+	UploaderName   string  `json:"uploader_name"`
 }
 
 func (q *Queries) ListMediaByEvent(ctx context.Context, eventID int64) ([]ListMediaByEventRow, error) {
@@ -229,6 +233,7 @@ func (q *Queries) ListMediaByEvent(ctx context.Context, eventID int64) ([]ListMe
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.GalleryVisible,
 			&i.UploaderName,
 		); err != nil {
 			return nil, err

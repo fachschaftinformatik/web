@@ -10,6 +10,15 @@ type Image struct {
 	Width, Height          int
 	AlbumCover             bool
 }
+
+type GalleryItem struct {
+	Image
+	AlbumTitle string
+	Visible    bool
+}
+
+func (i GalleryItem) VisibilityURL() string { return urls.MediaVisibility(i.ID) }
+
 type Album struct {
 	ID, Title     string
 	OriginalCount int

@@ -111,6 +111,9 @@ type HomePage struct {
 }
 
 type MediaPage struct {
+	CanManage                  bool
+	Managing, Saved            bool
+	GalleryItems               []GalleryItem
 	Pagination                 ListPagination
 	Albums                     []Album
 	Album                      Album

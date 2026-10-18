@@ -121,6 +121,9 @@ func registerEvents(c *Handler, register routeRegister) {
 
 func registerMedia(c *Handler, register routeRegister) {
 	public := routePolicy{}
+	manager := routePolicy{authenticated: true, csrf: true, private: true, bodyLimit: 64 << 10}
+	register("GET "+urls.ManageMediaPath, manager, c.ManageMedia)
+	register("POST "+urls.MediaVisibilityPattern, manager, c.MediaVisibility)
 	register("GET "+urls.MediaPath, public, c.Media)
 	register("GET "+urls.AlbumPattern, public, c.Media)
 	register("GET "+urls.AlbumCoverPattern, public, c.AlbumCover)
