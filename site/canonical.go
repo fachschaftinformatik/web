@@ -123,7 +123,12 @@ func (c *Handler) canonicalize(mux *http.ServeMux) http.Handler {
 			}
 		}
 		if u.Path != r.URL.Path || u.RawQuery != r.URL.RawQuery {
-			http.Redirect(w, r, u.RequestURI(), http.StatusPermanentRedirect)
+			target, err := url.Parse(strings.ReplaceAll(u.RequestURI(), "\\", "/"))
+			if err != nil || target.Hostname() != "" || target.Scheme != "" || !strings.HasPrefix(target.Path, "/") || strings.HasPrefix(target.Path, "//") {
+				c.notFound(w, r)
+				return
+			}
+			http.Redirect(w, r, target.String(), http.StatusPermanentRedirect)
 			return
 		}
 		mux.ServeHTTP(w, r)

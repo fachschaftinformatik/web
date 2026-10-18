@@ -30,7 +30,7 @@
       "managerFilePatterns": ["/^flake\\.nix$/"],
       "matchStrings": ["# renovate: datasource=(?<datasource>git-refs) depName=(?<depName>\\S+)\\n\\s+\\w+Revision = \"(?<currentDigest>[a-f0-9]{40})\";"],
       "currentValueTemplate": "main",
-      "versioningTemplate": "git"
+      "versioningTemplate": "regex:^(?<major>0)?main$"
     },
     {
       "customType": "regex",
