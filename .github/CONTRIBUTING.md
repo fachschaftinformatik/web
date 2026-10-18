@@ -150,6 +150,25 @@ queries. Bun updates apply to release tooling only.
 Indirect Go modules are included. Floating Docker tags remain floating; existing
 digest-pinned images receive digest updates.
 
+Renovate explicitly enables the Nix manager and maintains `flake.lock`, including
+the pinned Sass, TypeScript, Prettier and runtime packages supplied by nixpkgs.
+Annotated custom managers track all six browser-asset versions/revisions in
+`flake.nix`, the Trivy container, and the standalone actionlint and govulncheck
+versions in CI. Native managers cover Go modules and the Go toolchain, Docker
+images, GitHub Actions, Node, Bun and the release-tool dependencies. Lockfile
+maintenance refreshes transitive dependencies as well.
+
+`.github/renovate/update-locks.mjs` refreshes the seven asset download hashes
+(including the GOV.UK licence) after asset updates. Go and nixpkgs updates also
+synchronize the locked Go version with `go.mod` and the digest-pinned Docker
+builder, and regenerate Nix's Go vendor hash. The self-hosted configuration
+allows only these exact maintenance commands. CI verifies the resulting hashes.
+
+For diagnostics, manually run `ci:renovate` with `dry-run=true` and `debug=true`.
+Dry runs use the selected branch and its configuration, so coverage and update
+generation can be checked before merging configuration changes. Scheduled and
+non-dry runs continue to target `main`.
+
 ## CI
 
 The `ci:app` workflow in [ci.yaml](workflows/ci.yaml) runs on pull requests and pushes

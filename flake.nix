@@ -18,11 +18,17 @@
           pkgs = nixpkgs.legacyPackages.${system};
           goVersion = builtins.head (builtins.match ".*\ngo ([0-9.]+)\n.*" (builtins.readFile ./go.mod));
           go = pkgs.${"go_" + builtins.replaceStrings [ "." ] [ "_" ] (pkgs.lib.versions.majorMinor goVersion)};
+          # renovate: datasource=npm depName=govuk-frontend
           govukVersion = "6.6.0";
+          # renovate: datasource=npm depName=htmx.org
           htmxVersion = "2.0.8";
+          # renovate: datasource=npm depName=tinymce
           tinymceVersion = "8.10.0";
+          # renovate: datasource=npm depName=tinymce-i18n
           languageVersion = "26.9.28";
+          # renovate: datasource=git-refs depName=https://github.com/alphagov/govspeak-visual-editor
           iconsRevision = "c053cf1c198580723c8768f938cb6146dcd122e8";
+          # renovate: datasource=git-refs depName=https://github.com/alphagov/govuk-design-system
           communityRevision = "a1bfd60d1e0fcc2de52a1d357b934c3098ec62a6";
 
           govuk = pkgs.fetchurl {

@@ -4,5 +4,6 @@
   "requireConfig": "required",
   "branchPrefix": "renovate-self-hosted/",
   "binarySource": "install",
-  "allowedUnsafeExecutions": ["goGenerate"]
+  "allowedUnsafeExecutions": ["goGenerate"],
+  "allowedCommands": ["^node \\.github/renovate/update-locks\\.mjs --(assets|go)$"]
 }

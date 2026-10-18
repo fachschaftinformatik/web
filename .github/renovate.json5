@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "enabledManagers": ["bun", "gomod", "dockerfile", "docker-compose", "github-actions", "nix"],
+  "enabledManagers": ["bun", "gomod", "dockerfile", "docker-compose", "github-actions", "nix", "custom.regex"],
+  "nix": { "enabled": true },
   "timezone": "Europe/Berlin",
   "dependencyDashboard": false,
   "automerge": false,
@@ -17,8 +18,52 @@
   "commitMessageTopic": "{{{depName}}}",
   "commitMessageExtra": "from {{#if currentVersion}}{{{currentVersion}}}{{else}}{{{currentValue}}}{{/if}} to {{#if newVersion}}{{{newVersion}}}{{else}}{{{newValue}}}{{/if}}",
   "prBodyTemplate": "",
-  "lockFileMaintenance": { "enabled": false },
+  "lockFileMaintenance": { "enabled": true },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": ["# renovate: datasource=(?<datasource>npm) depName=(?<depName>\\S+)\\n\\s+\\w+Version = \"(?<currentValue>[^\"]+)\";"]
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^flake\\.nix$/"],
+      "matchStrings": ["# renovate: datasource=(?<datasource>git-refs) depName=(?<depName>\\S+)\\n\\s+\\w+Revision = \"(?<currentDigest>[a-f0-9]{40})\";"],
+      "currentValueTemplate": "main",
+      "versioningTemplate": "git"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/ci\\.yaml$/"],
+      "matchStrings": ["go run (?<depName>github\\.com/rhysd/actionlint|golang\\.org/x/vuln)/cmd/\\w+@(?<currentValue>v[0-9.]+)"],
+      "datasourceTemplate": "go"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/ci\\.yaml$/"],
+      "matchStrings": ["TRIVY_IMAGE: (?<depName>aquasec/trivy):(?<currentValue>[0-9.]+)@(?<currentDigest>sha256:[a-f0-9]+)"],
+      "datasourceTemplate": "docker"
+    }
+  ],
   "packageRules": [
+    {
+      "matchDepNames": ["go", "golang", "nixpkgs"],
+      "groupName": "go toolchain"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["flake.nix"],
+      "postUpgradeTasks": {
+        "commands": ["node .github/renovate/update-locks.mjs --assets"],
+        "executionMode": "branch",
+        "fileFilters": ["flake.nix"]
+      }
+    },
+    {
+      "matchManagers": ["nix"],
+      "lockFileMaintenance": { "enabled": true },
+      "semanticCommitScope": "ci"
+    },
     {
       "matchManagers": ["dockerfile", "docker-compose"],
       "pinDigests": true
@@ -41,7 +86,22 @@
     },
     {
       "matchManagers": ["gomod"],
-      "postUpdateOptions": ["gomodTidy", "goGenerate"]
+      "postUpdateOptions": ["gomodTidy", "goGenerate"],
+      "postUpgradeTasks": {
+        "commands": ["node .github/renovate/update-locks.mjs --go"],
+        "installTools": { "nix": {}, "golang": {} },
+        "executionMode": "branch",
+        "fileFilters": ["flake.nix", "go.mod", "go.sum", "Dockerfile", "internal/database/**"]
+      }
+    },
+    {
+      "matchDepNames": ["nixpkgs", "golang"],
+      "postUpgradeTasks": {
+        "commands": ["node .github/renovate/update-locks.mjs --go"],
+        "installTools": { "nix": {}, "golang": {} },
+        "executionMode": "branch",
+        "fileFilters": ["flake.nix", "go.mod", "go.sum", "Dockerfile"]
+      }
     },
     {
       "matchUpdateTypes": ["digest", "pinDigest"],

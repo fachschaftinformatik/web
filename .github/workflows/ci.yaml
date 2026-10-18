@@ -54,6 +54,8 @@ jobs:
         run: |
           nix develop -c go generate ./internal/database
           git diff --exit-code -- internal/database
+      - name: Verify dependency hashes
+        run: nix develop -c node .github/renovate/update-locks.mjs --assets --go --check
       - name: Race tests and coverage
         run: nix develop -c env TMPDIR="$RUNNER_TEMP" go test -race -coverprofile="$RUNNER_TEMP/coverage.out" ./...
       - name: Report coverage
