@@ -18,7 +18,7 @@
   "commitMessageTopic": "{{{depName}}}",
   "commitMessageExtra": "from {{#if currentVersion}}{{{currentVersion}}}{{else}}{{{currentValue}}}{{/if}} to {{#if newVersion}}{{{newVersion}}}{{else}}{{{newValue}}}{{/if}}",
   "prBodyTemplate": "",
-  "lockFileMaintenance": { "enabled": true },
+  "lockFileMaintenance": { "enabled": true, "schedule": ["at any time"] },
   "customManagers": [
     {
       "customType": "regex",
