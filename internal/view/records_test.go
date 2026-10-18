@@ -16,7 +16,7 @@ import (
 
 func TestEventPresentationKeepsDateAndPublicationDistinct(t *testing.T) {
 	e := Event(events.Event{ID: "42", EventDate: "2026-11-27", SourcePublishedAt: "2025-11-07T12:00:00Z", SourceStatus: "cancelled", CoverKey: "calendar/covers/42.jpg"})
-	if e.EventLabel() != "27.11.2026" || e.SourceDateLabel() != "07.11.2025" || e.StatusLabel() != "Abgesagt" {
+	if e.EventLabel() != "27.11.2026" || e.SourceDateLabel() != "07.11.2025" || e.StatusLabel() != "" {
 		t.Fatalf("incorrect event presentation: %s, %s, %s", e.EventLabel(), e.SourceDateLabel(), e.StatusLabel())
 	}
 	if e.CoverURL() != "/events/42/cover" || e.FullImageURL() != e.CoverURL() || e.AlbumURL() != "" {
@@ -28,6 +28,19 @@ func TestEventPresentationKeepsDateAndPublicationDistinct(t *testing.T) {
 	e.AlbumCoverPublicID = "8vJd3Rk5nQ0"
 	if e.AlbumURL() != "/media/albums/m7Qp2Vx9aK4" || e.FullImageURL() != "/images/8vJd3Rk5nQ0/original" {
 		t.Fatal("album linkage lost")
+	}
+}
+
+func TestEventMarkdownPreservesSourceAndPlainSummary(t *testing.T) {
+	e := Event(events.Event{Body: "Am **22.04.2026 ab 16:00 Uhr** geht es los.\n\n**16:30 Uhr:** Nächster Vortrag", BodyFormat: "plain"})
+	if !strings.Contains(e.RichBody(), "<strong>22.04.2026 ab 16:00 Uhr</strong>") {
+		t.Fatal("event description did not render bold timetable text", e.RichBody())
+	}
+	if strings.Contains(e.Summary(), "**") || strings.Contains(e.Summary(), "<strong>") || !strings.Contains(e.Summary(), "16:30 Uhr:") {
+		t.Fatal("card summary contains formatting markers or lost text", e.Summary())
+	}
+	if !strings.Contains(e.Body, "**16:30 Uhr:**") {
+		t.Fatal("rendering changed the original event source")
 	}
 }
 
@@ -63,7 +76,7 @@ func TestExamsPresentationFormatsCanonicalRecords(t *testing.T) {
 
 func TestAuthorPresentationRespectsVisibility(t *testing.T) {
 	p := NewPost(posts.Post{ID: "42", AuthorID: 7, AuthorPublicID: "m7Qp2Vx9aK4", AuthorPublic: true})
-	if p.URL() != "/posts/42" || p.AuthorURL() != "/users/m7Qp2Vx9aK4" {
+	if p.URL() != "/posts/42" || p.AuthorURL() != "" {
 		t.Fatal("public author not linked")
 	}
 	p.AuthorPublic = false

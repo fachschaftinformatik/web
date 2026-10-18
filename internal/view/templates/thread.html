@@ -20,12 +20,16 @@
         {{ else }}
           {{ .Author }}
         {{ end }}
-        <time
-          datetime="{{ .Created }}"
-          title="{{ .PostedLabel }}"
-          aria-label="{{ .RelativeTime }}, {{ .PostedLabel }}"
-          >{{ .RelativeTime }}</time
-        >{{ if .Edited }}
+        {{ if eq .Type "news" }}
+          Veröffentlicht am <time datetime="{{ .Created }}">{{ .DateLabel }}</time>
+        {{ else }}
+          <time
+            datetime="{{ .Created }}"
+            title="{{ .PostedLabel }}"
+            aria-label="{{ .RelativeTime }}, {{ .PostedLabel }}"
+            >{{ .RelativeTime }}</time
+          >
+        {{ end }}{{ if .Edited }}
           <span title="Bearbeitet um {{ .EditedLabel }}"
             >(bearbeitet)<span class="govuk-visually-hidden"> um {{ .EditedLabel }}</span></span
           >
@@ -62,7 +66,7 @@
           role="button"
           draggable="false"
           data-module="govuk-button"
-          >Beitrag bearbeiten</a
+          >{{ if eq .Type "news" }}Ankündigung bearbeiten{{ else }}Beitrag bearbeiten{{ end }}</a
         >
       {{ end }}
     </article>

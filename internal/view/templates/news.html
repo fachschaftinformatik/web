@@ -1,27 +1,93 @@
 {{ define "sidebar" }}{{ end }}
 {{ define "content" }}
-  <p class="govuk-body-l">Ankündigungen und Neuigkeiten aus der Fachschaft.</p>
   {{ if .Posts.CanWrite }}
     <p class="govuk-body">
-      <a class="govuk-button" href="/posts/create?type=news">Neuigkeit veröffentlichen</a>
+      <a class="govuk-button" href="/posts/create?type=news">Ankündigung veröffentlichen</a>
     </p>
   {{ end }}
+  <form
+    action="/news"
+    method="get"
+    role="search"
+    aria-label="Ankündigungen durchsuchen"
+    class="govuk-!-margin-bottom-6"
+  >
+    <div class="govuk-form-group govuk-!-margin-bottom-0">
+      <label class="govuk-label" for="news-query">Ankündigungen durchsuchen</label>
+      <div class="app-posts-search">
+        <input
+          class="govuk-input"
+          id="news-query"
+          name="search"
+          type="search"
+          value="{{ .Posts.Filter.Query }}"
+        />
+        <button
+          class="govuk-button govuk-button--secondary"
+          type="submit"
+          data-module="govuk-button"
+        >
+          Suchen
+        </button>
+      </div>
+    </div>
+    {{ if .Posts.Filter.Query }}
+      <p class="govuk-body govuk-!-margin-top-3 govuk-!-margin-bottom-0">
+        <a class="govuk-link" href="/news">Suche zurücksetzen</a>
+      </p>
+    {{ end }}
+  </form>
+  <h2 class="govuk-heading-m">
+    {{ .Posts.Pagination.Total }}
+    {{ if eq .Posts.Pagination.Total 1 }}Ankündigung{{ else }}Ankündigungen{{ end }}
+  </h2>
   {{ if .Posts.Posts }}
     <ul class="govuk-list app-posts-list" role="list">
       {{ range .Posts.Posts }}
         <li>
-          <h2 class="govuk-heading-m govuk-!-margin-bottom-2">
+          <h3 class="govuk-heading-m govuk-!-margin-bottom-2">
             <a class="govuk-link" href="{{ .URL }}">{{ .Title }}</a>
-          </h2>
-          <p class="govuk-body govuk-!-margin-bottom-2">{{ .Summary }}</p>
-          <p class="govuk-body-s govuk-!-margin-bottom-0">
+          </h3>
+          <p class="govuk-body-s app-publication-date govuk-!-margin-bottom-2">
+            Veröffentlicht am
             <time datetime="{{ .Created }}">{{ .DateLabel }}</time>
           </p>
+          {{ if .Summary }}
+            <p class="govuk-body govuk-!-margin-bottom-2">{{ .Summary }}</p>
+          {{ end }}
+          <div class="app-post-meta">
+            {{ template "vote" (voteControl $ .VoteURL ($.Posts.Pagination.PageURL $.Posts.Pagination.Page) .Title .Votes .UserVote) }}
+            <a
+              class="app-comment-link"
+              href="{{ .URL }}#comments-heading"
+              aria-label="{{ .Comments }} {{- if eq .Comments 1 -}}
+                Kommentar
+              {{- else -}}
+                Kommentare
+              {{- end -}} zu: {{ .Title }}"
+              title="Kommentare ansehen"
+              ><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  d="M21 11.5c0 4.7-4 8.5-9 8.5-1.4 0-2.8-.3-4-.9L3 21l1.6-4.3A8.1 8.1 0 0 1 3 11.5C3 6.8 7 3 12 3s9 3.8 9 8.5Z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linejoin="round"
+                /></svg
+              ><span>{{ .Comments }}</span></a
+            >
+          </div>
         </li>
       {{ end }}
     </ul>
   {{ else }}
-    <p class="govuk-body">Noch keine Neuigkeiten veröffentlicht.</p>
+    <p class="govuk-body">
+      {{ if .Posts.Filter.Query }}
+        Keine passenden Ankündigungen gefunden. Versuche einen anderen Suchbegriff.
+      {{ else }}
+        Noch keine Ankündigungen veröffentlicht.
+      {{ end }}
+    </p>
   {{ end }}
   {{ template "list-pagination" .Posts.Pagination }}
 {{ end }}

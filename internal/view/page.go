@@ -75,10 +75,10 @@ func (p Page) Breadcrumbs() []Breadcrumb {
 		items = append(items, Breadcrumb{"Veranstaltungen", EventsURL})
 	}
 	if p.Active == "news" && (p.Posts.Thread != nil || p.Editor != nil) {
-		items = append(items, Breadcrumb{"Neuigkeiten", NewsURL})
+		items = append(items, Breadcrumb{"Ankündigungen", NewsURL})
 	}
 	if p.Media.Detail {
-		items = append(items, Breadcrumb{"Medien", "/media"})
+		items = append(items, Breadcrumb{"Fotos", "/media"})
 		if p.Media.Viewer {
 			items = append(items, Breadcrumb{p.Media.Album.Title, p.Media.Return})
 		}

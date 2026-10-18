@@ -2,59 +2,54 @@
 {{ define "content" }}
   {{ if .Events.Detail }}
     {{ with .Events.Detail }}
-      <div class="{{ if .CoverURL }}app-event-detail{{ end }}">
+      <div class="app-event-detail">
         <div>
           {{ if .StatusLabel }}
             <p class="govuk-body">
-              <strong
-                class="govuk-tag {{ if eq .SourceStatus "cancelled" }}
-                  govuk-tag--red
-                {{ else }}
-                  govuk-tag--grey
-                {{ end }}"
-                >{{ .StatusLabel }}</strong
-              >
+              <strong class="govuk-tag govuk-tag--grey">{{ .StatusLabel }}</strong>
             </p>
           {{ end }}
-          <dl class="govuk-summary-list">
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key">
-                {{ if or .EventDate (not .SourcePublishedAt) }}
-                  Termin
-                {{ else }}
-                  Veröffentlicht
-                {{ end }}
-              </dt>
-              <dd class="govuk-summary-list__value">
-                {{ if .EventDate }}
-                  <time datetime="{{ .EventDate }}">{{ .EventLabel }}</time>
-                {{ else if .SourcePublishedAt }}
-                  <time datetime="{{ .SourcePublishedAt }}">{{ .SourceDateLabel }}</time>
-                {{ else }}
-                  Termin folgt
-                {{ end }}
-              </dd>
-            </div>
-            {{ if .Location }}
-              <div class="govuk-summary-list__row">
-                <dt class="govuk-summary-list__key">Ort</dt>
-                <dd class="govuk-summary-list__value">{{ .Location }}</dd>
-              </div>
-            {{ end }}
-          </dl>
+          {{ if or .EventDate .Location (not .SourcePublishedAt) }}
+            <dl class="govuk-summary-list">
+              {{ if or .EventDate (not .SourcePublishedAt) }}
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key">Termin</dt>
+                  <dd class="govuk-summary-list__value">
+                    {{ if .EventDate }}
+                      <time datetime="{{ .EventDate }}">{{ .EventLabel }}</time>
+                    {{ else }}
+                      Termin folgt
+                    {{ end }}
+                  </dd>
+                </div>
+              {{ end }}
+              {{ if .Location }}
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key">Ort</dt>
+                  <dd class="govuk-summary-list__value">{{ .Location }}</dd>
+                </div>
+              {{ end }}
+            </dl>
+          {{ end }}
+          {{ if .CoverURL }}
+            <figure class="app-event-detail__figure">
+              <img
+                class="app-event-cover app-event-cover--detail"
+                src="{{ .CoverURL }}"
+                width="{{ .CoverWidth }}"
+                height="{{ .CoverHeight }}"
+                alt="{{ .CoverAlt }}"
+                decoding="async"
+              />
+              <figcaption class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">
+                <a class="govuk-link" href="{{ .FullImageURL }}">Bild in voller Größe ansehen</a>
+              </figcaption>
+            </figure>
+          {{ end }}
           <div class="app-rich-content">{{ richHTML .RichBody }}</div>
           {{ if .AlbumURL }}
             <p class="govuk-body">
-              <a class="govuk-link" href="{{ .AlbumURL }}">Album ansehen</a>
-            </p>
-          {{ end }}
-          {{ if .SourceURL }}
-            <p class="govuk-body-s">
-              <a class="govuk-link" href="{{ .SourceURL }}">Originalbeitrag auf Instagram</a
-              >{{ if .EventDate }}
-                · veröffentlicht am
-                {{ .SourceDateLabel }}
-              {{ end }}
+              <a class="govuk-link" href="{{ .AlbumURL }}">Fotoalbum ansehen</a>
             </p>
           {{ end }}
           {{ if $.Events.CanCreate }}
@@ -72,21 +67,6 @@
             </p>
           {{ end }}
         </div>
-        {{ if .CoverURL }}
-          <figure class="app-event-detail__figure">
-            <img
-              class="app-event-cover app-event-cover--detail"
-              src="{{ .CoverURL }}"
-              width="{{ .CoverWidth }}"
-              height="{{ .CoverHeight }}"
-              alt="{{ .CoverAlt }}"
-              fetchpriority="high"
-            />
-            <figcaption class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">
-              <a class="govuk-link" href="{{ .FullImageURL }}">Bild in voller Größe ansehen</a>
-            </figcaption>
-          </figure>
-        {{ end }}
       </div>
     {{ end }}
   {{ else }}
@@ -118,7 +98,7 @@
     {{ template "list-pagination" .Events.Pagination }}
     <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible" />
     <p class="govuk-body">
-      <a class="govuk-link" href="/media">Medien von unseren Veranstaltungen ansehen</a>
+      <a class="govuk-link" href="/media">Fotos von unseren Veranstaltungen ansehen</a>
     </p>
   {{ end }}
 {{ end }}

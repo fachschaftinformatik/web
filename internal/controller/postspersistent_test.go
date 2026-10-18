@@ -126,8 +126,8 @@ func TestPersistentPostsRequests(t *testing.T) {
 			t.Fatalf("author visibility: %+v %v", thread, err)
 		}
 		w := request("GET", "/posts/"+post, nil, 0, c.Discussion, post, "")
-		if strings.Contains(w.Body.String(), `href="/users/`+otherRef+`"`) || !strings.Contains(w.Body.String(), `href="/users/`+authorRef+`"`) {
-			t.Fatal("private author linked or public author unlinked")
+		if strings.Contains(w.Body.String(), `href="/users/`) {
+			t.Fatal("public profile links must not be exposed")
 		}
 		if _, err := db.Exec(`UPDATE users SET deleted_at='2026-01-01T00:00:00Z' WHERE id=1`); err != nil {
 			t.Fatal(err)

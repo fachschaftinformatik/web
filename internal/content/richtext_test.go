@@ -34,3 +34,19 @@ func TestRichTextBoundary(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+func TestEventMarkdownFormattingAndBoundary(t *testing.T) {
+	source := "Am **22.04.2026 ab 16:00 Uhr** laden wir euch ein.\n\n**16:00 Uhr:** Vortrag von Prof. Beispiel\n**16:30 Uhr:** Zweiter Vortrag\n\n- Austausch\n- *Gemeinsames Grillen*\n\n[Weitere Informationen](https://example.org/event)"
+	rendered := MarkdownRichText(source)
+	for _, want := range []string{"<strong>22.04.2026 ab 16:00 Uhr</strong>", "<strong>16:00 Uhr:</strong>", "<strong>16:30 Uhr:</strong>", "<br>", "<ul>", "<li>Austausch</li>", "<em>Gemeinsames Grillen</em>", `href="https://example.org/event"`} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("event formatting missing %q: %s", want, rendered)
+		}
+	}
+	unsafe := MarkdownRichText("[Link](javascript:alert%281%29)\n\n<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>")
+	for _, forbidden := range []string{"<script", "<img", "onerror=", "javascript:"} {
+		if strings.Contains(unsafe, forbidden) {
+			t.Fatal("markdown bypassed rich-text boundary", unsafe)
+		}
+	}
+}

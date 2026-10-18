@@ -12,7 +12,7 @@
             <a class="govuk-link govuk-link--inverse govuk-!-font-weight-bold" href="/posts"
               >Zum Forum</a
             >
-            <a class="govuk-link govuk-link--inverse" href="/media">Zu den Medien</a>
+            <a class="govuk-link govuk-link--inverse" href="/media">Zu den Fotos</a>
           </div>
         </div>
         <div>
@@ -117,7 +117,9 @@
                           fetchpriority="high"
                         {{ end }}
                         decoding="async"
-                      /><span class="govuk-visually-hidden">Album ansehen: {{ .Title }}</span></a
+                      /><span class="govuk-visually-hidden"
+                        >Fotoalbum ansehen: {{ .Title }}</span
+                      ></a
                     >
                   </div>
                 {{ end }}
@@ -141,11 +143,11 @@
               </h3>
               <p class="govuk-body">{{ .Summary }}</p>
             {{ else }}
-              <p class="govuk-body">Noch keine Neuigkeiten veröffentlicht.</p>
+              <p class="govuk-body">Noch keine Ankündigungen veröffentlicht.</p>
             {{ end }}
           {{ end }}
           <p class="govuk-body">
-            <a class="govuk-link" href="/news">Alle Neuigkeiten lesen</a>
+            <a class="govuk-link" href="/news">Alle Ankündigungen lesen</a>
           </p>
         </section>
         <section class="govuk-grid-column-full govuk-!-margin-top-6" aria-labelledby="home-events">

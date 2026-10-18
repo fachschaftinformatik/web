@@ -131,7 +131,6 @@ func registerMedia(c *Handler, register routeRegister) {
 func registerAccounts(c *Handler, register routeRegister) {
 	account := routePolicy{session: true, csrf: true, bodyLimit: 64 << 10}
 	member := routePolicy{authenticated: true, csrf: true, bodyLimit: 8 << 20}
-	register("GET "+urls.UserPattern, routePolicy{}, c.PublicProfile)
 	forms(register, urls.LoginPath, account, c.Login)
 	register("POST "+urls.LogoutPath, member, c.Logout)
 	forms(register, urls.RegisterPath, account, c.Register)
