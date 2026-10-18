@@ -152,7 +152,7 @@
           default = web;
         } // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
           image = pkgs.dockerTools.buildLayeredImage {
-            name = "ghcr.io/fachschaftinformatik/web";
+            name = "ghcr.io/fsiwh/web";
             tag = "${revision}";
             contents = [ web pkgs.cacert pkgs.tzdata ];
             extraCommands = ''

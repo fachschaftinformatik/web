@@ -63,6 +63,11 @@ jobs:
       - name: Report coverage
         run: |
           nix develop -c go tool cover -html="$RUNNER_TEMP/coverage.out" -o "$RUNNER_TEMP/coverage.html"
+          coverage=$(nix develop -c go tool cover -func="$RUNNER_TEMP/coverage.out" | awk '/^total:/ {print $3}')
+          [[ "$coverage" =~ ^[0-9]+([.][0-9]+)?%$ ]]
+          jq -n --arg message "$coverage" \
+            '{schemaVersion: 1, label: "Coverage", message: $message, color: "blue", cacheSeconds: 300}' \
+            > "$RUNNER_TEMP/coverage.json"
           {
             echo '## Coverage'
             echo 'Download the coverage artifact for the HTML report and profile.'
@@ -76,6 +81,7 @@ jobs:
           path: |
             ${{ runner.temp }}/coverage.out
             ${{ runner.temp }}/coverage.html
+            ${{ runner.temp }}/coverage.json
           if-no-files-found: error
       - run: nix develop -c go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
@@ -299,3 +305,31 @@ jobs:
           nix shell --inputs-from . nixpkgs#skopeo -c skopeo --insecure-policy copy --preserve-digests \
             --authfile "$HOME/.docker/config.json" \
             "docker://$IMAGE_PREFIX@$DIGEST" "docker://$IMAGE_PREFIX:latest"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: github.event_name != 'workflow_dispatch' || !inputs.dry-run
+        with:
+          name: coverage
+          path: ${{ runner.temp }}/coverage
+      - name: Publish coverage badge
+        if: github.event_name != 'workflow_dispatch' || !inputs.dry-run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          jq -e '.schemaVersion == 1 and (.message | test("^[0-9]+([.][0-9]+)?%$"))' \
+            "$RUNNER_TEMP/coverage/coverage.json" > /dev/null
+          parent=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/heads/coverage" \
+            --jq '.[] | select(.ref == "refs/heads/coverage") | .object.sha')
+          tree=$(jq -n --rawfile content "$RUNNER_TEMP/coverage/coverage.json" \
+            '{tree: [{path: "coverage.json", mode: "100644", type: "blob", content: $content}]}' \
+            | gh api --method POST "repos/$GITHUB_REPOSITORY/git/trees" --input - --jq .sha)
+          commit=$(jq -n --arg tree "$tree" --arg parent "$parent" \
+            --arg message "ci: record coverage for $GITHUB_SHA" \
+            '{tree: $tree, message: $message, parents: (if $parent == "" then [] else [$parent] end)}' \
+            | gh api --method POST "repos/$GITHUB_REPOSITORY/git/commits" --input - --jq .sha)
+          if [[ -z "$parent" ]]; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref=refs/heads/coverage -f sha="$commit" > /dev/null
+          else
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/heads/coverage" \
+              -f sha="$commit" > /dev/null
+          fi
