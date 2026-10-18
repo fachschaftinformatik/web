@@ -90,6 +90,7 @@ func (c *Handler) Exams(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
+	filter = catalog.NormalizeFilter(filter)
 	if !c.validPageRange(w, r, total, view.ExamsPageSize) {
 		return
 	}

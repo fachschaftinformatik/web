@@ -41,6 +41,8 @@ type Filter struct {
 	Programs []string
 	Versions []string
 	Degrees  []string
+	// Legacy programme values encode qualifications, including their degree.
+	legacyPrograms []string
 }
 
 type Module struct {
@@ -49,6 +51,7 @@ type Module struct {
 	Program              string
 	Exams                []Exam
 	StudyProgram, Degree string
+	versions             []string
 }
 
 func (m Module) Qualification() (string, string) {
@@ -82,6 +85,7 @@ type Catalog struct {
 	programs, versions, degrees []string
 	programVersions             map[string][]string
 	programLabels               map[string]string
+	qualifications              map[int64]qualification
 }
 
 func (c Catalog) ProgramLabel(id string) string {
@@ -121,9 +125,13 @@ func mergeExam(target *Exam, value Exam) {
 }
 
 func (c Catalog) matchingExams(filter Filter) []Exam {
+	filter = c.NormalizeFilter(filter)
 	result := make([]Exam, 0)
 	query := strings.ToLower(strings.TrimSpace(filter.Query))
 	for _, exam := range c.exams {
+		if !c.matchesLegacyProgram(filter, exam.ProgramID, exam.Degree) {
+			continue
+		}
 		if len(filter.Degrees) > 0 && !slices.Contains(filter.Degrees, DegreeValue(exam.Degree)) {
 			continue
 		}
@@ -266,31 +274,20 @@ func (s *Service) Catalog(ctx context.Context) (Catalog, error) {
 	}
 	defer tx.Rollback()
 	q := database.New(tx)
-	programs, err := q.ListPrograms(ctx)
-	if err != nil {
-		return Catalog{}, err
-	}
 	result := Catalog{modules: []Module{}, programVersions: map[string][]string{}, programLabels: map[string]string{}}
-	programIDs := map[int64]string{}
-	for _, p := range programs {
-		id, err := lookupID(ctx, tx, "programs", p.ID)
-		if err != nil {
-			return Catalog{}, err
-		}
-		programIDs[p.ID] = id
-		result.programLabels[id] = p.Name
+	if err := result.loadPrograms(ctx, tx); err != nil {
+		return Catalog{}, err
 	}
 	versions, err := q.ListProgramVersions(ctx)
 	if err != nil {
 		return Catalog{}, err
 	}
+	qualificationVersions := map[int64][]string{}
 	for _, v := range versions {
 		result.versions = appendUnique(result.versions, v.Name)
-		for _, p := range programs {
-			if p.ID == v.ProgramID {
-				result.programVersions[programIDs[p.ID]] = appendUnique(result.programVersions[programIDs[p.ID]], v.Name)
-			}
-		}
+		program := result.qualifications[v.ProgramID].program
+		result.programVersions[program] = appendUnique(result.programVersions[program], v.Name)
+		qualificationVersions[v.ProgramID] = appendUnique(qualificationVersions[v.ProgramID], v.Name)
 	}
 	modules, err := q.ListArchiveModules(ctx)
 	if err != nil {
@@ -305,7 +302,7 @@ func (s *Service) Catalog(ctx context.Context) (Catalog, error) {
 		if err := tx.QueryRowContext(ctx, "SELECT program_id FROM modules WHERE id=?", m.ID).Scan(&programID); err != nil {
 			return Catalog{}, err
 		}
-		module := Module{ID: id, ProgramID: programIDs[programID], Title: m.Name, Program: m.ProgramName, StudyProgram: m.StudyProgram, Degree: m.Degree}
+		module := Module{ID: id, ProgramID: result.qualifications[programID].program, Title: m.Name, Program: m.ProgramName, StudyProgram: m.StudyProgram, Degree: m.Degree, versions: qualificationVersions[programID]}
 		result.modules = append(result.modules, module)
 		_, degree := module.Qualification()
 		result.programs = appendUnique(result.programs, module.ProgramID)
@@ -350,7 +347,7 @@ func (s *Service) Catalog(ctx context.Context) (Catalog, error) {
 		result.exams = append(result.exams, exam)
 		result.versions = appendUnique(result.versions, exam.Version)
 	}
-	slices.Sort(result.programs)
+	result.sortPrograms()
 	slices.Sort(result.degrees)
 	slices.Sort(result.versions)
 	slices.Reverse(result.versions)

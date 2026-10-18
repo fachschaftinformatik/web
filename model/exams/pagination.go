@@ -34,6 +34,10 @@ func (s *Service) catalogPage(ctx context.Context, f Filter, page, size int, mod
 	}
 	defer tx.Rollback()
 	result := Catalog{modules: []Module{}, programLabels: map[string]string{}}
+	if err := result.loadPrograms(ctx, tx); err != nil {
+		return result, 0, err
+	}
+	f = result.NormalizeFilter(f)
 	var moduleTitle string
 	if moduleID != "" {
 		internalID, err := resolveID(ctx, tx, "modules", moduleID)
@@ -49,37 +53,24 @@ func (s *Service) catalogPage(ctx context.Context, f Filter, page, size int, mod
 		}
 		result.modules = append(result.modules, Module{ID: moduleID, Title: moduleTitle})
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT DISTINCT CAST(p.id AS TEXT),p.name,COALESCE(pq.degree,'') FROM modules m JOIN programs p ON p.id=m.program_id AND p.deleted_at IS NULL LEFT JOIN program_qualifications pq ON pq.legacy_program_id=p.id LEFT JOIN study_programs sp ON sp.id=pq.study_program_id WHERE m.deleted_at IS NULL`)
+	rows, err := tx.QueryContext(ctx, `SELECT DISTINCT m.program_id FROM modules m JOIN programs p ON p.id=m.program_id AND p.deleted_at IS NULL WHERE m.deleted_at IS NULL`)
 	if err != nil {
 		return result, 0, err
 	}
 	for rows.Next() {
-		var program, degree, id string
-		if err := rows.Scan(&id, &program, &degree); err != nil {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
 			rows.Close()
 			return result, 0, err
 		}
-		label := program
-		if degree == "" {
-			program, degree = ProgramName(program)
-		}
-		result.programs = appendUnique(result.programs, id)
-		result.programLabels[id] = label
-		result.degrees = appendUnique(result.degrees, DegreeValue(degree))
+		q := result.qualifications[id]
+		result.programs = appendUnique(result.programs, q.program)
+		result.degrees = appendUnique(result.degrees, q.degree)
 	}
 	err = rows.Err()
 	rows.Close()
 	if err != nil {
 		return result, 0, err
-	}
-	for i, internalID := range result.programs {
-		id, err := publicid.Lookup(ctx, tx, "programs", internalID)
-		if err != nil {
-			return result, 0, err
-		}
-		result.programs[i] = id
-		result.programLabels[id] = result.programLabels[internalID]
-		delete(result.programLabels, internalID)
 	}
 	rows, err = tx.QueryContext(ctx, `SELECT DISTINCT pv.name FROM program_versions pv JOIN programs p ON p.id=pv.program_id AND p.deleted_at IS NULL UNION SELECT DISTINCT version FROM archive_placements`)
 	if err != nil {
@@ -119,17 +110,15 @@ func (s *Service) catalogPage(ctx context.Context, f Filter, page, size int, mod
 		if filter.column == "program_id" && slices.Contains(filter.values, "all") {
 			continue
 		}
+		if filter.column == "program_id" && len(filter.values) > 0 {
+			filter.values = result.legacyPrograms(f)
+			if len(filter.values) == 0 {
+				filter.values = []string{"-1"}
+			}
+		}
 		if len(filter.values) > 0 {
 			cte += " AND " + filter.column + " IN (" + strings.TrimSuffix(strings.Repeat("?,", len(filter.values)), ",") + ")"
 			for _, v := range filter.values {
-				if filter.column == "program_id" {
-					id, err := resolveID(ctx, tx, "programs", v)
-					if err != nil {
-						id = -1
-					}
-					args = append(args, id)
-					continue
-				}
 				args = append(args, v)
 			}
 		}
@@ -199,10 +188,7 @@ func (s *Service) catalogPage(ctx context.Context, f Filter, page, size int, mod
 		if err := tx.QueryRowContext(ctx, "SELECT program_id FROM modules WHERE id=?", internalModule).Scan(&programID); err != nil {
 			return result, 0, err
 		}
-		e.ProgramID, err = lookupID(ctx, tx, "programs", programID)
-		if err != nil {
-			return result, 0, err
-		}
+		e.ProgramID = result.qualifications[programID].program
 		e.Degree = DegreeLabel(e.Degree)
 		e.Assignments = []Assignment{{ModuleID: e.ModuleID, ProgramID: e.ProgramID, Version: e.Version, Title: e.Title, Program: e.Program, Degree: e.Degree}}
 	}
@@ -215,7 +201,7 @@ func (s *Service) catalogPage(ctx context.Context, f Filter, page, size int, mod
 			return result, 0, err
 		}
 	}
-	slices.Sort(result.programs)
+	result.sortPrograms()
 	slices.Sort(result.degrees)
 	slices.Sort(result.versions)
 	slices.Reverse(result.versions)
