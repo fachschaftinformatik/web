@@ -34,6 +34,13 @@
     },
     {
       "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/renovate\\.yaml$/"],
+      "matchStrings": ["renovate-version: '(?<currentValue>[0-9.]+)@(?<currentDigest>sha256:[a-f0-9]+)'"],
+      "depNameTemplate": "ghcr.io/renovatebot/renovate",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
       "managerFilePatterns": ["/^\\.github/workflows/ci\\.yaml$/"],
       "matchStrings": ["go run (?<depName>github\\.com/rhysd/actionlint|golang\\.org/x/vuln)/cmd/\\w+@(?<currentValue>v[0-9.]+)"],
       "datasourceTemplate": "go"
@@ -46,6 +53,26 @@
     }
   ],
   "packageRules": [
+    {
+      "description": "The native action manager cannot parse renovate-version with a digest; the custom manager handles it.",
+      "matchManagers": ["github-actions"],
+      "matchDepNames": ["ghcr.io/renovatebot/renovate"],
+      "enabled": false
+    },
+    {
+      "description": "v0.32+ declares cel.dev/cel-go; sqlc must migrate its imports before the old module path can update.",
+      "matchDepNames": ["github.com/google/cel-go"],
+      "allowedVersions": "<0.32.0"
+    },
+    {
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "postUpgradeTasks": {
+        "commands": ["node .github/renovate/update-locks.mjs --go"],
+        "installTools": { "nix": {}, "golang": {} },
+        "executionMode": "branch",
+        "fileFilters": ["flake.nix", "flake.lock", "go.mod", "go.sum", "Dockerfile", "internal/database/**", ".github/release/bun.lock"]
+      }
+    },
     {
       "matchDepNames": ["go", "golang", "nixpkgs"],
       "groupName": "go toolchain"
