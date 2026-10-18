@@ -11,8 +11,8 @@ import (
 	"github.com/fachschaftinformatik/web/internal/publicid"
 )
 
-const eligibleAlbum = `e.deleted_at IS NULL AND (SELECT COUNT(*) FROM (SELECT 1 FROM media photos WHERE photos.event_id=e.id AND photos.deleted_at IS NULL AND photos.gallery_visible=1 AND photos.mime_type IN ` + imageTypes + ` LIMIT 3))=3`
-const albumSummary = `SELECT e.id,e.title,COALESCE(e.cover_path,''),(SELECT COUNT(*) FROM media m WHERE m.event_id=e.id AND m.deleted_at IS NULL AND m.gallery_visible=1 AND m.mime_type IN ` + imageTypes + `),(SELECT CAST(m.id AS TEXT) FROM media m WHERE m.event_id=e.id AND m.deleted_at IS NULL AND m.gallery_visible=1 AND m.mime_type IN ` + imageTypes + ` ORDER BY m.created_at DESC,m.id DESC LIMIT 1) FROM events e WHERE ` + eligibleAlbum
+const eligibleAlbum = `e.deleted_at IS NULL AND EXISTS(SELECT 1 FROM media photos WHERE photos.event_id=e.id AND photos.deleted_at IS NULL AND photos.mime_type IN ` + imageTypes + `)`
+const albumSummary = `SELECT e.id,e.title,COALESCE(e.cover_path,''),(SELECT COUNT(*) FROM media m WHERE m.event_id=e.id AND m.deleted_at IS NULL AND m.mime_type IN ` + imageTypes + `),(SELECT CAST(m.id AS TEXT) FROM media m WHERE m.event_id=e.id AND m.deleted_at IS NULL AND m.mime_type IN ` + imageTypes + ` ORDER BY m.created_at DESC,m.id DESC LIMIT 1) FROM events e WHERE ` + eligibleAlbum
 
 func albumPhoto(id, title, description string, number int, albumTitle string) Image {
 	if strings.TrimSpace(title) == "" {
@@ -95,7 +95,7 @@ func (s *Service) Album(ctx context.Context, id string) (Album, error) {
 }
 
 // ItemAlbum resolves an item's owning public album from its stable ID. Album
-// visibility follows the same photo-count policy as the album listing.
+// visibility follows the same policy as the album listing.
 func (s *Service) ItemAlbum(ctx context.Context, value string) (string, error) {
 	id, err := resolve(ctx, s.db, "media", value)
 	if err != nil {
@@ -103,7 +103,7 @@ func (s *Service) ItemAlbum(ctx context.Context, value string) (string, error) {
 	}
 	var album string
 	err = s.db.QueryRowContext(ctx, `SELECT CAST(e.id AS TEXT) FROM media m JOIN events e ON e.id=m.event_id
-		WHERE m.id=? AND m.deleted_at IS NULL AND m.gallery_visible=1 AND m.mime_type IN `+imageTypes+` AND `+eligibleAlbum, id).Scan(&album)
+		WHERE m.id=? AND m.deleted_at IS NULL AND m.mime_type IN `+imageTypes+` AND `+eligibleAlbum, id).Scan(&album)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", ErrNotFound
 	}
@@ -118,7 +118,7 @@ func (s *Service) Photos(ctx context.Context, a Album, offset, limit int) ([]Ima
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT CAST(id AS TEXT),COALESCE(title,''),COALESCE(description,'') FROM media WHERE event_id=? AND deleted_at IS NULL AND gallery_visible=1 AND mime_type IN `+imageTypes+` ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?`, internal, min(100, max(1, limit)), max(0, offset))
+	rows, err := s.db.QueryContext(ctx, `SELECT CAST(id AS TEXT),COALESCE(title,''),COALESCE(description,'') FROM media WHERE event_id=? AND deleted_at IS NULL AND mime_type IN `+imageTypes+` ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?`, internal, min(100, max(1, limit)), max(0, offset))
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (s *Service) PhotoPosition(ctx context.Context, album, photo string) (int, 
 		return 0, resolveErr
 	}
 	var position int
-	err := s.db.QueryRowContext(ctx, `SELECT (SELECT COUNT(*) FROM media preceding WHERE preceding.event_id=m.event_id AND preceding.deleted_at IS NULL AND preceding.gallery_visible=1 AND preceding.mime_type IN `+imageTypes+` AND (preceding.created_at>m.created_at OR (preceding.created_at=m.created_at AND preceding.id>m.id))) FROM media m WHERE m.id=? AND m.event_id=? AND m.deleted_at IS NULL AND m.gallery_visible=1 AND m.mime_type IN `+imageTypes, photo, album).Scan(&position)
+	err := s.db.QueryRowContext(ctx, `SELECT (SELECT COUNT(*) FROM media preceding WHERE preceding.event_id=m.event_id AND preceding.deleted_at IS NULL AND preceding.mime_type IN `+imageTypes+` AND (preceding.created_at>m.created_at OR (preceding.created_at=m.created_at AND preceding.id>m.id))) FROM media m WHERE m.id=? AND m.event_id=? AND m.deleted_at IS NULL AND m.mime_type IN `+imageTypes, photo, album).Scan(&position)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, ErrNotFound
 	}

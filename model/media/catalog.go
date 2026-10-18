@@ -31,7 +31,7 @@ const imageTypes = `('image/jpeg','image/png','image/gif','image/webp','image/bm
 // historical newest-first order is made deterministic with the stable IDs.
 func (s *Service) Catalog(ctx context.Context) ([]Album, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT e.id,e.title,COALESCE(e.cover_path,''),m.id,COALESCE(m.title,''),COALESCE(m.description,'')
-FROM events e LEFT JOIN media m ON m.event_id=e.id AND m.deleted_at IS NULL AND m.gallery_visible=1 AND m.mime_type IN `+imageTypes+`
+FROM events e LEFT JOIN media m ON m.event_id=e.id AND m.deleted_at IS NULL AND m.mime_type IN `+imageTypes+`
 WHERE `+eligibleAlbum+`
 ORDER BY e.created_at DESC,e.id DESC,m.created_at DESC,m.id DESC`)
 	if err != nil {

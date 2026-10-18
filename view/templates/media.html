@@ -8,12 +8,12 @@
           <h2 class="govuk-notification-banner__title" id="gallery-success-title">Erfolgreich</h2>
         </div>
         <div class="govuk-notification-banner__content">
-          <p class="govuk-notification-banner__heading">Galerieauswahl gespeichert.</p>
+          <p class="govuk-notification-banner__heading">Auswahl für die Startseite gespeichert.</p>
         </div>
       </div>
     {{ end }}
-    <p class="govuk-body"><a class="govuk-link" href="/media">Zur Galerie</a></p>
-    <p class="govuk-body">Wähle aus, welche Bilder in der Galerie erscheinen. Alben werden ab drei ausgewählten Bildern angezeigt.</p>
+    <p class="govuk-body"><a class="govuk-link" href="/media">Zu allen Fotos</a></p>
+    <p class="govuk-body">Wähle die Bilder für die Bilderstrecke auf der Startseite aus. Unter Fotos bleiben alle Bilder sichtbar.</p>
     <ul class="govuk-list app-image-cards" role="list">
       {{ range $g.GalleryItems }}
         <li class="app-image-card" id="image-{{ .ID }}">
@@ -29,8 +29,8 @@
               <div class="govuk-form-group">
                 <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
                   <div class="govuk-checkboxes__item">
-                    <input class="govuk-checkboxes__input" id="gallery-{{ .ID }}" name="gallery_visible" type="checkbox" value="1" {{ if .Visible }}checked{{ end }} />
-                    <label class="govuk-label govuk-checkboxes__label" for="gallery-{{ .ID }}">In der Galerie anzeigen<span class="govuk-visually-hidden">: {{ .Title }}</span></label>
+                    <input class="govuk-checkboxes__input" id="homepage-{{ .ID }}" name="homepage_visible" type="checkbox" value="1" {{ if .Visible }}checked{{ end }} />
+                    <label class="govuk-label govuk-checkboxes__label" for="homepage-{{ .ID }}">Auf der Startseite anzeigen<span class="govuk-visually-hidden">: {{ .Title }}</span></label>
                   </div>
                 </div>
               </div>
@@ -45,7 +45,7 @@
     {{ template "list-pagination" $g.Pagination }}
   {{ else if not $g.Detail }}
     {{ if $g.CanManage }}
-      <p class="govuk-body"><a class="govuk-link" href="/media/manage">Galerie verwalten</a></p>
+      <p class="govuk-body"><a class="govuk-link" href="/media/manage">Startseitenbilder auswählen</a></p>
     {{ end }}
     <p class="govuk-body">Fotos von unseren Veranstaltungen.</p>
     <ul class="govuk-list app-image-cards" role="list">

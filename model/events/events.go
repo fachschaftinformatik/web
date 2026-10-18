@@ -57,7 +57,7 @@ func (d Draft) Validate() []FieldError {
 
 const selectEvent = `SELECT CAST(id AS TEXT),title,body,body_format,event_date,location,created_at,updated_at,cover_key,cover_alt,cover_width,cover_height,legacy_post_id,source_url,source_published_at,source_status,
 CASE WHEN EXISTS(SELECT 1 FROM events album WHERE album.id=gallery_album_id AND album.deleted_at IS NULL)
-AND (SELECT COUNT(*) FROM (SELECT 1 FROM media photos WHERE photos.event_id=gallery_album_id AND photos.deleted_at IS NULL AND photos.gallery_visible=1 AND photos.mime_type IN ('image/jpeg','image/png','image/gif','image/webp','image/bmp') LIMIT 3))=3
+AND EXISTS(SELECT 1 FROM media photos WHERE photos.event_id=gallery_album_id AND photos.deleted_at IS NULL AND photos.mime_type IN ('image/jpeg','image/png','image/gif','image/webp','image/bmp'))
 THEN gallery_album_id END,gallery_cover_id FROM calendar_events WHERE deleted_at IS NULL`
 
 func scan(row interface{ Scan(...any) error }) (Event, error) {

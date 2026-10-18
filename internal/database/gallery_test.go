@@ -34,6 +34,7 @@ INSERT INTO media(id,event_id,user_id,access_key,mime_type,nbytes,gallery_visibl
 (101,10,1,'media/first/source','image/jpeg',5,1),(102,10,1,'media/second/source','image/jpeg',5,0)`); err != nil {
 		t.Fatal(err)
 	}
+	column := "gallery_visible"
 	verify := func() {
 		t.Helper()
 		for _, row := range []struct {
@@ -42,12 +43,12 @@ INSERT INTO media(id,event_id,user_id,access_key,mime_type,nbytes,gallery_visibl
 		}{{101, 1, "media/first/source"}, {102, 0, "media/second/source"}} {
 			var visible int
 			var key string
-			if err := db.QueryRow(`SELECT gallery_visible,access_key FROM media WHERE id=?`, row.id).Scan(&visible, &key); err != nil || visible != row.visible || key != row.key {
+			if err := db.QueryRow(`SELECT `+column+`,access_key FROM media WHERE id=?`, row.id).Scan(&visible, &key); err != nil || visible != row.visible || key != row.key {
 				t.Fatalf("selection or file changed: %d %q %v", visible, key, err)
 			}
 		}
 	}
-	if _, err := p.Up(ctx); err != nil {
+	if _, err := p.UpTo(ctx, 23); err != nil {
 		t.Fatal(err)
 	}
 	verify()
@@ -62,8 +63,19 @@ INSERT INTO media(id,event_id,user_id,access_key,mime_type,nbytes,gallery_visibl
 		t.Fatal(err)
 	}
 	verify()
-	if _, err := p.Up(ctx); err != nil {
+	if _, err := p.UpTo(ctx, 23); err != nil {
 		t.Fatal(err)
 	}
 	verify()
+	if _, err := p.Up(ctx); err != nil {
+		t.Fatal(err)
+	}
+	column = "homepage_visible"
+	verify()
+	if _, err := db.Exec(`INSERT INTO media(id,event_id,user_id,access_key,mime_type,nbytes) VALUES(104,10,1,'new-homepage','image/jpeg',5)`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.QueryRow(`SELECT homepage_visible FROM media WHERE id=104`).Scan(&visible); err != nil || visible != 0 {
+		t.Fatalf("homepage default: %d %v", visible, err)
+	}
 }

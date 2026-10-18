@@ -31,11 +31,11 @@ func TestImportPreservesCaptionsFullImagesAndEditorialEdits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e.Body != input.Draft.Body || e.EventDate != "" || e.SourcePublishedAt != input.PublishedAt.Format(time.RFC3339) || e.SourceURL != input.SourceURL || e.AlbumID.Valid {
+	if e.Body != input.Draft.Body || e.EventDate != "" || e.SourcePublishedAt != input.PublishedAt.Format(time.RFC3339) || e.SourceURL != input.SourceURL || !e.AlbumID.Valid {
 		t.Fatalf("imported event: %+v", e)
 	}
 	media := media.NewService(db, s.storage)
-	if albums, err := media.Catalog(ctx); err != nil || len(albums) != 0 {
+	if albums, err := media.Carousel(ctx); err != nil || len(albums) != 0 {
 		t.Fatalf("imported photos appeared without selection: %+v %v", albums, err)
 	}
 	items, _, err := media.GalleryPage(ctx, 1, 1, 12)
@@ -46,7 +46,7 @@ func TestImportPreservesCaptionsFullImagesAndEditorialEdits(t *testing.T) {
 		if item.Visible {
 			t.Fatal("import selected a new photo")
 		}
-		if err := media.SetGalleryVisibility(ctx, 1, item.ID, true); err != nil {
+		if err := media.SetHomepageVisibility(ctx, 1, item.ID, true); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -121,8 +121,8 @@ func TestImportPreservesCaptionsFullImagesAndEditorialEdits(t *testing.T) {
 		t.Fatal(err)
 	}
 	e, err = s.Lookup(ctx, event)
-	if err != nil || e.AlbumID.Valid || e.CoverKey == "" {
-		t.Fatalf("two-image album linked or event cover lost: %+v %v", e, err)
+	if err != nil || !e.AlbumID.Valid || e.CoverKey == "" {
+		t.Fatalf("two-image album or event cover lost: %+v %v", e, err)
 	}
 	if _, err := db.Exec(`UPDATE calendar_events SET deleted_at='2026-01-01T00:00:00Z' WHERE id=?`, e.InternalID); err != nil {
 		t.Fatal(err)
@@ -147,7 +147,7 @@ func TestImportNeverReusesDeletedHighestResourceKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec(`UPDATE media SET gallery_visible=1`); err != nil {
+	if _, err := db.Exec(`UPDATE media SET homepage_visible=1`); err != nil {
 		t.Fatal(err)
 	}
 	old, err := s.Lookup(ctx, first)
@@ -168,7 +168,7 @@ func TestImportNeverReusesDeletedHighestResourceKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec(`UPDATE media SET gallery_visible=1`); err != nil {
+	if _, err := db.Exec(`UPDATE media SET homepage_visible=1`); err != nil {
 		t.Fatal(err)
 	}
 	current, err := s.Lookup(ctx, next)

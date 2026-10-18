@@ -19,7 +19,7 @@ INSERT INTO media(id,event_id,user_id,title,access_key,mime_type,nbytes,created_
 (104,10,900,'Four','104','image/jpeg',5,'2026-01-01T00:00:00Z')`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec(`UPDATE media SET gallery_visible=1`); err != nil {
+	if _, err := db.Exec(`UPDATE media SET homepage_visible=1`); err != nil {
 		t.Fatal(err)
 	}
 	seedPublicRefs(t, db)
@@ -55,8 +55,11 @@ INSERT INTO media(id,event_id,user_id,title,access_key,mime_type,nbytes,created_
 	if w := request("GET", "/media/manage", member, nil); w.Code != 403 {
 		t.Fatalf("member management: %d", w.Code)
 	}
-	if w := request("GET", "/media/manage", staff, nil); w.Code != 200 || !strings.Contains(w.Body.String(), "In der Galerie anzeigen") {
+	if w := request("GET", "/media/manage", staff, nil); w.Code != 200 || !strings.Contains(w.Body.String(), "Auf der Startseite anzeigen") {
 		t.Fatalf("staff management: %d %s", w.Code, w.Body.String())
+	}
+	if w := request("GET", "/", nil, nil); w.Code != 200 || !strings.Contains(w.Body.String(), `/images/`+photo+`/1200`) {
+		t.Fatalf("selected homepage image missing: %d", w.Code)
 	}
 	path := "/media/" + photo + "/visibility"
 	if w := request("POST", path, staff, url.Values{"page": {"1"}, "csrf": {"invalid"}}); w.Code != 403 {
@@ -68,14 +71,17 @@ INSERT INTO media(id,event_id,user_id,title,access_key,mime_type,nbytes,created_
 	if w := request("POST", path, staff, url.Values{"page": {"1"}, "csrf": {staff.CSRF}}); w.Code != 303 {
 		t.Fatalf("save selection: %d %s", w.Code, w.Body.String())
 	}
-	if w := request("GET", "/media/"+photo, nil, nil); w.Code != 404 {
-		t.Fatalf("excluded viewer: %d", w.Code)
+	if w := request("GET", "/media/"+photo, nil, nil); w.Code != 200 {
+		t.Fatalf("photo disappeared after homepage exclusion: %d", w.Code)
+	}
+	if w := request("GET", "/", nil, nil); w.Code != 200 || strings.Contains(w.Body.String(), `/images/`+photo+`/1200`) {
+		t.Fatalf("unselected homepage image still present: %d", w.Code)
 	}
 	var visible bool
-	if err := db.QueryRow(`SELECT gallery_visible FROM media WHERE id=?`, internal).Scan(&visible); err != nil || visible {
+	if err := db.QueryRow(`SELECT homepage_visible FROM media WHERE id=?`, internal).Scan(&visible); err != nil || visible {
 		t.Fatalf("visibility: %v %v", visible, err)
 	}
-	if w := request("POST", path, staff, url.Values{"page": {"1"}, "csrf": {staff.CSRF}, "gallery_visible": {"1"}}); w.Code != 303 {
+	if w := request("POST", path, staff, url.Values{"page": {"1"}, "csrf": {staff.CSRF}, "homepage_visible": {"1"}}); w.Code != 303 {
 		t.Fatalf("restore: %d", w.Code)
 	}
 	if w := request("GET", "/media/"+photo, nil, nil); w.Code != 200 {
