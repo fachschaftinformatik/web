@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/publicid"
 	"github.com/fachschaftinformatik/web/internal/storage"
 	xdraw "golang.org/x/image/draw"
 	_ "golang.org/x/image/webp"
@@ -79,6 +80,10 @@ func prepareImage(data []byte, maxSide int) ([]byte, int, int, error) {
 }
 
 func (s *Service) OpenCover(ctx context.Context, post string) (*storage.Object, error) {
+	post, resolveErr := resolve(ctx, s.db, "events", post)
+	if resolveErr != nil {
+		return nil, resolveErr
+	}
 	var key string
 	err := s.db.QueryRowContext(ctx, `SELECT cover_key FROM calendar_events WHERE id=? AND deleted_at IS NULL AND cover_key!=''`, post).Scan(&key)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -103,6 +108,9 @@ func (s *Service) OpenCover(ctx context.Context, post string) (*storage.Object, 
 
 func validCoverKey(key string) bool {
 	value := strings.TrimSuffix(strings.TrimPrefix(key, "calendar/covers/"), ".jpg")
+	if publicid.Valid(value) && key == "calendar/covers/"+value+".jpg" {
+		return true
+	}
 	id, err := strconv.ParseInt(value, 10, 64)
 	return err == nil && id > 0 && key == "calendar/covers/"+strconv.FormatInt(id, 10)+".jpg"
 }

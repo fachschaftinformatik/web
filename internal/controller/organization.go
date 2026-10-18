@@ -9,17 +9,17 @@ import (
 	"github.com/fachschaftinformatik/web/internal/view"
 )
 
-func (c *Handler) MasterData(w http.ResponseWriter, r *http.Request, a *view.AdminPage) {
+func (c *Handler) OrganizationSettings(w http.ResponseWriter, r *http.Request, a *view.AdminPage) {
 	id := r.PathValue("id")
 	if id == "" {
-		a.View = "master-data"
-		roles := append(c.people.Responsibilities("board"), c.people.Responsibilities("departments")...)
-		a.MasterData = view.MasterDataTasks(c.organization.Current(), roles)
+		a.View = "settings"
+		roles := append(c.members.Roles("board"), c.members.Roles("departments")...)
+		a.OrganizationSettings = view.OrganizationSettingsTasks(c.organization.Current(), roles)
 		c.adminRender(w, "Stammdaten", a, http.StatusOK)
 		return
 	}
 	title := ""
-	for _, section := range view.MasterDataSections {
+	for _, section := range view.OrganizationSettingsSections {
 		if section.ID == id {
 			title = section.Title
 		}
@@ -33,12 +33,30 @@ func (c *Handler) MasterData(w http.ResponseWriter, r *http.Request, a *view.Adm
 	if r.Method == http.MethodPost {
 		get := func(key string) string { return strings.TrimSpace(r.PostForm.Get(key)) }
 		switch id {
-		case "identitaet":
+		case "identity":
 			d.Name, d.ShortName, d.FormalName, d.Institution = get("Name"), get("ShortName"), get("FormalName"), get("Institution")
-		case "kontakt":
+		case "contact":
 			d.ContactEmail, d.Street, d.PostalCode, d.City, d.Country, d.Office = get("ContactEmail"), get("Street"), get("PostalCode"), get("City"), get("Country"), get("Office")
-			d.ChairResponsibility, d.PublicityResponsibility = get("ChairResponsibility"), get("PublicityResponsibility")
-		case "rechtliches":
+			roles := append(c.members.Roles("board"), c.members.Roles("departments")...)
+			resolve := func(value string) (string, bool) {
+				if value == "" {
+					return "", true
+				}
+				for _, role := range roles {
+					if role.PublicID == value {
+						return role.ID, true
+					}
+				}
+				return "", false
+			}
+			var chairOK, publicityOK bool
+			d.ChairRole, chairOK = resolve(get("ChairRole"))
+			d.PublicityRole, publicityOK = resolve(get("PublicityRole"))
+			if !chairOK || !publicityOK {
+				c.notFound(w, r)
+				return
+			}
+		case "legal":
 			d.HostingName, d.HostingURL, d.PrivacyURL = get("HostingName"), get("HostingURL"), get("PrivacyURL")
 			d.SupervisionName, d.SupervisionURL = get("SupervisionName"), get("SupervisionURL")
 			d.PrivacyAuthorityName, d.PrivacyAuthorityURL = get("PrivacyAuthorityName"), get("PrivacyAuthorityURL")
@@ -49,7 +67,7 @@ func (c *Handler) MasterData(w http.ResponseWriter, r *http.Request, a *view.Adm
 					d.RegulationLinks[i].URL = strings.TrimSpace(urls[i])
 				}
 			}
-		case "verknuepfungen":
+		case "links":
 			d.SocialLinks = parseLinks(r, "SocialLinks")
 			d.ElectionLinks = parseLinks(r, "ElectionLinks")
 		}
@@ -64,13 +82,14 @@ func (c *Handler) MasterData(w http.ResponseWriter, r *http.Request, a *view.Adm
 			return
 		}
 		if len(fields) == 0 {
-			http.Redirect(w, r, "/verwaltung/stammdaten?gespeichert=1", http.StatusSeeOther)
+			flash(w, "Die Änderungen wurden gespeichert.")
+			http.Redirect(w, r, "/admin/settings", http.StatusSeeOther)
 			return
 		}
 	}
-	roles := append(c.people.Responsibilities("board"), c.people.Responsibilities("departments")...)
+	roles := append(c.members.Roles("board"), c.members.Roles("departments")...)
 	a.View, a.Action = "form", r.URL.Path
-	a.Fields = view.MasterDataFields(id, d, roles)
+	a.Fields = view.OrganizationSettingsFields(id, d, roles)
 	view.AttachErrors(a.Fields, fields)
 	status := http.StatusOK
 	if len(fields) > 0 {

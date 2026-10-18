@@ -21,7 +21,7 @@
     {{ end }}
     <h1 class="govuk-heading-l">Passwort vergessen</h1>
     <p class="govuk-body">Fordere einen Link an, um dein Passwort zurückzusetzen.</p>
-    <form action="/forgot" method="post" novalidate>
+    <form action="/password/forgot" method="post" novalidate>
       <input type="hidden" name="csrf" value="{{ .CSRF }}" />
       <div class="govuk-form-group {{ if .Forgot.EmailError }}govuk-form-group--error{{ end }}">
         <label class="govuk-label" for="email">E-Mail-Adresse</label>

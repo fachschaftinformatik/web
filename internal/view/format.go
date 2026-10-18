@@ -22,9 +22,9 @@ type textBlock struct {
 
 var publicURL = regexp.MustCompile(`https?://[^\s<>"']+`)
 
-// rawForumText preserves literal text, paragraphs, lists and quotes.
+// rawPostText preserves literal text, paragraphs, lists and quotes.
 // Only explicit HTTP(S) URLs become links; source HTML is never trusted.
-func rawForumText(source string) []textBlock {
+func rawPostText(source string) []textBlock {
 	var blocks []textBlock
 	for _, line := range strings.Split(strings.ReplaceAll(source, "\r\n", "\n"), "\n") {
 		line = strings.TrimSpace(line)
@@ -43,12 +43,12 @@ func rawForumText(source string) []textBlock {
 			blocks = append(blocks, textBlock{Kind: kind})
 		}
 		index := len(blocks) - 1
-		blocks[index].Lines = append(blocks[index].Lines, forumParts(line))
+		blocks[index].Lines = append(blocks[index].Lines, postParts(line))
 	}
 	return blocks
 }
 
-func forumParts(line string) []textPart {
+func postParts(line string) []textPart {
 	var parts []textPart
 	for {
 		match := publicURL.FindStringIndex(line)

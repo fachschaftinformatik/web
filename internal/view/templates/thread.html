@@ -1,18 +1,18 @@
 {{ define "sidebar" }}{{ end }}
 {{ define "content" }}
-  {{ if .Forum.Comment.Error }}
+  {{ if .Posts.Comment.Error }}
     <div class="govuk-error-summary" data-module="govuk-error-summary">
       <div role="alert">
         <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
         <div class="govuk-error-summary__body">
           <ul class="govuk-list govuk-error-summary__list">
-            <li><a href="#{{ .Forum.Comment.Anchor }}">{{ .Forum.Comment.Error }}</a></li>
+            <li><a href="#{{ .Posts.Comment.Anchor }}">{{ .Posts.Comment.Error }}</a></li>
           </ul>
         </div>
       </div>
     </div>
   {{ end }}
-  {{ with .Forum.Thread }}
+  {{ with .Posts.Thread }}
     <article class="app-thread" aria-label="Beitrag">
       <p class="govuk-body-s">
         {{ if .AuthorURL }}
@@ -50,15 +50,15 @@
       {{ if eq .BodyFormat "html" }}
         <div class="app-rich-content">{{ richHTML .Body }}</div>
       {{ else }}
-        {{ template "forum-body" (rawForumText .Body) }}
+        {{ template "post-body" (rawPostText .Body) }}
       {{ end }}
       <div class="govuk-!-margin-bottom-4" id="post-vote">
-        {{ template "vote" (voteControl $ (printf "%s/vote" .URL) (printf "%s#post-vote" .URL) .Title .Votes .UserVote) }}
+        {{ template "vote" (voteControl $ .VoteURL (printf "%s#post-vote" .URL) .Title .Votes .UserVote) }}
       </div>
-      {{ if $.Forum.CanEdit }}
+      {{ if $.Posts.CanEdit }}
         <a
           class="govuk-button govuk-button--secondary"
-          href="{{ .URL }}/edit"
+          href="{{ .EditURL }}"
           role="button"
           draggable="false"
           data-module="govuk-button"
@@ -72,7 +72,7 @@
         {{ .Comments }} {{ if eq .Comments 1 }}Kommentar{{ else }}Kommentare{{ end }}
       </h2>
       {{ if .Replies }}
-        <ol class="govuk-list app-forum-posts">
+        <ol class="govuk-list app-posts-list">
           {{ range .Replies }}
             <li id="comment-{{ .ID }}">
               <article aria-labelledby="comment-heading-{{ .ID }}">
@@ -102,10 +102,10 @@
                     {{ end }}
                   </p>
                 </div>
-                {{ template "forum-body" (rawForumText .Text) }}
-                {{ template "vote" (voteControl $ (printf "%s/comments/%s/vote" $.Forum.Thread.URL .ID) ($.Forum.CommentURL .ID) (printf "Kommentar von %s" .Author) .Votes .UserVote) }}
+                {{ template "post-body" (rawPostText .Text) }}
+                {{ template "vote" (voteControl $ ($.Posts.Thread.CommentVoteURL .ID) ($.Posts.CommentURL .ID) (printf "Kommentar von %s" .Author) .Votes .UserVote) }}
                 {{ if .CanEdit }}
-                  {{ $invalid := and $.Forum.Comment.Error (eq $.Forum.Comment.ID .ID) }}
+                  {{ $invalid := and $.Posts.Comment.Error (eq $.Posts.Comment.ID .ID) }}
                   <details
                     class="govuk-details"
                     {{ if $invalid }}open{{ end }}
@@ -116,7 +116,7 @@
                     <div class="govuk-details__text">
                       <form
                         method="post"
-                        action="{{ $.Forum.Thread.URL }}/comments/{{ .ID }}/edit"
+                        action="{{ $.Posts.Thread.EditCommentURL .ID }}"
                         novalidate
                       >
                         <input type="hidden" name="csrf" value="{{ $.CSRF }}" />
@@ -127,7 +127,7 @@
                           >{{ if $invalid }}
                             <p class="govuk-error-message" id="edit-comment-{{ .ID }}-error">
                               <span class="govuk-visually-hidden">Fehler:</span>
-                              {{ $.Forum.Comment.Error }}
+                              {{ $.Posts.Comment.Error }}
                             </p>
                           {{ end }}<textarea
                             class="govuk-textarea {{ if $invalid }}govuk-textarea--error{{ end }}"
@@ -138,7 +138,7 @@
                               aria-invalid="true" aria-describedby="edit-comment-{{ .ID }}-error"
                             {{ end }}
                           >
-{{ if $invalid }}{{ $.Forum.Comment.Text }}{{ else }}{{ .Text }}{{ end }}</textarea
+{{ if $invalid }}{{ $.Posts.Comment.Text }}{{ else }}{{ .Text }}{{ end }}</textarea
                           >
                         </div>
                         <button class="govuk-button" type="submit" data-module="govuk-button">
@@ -155,17 +155,17 @@
       {{ else }}
         <p class="govuk-body">Noch keine Kommentare.</p>
       {{ end }}
-      {{ template "list-pagination" $.Forum.Pagination }}
-      {{ if $.Forum.CanWrite }}
-        {{ $invalid := and $.Forum.Comment.Error (eq $.Forum.Comment.ID "") }}
-        <form method="post" action="{{ .URL }}/comments" novalidate>
+      {{ template "list-pagination" $.Posts.Pagination }}
+      {{ if $.Posts.CanWrite }}
+        {{ $invalid := and $.Posts.Comment.Error (eq $.Posts.Comment.ID "") }}
+        <form method="post" action="{{ .CommentsURL }}" novalidate>
           <input type="hidden" name="csrf" value="{{ $.CSRF }}" />
           <div class="govuk-form-group {{ if $invalid }}govuk-form-group--error{{ end }}">
             <label class="govuk-label govuk-label--s" for="comment-text">Kommentar schreiben</label>
             <p class="govuk-hint" id="comment-hint">Höchstens 10.000 Zeichen.</p>
             {{ if $invalid }}
               <p class="govuk-error-message" id="comment-error">
-                <span class="govuk-visually-hidden">Fehler:</span> {{ $.Forum.Comment.Error }}
+                <span class="govuk-visually-hidden">Fehler:</span> {{ $.Posts.Comment.Error }}
               </p>
             {{ end }}<textarea
               class="govuk-textarea {{ if $invalid }}govuk-textarea--error{{ end }}"
@@ -175,7 +175,7 @@
               aria-describedby="comment-hint{{ if $invalid }}comment-error{{ end }}"
               {{ if $invalid }}aria-invalid="true"{{ end }}
             >
-{{ if eq $.Forum.Comment.ID "" }}{{ $.Forum.Comment.Text }}{{ end }}</textarea
+{{ if eq $.Posts.Comment.ID "" }}{{ $.Posts.Comment.Text }}{{ end }}</textarea
             >
           </div>
           <button class="govuk-button" type="submit" data-module="govuk-button">
@@ -191,28 +191,28 @@
   {{ end }}
 {{ end }}
 
-{{ define "forum-body" }}
+{{ define "post-body" }}
   {{ range . }}
     {{ if eq .Kind "list" }}
       <ul class="govuk-list govuk-list--bullet">
-        {{ range .Lines }}<li>{{ template "forum-parts" . }}</li>{{ end }}
+        {{ range .Lines }}<li>{{ template "post-parts" . }}</li>{{ end }}
       </ul>
     {{ else if eq .Kind "quote" }}
       <blockquote class="govuk-inset-text app-thread-quote">
         {{ range $i, $line := .Lines }}
-          {{ if $i }}<br />{{ end }}{{ template "forum-parts" $line }}
+          {{ if $i }}<br />{{ end }}{{ template "post-parts" $line }}
         {{ end }}
       </blockquote>
     {{ else if eq .Kind "paragraph" }}
       <p class="govuk-body">
         {{ range $i, $line := .Lines }}
-          {{ if $i }}<br />{{ end }}{{ template "forum-parts" $line }}
+          {{ if $i }}<br />{{ end }}{{ template "post-parts" $line }}
         {{ end }}
       </p>
     {{ end }}
   {{ end }}
 {{ end }}
-{{ define "forum-parts" }}
+{{ define "post-parts" }}
   {{ range . }}
     {{ if .URL }}
       <a class="govuk-link" href="{{ .URL }}">{{ .Text }}</a>

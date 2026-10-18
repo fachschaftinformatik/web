@@ -15,13 +15,13 @@ import (
 	"testing"
 
 	"github.com/fachschaftinformatik/web/internal/database"
-	"github.com/fachschaftinformatik/web/internal/model/archive"
 	"github.com/fachschaftinformatik/web/internal/model/events"
-	"github.com/fachschaftinformatik/web/internal/model/forum"
-	"github.com/fachschaftinformatik/web/internal/model/gallery"
+	"github.com/fachschaftinformatik/web/internal/model/exams"
+	"github.com/fachschaftinformatik/web/internal/model/media"
 	"github.com/fachschaftinformatik/web/internal/model/meetings"
+	"github.com/fachschaftinformatik/web/internal/model/members"
 	"github.com/fachschaftinformatik/web/internal/model/organization"
-	"github.com/fachschaftinformatik/web/internal/model/people"
+	"github.com/fachschaftinformatik/web/internal/model/posts"
 	"github.com/fachschaftinformatik/web/internal/model/users"
 	objectstore "github.com/fachschaftinformatik/web/internal/storage"
 	"github.com/fachschaftinformatik/web/internal/storage/disk"
@@ -32,7 +32,7 @@ func identityBrowser(t *testing.T) (*adminBrowser, *sql.DB) {
 	return identityBrowserWithStorage(t, nil)
 }
 
-func identityBrowserWithStorage(t *testing.T, storage archive.Storage) (*adminBrowser, *sql.DB) {
+func identityBrowserWithStorage(t *testing.T, storage exams.Storage) (*adminBrowser, *sql.DB) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "sqlite.db")
 	if err := database.Migrate(path, log.New(io.Discard, "", 0)); err != nil {
@@ -52,13 +52,13 @@ func identityBrowserWithStorage(t *testing.T, storage archive.Storage) (*adminBr
 	return newAdminBrowser(t, server), db
 }
 
-func persistentServices(t *testing.T, db *sql.DB, storage archive.Storage) Services {
+func persistentServices(t *testing.T, db *sql.DB, storage exams.Storage) Services {
 	t.Helper()
 
 	content, err := json.Marshal(organization.Details{
 		Name: "Example Council", FormalName: "Example Representative Body", ShortName: "Example Council", Institution: "Example University",
 		City: "Example City", Street: "Example Street 1", PostalCode: "12345", Country: "Deutschland", Office: "A1",
-		ContactEmail: "contact@example.org", ChairResponsibility: "1", PublicityResponsibility: "6", LegalUpdated: "2026-01-01",
+		ContactEmail: "contact@example.org", ChairRole: "1", PublicityRole: "6", LegalUpdated: "2026-01-01",
 		HostingName: "Example Host", HostingURL: "https://example.org/hosting", PrivacyURL: "https://example.org/privacy",
 		SupervisionName: "Example Supervision", SupervisionURL: "https://example.org/supervision",
 		PrivacyAuthorityName: "Example Privacy Authority", PrivacyAuthorityURL: "https://example.org/authority",
@@ -83,15 +83,17 @@ func persistentServices(t *testing.T, db *sql.DB, storage archive.Storage) Servi
 		if _, err := db.Exec(`INSERT INTO historical_meeting_documents(file,year,number,date,kind,note,bytes,sha256,sources,blob_key) VALUES(?,?,1,?,'Einladung','',?,?,?,?) ON CONFLICT(file) DO NOTHING`, file, record.year, record.date, len(data), digest, string(sources), "meetings/historical/"+digest); err != nil {
 			t.Fatal(err)
 		}
+		publicRef(t, db, "historical_documents", file)
 	}
 	if _, err = db.Exec(`INSERT OR IGNORE INTO people(id,name,email,position) VALUES('1','Example Chair','chair@example.org',0); INSERT OR IGNORE INTO responsibilities(id,group_name,title,email,position) VALUES('1','board','Vorsitz','chair@example.org',0),('6','departments','Öffentlichkeit','public@example.org',1); INSERT OR IGNORE INTO responsibility_members(responsibility_id,person_id,position) VALUES('1','1',0)`); err != nil {
 		t.Fatal(err)
 	}
+	seedPublicRefs(t, db)
 	org, err := organization.NewStore(context.Background(), db)
 	if err != nil {
 		t.Fatal(err)
 	}
-	team, err := people.Open(context.Background(), db)
+	team, err := members.Open(context.Background(), db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +111,7 @@ func persistentServices(t *testing.T, db *sql.DB, storage archive.Storage) Servi
 	if err != nil {
 		t.Fatal(err)
 	}
-	return Services{Organization: org, Users: users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}), Archive: archive.NewService(db, storage), People: team, Meetings: meetingStore, Forum: forum.NewService(db), Gallery: gallery.NewService(db, provider), Events: events.NewService(db, provider)}
+	return Services{Organization: org, Users: users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}}), Exams: exams.NewService(db, storage), Members: team, Meetings: meetingStore, Posts: posts.NewService(db), Media: media.NewService(db, provider), Events: events.NewService(db, provider)}
 }
 
 func historicalTestPDF(file string) []byte { return []byte("%PDF-1.4\n" + file + "\n%%EOF") }
@@ -123,6 +125,7 @@ func TestPersistentLoginAuthorizationAndLogout(t *testing.T) {
 	if _, err := db.Exec(`INSERT INTO users (id,email,name,password,role,active,verified) VALUES (42,'PERSON@fsv-wh.de','Person',?,'user',1,1)`, string(hash)); err != nil {
 		t.Fatal(err)
 	}
+	seedPublicRefs(t, db)
 	_, body, _ := b.get("/login")
 	if strings.Contains(body, "Demozugang") {
 		t.Fatal("persistent login advertises demo credentials")
@@ -138,21 +141,21 @@ func TestPersistentLoginAuthorizationAndLogout(t *testing.T) {
 	if status != 303 || headers.Get("Location") != "/" {
 		t.Fatalf("login: %d %v", status, headers)
 	}
-	_, body, _ = b.get("/archive")
+	_, body, _ = b.get("/exams")
 	rotated := csrfFrom(t, body)
 	if rotated == csrf {
 		t.Fatal("login did not rotate session")
 	}
-	if strings.Contains(body, `href="/verwaltung"`) {
+	if strings.Contains(body, `href="/admin"`) {
 		t.Fatal("normal user sees administration link")
 	}
-	if status, _, _ := b.get("/verwaltung"); status != 403 {
+	if status, _, _ := b.get("/admin"); status != 403 {
 		t.Fatal("normal user accessed administration")
 	}
 	if _, err := db.Exec(`UPDATE users SET role='admin' WHERE id=42`); err != nil {
 		t.Fatal(err)
 	}
-	if status, body, _ := b.get("/verwaltung/benutzer"); status != 200 || !strings.Contains(body, "person@fsv-wh.de") {
+	if status, body, _ := b.get("/admin/users"); status != 200 || !strings.Contains(body, "person@fsv-wh.de") {
 		t.Fatal("live directory or updated role not used")
 	}
 	// Build a fresh handler and service, keeping only the database and browser cookie.
@@ -163,13 +166,13 @@ func TestPersistentLoginAuthorizationAndLogout(t *testing.T) {
 	restarted := httptest.NewServer(handler)
 	defer restarted.Close()
 	b.server = restarted
-	if status, _, _ := b.get("/verwaltung"); status != 200 {
+	if status, _, _ := b.get("/admin"); status != 200 {
 		t.Fatal("session lost after handler restart")
 	}
 	if status, _, _ := b.post("/logout", url.Values{"csrf": {rotated}}); status != 303 {
 		t.Fatal("logout failed")
 	}
-	if status, _, headers := b.get("/verwaltung"); status != 303 || headers.Get("Location") != "/login" {
+	if status, _, headers := b.get("/admin"); status != 303 || headers.Get("Location") != "/login" {
 		t.Fatal("logout retained administration access")
 	}
 }
@@ -195,8 +198,11 @@ func TestPersistentRegistrationAndRecoveryJourney(t *testing.T) {
 	if status, _, _ := b.post("/register", url.Values{}); status != 403 {
 		t.Fatal("registration accepted missing CSRF")
 	}
-	if status, body, _ := b.post("/register", form); status != 200 || !strings.Contains(body, "Dein Konto wurde erstellt.") {
+	if status, body, h := b.post("/register", form); status != 303 || h.Get("Location") != "/register" {
 		t.Fatalf("registration: %d %s", status, body)
+	}
+	if status, body, _ := b.get("/register"); status != 200 || !strings.Contains(body, "Dein Konto wurde erstellt.") {
+		t.Fatal("registration receipt missing")
 	}
 	verifyPath := mailTokenPath(t, db, "verify")
 	_, body, _ = b.get(verifyPath)
@@ -205,21 +211,24 @@ func TestPersistentRegistrationAndRecoveryJourney(t *testing.T) {
 		t.Fatal("GET consumed verification token")
 	}
 	u, _ := url.Parse(verifyPath)
-	if status, _, _ := b.post("/verify", url.Values{"csrf": {csrfFrom(t, body)}, "token": {u.Query().Get("token")}}); status != 200 {
+	if status, _, h := b.post("/email/confirm", url.Values{"csrf": {csrfFrom(t, body)}, "token": {u.Query().Get("token")}}); status != 303 || h.Get("Location") != "/email/confirm" {
 		t.Fatal("verification failed")
 	}
-	_, body, _ = b.get("/forgot")
-	if status, body, _ := b.post("/forgot", url.Values{"csrf": {csrfFrom(t, body)}, "email": {"kim@studmail.w-hs.de"}}); status != 200 || !strings.Contains(body, "Wenn ein Konto") {
+	_, body, _ = b.get("/password/forgot")
+	if status, _, h := b.post("/password/forgot", url.Values{"csrf": {csrfFrom(t, body)}, "email": {"kim@studmail.w-hs.de"}}); status != 303 || h.Get("Location") != "/password/forgot" {
 		t.Fatal("reset request failed")
+	}
+	if status, body, _ := b.get("/password/forgot"); status != 200 || !strings.Contains(body, "Wenn ein Konto") {
+		t.Fatal("reset receipt missing")
 	}
 	resetPath := mailTokenPath(t, db, "reset")
 	_, body, _ = b.get(resetPath)
 	u, _ = url.Parse(resetPath)
 	reset := url.Values{"csrf": {csrfFrom(t, body)}, "token": {u.Query().Get("token")}, "password": {"replacement 🔐"}}
-	if status, _, _ := b.post("/reset", reset); status != 200 {
+	if status, _, _ := b.post("/password/reset", reset); status != 303 {
 		t.Fatal("reset failed")
 	}
-	if status, _, _ := b.post("/reset", reset); status != 422 {
+	if status, _, _ := b.post("/password/reset", reset); status != 422 {
 		t.Fatal("reset token reused")
 	}
 	s := users.NewService(db, "https://example.org", users.DomainPolicy{Registration: []string{"studmail.w-hs.de"}, Accounts: []string{"studmail.w-hs.de", "fsv-wh.de"}})

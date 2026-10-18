@@ -81,6 +81,13 @@ func queuedToken(t *testing.T, db *sql.DB, kind string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
+	wantPath := "/email/confirm"
+	if kind == "reset" {
+		wantPath = "/password/reset"
+	}
+	if u.Path != wantPath {
+		t.Fatalf("queued %s link path = %q, want %q", kind, u.Path, wantPath)
+	}
 	return u.Query().Get("token")
 }
 

@@ -17,29 +17,29 @@ func TestMasterDataFollowsAdminFormAndPublicationPatterns(t *testing.T) {
 	server := httptest.NewServer(c)
 	defer server.Close()
 	b := newAdminBrowser(t, server)
-	if status, _, headers := b.get("/verwaltung/stammdaten"); status != 303 || headers.Get("Location") != "/login" {
+	if status, _, headers := b.get("/admin/settings"); status != 303 || headers.Get("Location") != "/login" {
 		t.Fatal("master data is public")
 	}
 	b.login()
-	for _, path := range []string{"/verwaltung/stammdaten", "/verwaltung/stammdaten/identitaet", "/verwaltung/stammdaten/kontakt", "/verwaltung/stammdaten/rechtliches", "/verwaltung/stammdaten/verknuepfungen"} {
+	for _, path := range []string{"/admin/settings", "/admin/settings/identity", "/admin/settings/contact", "/admin/settings/legal", "/admin/settings/links"} {
 		if status, body, _ := b.get(path); status != 200 || !strings.Contains(body, "Stammdaten") {
 			t.Fatalf("missing form: %s %d", path, status)
 		}
 	}
 	form := url.Values{"Name": {"Changed Council"}, "ShortName": {"Example Council"}, "FormalName": {"Example Representative Body"}, "Institution": {"Example University"}}
-	if status, _, _ := b.post("/verwaltung/stammdaten/identitaet", form); status != 403 {
+	if status, _, _ := b.post("/admin/settings/identity", form); status != 403 {
 		t.Fatal("missing CSRF accepted")
 	}
 	form.Set("csrf", b.csrf)
 	form.Set("Name", "")
-	if status, body, _ := b.post("/verwaltung/stammdaten/identitaet", form); status != 422 || !strings.Contains(body, `href="#Name"`) || !strings.Contains(body, `value="Example University"`) {
+	if status, body, _ := b.post("/admin/settings/identity", form); status != 422 || !strings.Contains(body, `href="#Name"`) || !strings.Contains(body, `value="Example University"`) {
 		t.Fatal("invalid form lost input or field errors")
 	}
 	if c.organization.Current().Name == "" {
 		t.Fatal("invalid submission changed published settings")
 	}
 	form.Set("Name", "Changed Council")
-	if status, _, headers := b.post("/verwaltung/stammdaten/identitaet", form); status != 303 || headers.Get("Location") != "/verwaltung/stammdaten?gespeichert=1" {
+	if status, _, headers := b.post("/admin/settings/identity", form); status != 303 || headers.Get("Location") != "/admin/settings" {
 		t.Fatal("valid changes did not redirect")
 	}
 	if status, body, _ := b.get("/"); status != 200 || !strings.Contains(body, "Changed Council") || !strings.Contains(body, "Example Council") {
@@ -50,11 +50,11 @@ func TestMasterDataFollowsAdminFormAndPublicationPatterns(t *testing.T) {
 		t.Fatal("settings were not durable", err)
 	}
 	form = url.Values{"csrf": {b.csrf}, "SocialLinksTitle": {"Bad link"}, "SocialLinksURL": {"javascript:alert(1)"}}
-	if status, body, _ := b.post("/verwaltung/stammdaten/verknuepfungen", form); status != 422 || !strings.Contains(body, `href="#SocialLinks"`) {
+	if status, body, _ := b.post("/admin/settings/links", form); status != 422 || !strings.Contains(body, `href="#SocialLinks"`) {
 		t.Fatal("unsafe URL accepted or error not linked")
 	}
 	form.Set("SocialLinksURL", "https://social.example.org/")
-	if status, _, _ := b.post("/verwaltung/stammdaten/verknuepfungen", form); status != 303 {
+	if status, _, _ := b.post("/admin/settings/links", form); status != 303 {
 		t.Fatal("valid links not saved")
 	}
 	if _, body, _ := b.get("/contact"); !strings.Contains(body, `href="https://social.example.org/"`) || strings.Contains(body, "discord.com/invite") {
@@ -71,7 +71,7 @@ func TestMasterDataFollowsAdminFormAndPublicationPatterns(t *testing.T) {
 	if _, err := db.Exec("UPDATE users SET role='editor' WHERE id=900"); err != nil {
 		t.Fatal(err)
 	}
-	if status, _, _ := b.get("/verwaltung/stammdaten"); status != 403 {
+	if status, _, _ := b.get("/admin/settings"); status != 403 {
 		t.Fatal("editor can access master data")
 	}
 	if _, err := c.organization.Save(context.Background(), 900, details); err != organization.ErrForbidden {
@@ -103,17 +103,17 @@ func TestMasterDataRevisionDate(t *testing.T) {
 		values.Add("RegulationLinksTitle", link.Title)
 		values.Add("RegulationLinksURL", link.URL)
 	}
-	if status, body, _ := b.get("/verwaltung/stammdaten/rechtliches"); status != 200 || strings.Contains(body, "Stand der rechtlichen Informationen") || strings.Contains(body, "LegalUpdated-day") {
+	if status, body, _ := b.get("/admin/settings/legal"); status != 200 || strings.Contains(body, "Stand der rechtlichen Informationen") || strings.Contains(body, "LegalUpdated-day") {
 		t.Fatal("revision date should not be editable")
 	}
-	if _, body, _ := b.get("/verwaltung/stammdaten/rechtliches"); !strings.Contains(body, `name="RegulationLinksURL"`) || strings.Contains(body, `name="RegulationLinksTitle"`) || strings.Contains(body, "Zum Entfernen") || strings.Contains(body, "Neue Verknüpfung") {
+	if _, body, _ := b.get("/admin/settings/legal"); !strings.Contains(body, `name="RegulationLinksURL"`) || strings.Contains(body, `name="RegulationLinksTitle"`) || strings.Contains(body, "Zum Entfernen") || strings.Contains(body, "Neue Verknüpfung") {
 		t.Fatal("legal links are missing or contain unnecessary guidance")
 	}
-	if _, body, _ := b.get("/verwaltung/stammdaten/verknuepfungen"); strings.Contains(body, `name="RegulationLinksTitle"`) || strings.Contains(body, "Zum Entfernen") {
+	if _, body, _ := b.get("/admin/settings/links"); strings.Contains(body, `name="RegulationLinksTitle"`) || strings.Contains(body, "Zum Entfernen") {
 		t.Fatal("legal links still appear in the general links form")
 	}
 	values.Set("LegalUpdated", "1900-01-01")
-	if status, _, _ := b.post("/verwaltung/stammdaten/rechtliches", values); status != 303 || c.organization.Current().LegalUpdated != d.LegalUpdated {
+	if status, _, _ := b.post("/admin/settings/legal", values); status != 303 || c.organization.Current().LegalUpdated != d.LegalUpdated {
 		t.Fatal("unchanged save or submitted date changed revision date")
 	}
 	if got := c.organization.Current(); len(got.RegulationLinks) != len(d.RegulationLinks) || len(got.SocialLinks) != len(d.SocialLinks) {
@@ -121,7 +121,7 @@ func TestMasterDataRevisionDate(t *testing.T) {
 	}
 	values.Del("RegulationLinksTitle")
 	values["RegulationLinksURL"][0] = "https://example.org/statute.pdf"
-	if status, _, _ := b.post("/verwaltung/stammdaten/rechtliches", values); status != 303 {
+	if status, _, _ := b.post("/admin/settings/legal", values); status != 303 {
 		t.Fatal("URL-only legal links form could not be saved")
 	}
 	if got := c.organization.Current().RegulationLinks[0]; got.Title != d.RegulationLinks[0].Title || got.URL != "https://example.org/statute.pdf" {
@@ -131,7 +131,7 @@ func TestMasterDataRevisionDate(t *testing.T) {
 		t.Fatal("legal change did not update revision date automatically")
 	}
 	values.Set("HostingURL", "invalid")
-	if status, _, _ := b.post("/verwaltung/stammdaten/rechtliches", values); status != 422 {
+	if status, _, _ := b.post("/admin/settings/legal", values); status != 422 {
 		t.Fatal("invalid legal information was accepted")
 	}
 }
@@ -144,23 +144,23 @@ func TestMasterDataTaskListReflectsSavedEntries(t *testing.T) {
 	b.login()
 	original := c.organization.Current()
 	d := original
-	d.Office, d.ChairResponsibility, d.PublicityResponsibility = "", "", ""
+	d.Office, d.ChairRole, d.PublicityRole = "", "", ""
 	d.SocialLinks, d.ElectionLinks, d.RegulationLinks = nil, nil, nil
 	if fields, err := c.organization.Save(context.Background(), 900, d); err != nil || len(fields) != 0 {
 		t.Fatal("cannot save optional missing entries", fields, err)
 	}
 	check := func(incomplete bool) {
 		t.Helper()
-		status, body, _ := b.get("/verwaltung/stammdaten")
+		status, body, _ := b.get("/admin/settings")
 		if status != 200 || !strings.Contains(body, `class="govuk-task-list"`) {
 			t.Fatal("missing task list")
 		}
-		for _, id := range []string{"identitaet"} {
+		for _, id := range []string{"identity"} {
 			if !htmlContains(body, `id="stammdaten-`+id+`-status">Vollständig`) {
 				t.Fatalf("%s should be complete", id)
 			}
 		}
-		for _, id := range []string{"kontakt", "rechtliches", "verknuepfungen"} {
+		for _, id := range []string{"contact", "legal", "links"} {
 			marker := `id="stammdaten-` + id + `-status">`
 			if incomplete {
 				marker += `<strong class="govuk-tag govuk-tag--blue">Unvollständig`
@@ -176,7 +176,7 @@ func TestMasterDataTaskListReflectsSavedEntries(t *testing.T) {
 		}
 	}
 	check(true)
-	b.get("/verwaltung/stammdaten/kontakt")
+	b.get("/admin/settings/contact")
 	check(true)
 	if fields, err := c.organization.Save(context.Background(), 900, original); err != nil || len(fields) != 0 {
 		t.Fatal(fields, err)
@@ -202,22 +202,22 @@ func TestLegalRevisionFollowsLinkedContactChanges(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if status, body, _ := b.get("/impressum"); status != 200 || !strings.Contains(body, "Zuletzt aktualisiert am "+date.Format("02.01.2006")) {
+		if status, body, _ := b.get("/legal"); status != 200 || !strings.Contains(body, "Zuletzt aktualisiert am "+date.Format("02.01.2006")) {
 			t.Fatal("legal revision was not published immediately")
 		}
 	}
 	reset()
-	chair := c.people.People()[0]
-	if errors := c.people.SavePerson(chair); len(errors) != 0 {
+	chair := c.members.Members()[0]
+	if errors := c.members.SaveMember(chair); len(errors) != 0 {
 		t.Fatal(errors)
 	}
-	role := c.people.Responsibilities("board")[0]
-	if errors := c.people.SaveResponsibility(role); len(errors) != 0 {
+	role := c.members.Roles("board")[0]
+	if errors := c.members.SaveRole(role); len(errors) != 0 {
 		t.Fatal(errors)
 	}
 	check("2000-01-01")
 	chair.Name = "Updated Chair"
-	if errors := c.people.SavePerson(chair); len(errors) != 0 {
+	if errors := c.members.SaveMember(chair); len(errors) != 0 {
 		t.Fatal(errors)
 	}
 	today := time.Now().UTC().Format(time.DateOnly)

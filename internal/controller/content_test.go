@@ -62,20 +62,20 @@ func TestMeetingInitialSaveFailureCanRetry(t *testing.T) {
 	}
 	c := &Handler{meetings: store, views: views, identity: &users.Service{}}
 	router := http.NewServeMux()
-	router.HandleFunc("POST /verwaltung/sitzungen/{id}", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("POST /admin/meetings/{id}", func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseMultipartForm(uploadBodyLimit); err != nil {
 			t.Error(err)
 			return
 		}
 		defer r.MultipartForm.RemoveAll()
-		c.EditPublication(&sessionResponse{ResponseWriter: w, session: &session{ID: "cookie", UserID: 42, Authenticated: true, Role: "admin"}}, r, &view.AdminPage{Section: "sitzungen", SectionTitle: "Sitzungen"})
+		c.EditPublication(&sessionResponse{ResponseWriter: w, session: &session{ID: "cookie", UserID: 42, Authenticated: true, Role: "admin"}}, r, &view.AdminPage{Section: "meetings", SectionTitle: "Sitzungen"})
 	})
 	server := httptest.NewServer(router)
 	defer server.Close()
 	b := newAdminBrowser(t, server)
 	fields := map[string]string{"day": "28", "month": "10", "year": "2028", "number": "45", "kind": "Einladung"}
 	pdf := []byte("%PDF-1.4\nmeeting\n%%EOF")
-	status, body, _ := b.upload("/verwaltung/sitzungen/neu", fields, pdf)
+	status, body, _ := b.upload("/admin/meetings/create", fields, pdf)
 	if status != http.StatusUnprocessableEntity {
 		t.Fatalf("failed save status %d", status)
 	}
@@ -83,7 +83,7 @@ func TestMeetingInitialSaveFailureCanRetry(t *testing.T) {
 		t.Fatal("failed initial save claimed to retain the upload")
 	}
 	action := regexp.MustCompile(`id="admin-form"\s+action="([^"]+)"`).FindStringSubmatch(body)
-	if action == nil || action[1] != "/verwaltung/sitzungen/neu" {
+	if action == nil || action[1] != "/admin/meetings/create" {
 		t.Fatalf("failed save left nonretryable action: %v", action)
 	}
 	var count int
@@ -92,7 +92,7 @@ func TestMeetingInitialSaveFailureCanRetry(t *testing.T) {
 	}
 	storage.fail.Store(false)
 	status, _, headers := b.upload(action[1], fields, pdf)
-	if status != http.StatusSeeOther || !strings.HasSuffix(headers.Get("Location"), "/pruefen") {
+	if status != http.StatusSeeOther || !strings.HasSuffix(headers.Get("Location"), "/check") {
 		t.Fatalf("retry failed: %d %s", status, headers.Get("Location"))
 	}
 	if err := db.QueryRow("SELECT count(*) FROM meeting_publications").Scan(&count); err != nil || count != 1 {
@@ -154,6 +154,11 @@ func TestMeetingDraftUsesStableAccountOwner(t *testing.T) {
 	if err := c.meetings.Save(p); err != nil {
 		t.Fatal(err)
 	}
+	stored, ok, err := c.meetings.GetWithError(p.ID)
+	if err != nil || !ok || stored.PublicID == "" {
+		t.Fatalf("saved draft missing public ID: %+v %v", stored, err)
+	}
+	ref := stored.PublicID
 	for _, tc := range []struct {
 		name    string
 		session *session
@@ -165,8 +170,8 @@ func TestMeetingDraftUsesStableAccountOwner(t *testing.T) {
 		{"missing account", &session{ID: "42", Authenticated: true}, 404},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodGet, "/documents/draft", nil)
-			r.SetPathValue("id", p.ID)
+			r := httptest.NewRequest(http.MethodGet, "/documents/"+ref, nil)
+			r.SetPathValue("id", ref)
 			recorder := httptest.NewRecorder()
 			w := &sessionResponse{ResponseWriter: recorder, session: tc.session}
 			c.Document(w, r)
@@ -178,16 +183,16 @@ func TestMeetingDraftUsesStableAccountOwner(t *testing.T) {
 			}
 		})
 	}
-	r := httptest.NewRequest(http.MethodPost, "/verwaltung/sitzungen/draft/pruefen", nil)
-	r.SetPathValue("id", p.ID)
+	r := httptest.NewRequest(http.MethodPost, "/admin/meetings/"+ref+"/check", nil)
+	r.SetPathValue("id", ref)
 	recorder := httptest.NewRecorder()
 	w := &sessionResponse{ResponseWriter: recorder, session: &session{ID: "rotated-token", UserID: 42, Authenticated: true}}
 	c.ReviewPublication(w, r)
 	if recorder.Code != http.StatusSeeOther {
 		t.Fatalf("stable owner could not publish: %d", recorder.Code)
 	}
-	r = httptest.NewRequest(http.MethodGet, "/documents/draft", nil)
-	r.SetPathValue("id", p.ID)
+	r = httptest.NewRequest(http.MethodGet, "/documents/"+ref, nil)
+	r.SetPathValue("id", ref)
 	recorder = httptest.NewRecorder()
 	c.Document(&sessionResponse{ResponseWriter: recorder}, r)
 	if recorder.Code != http.StatusOK {
@@ -205,13 +210,13 @@ func TestMeetingYears(t *testing.T) {
 		status      int
 	}{
 		{"", "05.04.2030", 200},
-		{"?jahr=2029", "04.03.2029", 200},
-		{"?jahr=2028", "Datum uneindeutig", 200},
-		{"?jahr=1999", "Seite nicht gefunden", 404},
-		{"?jahr=invalid", "Seite nicht gefunden", 404},
+		{"?year=2029", "04.03.2029", 200},
+		{"?year=2028", "Datum uneindeutig", 200},
+		{"?year=1999", "Seite nicht gefunden", 404},
+		{"?year=invalid", "Seite nicht gefunden", 404},
 	} {
 		response := httptest.NewRecorder()
-		handler.ServeHTTP(response, httptest.NewRequest("GET", "/fachschaft/sitzungen"+tc.query, nil))
+		handler.ServeHTTP(response, httptest.NewRequest("GET", "/meetings"+tc.query, nil))
 		if response.Code != tc.status || !strings.Contains(response.Body.String(), tc.want) {
 			t.Fatalf("%s: %d %s", tc.query, response.Code, response.Body.String())
 		}

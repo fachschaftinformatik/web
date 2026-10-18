@@ -9,14 +9,14 @@
             Wir vertreten deine Interessen und helfen dir bei Fragen rund ums Informatikstudium.
           </p>
           <div class="govuk-button-group app-masthead__actions">
-            <a class="govuk-link govuk-link--inverse govuk-!-font-weight-bold" href="/discussions"
+            <a class="govuk-link govuk-link--inverse govuk-!-font-weight-bold" href="/posts"
               >Zum Forum</a
             >
-            <a class="govuk-link govuk-link--inverse" href="/community/events">Zu den Fotos</a>
+            <a class="govuk-link govuk-link--inverse" href="/media">Zu den Medien</a>
           </div>
         </div>
         <div>
-          {{ $albums := .Images.CarouselAlbums }}
+          {{ $albums := .Media.CarouselAlbums }}
           {{ if $albums }}
             <section class="app-event-carousel" aria-label="Veranstaltungsalben">
               <div class="app-event-carousel__controls" hidden>
@@ -145,7 +145,7 @@
             {{ end }}
           {{ end }}
           <p class="govuk-body">
-            <a class="govuk-link" href="/community/neuigkeiten">Alle Neuigkeiten lesen</a>
+            <a class="govuk-link" href="/news">Alle Neuigkeiten lesen</a>
           </p>
         </section>
         <section class="govuk-grid-column-full govuk-!-margin-top-6" aria-labelledby="home-events">
@@ -156,7 +156,7 @@
             <p class="govuk-body">Aktuell sind keine Veranstaltungen angekündigt.</p>
           {{ end }}
           <p class="govuk-body govuk-!-margin-bottom-0">
-            <a class="govuk-link" href="/community/veranstaltungen">Alle Veranstaltungen ansehen</a>
+            <a class="govuk-link" href="/events">Alle Veranstaltungen ansehen</a>
           </p>
         </section>
       </div>
@@ -167,11 +167,11 @@
       <section aria-labelledby="home-archive">
         <h2 class="govuk-heading-l" id="home-archive">Altklausuren</h2>
         <p class="govuk-body">
-          Finde Klausurrekonstruktionen für deine Prüfungsvorbereitung – passend zu Modul,
-          Studiengang und Prüfungsordnung.
+          Finde Altklausuren für deine Prüfungsvorbereitung – passend zu Modul, Studiengang und
+          Prüfungsordnung.
         </p>
         <p class="govuk-body">
-          <a class="govuk-link govuk-!-font-weight-bold" href="/archive">Altklausuren finden</a>
+          <a class="govuk-link govuk-!-font-weight-bold" href="/exams">Altklausuren finden</a>
         </p>
       </section>
       <section aria-labelledby="home-exchange">
@@ -181,17 +181,17 @@
           anderen Studierenden aus.
         </p>
         <p class="govuk-body">
-          <a class="govuk-link govuk-!-font-weight-bold" href="/discussions">Zum Forum</a>
+          <a class="govuk-link govuk-!-font-weight-bold" href="/posts">Zum Forum</a>
         </p>
       </section>
       <section aria-labelledby="home-team">
-        <h2 class="govuk-heading-l" id="home-team">Fachschaft</h2>
+        <h2 class="govuk-heading-l" id="home-team">Über uns</h2>
         <p class="govuk-body">
           Erfahre, wer deine Interessen vertritt, was die Fachschaft organisiert und wie du
           mitmachen kannst.
         </p>
         <p class="govuk-body">
-          <a class="govuk-link govuk-!-font-weight-bold" href="/fachschaft"
+          <a class="govuk-link govuk-!-font-weight-bold" href="/about"
             >Die Fachschaft kennenlernen</a
           >
         </p>
@@ -201,9 +201,9 @@
     <section class="govuk-grid-row" aria-labelledby="home-forum">
       <div class="govuk-grid-column-two-thirds-from-desktop">
         <h2 class="govuk-heading-l" id="home-forum">Aus dem Forum</h2>
-        {{ if .Home.Forum }}
-          <ul class="govuk-list app-forum-posts" role="list">
-            {{ range .Home.Forum }}
+        {{ if .Home.Posts }}
+          <ul class="govuk-list app-posts-list" role="list">
+            {{ range .Home.Posts }}
               <li>
                 <h3 class="govuk-heading-s govuk-!-margin-bottom-2">
                   <a class="govuk-link" href="{{ .URL }}">{{ .Title }}</a>
@@ -212,7 +212,7 @@
                   <p class="govuk-body govuk-!-margin-bottom-2">{{ .Summary }}</p>
                 {{ end }}
                 <div class="app-post-meta">
-                  {{ template "vote" (voteControl $ (printf "%s/vote" .URL) "/#home-forum" .Title .Votes .UserVote) }}
+                  {{ template "vote" (voteControl $ .VoteURL "/#home-forum" .Title .Votes .UserVote) }}
                   <p class="govuk-body-s govuk-!-margin-bottom-0">
                     <span class="govuk-visually-hidden">Veröffentlicht am </span
                     ><time datetime="{{ .DateISO }}">{{ .Date }}</time>
@@ -224,7 +224,7 @@
         {{ else }}
           <p class="govuk-body">Noch keine Themen veröffentlicht.</p>
         {{ end }}
-        <p class="govuk-body"><a class="govuk-link" href="/discussions">Alle Themen im Forum</a></p>
+        <p class="govuk-body"><a class="govuk-link" href="/posts">Alle Themen im Forum</a></p>
       </div>
     </section>
     <hr class="govuk-section-break govuk-section-break--xl govuk-section-break--visible" />
@@ -237,7 +237,7 @@
           engagieren.
         </p>
         <p class="govuk-body">
-          <a class="govuk-link" href="/fachschaft">Mehr über die Fachschaft</a>
+          <a class="govuk-link" href="/about">Mehr über die Fachschaft</a>
         </p>
       </div>
     </section>

@@ -15,13 +15,13 @@ import (
 	"github.com/fachschaftinformatik/web/internal/controller"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/email"
-	"github.com/fachschaftinformatik/web/internal/model/archive"
 	"github.com/fachschaftinformatik/web/internal/model/events"
-	"github.com/fachschaftinformatik/web/internal/model/forum"
-	"github.com/fachschaftinformatik/web/internal/model/gallery"
+	"github.com/fachschaftinformatik/web/internal/model/exams"
+	"github.com/fachschaftinformatik/web/internal/model/media"
 	"github.com/fachschaftinformatik/web/internal/model/meetings"
+	"github.com/fachschaftinformatik/web/internal/model/members"
 	"github.com/fachschaftinformatik/web/internal/model/organization"
-	"github.com/fachschaftinformatik/web/internal/model/people"
+	"github.com/fachschaftinformatik/web/internal/model/posts"
 	"github.com/fachschaftinformatik/web/internal/model/users"
 	"github.com/fachschaftinformatik/web/internal/storage"
 	"github.com/fachschaftinformatik/web/internal/storage/disk"
@@ -77,7 +77,7 @@ func newApplication(ctx context.Context, databasePath, blobPath string) (_ *appl
 			return nil, err
 		}
 	}
-	team, err := people.Open(ctx, db)
+	team, err := members.Open(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -90,10 +90,10 @@ func newApplication(ctx context.Context, databasePath, blobPath string) (_ *appl
 		return nil, err
 	}
 	identity := users.NewService(db, cfg.Domain, users.DomainPolicy{Registration: cfg.RegistrationDomains, Accounts: cfg.AccountDomains})
-	files := archive.NewService(db, objects)
+	examDocuments := exams.NewService(db, objects)
 	app.handler, err = controller.New(controller.Services{
-		Users: identity, Archive: files, People: team, Meetings: publications, Organization: org,
-		Forum: forum.NewService(db), Gallery: gallery.NewService(db, objects), Events: events.NewService(db, objects),
+		Users: identity, Exams: examDocuments, Members: team, Meetings: publications, Organization: org,
+		Posts: posts.NewService(db), Media: media.NewService(db, objects), Events: events.NewService(db, objects),
 	}, origin.Scheme == "https")
 	if err != nil {
 		return nil, err
@@ -106,8 +106,8 @@ func newApplication(ctx context.Context, databasePath, blobPath string) (_ *appl
 		defer ticker.Stop()
 		sender := email.NewSender(cfg, org)
 		for {
-			if err := files.CleanupBlobs(maintenanceCtx); err != nil && maintenanceCtx.Err() == nil {
-				log.Printf("Archive file maintenance: %v", err)
+			if err := examDocuments.CleanupBlobs(maintenanceCtx); err != nil && maintenanceCtx.Err() == nil {
+				log.Printf("Exam document maintenance: %v", err)
 			}
 			if err := publications.CleanupBlobs(maintenanceCtx); err != nil && maintenanceCtx.Err() == nil {
 				log.Printf("Meeting file maintenance: %v", err)

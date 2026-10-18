@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -16,10 +17,54 @@ import (
 	"testing"
 
 	"github.com/fachschaftinformatik/web/internal/database"
-	"github.com/fachschaftinformatik/web/internal/model/forum"
+	"github.com/fachschaftinformatik/web/internal/model/posts"
 	"github.com/fachschaftinformatik/web/internal/model/users"
+	"github.com/fachschaftinformatik/web/internal/publicid"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// publicRef allocates the same registry entry that a production write creates.
+// SQL fixtures run after migrations, so they must explicitly create their refs.
+func publicRef(t *testing.T, db *sql.DB, namespace, recordID string) string {
+	t.Helper()
+	ref, err := publicid.Ensure(context.Background(), db, namespace, recordID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ref
+}
+
+func seedPublicRefs(t *testing.T, db *sql.DB) {
+	t.Helper()
+	for namespace, table := range map[string]string{
+		"users": "users", "members": "people", "roles": "responsibilities",
+		"posts": "discussion_posts", "comments": "discussion_comments",
+		"events": "events", "albums": "events", "media": "media",
+		"programs": "programs", "modules": "modules", "documents": "archive",
+		"submissions": "archive_requests",
+	} {
+		rows, err := db.Query("SELECT id FROM " + table)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var ids []string
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				t.Fatal(err)
+			}
+			ids = append(ids, id)
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, id := range ids {
+			publicRef(t, db, namespace, id)
+		}
+	}
+}
 
 // htmlContains keeps markup assertions independent of template indentation.
 func htmlContains(body, snippet string) bool {
@@ -50,7 +95,7 @@ func testApplication(t *testing.T, records ...users.User) (*Handler, *sql.DB) {
 		t.Fatal(err)
 	}
 	if len(records) == 0 {
-		records = []users.User{{ID: "42", Name: "Kim Muster", Email: "kim@studmail.w-hs.de", Active: true}, {ID: "43", Name: "Alex Beispiel", Email: "alex@studmail.w-hs.de", Active: true}}
+		records = []users.User{{ID: 42, Name: "Kim Muster", Email: "kim@studmail.w-hs.de", Active: true}, {ID: 43, Name: "Alex Beispiel", Email: "alex@studmail.w-hs.de", Active: true}}
 	}
 	for _, user := range records {
 		if _, err := db.Exec(`INSERT INTO users(id,email,name,password,role,active,verified) VALUES(?,?,?,?,'user',1,?)`, user.ID, strings.ToLower(strings.TrimSpace(user.Email)), user.Name, string(hash), user.Verified); err != nil {
@@ -79,10 +124,10 @@ func seedPublicContent(t *testing.T, db *sql.DB) {
 			t.Fatal(err)
 		}
 	}
-	var posts []forum.Post
-	var threads []forum.Thread
+	var threads []posts.Thread
+	var posts []posts.Post
 	for path, target := range map[string]any{"snapshot.json": &posts, "threads.json": &threads} {
-		data, err := os.ReadFile("../model/forum/testdata/" + path)
+		data, err := os.ReadFile("../model/posts/testdata/" + path)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -125,6 +170,7 @@ UPDATE modules SET alias='SQL' WHERE id=11;`)
 	for _, id := range []string{"140126343856652289", "140126331227602945", "140126318313340929", "140126304396640257", "140126291885031425", "140126279717355521"} {
 		exec(`INSERT INTO media(id,event_id,user_id,title,description,access_key,mime_type,nbytes,created_at) VALUES(?,?,900,'Foto','Teilnehmende',?,'image/jpeg',5,'2025-01-01T00:00:00Z')`, id, album, id)
 	}
+	seedPublicRefs(t, db)
 }
 
 func (b *adminBrowser) loginAs(email string) {
@@ -132,10 +178,10 @@ func (b *adminBrowser) loginAs(email string) {
 	_, body, _ := b.get("/login")
 	token := csrfFrom(b.t, body)
 	status, _, headers := b.post("/login", url.Values{"email": {email}, "password": {"test password"}, "csrf": {token}})
-	if status != 303 || headers.Get("Location") != "/verwaltung" {
+	if status != 303 || headers.Get("Location") != "/admin" {
 		b.t.Fatalf("login failed: %d", status)
 	}
-	_, body, _ = b.get("/verwaltung")
+	_, body, _ = b.get("/admin")
 	b.csrf = csrfFrom(b.t, body)
 	if b.csrf == token {
 		b.t.Fatal("session not rotated at login")

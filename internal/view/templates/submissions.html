@@ -1,0 +1,7 @@
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  {{ template "submission-list" .SubmissionList }}
+  <a class="govuk-button" data-module="govuk-button" href="/exams/submissions/create"
+    >Altklausur einreichen</a
+  >
+{{ end }}

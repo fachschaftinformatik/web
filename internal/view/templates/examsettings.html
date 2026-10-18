@@ -1,0 +1,33 @@
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  <p class="govuk-body">
+    Diese Auswahl wird beim Öffnen der Altklausuren und beim Einreichen eines Dokuments
+    vorausgewählt. Du kannst die Filter jederzeit ändern. Ohne Auswahl werden alle Altklausuren
+    angezeigt.
+  </p>
+  {{ with .Upload }}
+    {{ if .Errors }}
+      <div class="govuk-error-summary" data-module="govuk-error-summary">
+        <div role="alert">
+          <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
+          <div class="govuk-error-summary__body">
+            <ul class="govuk-list govuk-error-summary__list">
+              <li><a href="#program-0">{{ index .Errors "preferences" }}</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    {{ end }}
+    <form action="{{ .Action }}" method="post" novalidate>
+      <input type="hidden" name="csrf" value="{{ $.CSRF }}" />
+      {{ template "upload-scope" (scopeField "degree" "Abschlüsse" .Degrees "") }}
+      {{ template "upload-scope" (scopeField "program" "Studiengänge" .Programs "") }}
+      {{ template "upload-scope" (scopeField "version" "Prüfungsordnungen" .Versions "") }}
+      <div class="govuk-button-group">
+        <button class="govuk-button" type="submit" data-module="govuk-button">
+          Voreinstellungen speichern</button
+        ><a class="govuk-link" href="/exams">Abbrechen</a>
+      </div>
+    </form>
+  {{ end }}
+{{ end }}

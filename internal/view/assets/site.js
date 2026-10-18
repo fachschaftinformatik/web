@@ -199,7 +199,7 @@ initAssignmentSearch(document);
 // Files stay in the browser until a valid draft has been saved.
 const uploadResponses = new WeakMap();
 document.addEventListener("htmx:beforeRequest", (event) => {
-  if (!event.detail.elt.matches("form.app-archive-upload")) return;
+  if (!event.detail.elt.matches("form.app-exams-upload")) return;
   uploadResponses.set(event.detail.xhr, [...event.detail.elt.querySelector('[name="files"]').files]);
 });
 document.addEventListener("htmx:beforeSwap", (event) => {
@@ -389,19 +389,19 @@ if (carousel) {
 
 // Return links retain the album page and focus the originating thumbnail.
 const returnThumbnail = document.getElementById(window.location.hash.slice(1));
-if (returnThumbnail?.matches(".app-gallery-link")) {
+if (returnThumbnail?.matches(".app-media-link")) {
   returnThumbnail.focus({ preventScroll: true });
 }
 
 // Keep the image pages as ordinary links, including without JavaScript.
 // Shortcuts are scoped to the viewer and never intercept text entry.
-const galleryViewer = document.querySelector(".app-gallery-viewer");
-if (galleryViewer) {
+const mediaViewer = document.querySelector(".app-media-viewer");
+if (mediaViewer) {
   document.addEventListener("keydown", (event) => {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
         event.target.closest("input, textarea, select, [contenteditable], [role='textbox']")) return;
-    const selector = { ArrowLeft: '[rel="prev"]', ArrowRight: '[rel="next"]', Escape: '.app-gallery-return' }[event.key];
-    const link = selector && galleryViewer.querySelector(selector);
+    const selector = { ArrowLeft: '[rel="prev"]', ArrowRight: '[rel="next"]', Escape: '.app-media-return' }[event.key];
+    const link = selector && mediaViewer.querySelector(selector);
     if (link) {
       event.preventDefault();
       window.location.assign(link.href);
@@ -409,17 +409,17 @@ if (galleryViewer) {
   });
 }
 
-const archiveForm = document.querySelector("#archive-search");
-const archiveFilters = document.querySelector(".app-archive-filters");
-if (archiveFilters) {
-  archiveFilters.open =
+const examsForm = document.querySelector("#exams-search");
+const examsFilters = document.querySelector(".app-exams-filters");
+if (examsFilters) {
+  examsFilters.open =
     window.matchMedia("(min-width: 48.0625em)").matches ||
-    archiveFilters.dataset.active === "true";
+    examsFilters.dataset.active === "true";
 }
-archiveForm?.addEventListener("change", () => {
+examsForm?.addEventListener("change", () => {
   let count = 0;
   for (const name of ["degree", "program", "version"]) {
-    const selected = archiveForm.querySelectorAll(`[name="${name}"]:checked`).length;
+    const selected = examsForm.querySelectorAll(`[name="${name}"]:checked`).length;
     count += selected;
   }
   document.querySelector("#filter-label").textContent = count
@@ -428,13 +428,13 @@ archiveForm?.addEventListener("change", () => {
 });
 
 document.addEventListener("htmx:beforeRequest", (event) => {
-  if (event.detail.target?.id !== "archive-results") return;
+  if (event.detail.target?.id !== "exams-results") return;
   document.querySelector("#search-error").hidden = true;
   event.detail.target.setAttribute("aria-busy", "true");
 });
 
 document.addEventListener("htmx:afterRequest", (event) => {
-  if (event.detail.target?.id !== "archive-results") return;
+  if (event.detail.target?.id !== "exams-results") return;
   event.detail.target.removeAttribute("aria-busy");
   if (event.detail.failed) {
     const error = document.querySelector("#search-error");
@@ -443,9 +443,9 @@ document.addEventListener("htmx:afterRequest", (event) => {
 });
 
 document.addEventListener("htmx:afterSwap", (event) => {
-  if (event.detail.target?.id !== "archive-results") return;
+  if (event.detail.target?.id !== "exams-results") return;
   // An explicit search submission moves focus to the new result heading.
   document.querySelector("#results-heading")?.focus();
-  const resultsTitle = document.querySelector("#archive-results")?.dataset.documentTitle;
+  const resultsTitle = document.querySelector("#exams-results")?.dataset.documentTitle;
   if (resultsTitle) document.title = resultsTitle;
 });

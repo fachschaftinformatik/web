@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/fachschaftinformatik/web/internal/model/archive"
 	"github.com/fachschaftinformatik/web/internal/model/events"
-	"github.com/fachschaftinformatik/web/internal/model/forum"
-	"github.com/fachschaftinformatik/web/internal/model/gallery"
+	"github.com/fachschaftinformatik/web/internal/model/exams"
+	"github.com/fachschaftinformatik/web/internal/model/media"
 	"github.com/fachschaftinformatik/web/internal/model/meetings"
+	"github.com/fachschaftinformatik/web/internal/model/members"
 	"github.com/fachschaftinformatik/web/internal/model/organization"
-	"github.com/fachschaftinformatik/web/internal/model/people"
+	"github.com/fachschaftinformatik/web/internal/model/posts"
 	"github.com/fachschaftinformatik/web/internal/model/users"
 	"github.com/fachschaftinformatik/web/internal/view"
 )
@@ -54,30 +54,30 @@ type Handler struct {
 	organization  *organization.Store
 	router        http.Handler
 	views         *view.Renderer
-	people        *people.Store
+	members       *members.Store
 	meetings      *meetings.Store
 	identity      *users.Service
 	secureCookies bool
-	archive       *archive.Service
-	forum         *forum.Service
-	gallery       *gallery.Service
+	exams         *exams.Service
+	posts         *posts.Service
+	media         *media.Service
 	events        *events.Service
 }
 
 type Services struct {
 	Organization *organization.Store
 	Users        *users.Service
-	Archive      *archive.Service
-	People       *people.Store
+	Exams        *exams.Service
+	Members      *members.Store
 	Meetings     *meetings.Store
-	Forum        *forum.Service
-	Gallery      *gallery.Service
+	Posts        *posts.Service
+	Media        *media.Service
 	Events       *events.Service
 }
 
 // New constructs the HTML application with its required dependencies.
 func New(services Services, secureCookies bool) (*Handler, error) {
-	if services.Organization == nil || services.Users == nil || services.Archive == nil || services.People == nil || services.Meetings == nil || services.Forum == nil || services.Gallery == nil || services.Events == nil {
+	if services.Organization == nil || services.Users == nil || services.Exams == nil || services.Members == nil || services.Meetings == nil || services.Posts == nil || services.Media == nil || services.Events == nil {
 		return nil, errors.New("application services are incomplete")
 	}
 	views, err := view.NewRenderer()
@@ -85,8 +85,8 @@ func New(services Services, secureCookies bool) (*Handler, error) {
 		return nil, err
 	}
 	c := &Handler{views: views, secureCookies: secureCookies, organization: services.Organization,
-		identity: services.Users, archive: services.Archive, people: services.People,
-		meetings: services.Meetings, forum: services.Forum, gallery: services.Gallery, events: services.Events}
+		identity: services.Users, exams: services.Exams, members: services.Members,
+		meetings: services.Meetings, posts: services.Posts, media: services.Media, events: services.Events}
 	c.router = c.routes()
 	return c, nil
 }
@@ -105,6 +105,11 @@ func (c *Handler) serverError(w http.ResponseWriter, err error) {
 }
 
 func (c *Handler) renderStatus(w http.ResponseWriter, page string, fragment bool, data view.Page, status int) {
+	if status != http.StatusOK || fragment {
+		data.CanonicalURL = ""
+	} else if response, ok := w.(*sessionResponse); ok && data.CanonicalURL == "" {
+		data.CanonicalURL = response.canonicalURL
+	}
 	if c.organization != nil {
 		data.Organization = c.organization.Current()
 	}
@@ -113,14 +118,14 @@ func (c *Handler) renderStatus(w http.ResponseWriter, page string, fragment bool
 		data.RegistrationDomains = view.DomainLabels(domains.Registration)
 		data.AccountDomains = view.DomainLabels(domains.Accounts)
 	}
-	if c.people != nil {
-		for _, role := range c.people.Responsibilities("board") {
-			if role.ID == data.Organization.ChairResponsibility {
+	if c.members != nil {
+		for _, role := range c.members.Roles("board") {
+			if role.ID == data.Organization.ChairRole {
 				data.ChairEmail = role.Email
 			}
 		}
-		for _, role := range c.people.Responsibilities("departments") {
-			if role.ID == data.Organization.PublicityResponsibility {
+		for _, role := range c.members.Roles("departments") {
+			if role.ID == data.Organization.PublicityRole {
 				data.PublicityEmail = role.Email
 			}
 		}

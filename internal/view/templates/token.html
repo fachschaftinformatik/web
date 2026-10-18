@@ -19,7 +19,7 @@
   <h1 class="govuk-heading-l">{{ .Title }}</h1>
   {{ if .Token.Done }}
     <p class="govuk-body">
-      {{ if eq .Token.Kind "verify" }}
+      {{ if eq .Token.Kind "confirm" }}
         Deine E-Mail-Adresse ist bestätigt.
       {{ else }}
         Dein Passwort wurde geändert. Melde dich mit deinem neuen Passwort an.
@@ -27,7 +27,15 @@
     </p>
     <p class="govuk-body"><a class="govuk-link" href="/login">Zur Anmeldung</a></p>
   {{ else }}
-    <form action="/{{ .Token.Kind }}" method="post" novalidate>
+    <form
+      action="{{- if eq .Token.Kind "reset" -}}
+        /password/reset
+      {{- else -}}
+        /email/confirm
+      {{- end -}}"
+      method="post"
+      novalidate
+    >
       <input type="hidden" name="csrf" value="{{ .CSRF }}" />
       <input type="hidden" name="token" value="{{ .Token.Value }}" />
       {{ if eq .Token.Kind "reset" }}
@@ -51,7 +59,7 @@
         <p class="govuk-body">Bestätige deine E-Mail-Adresse, um dich anmelden zu können.</p>
       {{ end }}
       <button class="govuk-button" id="confirm" type="submit" data-module="govuk-button">
-        {{ if eq .Token.Kind "verify" }}
+        {{ if eq .Token.Kind "confirm" }}
           E-Mail-Adresse bestätigen
         {{ else }}
           Passwort speichern

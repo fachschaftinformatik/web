@@ -28,62 +28,24 @@
     {{ end }}
     {{ if .ChooseScope }}
       <p class="govuk-body">
-        Wähle alle Abschlüsse, Studiengänge und Prüfungsordnungen aus, für die die Reko gilt. Im
+        Wähle alle Abschlüsse, Studiengänge und Prüfungsordnungen aus, für die das Dokument gilt. Im
         nächsten Schritt wählst du die passenden Module und lädst die Datei hoch.
       </p>
       <form action="{{ .Action }}" method="get" novalidate>
-        <input type="hidden" name="scope" value="1" />
-        {{ if .ReviewEditing }}
-          <input type="hidden" name="edit_token" value="{{ .EditToken }}" />
+        {{ if .RevisionID }}
+          <input type="hidden" name="revision" value="{{ .RevisionID }}" />
         {{ end }}
         {{ template "upload-scope" (scopeField "degree" "Abschlüsse" .Degrees (index .Errors "degree")) }}
         {{ template "upload-scope" (scopeField "program" "Studiengänge" .Programs (index .Errors "program")) }}
         {{ template "upload-scope" (scopeField "version" "Prüfungsordnungen" .Versions (index .Errors "version")) }}
         <div class="govuk-button-group">
           <button class="govuk-button" type="submit" data-module="govuk-button">Weiter</button
-          ><a
-            class="govuk-link"
-            href="{{- if .ReviewEditing -}}
-              /verwaltung/einreichungen/{{ .RequestID }}
-            {{- else -}}
-              /archive
-            {{- end -}}"
-            >Abbrechen</a
-          >
+          ><a class="govuk-link" href="{{ .CancelURL }}">Abbrechen</a>
         </div>
       </form>
     {{ else }}
-      <dl class="govuk-summary-list">
-        <div class="govuk-summary-list__row">
-          <dt class="govuk-summary-list__key">Abschlüsse</dt>
-          <dd class="govuk-summary-list__value">
-            {{ range $i,$value:=.Scope.Degrees }}{{ if $i }}<br />{{ end }}{{ $value }}{{ end }}
-          </dd>
-          <dd class="govuk-summary-list__actions">
-            <a class="govuk-link" href="{{ .Action }}?choose_scope=1"
-              >Ändern<span class="govuk-visually-hidden"
-                >: Abschlüsse, Studiengänge und Prüfungsordnungen</span
-              ></a
-            >
-          </dd>
-        </div>
-        <div class="govuk-summary-list__row">
-          <dt class="govuk-summary-list__key">Studiengänge</dt>
-          <dd class="govuk-summary-list__value">
-            {{ range $i,$value:=.Scope.Programs }}{{ if $i }}<br />{{ end }}{{ $value }}{{ end }}
-          </dd>
-        </div>
-        <div class="govuk-summary-list__row">
-          <dt class="govuk-summary-list__key">Prüfungsordnungen</dt>
-          <dd class="govuk-summary-list__value">
-            {{ range $i,$value:=.Scope.Versions }}
-              {{ if $i }}<br />{{ end }}{{ poLabel $value }}
-            {{ end }}
-          </dd>
-        </div>
-      </dl>
       <form
-        class="app-archive-upload"
+        class="app-exams-upload"
         action="{{ .Action }}"
         method="post"
         enctype="multipart/form-data"
@@ -94,17 +56,17 @@
         hx-select="#main-content"
         hx-swap="outerHTML"
       >
-        <input type="hidden" name="csrf" value="{{ $.CSRF }}" /><input
-          type="hidden"
-          name="scope"
-          value="1"
-        /><input type="hidden" name="module_selection" value="1" />
+        <input type="hidden" name="csrf" value="{{ $.CSRF }}" />
+        <input type="hidden" name="module_selection" value="1" />
+        {{ if .RevisionID }}
+          <input type="hidden" name="revision" value="{{ .RevisionID }}" />
+        {{ end }}
         {{ if .ReviewEditing }}
           <input type="hidden" name="edit_token" value="{{ .EditToken }}" />
         {{ end }}
-        {{ range .Scope.Programs }}<input type="hidden" name="program" value="{{ . }}" />{{ end }}
-        {{ range .Scope.Degrees }}<input type="hidden" name="degree" value="{{ . }}" />{{ end }}
-        {{ range .Scope.Versions }}<input type="hidden" name="version" value="{{ . }}" />{{ end }}
+        {{ template "upload-scope" (scopeField "degree" "Abschlüsse" .Degrees (index .Errors "degree")) }}
+        {{ template "upload-scope" (scopeField "program" "Studiengänge" .Programs (index .Errors "program")) }}
+        {{ template "upload-scope" (scopeField "version" "Prüfungsordnungen" .Versions (index .Errors "version")) }}
         <div
           class="govuk-form-group {{ if index .Errors "module_id" }}
             govuk-form-group--error
@@ -117,7 +79,7 @@
             aria-describedby="modules-hint{{ if index .Errors "module_id" }}module-error{{ end }}"
           >
             <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-              Für welche Module gilt die Reko?
+              Für welche Module gilt das Dokument?
             </legend>
             <div class="govuk-hint" id="modules-hint">Wähle alle passenden Module aus.</div>
             {{ if index .Errors "module_id" }}
@@ -205,7 +167,8 @@
             <ul class="govuk-list">
               {{ range .Existing }}
                 <li>
-                  <a class="govuk-link" href="{{ .URL }}">Reko {{ .Number }}</a> (PDF, {{ .Size }})
+                  <a class="govuk-link" href="{{ .URL }}">Dokument {{ .Number }}</a> (PDF,
+                  {{ .Size }})
                 </li>
               {{ end }}
             </ul>
@@ -234,15 +197,7 @@
         <div class="govuk-button-group">
           <button class="govuk-button" type="submit" data-module="govuk-button">
             {{ if .ReviewEditing }}Änderungen speichern{{ else }}Angaben prüfen{{ end }}</button
-          ><a
-            class="govuk-link"
-            href="{{- if .ReviewEditing -}}
-              /verwaltung/einreichungen/{{ .RequestID }}
-            {{- else -}}
-              /archive
-            {{- end -}}"
-            >Abbrechen</a
-          >
+          ><a class="govuk-link" href="{{ .CancelURL }}">Abbrechen</a>
         </div>
       </form>
     {{ end }}

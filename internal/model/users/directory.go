@@ -7,14 +7,18 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/fachschaftinformatik/web/internal/publicid"
 )
 
 // User is a login identity, independent of a public person profile.
 type User struct {
-	ID, Name, Email, Role string
-	Program               string
-	Active                bool
-	Verified              bool
+	ID                int64
+	Name, Email, Role string
+	PublicID          string
+	Program           string
+	Active            bool
+	Verified          bool
 }
 
 // Directory is an immutable account display snapshot. It contains neither
@@ -33,7 +37,7 @@ func NewDirectory(records []User) *Directory {
 
 func (d *Directory) Get(id string) (User, bool) {
 	for _, user := range d.users {
-		if user.ID == id {
+		if publicid.Valid(id) && user.PublicID == id {
 			return user, true
 		}
 	}
@@ -77,19 +81,39 @@ var ErrProfileNotFound = errors.New("public profile not found")
 
 // PublicProfile contains only information a user has chosen to make public.
 type PublicProfile struct {
-	ID   int64
-	Name string
+	ID       int64
+	PublicID string
+	Name     string
 }
 
 func (s *Service) PublicProfile(ctx context.Context, value string) (PublicProfile, error) {
 	var profile PublicProfile
-	id, err := strconv.ParseInt(value, 10, 64)
-	if err != nil || id <= 0 || strconv.FormatInt(id, 10) != value {
+	id, err := s.ResolvePublicID(ctx, value)
+	if errors.Is(err, sql.ErrNoRows) {
 		return profile, ErrProfileNotFound
 	}
+	if err != nil {
+		return profile, err
+	}
+	profile.PublicID = value
 	err = s.db.QueryRowContext(ctx, `SELECT id,name FROM users WHERE id=? AND private=0 AND deleted_at IS NULL`, id).Scan(&profile.ID, &profile.Name)
 	if errors.Is(err, sql.ErrNoRows) {
 		return profile, ErrProfileNotFound
 	}
 	return profile, err
+}
+
+func (s *Service) PublicID(ctx context.Context, internal int64) (string, error) {
+	return publicid.Ensure(ctx, s.db, "users", strconv.FormatInt(internal, 10))
+}
+
+func (s *Service) ResolvePublicID(ctx context.Context, value string) (int64, error) {
+	if !publicid.Valid(value) {
+		return 0, sql.ErrNoRows
+	}
+	internal, err := publicid.Resolve(ctx, s.db, "users", value)
+	if err != nil {
+		return 0, err
+	}
+	return strconv.ParseInt(internal, 10, 64)
 }

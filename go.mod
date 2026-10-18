@@ -8,7 +8,6 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/minio/minio-go/v7 v7.4.1
 	github.com/pressly/goose/v3 v3.29.0
-	github.com/ruhrcloud/snowflake v0.0.0-20251228200157-d41d492f2e7c
 	golang.org/x/image v0.47.0
 	golang.org/x/net v0.61.0
 	modernc.org/sqlite v1.60.1

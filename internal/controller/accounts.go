@@ -5,18 +5,22 @@ import (
 	"errors"
 	"net/http"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/fachschaftinformatik/web/internal/model/users"
+	"github.com/fachschaftinformatik/web/internal/urls"
 	"github.com/fachschaftinformatik/web/internal/view"
 )
 
 func (c *Handler) ResendUserConfirmation(w http.ResponseWriter, r *http.Request) {
 
-	userID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
+	userID, err := c.identity.ResolvePublicID(r.Context(), r.PathValue("id"))
+	if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		c.serverError(w, err)
 		return
 	}
 	queued, err := c.identity.ResendConfirmation(r.Context(), userID)
@@ -28,9 +32,9 @@ func (c *Handler) ResendUserConfirmation(w http.ResponseWriter, r *http.Request)
 		c.serverError(w, err)
 		return
 	}
-	target := "/verwaltung/benutzer/" + strconv.FormatInt(userID, 10)
+	target := urls.AdminUser(r.PathValue("id"))
 	if queued {
-		target += "?bestaetigung=1"
+		flash(w, "Die E-Mail zur Bestätigung wurde zum Versand vorgemerkt.")
 	}
 	http.Redirect(w, r, target, http.StatusSeeOther)
 }
@@ -38,6 +42,10 @@ func (c *Handler) ResendUserConfirmation(w http.ResponseWriter, r *http.Request)
 func (c *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	data := view.Page{Title: "Passwort vergessen", Active: "forgot"}
+	if r.Method != http.MethodPost && takeFlash(w) == "password-reset-requested" {
+		data.Forgot.Submitted = true
+		data.Title = "Prüfe dein E-Mail-Postfach"
+	}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
@@ -55,8 +63,9 @@ func (c *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 				c.serverError(w, err)
 				return
 			}
-			data.Forgot = view.ForgotPage{Submitted: true}
-			data.Title = "Prüfe dein E-Mail-Postfach"
+			flash(w, "password-reset-requested")
+			http.Redirect(w, r, urls.ForgotPasswordPath, http.StatusSeeOther)
+			return
 		}
 
 	}
@@ -64,8 +73,7 @@ func (c *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Handler) ResendInvitation(w http.ResponseWriter, r *http.Request) {
-
-	queued, err := c.people.Resend(r.Context(), c.identity, r.PathValue("id"))
+	internal, err := c.members.ResolvePublicID(r.Context(), r.PathValue("id"))
 	if errors.Is(err, sql.ErrNoRows) {
 		c.notFound(w, r)
 		return
@@ -74,9 +82,18 @@ func (c *Handler) ResendInvitation(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
-	target := "/verwaltung/mitglieder?gespeichert=1"
+	queued, err := c.members.Resend(r.Context(), c.identity, internal)
+	if errors.Is(err, sql.ErrNoRows) {
+		c.notFound(w, r)
+		return
+	}
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
+	target := urls.AdminMembersPath
 	if queued {
-		target = "/verwaltung/mitglieder?einladung=1"
+		flash(w, "Die Einladung wurde zum Versand vorgemerkt.")
 	}
 	http.Redirect(w, r, target, http.StatusSeeOther)
 }
@@ -87,6 +104,11 @@ func (c *Handler) Invitation(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	page := view.Page{Title: "Einladung annehmen", Active: "register", Invite: view.InvitationPage{Value: r.URL.Query().Get("token")}}
 	form := &page.Invite
+	if r.Method != http.MethodPost && takeFlash(w) == "invitation-accepted" {
+		form.Done = true
+		c.render(w, "invite", false, page)
+		return
+	}
 	if r.Method == http.MethodPost {
 		form.Value = r.PostForm.Get("token")
 	}
@@ -113,7 +135,9 @@ func (c *Handler) Invitation(w http.ResponseWriter, r *http.Request) {
 							c.serverError(w, err)
 							return
 						} else {
-							form.Done = true
+							flash(w, "invitation-accepted")
+							http.Redirect(w, r, urls.AcceptInvitationPath, http.StatusSeeOther)
+							return
 						}
 					}
 				}
@@ -170,12 +194,12 @@ func (c *Handler) Login(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				c.setSessionCookie(w, r, s)
-				target := "/"
+				target := urls.HomePath
 				if s.CanAdmin() {
-					target = "/verwaltung"
+					target = urls.AdminPath
 				} else {
 					if s.CanReview() {
-						target = "/verwaltung"
+						target = urls.AdminPath
 					}
 				}
 				http.Redirect(w, r, target, http.StatusSeeOther)
@@ -190,6 +214,9 @@ func (c *Handler) Login(w http.ResponseWriter, r *http.Request) {
 func (c *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	data := view.Page{Title: "Konto erstellen", Active: "register"}
+	if r.Method != http.MethodPost && takeFlash(w) == "registration-submitted" {
+		data.Register.Submitted = true
+	}
 
 	var err error
 	data.Register.Programs, err = c.identity.Programs(r.Context())
@@ -227,7 +254,9 @@ func (c *Handler) Register(w http.ResponseWriter, r *http.Request) {
 					c.serverError(w, err)
 					return
 				} else {
-					form.Submitted = true
+					flash(w, "registration-submitted")
+					http.Redirect(w, r, urls.RegisterPath, http.StatusSeeOther)
+					return
 				}
 			}
 		}
@@ -242,10 +271,17 @@ func (c *Handler) Token(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	kind, title := "reset", "Passwort zurücksetzen"
-	if r.URL.Path == "/verify" {
+	if r.PathValue("tokenKind") == "verify" {
 		kind, title = "verify", "E-Mail-Adresse bestätigen"
 	}
-	page := view.Page{Title: title, Active: "forgot", Token: view.TokenPage{Kind: kind, Value: r.URL.Query().Get("token")}}
+	formKind := kind
+	if kind == "verify" {
+		formKind = "confirm"
+	}
+	page := view.Page{Title: title, Active: "forgot", Token: view.TokenPage{Kind: formKind, Value: r.URL.Query().Get("token")}}
+	if r.Method != http.MethodPost && takeFlash(w) == "account-token-"+kind {
+		page.Token.Done = true
+	}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		page.Token.Value = r.PostForm.Get("token")
@@ -262,7 +298,9 @@ func (c *Handler) Token(w http.ResponseWriter, r *http.Request) {
 					c.serverError(w, err)
 					return
 				} else {
-					page.Token.Done = true
+					flash(w, "account-token-"+kind)
+					http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
+					return
 				}
 			}
 		}

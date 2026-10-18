@@ -23,7 +23,7 @@
         <li>
           <a
             class="govuk-link"
-            href="/fachschaft/sitzungen?jahr={{ . }}"
+            href="/meetings?year={{ . }}"
             {{ if eq . $.Meetings.Year }}aria-current="page"{{ end }}
             >{{ if eq . $.Meetings.Year }}<strong>{{ . }}</strong>{{ else }}{{ . }}{{ end }}</a
           >

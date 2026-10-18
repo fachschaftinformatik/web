@@ -13,17 +13,17 @@ func TestContentEditor(t *testing.T) {
 	defer server.Close()
 	b := newAdminBrowser(t, server)
 	b.login()
-	status, body, _ := b.get("/d/new")
+	status, body, _ := b.get("/posts/create")
 	if status != 200 || strings.Contains(body, "Beitragsart") || strings.Contains(body, `name="type"`) {
 		t.Fatal("editor exposes a post-type selector")
 	}
 	form := url.Values{"csrf": {b.csrf}, "title": {""}, "body": {"Ein vollständiger Beitragstext."}, "type": {"event"}, "location": {"Raum A4"}}
-	status, body, _ = b.post("/d/new", form)
+	status, body, _ = b.post("/posts/create", form)
 	if status != 422 || !strings.Contains(body, "Ein vollständiger Beitragstext.") {
 		t.Fatalf("invalid form lost submitted text: %d %s", status, body)
 	}
 	form.Set("title", "Mein Beitrag")
-	status, _, headers := b.post("/d/new", form)
+	status, _, headers := b.post("/posts/create", form)
 	if status != 303 {
 		t.Fatalf("valid post failed: %d", status)
 	}
@@ -35,10 +35,10 @@ func TestContentEditor(t *testing.T) {
 	if status, body, _ = b.get(path + "/edit"); status != 200 || !strings.Contains(body, "Mein Beitrag") {
 		t.Fatal("saved post cannot be edited")
 	}
-	if status, _, _ = b.get("/d/unknown/edit"); status != 404 {
+	if status, _, _ = b.get("/posts/unknown/edit"); status != 404 {
 		t.Fatal("unknown post editable")
 	}
-	if status, _, _ = b.request("POST", "/d/new", "application/x-www-form-urlencoded", strings.NewReader(strings.Repeat("x", 9<<20))); status != 400 {
+	if status, _, _ = b.request("POST", "/posts/create", "application/x-www-form-urlencoded", strings.NewReader(strings.Repeat("x", 9<<20))); status != 400 {
 		t.Fatalf("oversized request: %d", status)
 	}
 }
@@ -57,7 +57,7 @@ func TestRichEditorSubmission(t *testing.T) {
 		{`<p>&nbsp;</p><ul><li><br></li></ul>`, 422},
 		{`<p><strong>kurz</strong></p>`, 422},
 	} {
-		status, body, headers := b.post("/d/new", url.Values{"csrf": {b.csrf}, "title": {"Mein Beitrag"}, "rich_body": {tc.html}})
+		status, body, headers := b.post("/posts/create", url.Values{"csrf": {b.csrf}, "title": {"Mein Beitrag"}, "rich_body": {tc.html}})
 		if status != tc.status || strings.Contains(body, "bad()") {
 			t.Fatalf("%d %s", status, body)
 		}

@@ -44,10 +44,18 @@
         <h2 class="govuk-heading-l">Organisation</h2>
         <div class="app-community-cards">
           <div class="app-community-card">
+            <img
+              class="app-community-card__image"
+              src="/assets/community/propose-a-change-to-pages.svg"
+              alt=""
+              width="320"
+              height="180"
+              loading="lazy"
+            />
             <h3 class="govuk-heading-m">Stammdaten</h3>
             <p class="govuk-body">Name, Kontaktangaben, rechtliche Informationen und Links.</p>
             <p class="govuk-body">
-              <a class="govuk-link" href="/verwaltung/stammdaten">Zu den Stammdaten</a>
+              <a class="govuk-link" href="/admin/settings">Zu den Stammdaten</a>
             </p>
           </div>
           <div class="app-community-card">
@@ -64,7 +72,7 @@
               Lade Mitglieder ein, bearbeite ihre Daten und sieh, welche Funktionen sie übernehmen.
             </p>
             <p class="govuk-body">
-              <a class="govuk-link" href="/verwaltung/mitglieder">Zu den Mitgliedern</a>
+              <a class="govuk-link" href="/admin/members">Zu den Mitgliedern</a>
             </p>
           </div>
           <div class="app-community-card">
@@ -82,7 +90,7 @@
               Mitglieder zu.
             </p>
             <p class="govuk-body">
-              <a class="govuk-link" href="/verwaltung/funktionen">Zu den Funktionen</a>
+              <a class="govuk-link" href="/admin/roles">Zu den Funktionen</a>
             </p>
           </div>
           <div class="app-community-card">
@@ -99,7 +107,7 @@
               Stelle Einladungen zur Sitzung und Sitzungsprotokolle für die Studierenden bereit.
             </p>
             <p class="govuk-body">
-              <a class="govuk-link" href="/verwaltung/sitzungen">Zu den Sitzungen</a>
+              <a class="govuk-link" href="/admin/meetings">Zu den Sitzungen</a>
             </p>
           </div>
         </div>
@@ -117,11 +125,10 @@
           />
           <h3 class="govuk-heading-m">Einreichungen</h3>
           <p class="govuk-body">
-            Prüfe eingereichte Rekos und bestätige ihre Veröffentlichung im Archiv oder lehne sie
-            ab.
+            Prüfe eingereichte Dokumente und gib sie für die Altklausuren frei oder lehne sie ab.
           </p>
           <p class="govuk-body">
-            <a class="govuk-link" href="/verwaltung/einreichungen">Zu den Einreichungen</a>
+            <a class="govuk-link" href="/admin/submissions">Zu den Einreichungen</a>
           </p>
         </div>
         {{ if not .ReviewerOnly }}
@@ -140,7 +147,7 @@
               Anmeldung.
             </p>
             <p class="govuk-body">
-              <a class="govuk-link" href="/verwaltung/benutzer">Zu den Benutzerkonten</a>
+              <a class="govuk-link" href="/admin/users">Zu den Benutzerkonten</a>
             </p>
           </div>
         {{ end }}
@@ -148,13 +155,13 @@
     {{ end }}
 
     {{ if eq .View "users" }}
-      <form action="/verwaltung/benutzer" method="get" class="govuk-!-margin-bottom-6">
+      <form action="/admin/users" method="get" class="govuk-!-margin-bottom-6">
         <div class="govuk-form-group">
           <label class="govuk-label" for="user-search">Name oder E-Mail-Adresse</label
           ><input
             class="govuk-input"
             id="user-search"
-            name="q"
+            name="search"
             type="search"
             value="{{ .Query }}"
           />
@@ -167,15 +174,13 @@
           Suchen
         </button>
         {{ if .Query }}
-          <a class="govuk-link govuk-!-margin-left-3" href="/verwaltung/benutzer"
-            >Suche zurücksetzen</a
-          >
+          <a class="govuk-link govuk-!-margin-left-3" href="/admin/users">Suche zurücksetzen</a>
         {{ end }}
       </form>
       <h2 class="govuk-heading-m">{{ .Total }} Benutzerkonten gefunden</h2>
       {{ if .Users }}
         <table
-          class="govuk-table app-admin-table app-admin-users app-archive-upload-table"
+          class="govuk-table app-admin-table app-admin-users app-exams-upload-table"
           role="table"
         >
           <caption class="govuk-visually-hidden">
@@ -199,18 +204,18 @@
             {{ range .Users }}
               <tr class="govuk-table__row" role="row">
                 <th class="govuk-table__header" scope="row" role="rowheader">
-                  <a class="govuk-link" href="/verwaltung/benutzer/{{ .ID }}">{{ .Name }}</a>
+                  <a class="govuk-link" href="{{ .URL }}">{{ .Name }}</a>
                 </th>
                 <td class="govuk-table__cell" role="cell">
-                  <span class="app-archive-upload-label" aria-hidden="true">E-Mail-Adresse</span
+                  <span class="app-exams-upload-label" aria-hidden="true">E-Mail-Adresse</span
                   ><span>{{ .Email }}</span>
                 </td>
                 <td class="govuk-table__cell" role="cell">
-                  <span class="app-archive-upload-label" aria-hidden="true">Berechtigung</span
+                  <span class="app-exams-upload-label" aria-hidden="true">Berechtigung</span
                   ><span>{{ .Permission }}</span>
                 </td>
                 <td class="govuk-table__cell" role="cell">
-                  <span class="app-archive-upload-label" aria-hidden="true">Status</span
+                  <span class="app-exams-upload-label" aria-hidden="true">Status</span
                   ><span
                     >{{ template "email-status" . }}{{ if eq .Status "Inaktiv" }}
                       <p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">
@@ -297,16 +302,16 @@
       {{ end }}
     {{ end }}
 
-    {{ if eq .View "master-data" }}
+    {{ if eq .View "settings" }}
       <p class="govuk-body">Änderungen gelten sofort für Website und E-Mails.</p>
       <h2 class="govuk-heading-m">Angaben zur Organisation</h2>
       <ul class="govuk-task-list">
-        {{ range .MasterData }}
+        {{ range .OrganizationSettings }}
           <li class="govuk-task-list__item govuk-task-list__item--with-link">
             <div class="govuk-task-list__name-and-hint">
               <a
                 class="govuk-link govuk-task-list__link"
-                href="/verwaltung/stammdaten/{{ .ID }}"
+                href="/admin/settings/{{ .ID }}"
                 aria-describedby="stammdaten-{{ .ID }}-status{{ if .Missing }}
                   stammdaten-{{ .ID }}-hint
                 {{ end }}"
@@ -361,9 +366,9 @@
             </dd>
           </div>
         </dl>
-        {{ with $.Admin.Person }}
+        {{ with $.Admin.Member }}
           <p class="govuk-body">
-            <a class="govuk-link" href="/verwaltung/mitglieder/{{ .ID }}">Mitglied anzeigen</a>
+            <a class="govuk-link" href="{{ .EditURL }}">Mitglied bearbeiten</a>
           </p>
         {{ end }}
         <div class="govuk-button-group">
@@ -371,7 +376,7 @@
             class="govuk-button govuk-button--secondary"
             data-module="govuk-button"
             data-dialog="password-reset-dialog"
-            href="/verwaltung/benutzer/{{ .ID }}/passwort-zuruecksetzen"
+            href="{{ .ResetURL }}"
             >Passwort zurücksetzen</a
           >
           {{ if $.Admin.CanResendConfirmation }}
@@ -381,7 +386,7 @@
               type="submit"
               form="confirmation-form"
             >
-              {{ if $.Admin.Person }}
+              {{ if $.Admin.Member }}
                 Einladung erneut senden
               {{ else }}
                 Bestätigung erneut senden
@@ -390,11 +395,7 @@
           {{ end }}
         </div>
         {{ if $.Admin.CanResendConfirmation }}
-          <form
-            id="confirmation-form"
-            action="/verwaltung/benutzer/{{ .ID }}/bestaetigung-senden"
-            method="post"
-          >
+          <form id="confirmation-form" action="{{ .ConfirmURL }}" method="post">
             <input type="hidden" name="csrf" value="{{ $csrf }}" />
           </form>
         {{ end }}
@@ -414,15 +415,15 @@
 
     {{ if eq .View "reset" }}{{ template "password-reset-form" $ }}{{ end }}
 
-    {{ if eq .View "people" }}
+    {{ if eq .View "members" }}
       <div class="govuk-button-group">
-        <a class="govuk-button" data-module="govuk-button" href="/verwaltung/mitglieder/neu"
+        <a class="govuk-button" data-module="govuk-button" href="/admin/members/create"
           >Mitglied hinzufügen</a
         >
       </div>
       <section aria-labelledby="members-heading">
         <h2 class="govuk-heading-m" id="members-heading">Mitglieder</h2>
-        <table class="govuk-table app-admin-table app-archive-upload-table" role="table">
+        <table class="govuk-table app-admin-table app-exams-upload-table" role="table">
           <caption class="govuk-visually-hidden">
             Mitglieder und ihre Funktionen
           </caption>
@@ -437,24 +438,22 @@
             {{ range .Members }}
               <tr class="govuk-table__row" role="row">
                 <th class="govuk-table__header" scope="row" role="rowheader">
-                  <a class="govuk-link" href="/verwaltung/mitglieder/{{ .ID }}"
+                  <a class="govuk-link" href="{{ .EditURL }}"
                     >{{ .Name }}<span class="govuk-visually-hidden"> bearbeiten</span></a
                   >{{ if .AccountEmail }}
                     <p
                       class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0 app-wrap-anywhere"
                     >
-                      <a class="govuk-link" href="/verwaltung/benutzer/{{ .UserID }}"
-                        >{{ .AccountEmail }}</a
-                      >
+                      <a class="govuk-link" href="{{ .UserURL }}">{{ .AccountEmail }}</a>
                     </p>
                   {{ end }}
                 </th>
                 <td class="govuk-table__cell" role="cell">
-                  <span class="app-archive-upload-label" aria-hidden="true">Funktionen</span>
+                  <span class="app-exams-upload-label" aria-hidden="true">Funktionen</span>
                   <div>
-                    {{ if .Tasks }}
+                    {{ if .Roles }}
                       <ul class="govuk-list govuk-!-margin-bottom-0">
-                        {{ range .Tasks }}<li>{{ . }}</li>{{ end }}
+                        {{ range .Roles }}<li>{{ . }}</li>{{ end }}
                       </ul>
                     {{ else }}
                       Keine Funktionen zugeordnet
@@ -462,7 +461,7 @@
                   </div>
                 </td>
                 <td class="govuk-table__cell" role="cell">
-                  <span class="app-archive-upload-label" aria-hidden="true">Status</span
+                  <span class="app-exams-upload-label" aria-hidden="true">Status</span
                   ><strong
                     class="govuk-tag {{ if not .UserID }}
                       govuk-tag--grey
@@ -480,8 +479,8 @@
         </table>
       </section>
     {{ end }}
-    {{ if eq .View "functions" }}
-      <a class="govuk-button" data-module="govuk-button" href="/verwaltung/funktionen/neu"
+    {{ if eq .View "roles" }}
+      <a class="govuk-button" data-module="govuk-button" href="/admin/roles/create"
         >Funktion hinzufügen</a
       >
       <p class="govuk-body">
@@ -501,7 +500,7 @@
             </tr>
           </thead>
           <tbody class="govuk-table__body">
-            {{ range .Tasks }}
+            {{ range .Roles }}
               <tr class="govuk-table__row">
                 <th class="govuk-table__header" scope="row">
                   <a class="govuk-link" href="{{ .URL }}"
@@ -527,12 +526,12 @@
       </section>
     {{ end }}
 
-    {{ if eq .View "requests" }}
-      {{ template "request-list" .RequestList }}
+    {{ if eq .View "submissions" }}
+      {{ template "submission-list" .SubmissionList }}
     {{ end }}
 
     {{ if eq .View "meetings" }}
-      <a class="govuk-button" data-module="govuk-button" href="/verwaltung/sitzungen/neu"
+      <a class="govuk-button" data-module="govuk-button" href="/admin/meetings/create"
         >Dokument hinzufügen</a
       >
       <p class="govuk-body">
@@ -558,7 +557,7 @@
                   <p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">
                     <a
                       class="govuk-link"
-                      href="/verwaltung/sitzungen/neu?datum={{ .Date }}&amp;nummer={{ .Number }}"
+                      href="/admin/meetings/create?date={{ .Date }}&amp;number={{ .Number }}"
                       >Dokument hinzufügen<span class="govuk-visually-hidden">
                         zur {{ .Number }}. Sitzung vom {{ .DateLabel }}</span
                       ></a
@@ -587,15 +586,13 @@
     {{ end }}
 
     {{ if eq .View "form" }}
-      {{ with .Person }}
+      {{ with .Member }}
         {{ if .UserID }}
           <dl class="govuk-summary-list">
             <div class="govuk-summary-list__row">
               <dt class="govuk-summary-list__key">Benutzerkonto</dt>
               <dd class="govuk-summary-list__value app-wrap-anywhere">
-                <a class="govuk-link" href="/verwaltung/benutzer/{{ .UserID }}"
-                  >{{ .AccountEmail }}</a
-                >
+                <a class="govuk-link" href="{{ .UserURL }}">{{ .AccountEmail }}</a>
               </dd>
             </div>
             <div class="govuk-summary-list__row">
@@ -605,7 +602,7 @@
           </dl>
         {{ end }}
       {{ end }}
-      {{ if eq .Action "/verwaltung/stammdaten/verknuepfungen" }}
+      {{ if eq .Action "/admin/settings/links" }}
         <p class="govuk-body">Die Linktexte erscheinen auf der Website.</p>
       {{ end }}
       <form
@@ -860,8 +857,8 @@
           {{ if .Data }}
             <p class="govuk-body app-wrap-anywhere">
               Ausgewählt:
-              <a class="govuk-link" href="/documents/{{ .ID }}">{{ .Filename }}</a> (PDF,
-              {{ .Size }}). Ohne neue Auswahl wird diese Datei beibehalten.
+              <a class="govuk-link" href="{{ .URL }}">{{ .Filename }}</a> (PDF, {{ .Size }}). Ohne
+              neue Auswahl wird diese Datei beibehalten.
             </p>
           {{ end }}
         {{ end }}
@@ -874,12 +871,12 @@
             {{ else }}
               Änderungen speichern
             {{ end }}</button
-          ><a class="govuk-link" href="/verwaltung/{{ .Section }}">Abbrechen</a>
+          ><a class="govuk-link" href="/admin/{{ .Section }}">Abbrechen</a>
         </div>
       </form>
-      {{ with .Person }}
+      {{ with .Member }}
         {{ if and .UserID (not .Confirmed) }}
-          <form action="/verwaltung/mitglieder/{{ .ID }}/einladen" method="post">
+          <form action="{{ .InviteURL }}" method="post">
             <input type="hidden" name="csrf" value="{{ $csrf }}" /><button
               class="govuk-button govuk-button--secondary"
               data-module="govuk-button"
@@ -903,7 +900,7 @@
             <dt class="govuk-summary-list__key">Sitzungsdatum</dt>
             <dd class="govuk-summary-list__value">{{ .DateLabel }}</dd>
             <dd class="govuk-summary-list__actions">
-              <a class="govuk-link" href="/verwaltung/sitzungen/{{ .ID }}#date-day"
+              <a class="govuk-link" href="{{ .EditURL }}#date-day"
                 >Ändern<span class="govuk-visually-hidden">: Sitzungsdatum</span></a
               >
             </dd>
@@ -912,7 +909,7 @@
             <dt class="govuk-summary-list__key">Sitzungsnummer</dt>
             <dd class="govuk-summary-list__value">{{ .Number }}</dd>
             <dd class="govuk-summary-list__actions">
-              <a class="govuk-link" href="/verwaltung/sitzungen/{{ .ID }}#number"
+              <a class="govuk-link" href="{{ .EditURL }}#number"
                 >Ändern<span class="govuk-visually-hidden">: Sitzungsnummer</span></a
               >
             </dd>
@@ -921,7 +918,7 @@
             <dt class="govuk-summary-list__key">Dokumentart</dt>
             <dd class="govuk-summary-list__value">{{ .KindLabel }}</dd>
             <dd class="govuk-summary-list__actions">
-              <a class="govuk-link" href="/verwaltung/sitzungen/{{ .ID }}#kind"
+              <a class="govuk-link" href="{{ .EditURL }}#kind"
                 >Ändern<span class="govuk-visually-hidden">: Dokumentart</span></a
               >
             </dd>
@@ -929,11 +926,10 @@
           <div class="govuk-summary-list__row">
             <dt class="govuk-summary-list__key">Datei</dt>
             <dd class="govuk-summary-list__value app-wrap-anywhere">
-              <a class="govuk-link" href="/documents/{{ .ID }}">{{ .Filename }}</a> (PDF,
-              {{ .Size }})
+              <a class="govuk-link" href="{{ .URL }}">{{ .Filename }}</a> (PDF, {{ .Size }})
             </dd>
             <dd class="govuk-summary-list__actions">
-              <a class="govuk-link" href="/verwaltung/sitzungen/{{ .ID }}#file"
+              <a class="govuk-link" href="{{ .EditURL }}#file"
                 >Ändern<span class="govuk-visually-hidden">: Datei</span></a
               >
             </dd>
@@ -945,9 +941,7 @@
         <div class="govuk-button-group">
           <button class="govuk-button" data-module="govuk-button" type="submit">
             Veröffentlichen</button
-          ><a class="govuk-link" href="/verwaltung/sitzungen/{{ .Publication.ID }}"
-            >Angaben bearbeiten</a
-          >
+          ><a class="govuk-link" href="{{ .Publication.EditURL }}">Angaben bearbeiten</a>
         </div>
       </form>
     {{ end }}
@@ -963,15 +957,13 @@
   <p class="govuk-body">
     Das bisherige Passwort bleibt gültig, bis die Person ein neues Passwort festlegt.
   </p>
-  <form action="/verwaltung/benutzer/{{ .Admin.User.ID }}/passwort-zuruecksetzen" method="post">
+  <form action="{{ .Admin.User.ResetURL }}" method="post">
     <input type="hidden" name="csrf" value="{{ .CSRF }}" />
     <div class="govuk-button-group">
       <button class="govuk-button" data-module="govuk-button" type="submit">
         Link zum Zurücksetzen senden
       </button>
-      <a class="govuk-link" data-dialog-cancel href="/verwaltung/benutzer/{{ .Admin.User.ID }}"
-        >Abbrechen</a
-      >
+      <a class="govuk-link" data-dialog-cancel href="{{ .Admin.User.URL }}">Abbrechen</a>
     </div>
   </form>
 {{ end }}

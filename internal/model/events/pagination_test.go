@@ -20,14 +20,16 @@ func TestEventPagesOrderHistoryAndExcludeCancelledFromHome(t *testing.T) {
 	}
 	now := time.Date(2026, 10, 17, 12, 0, 0, 0, time.UTC)
 	want := []string{"10", "14", "11", "12", "13"}
+	seedReferences(t, db)
 	for page, id := range want {
+		id = reference(t, db, "events", id)
 		records, total, err := s.FindPage(context.Background(), now, page+1, 1, false)
 		if err != nil || total != 5 || len(records) != 1 || records[0].ID != id {
 			t.Fatalf("page %d: %+v total %d %v", page+1, records, total, err)
 		}
 	}
 	home, total, err := s.FindPage(context.Background(), now, 1, 3, true)
-	if err != nil || total != 2 || len(home) != 2 || home[0].ID != "10" || home[1].ID != "14" {
+	if err != nil || total != 2 || len(home) != 2 || home[0].ID != reference(t, db, "events", "10") || home[1].ID != reference(t, db, "events", "14") {
 		t.Fatalf("home: %+v %d %v", home, total, err)
 	}
 	all, _, err := s.FindPage(context.Background(), now, 1, 100, false)
@@ -49,6 +51,7 @@ func TestUpcomingUTCTimestampsAtLocalMidnight(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := time.Date(2026, 7, 17, 23, 0, 0, 0, time.UTC)
+	seedReferences(t, db)
 	home, total, err := s.FindPage(context.Background(), now, 1, 6, true)
 	if err != nil || total != 2 {
 		t.Fatal("UTC timestamps were classified by UTC day instead of local day", home, total, err)
@@ -58,7 +61,7 @@ func TestUpcomingUTCTimestampsAtLocalMidnight(t *testing.T) {
 		t.Fatal(err)
 	}
 	upcoming, past := Group(all, now)
-	if len(upcoming) != 2 || len(past) != 1 || past[0].ID != "21" {
+	if len(upcoming) != 2 || len(past) != 1 || past[0].ID != reference(t, db, "events", "21") {
 		t.Fatal("UTC calendar grouping disagrees", upcoming, past)
 	}
 }

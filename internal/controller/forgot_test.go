@@ -23,13 +23,13 @@ func TestForgotPassword(t *testing.T) {
 		{"invalid", "POST", "not-an-email", 422, "Gib eine vollständige E-Mail-Adresse ein"},
 		{"other domain", "POST", "person@example.org", 422, "Verwende eine E-Mail-Adresse mit"},
 		{"lookalike", "POST", "person@fsv-wh.de.example.org", 422, "Verwende eine E-Mail-Adresse mit"},
-		{"student", "POST", "person@studmail.w-hs.de", 200, "Prüfe dein E-Mail-Postfach"},
-		{"staff", "POST", "person@fsv-wh.de", 200, "Prüfe dein E-Mail-Postfach"},
-		{"trim and case", "POST", "  Person@FSV-WH.DE  ", 200, "Prüfe dein E-Mail-Postfach"},
+		{"student", "POST", "person@studmail.w-hs.de", 303, ""},
+		{"staff", "POST", "person@fsv-wh.de", 303, ""},
+		{"trim and case", "POST", "  Person@FSV-WH.DE  ", 303, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			form := url.Values{"email": {tc.email}}
-			req := httptest.NewRequest(tc.method, "/forgot", strings.NewReader(form.Encode()))
+			req := httptest.NewRequest(tc.method, "/password/forgot", strings.NewReader(form.Encode()))
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			response := httptest.NewRecorder()
 			handler.ForgotPassword(response, req)
@@ -49,7 +49,7 @@ func TestForgotPassword(t *testing.T) {
 		})
 	}
 	response := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/forgot", strings.NewReader(strings.Repeat("x", 65<<10)))
+	req := httptest.NewRequest(http.MethodPost, "/password/forgot", strings.NewReader(strings.Repeat("x", 65<<10)))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	handler.ForgotPassword(response, req)
 	if response.Code != http.StatusBadRequest {

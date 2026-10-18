@@ -1,24 +1,24 @@
 {{ define "sidebar" }}{{ end }}
 {{ define "content" }}
-  {{ with .Archive.Module }}
+  {{ with .Exams.Module }}
     <h2 class="govuk-heading-m">
-      {{ if gt $.Archive.ListPagination.Pages 0 }}
-        {{ $.Archive.ListPagination.Total }}
-        {{ if eq $.Archive.ListPagination.Total 1 }}Reko{{ else }}Rekos{{ end }}
+      {{ if gt $.Exams.ListPagination.Pages 0 }}
+        {{ $.Exams.ListPagination.Total }}
+        {{ if eq $.Exams.ListPagination.Total 1 }}Dokument{{ else }}Dokumente{{ end }}
       {{ else }}
         {{ if eq (len .Exams) 0 }}
-          Keine Rekos gefunden
+          Keine Dokumente gefunden
         {{ else if eq (len .Exams) 1 }}
-          1 Reko
+          1 Dokument
         {{ else }}
-          {{ len .Exams }} Rekos
+          {{ len .Exams }} Dokumente
         {{ end }}
       {{ end }}
     </h2>
     {{ if .Exams }}
-      <table class="govuk-table app-archive-table app-archive-upload-table" role="table">
+      <table class="govuk-table app-exams-table app-exams-upload-table" role="table">
         <caption class="govuk-visually-hidden">
-          Klausurrekonstruktionen für
+          Altklausuren für
           {{ .Title }}
         </caption>
         <thead class="govuk-table__head" role="rowgroup">
@@ -39,7 +39,7 @@
                 {{ .Date }}
               </th>
               <td class="govuk-table__cell" role="cell">
-                <span class="app-archive-upload-label" aria-hidden="true">Gültig für</span>
+                <span class="app-exams-upload-label" aria-hidden="true">Gültig für</span>
                 <div>
                   {{ if .Assignments }}
                     <ul class="govuk-list govuk-!-margin-bottom-0">
@@ -54,17 +54,17 @@
                 </div>
               </td>
               <td class="govuk-table__cell" role="cell">
-                <span class="app-archive-upload-label" aria-hidden="true">Dokumente</span
+                <span class="app-exams-upload-label" aria-hidden="true">Dokumente</span
                 ><span
                   ><a class="govuk-link" href="{{ .URL }}"
-                    >Reko<span class="govuk-visually-hidden">
+                    >Dokument<span class="govuk-visually-hidden">
                       für {{ .Title }} vom {{ .Date }}</span
                     ></a
                   >
                   (PDF,
                   {{ .Size }}){{ if .CanRevise $.UserID $.Role }}
                     <p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-0">
-                      <a class="govuk-link" href="{{ .URL }}/revision"
+                      <a class="govuk-link" href="{{ .RevisionURL }}"
                         >Neue Revision einreichen<span class="govuk-visually-hidden">
                           für {{ .Title }} vom {{ .Date }}</span
                         ></a
@@ -79,16 +79,16 @@
       </table>
     {{ else }}
       <p class="govuk-body">
-        Für deine Suche und Filter wurden in diesem Modul keine Rekos gefunden.
+        Für deine Suche und Filter wurden in diesem Modul keine Dokumente gefunden.
       </p>
     {{ end }}
   {{ end }}
-  {{ if .Archive.Filtered }}
+  {{ if .Exams.Filtered }}
     <p class="govuk-body">
-      <a class="govuk-link" href="/archive/{{ .Archive.Module.ID }}?applied=1"
-        >Alle Rekos für dieses Modul anzeigen</a
+      <a class="govuk-link" href="{{ .Exams.Module.URL }}?program=all"
+        >Alle Dokumente für dieses Modul anzeigen</a
       >.
     </p>
   {{ end }}
-  {{ template "list-pagination" .Archive.ListPagination }}
+  {{ template "list-pagination" .Exams.ListPagination }}
 {{ end }}

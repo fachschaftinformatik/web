@@ -54,7 +54,7 @@ func (s *Sender) SendVerificationEmail(toEmail, name, link string) error {
 		Validity: "Der Link ist 24 Stunden gültig.",
 		Note:     "Wenn du dich nicht registriert hast, kannst du diese E-Mail ignorieren.",
 	}
-	if target, err := url.Parse(link); err == nil && target.Path == "/invite" {
+	if target, err := url.Parse(link); err == nil && target.Path == "/invitation/accept" {
 		n.Title = "Einladung: " + s.organization.Current().ShortName
 		n.Intro = "Du wurdest als Mitglied der Fachschaft eingeladen. Lege dein Passwort fest und bestätige deine E-Mail-Adresse, um dein Benutzerkonto zu nutzen."
 		n.Action = "Einladung annehmen"

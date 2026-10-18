@@ -6,16 +6,16 @@ import (
 )
 
 type AdminMemberRow struct {
-	Person
-	Tasks []string
+	Member
+	Roles []string
 }
 
-type AdminTaskRow struct {
+type AdminRoleRow struct {
 	Title, Kind, URL string
 	Members          []string
 }
 
-func ResponsibilityKind(group string) string {
+func MemberRoleKind(group string) string {
 	if group == "board" {
 		return "Vorstand"
 	}
@@ -28,25 +28,25 @@ func ResponsibilityKind(group string) string {
 type AdminLink struct{ ID, Label, URL, Group string }
 
 var AdminLinks = []AdminLink{
-	{"stammdaten", "Stammdaten", "/verwaltung/stammdaten", "Organisation"},
-	{"mitglieder", "Mitglieder", "/verwaltung/mitglieder", "Organisation"},
-	{"funktionen", "Funktionen", "/verwaltung/funktionen", "Organisation"},
-	{"sitzungen", "Sitzungen", "/verwaltung/sitzungen", "Organisation"},
-	{"einreichungen", "Einreichungen", "/verwaltung/einreichungen", "Vorgänge"},
-	{"benutzer", "Benutzerkonten", "/verwaltung/benutzer", "Zugänge"},
+	{"settings", "Stammdaten", "/admin/settings", "Organisation"},
+	{"members", "Mitglieder", "/admin/members", "Organisation"},
+	{"roles", "Funktionen", "/admin/roles", "Organisation"},
+	{"meetings", "Sitzungen", "/admin/meetings", "Organisation"},
+	{"submissions", "Einreichungen", "/admin/submissions", "Vorgänge"},
+	{"users", "Benutzerkonten", "/admin/users", "Zugänge"},
 }
 
 type AdminPage struct {
-	MasterData                                                   []MasterDataTask
+	OrganizationSettings                                         []OrganizationSettingsTask
 	CanResendConfirmation                                        bool
-	Person                                                       *Person
+	Member                                                       *Member
 	Inviting                                                     bool
 	ReviewerOnly                                                 bool
-	Requests                                                     []Request
+	Submissions                                                  []Submission
 	Section, SectionTitle, View, Action, Query, Message, Success string
 	Fields                                                       []AdminField
 	Members                                                      []AdminMemberRow
-	Tasks                                                        []AdminTaskRow
+	Roles                                                        []AdminRoleRow
 	Users                                                        []User
 	User                                                         *User
 	Meetings                                                     []Meeting
@@ -63,7 +63,7 @@ type AdminGroup struct {
 func (a AdminPage) Groups() []AdminGroup {
 	var groups []AdminGroup
 	for _, link := range AdminLinks {
-		if a.ReviewerOnly && link.ID != "einreichungen" {
+		if a.ReviewerOnly && link.ID != "submissions" {
 			continue
 		}
 		if len(groups) == 0 || groups[len(groups)-1].Title != link.Group {
@@ -75,22 +75,22 @@ func (a AdminPage) Groups() []AdminGroup {
 	return groups
 }
 
-func (a AdminPage) RequestList() RequestListPage {
-	return RequestListPage{Requests: a.Requests, Reviewing: true, CanViewUsers: !a.ReviewerOnly}
+func (a AdminPage) SubmissionList() SubmissionListPage {
+	return SubmissionListPage{Submissions: a.Submissions, Reviewing: true, CanViewUsers: !a.ReviewerOnly}
 }
 
 func (a AdminPage) UserPageURL(page int) string {
 	q := url.Values{}
 	if a.Query != "" {
-		q.Set("q", a.Query)
+		q.Set("search", a.Query)
 	}
 	if page != 1 {
-		q.Set("seite", strconv.Itoa(page))
+		q.Set("page", strconv.Itoa(page))
 	}
 	if len(q) == 0 {
-		return "/verwaltung/benutzer"
+		return "/admin/users"
 	}
-	return "/verwaltung/benutzer?" + q.Encode()
+	return "/admin/users?" + q.Encode()
 }
 
 func (a AdminPage) Pagination() []PaginationItem {

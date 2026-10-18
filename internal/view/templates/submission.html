@@ -1,0 +1,203 @@
+{{ define "sidebar" }}{{ if .Admin }}{{ template "admin-navigation" . }}{{ end }}{{ end }}
+{{ define "content" }}
+  {{ with .Submission }}
+    {{ if .Error }}
+      <div class="govuk-error-summary" data-module="govuk-error-summary">
+        <div role="alert">
+          <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
+          <div class="govuk-error-summary__body"><p class="govuk-body">{{ .Error }}</p></div>
+        </div>
+      </div>
+    {{ end }}
+    <p class="govuk-body">{{ template "submission-status" .Entry.Status }}</p>
+    {{ if and (not .Reviewing) (eq .Entry.Status "pending") }}
+      <h2 class="govuk-heading-m">Wie geht es weiter?</h2>
+      <p class="govuk-body">
+        Deine Einreichung wird von der Fachschaft geprüft. Nach der Freigabe sind die Dokumente
+        unter Altklausuren verfügbar.
+      </p>
+      <p class="govuk-body">
+        Den aktuellen Stand findest du unter
+        <a class="govuk-link" href="/exams/submissions">Meine Einreichungen</a>. Bei Fragen kannst
+        du die <a class="govuk-link" href="/contact">Fachschaft kontaktieren</a>.
+      </p>
+      <h2 class="govuk-heading-m">Deine Angaben</h2>
+    {{ end }}
+    {{ if and (not .Reviewing) (eq .Entry.Status "approved") }}
+      <p class="govuk-body">
+        Deine Einreichung wurde freigegeben. Die Dokumente sind unter Altklausuren verfügbar.
+      </p>
+    {{ end }}
+    {{ if and (not .Reviewing) (eq .Entry.Status "rejected") }}
+      <p class="govuk-body">Deine Einreichung wurde abgelehnt.</p>
+    {{ end }}
+    {{ $draft := and (not .Reviewing) (eq .Entry.Status "draft") }}
+    {{ $editable := or $draft .Reviewing }}
+    {{ $editURL := .EditURL }}
+    {{ with .Entry }}
+      {{ $scope := .DisplayScope }}
+      <dl class="govuk-summary-list">
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Abschlüsse</dt>
+          <dd class="govuk-summary-list__value">
+            {{ range $i,$value:=$scope.Degrees }}{{ if $i }}<br />{{ end }}{{ $value }}{{ end }}
+          </dd>
+          {{ if $editable }}
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="{{ $editURL }}#degree-0"
+                >Ändern<span class="govuk-visually-hidden">: Abschlüsse</span></a
+              >
+            </dd>
+          {{ end }}
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Studiengänge</dt>
+          <dd class="govuk-summary-list__value">
+            {{ range $i,$value:=$scope.Programs }}{{ if $i }}<br />{{ end }}{{ $value }}{{ end }}
+          </dd>
+          {{ if $editable }}
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="{{ $editURL }}#program-0"
+                >Ändern<span class="govuk-visually-hidden">: Studiengänge</span></a
+              >
+            </dd>
+          {{ end }}
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Prüfungsordnungen</dt>
+          <dd class="govuk-summary-list__value">
+            {{ range $i,$value:=$scope.Versions }}
+              {{ if $i }}<br />{{ end }}{{ poLabel $value }}
+            {{ end }}
+          </dd>
+          {{ if $editable }}
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="{{ $editURL }}#version-0"
+                >Ändern<span class="govuk-visually-hidden">: Prüfungsordnungen</span></a
+              >
+            </dd>
+          {{ end }}
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Module</dt>
+          <dd class="govuk-summary-list__value">
+            {{ if .SharedAssignments }}
+              {{ template "assignment-summary" .Assignments }}
+            {{ else }}
+              {{ range .Documents }}
+                <h3 class="govuk-heading-s">Dokument {{ .Number }}</h3>
+                {{ template "assignment-summary" .Assignments }}
+              {{ end }}
+            {{ end }}
+          </dd>
+          {{ if $editable }}
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="{{ $editURL }}#module_id"
+                >Ändern<span class="govuk-visually-hidden">: Module</span></a
+              >
+            </dd>
+          {{ end }}
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Prüfungsdatum</dt>
+          <dd class="govuk-summary-list__value">{{ .DateLabel }}</dd>
+          {{ if $editable }}
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="{{ $editURL }}#date"
+                >Ändern<span class="govuk-visually-hidden">: Prüfungsdatum</span></a
+              >
+            </dd>
+          {{ end }}
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Anmerkung</dt>
+          <dd class="govuk-summary-list__value">
+            {{ if .Comment }}{{ .Comment }}{{ else }}Keine Anmerkung{{ end }}
+          </dd>
+          {{ if $editable }}
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="{{ $editURL }}#comment"
+                >Ändern<span class="govuk-visually-hidden">: Anmerkung</span></a
+              >
+            </dd>
+          {{ end }}
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">
+            {{ if eq (len .Documents) 1 }}Datei{{ else }}Dateien{{ end }}
+          </dt>
+          <dd class="govuk-summary-list__value">
+            <ul class="govuk-list govuk-!-margin-bottom-0">
+              {{ range .Documents }}
+                <li>
+                  <a class="govuk-link" href="{{ .URL }}">Dokument {{ .Number }}</a> (PDF,
+                  {{ .Size }})
+                </li>
+              {{ end }}
+            </ul>
+          </dd>
+          {{ if $editable }}
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="{{ $editURL }}#files"
+                >Ändern<span class="govuk-visually-hidden">: Datei</span></a
+              >
+            </dd>
+          {{ end }}
+        </div>
+      </dl>
+    {{ end }}
+    {{ if $draft }}
+      <h2 class="govuk-heading-m">Altklausur zur Prüfung einreichen</h2>
+      <p class="govuk-body">
+        Mit dem Einreichen sendest du dein Dokument zur Prüfung an die Fachschaft. Es wird erst nach
+        der Freigabe veröffentlicht.
+      </p>
+      <form action="{{ .Entry.CheckURL }}" method="post">
+        <input type="hidden" name="csrf" value="{{ $.CSRF }}" />
+        <div class="govuk-button-group">
+          <button class="govuk-button" type="submit" data-module="govuk-button">Einreichen</button
+          ><a class="govuk-link" href="/exams/submissions">Später fortsetzen</a>
+        </div>
+      </form>
+    {{ else if and .Reviewing (ne .Entry.Status "draft") }}
+      <form action="{{ .Entry.ReviewURL }}" method="post">
+        <input type="hidden" name="csrf" value="{{ $.CSRF }}" />
+        <input type="hidden" name="edit_token" value="{{ .Entry.EditToken }}" />
+        <div class="govuk-button-group">
+          {{ if ne .Entry.Status "approved" }}
+            <button
+              class="govuk-button"
+              type="submit"
+              name="decision"
+              value="approve"
+              data-module="govuk-button"
+            >
+              Freigeben
+            </button>
+          {{ end }}{{ if ne .Entry.Status "rejected" }}
+            <button
+              class="govuk-button govuk-button--secondary"
+              type="submit"
+              name="decision"
+              value="reject"
+              data-module="govuk-button"
+            >
+              Ablehnen
+            </button>
+          {{ end }}
+        </div>
+      </form>
+    {{ end }}
+    <p class="govuk-body">
+      <a
+        class="govuk-link"
+        href="{{- if .Reviewing -}}
+          /admin/submissions
+        {{- else -}}
+          /exams/submissions
+        {{- end -}}"
+        >Zur Übersicht</a
+      >
+    </p>
+  {{ end }}
+{{ end }}

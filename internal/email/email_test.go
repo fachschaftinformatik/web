@@ -19,7 +19,7 @@ func TestNotificationMIMEPreservesUnicodeAndActionLinks(t *testing.T) {
 		Organization: organization.Details{Name: "Example", ShortName: "Example Council", Institution: "Example University"},
 		Name:         "Jörg <script>alert(1)</script>", Domain: "https://example.org",
 		Title: "E-Mail-Adresse bestätigen", Intro: "Bestätige dein Konto.",
-		Action: "E-Mail-Adresse bestätigen", Link: "https://example.org/verify?token=" + strings.Repeat("a", 64) + "&source=email",
+		Action: "E-Mail-Adresse bestätigen", Link: "https://example.org/email/confirm?token=" + strings.Repeat("a", 64) + "&source=email",
 		Validity: "Der Link ist 24 Stunden gültig.", Note: "Deine Fachschaft.",
 	}
 	encoded, err := sender.message("person@example.org", n)

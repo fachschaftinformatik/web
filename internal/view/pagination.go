@@ -30,10 +30,10 @@ func paginationItems(page, pages int, pageURL func(int) string) []PaginationItem
 	return result
 }
 
-const ArchivePageSize = 20
+const ExamsPageSize = 20
 
 // Zero marks an ellipsis between the current neighbourhood and an end page.
-func GalleryPageNumbers(page, pages int) []int {
+func MediaPageNumbers(page, pages int) []int {
 	var numbers []int
 	for number := 1; number <= pages; number++ {
 		if pages <= 7 || number == 1 || number == pages || (number >= page-1 && number <= page+1) || (page <= 4 && number < page) || (page >= pages-3 && number > page) {

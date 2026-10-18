@@ -1,0 +1,204 @@
+{{ define "sidebar" }}{{ end }}
+{{ define "content" }}
+  {{ $g := .Media }}
+  {{ if not $g.Detail }}
+    <p class="govuk-body">Einblicke in unsere LAN-Partys und das Fachschaftsleben.</p>
+    <ul class="govuk-list app-image-cards" role="list">
+      {{ range $g.Albums }}
+        <li class="app-image-card">
+          <div class="app-image-card__image">
+            {{ with .CoverImage }}
+              {{ if .Source }}
+                <img
+                  src="{{ .Thumbnail }}"
+                  srcset="{{ .ThumbnailSources }}"
+                  sizes="(max-width: 768px) calc(100vw - 60px), (max-width: 1200px) 35vw, 390px"
+                  {{ if .Width }}width="{{ .Width }}" height="{{ .Height }}"{{ end }}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              {{ end }}
+            {{ else }}
+              <img
+                src="/assets/community/event-placeholder.svg"
+                width="800"
+                height="450"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+            {{ end }}
+          </div>
+          <div class="app-image-card__content">
+            <h2 class="govuk-heading-s govuk-!-margin-bottom-2">
+              <a class="govuk-link app-image-card__link" href="{{ .URL }}">{{ .Title }}</a>
+            </h2>
+            <p class="govuk-body-s app-image-card__meta">{{ .OriginalCount }} Bilder</p>
+          </div>
+        </li>
+      {{ end }}
+    </ul>
+    {{ template "list-pagination" $g.Pagination }}
+  {{ else if $g.Viewer }}
+    <section class="app-media-viewer" aria-label="Bildansicht">
+      <nav class="app-media-controls" aria-label="Bildernavigation">
+        <div>
+          {{ if $g.Previous }}
+            <a
+              class="govuk-link app-media-step"
+              href="{{ $g.Previous }}"
+              rel="prev"
+              aria-label="Vorheriges Bild"
+              >{{ template "media-arrow-prev" }}<span>Zurück</span></a
+            >
+          {{ end }}
+        </div>
+        <p class="govuk-body-s app-media-position">Foto {{ $g.Number }} von {{ $g.Total }}</p>
+        <div>
+          {{ if $g.Next }}
+            <a
+              class="govuk-link app-media-step"
+              href="{{ $g.Next }}"
+              rel="next"
+              aria-label="Nächstes Bild"
+              ><span>Weiter</span>{{ template "media-arrow-next" }}</a
+            >
+          {{ end }}
+        </div>
+      </nav>
+      <figure class="app-media-figure">
+        <div class="app-media-stage">
+          <img
+            class="app-media-image"
+            src="{{ $g.Image.Source }}"
+            {{ if $g.Image.Width }}
+              width="{{ $g.Image.Width }}" height="{{ $g.Image.Height }}"
+            {{ end }}
+            alt="{{ $g.Image.Description }}"
+            decoding="async"
+          />
+        </div>
+        <figcaption class="govuk-body-s govuk-!-margin-top-3">{{ $g.Image.Title }}</figcaption>
+      </figure>
+      <p class="govuk-body">
+        <a class="govuk-link app-media-return" href="{{ $g.Return }}">Zum Album</a>
+      </p>
+    </section>
+  {{ else }}
+    {{ if $g.Images }}
+      <p class="govuk-body-s">
+        {{ $g.Total }}
+        {{ if eq $g.Total 1 }}
+          Foto
+        {{ else }}
+          Fotos
+        {{ end }}{{ if gt $g.Pages 1 }}– Seite {{ $g.Page }} von {{ $g.Pages }}{{ end }}
+      </p>
+      <p class="govuk-body">Wähle ein Foto aus, um es in voller Größe anzusehen.</p>
+      <ul class="govuk-list app-image-cards app-photo-cards" role="list">
+        {{ range $index, $image := $g.Images }}
+          <li class="app-image-card app-photo-card">
+            <a
+              class="govuk-link app-media-link app-photo-card__link"
+              id="image-{{ .ID }}"
+              href="{{ $g.Album.ImageURL . }}"
+              ><div class="app-image-card__image">
+                <img
+                  class="app-media-thumbnail"
+                  src="{{ .Thumbnail }}"
+                  srcset="{{ .ThumbnailSources }}"
+                  {{ if .Width }}width="{{ .Width }}" height="{{ .Height }}"{{ end }}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <span class="app-image-card__content govuk-body-s govuk-!-margin-bottom-0"
+                >Foto {{ $g.ImageNumber $index }}<span class="govuk-visually-hidden">
+                  vergrößern: {{ .Description }}</span
+                ></span
+              ></a
+            >
+          </li>
+        {{ end }}
+      </ul>
+      {{ if gt $g.Pages 1 }}
+        <nav class="govuk-pagination app-media-pagination" aria-label="Albumseiten">
+          {{ if $g.Previous }}
+            <div class="govuk-pagination__prev">
+              <a class="govuk-link govuk-pagination__link" href="{{ $g.Previous }}" rel="prev"
+                >{{ template "media-arrow-prev" }}<span class="govuk-pagination__link-title"
+                  >Zurück<span class="govuk-visually-hidden"> zur vorherigen Seite</span></span
+                ></a
+              >
+            </div>
+          {{ end }}
+          <ul class="govuk-pagination__list">
+            {{ range $g.PageNumbers }}
+              {{ if eq . 0 }}
+                <li class="govuk-pagination__item govuk-pagination__item--ellipsis">⋯</li>
+              {{ else }}
+                <li
+                  class="govuk-pagination__item {{ if eq $g.Page . }}
+                    govuk-pagination__item--current
+                  {{ end }}"
+                >
+                  <a
+                    class="govuk-link govuk-pagination__link"
+                    href="{{ $g.Album.PageURL . }}"
+                    aria-label="Seite {{ . }}"
+                    {{ if eq $g.Page . }}aria-current="page"{{ end }}
+                    >{{ . }}</a
+                  >
+                </li>
+              {{ end }}
+            {{ end }}
+          </ul>
+          {{ if $g.Next }}
+            <div class="govuk-pagination__next">
+              <a class="govuk-link govuk-pagination__link" href="{{ $g.Next }}" rel="next"
+                ><span class="govuk-pagination__link-title"
+                  >Weiter<span class="govuk-visually-hidden"> zur nächsten Seite</span></span
+                >{{ template "media-arrow-next" }}</a
+              >
+            </div>
+          {{ end }}
+        </nav>
+      {{ end }}
+    {{ else }}
+      <p class="govuk-body">In diesem Album sind noch keine Bilder vorhanden.</p>
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ define "media-arrow-prev" }}
+  <svg
+    class="govuk-pagination__icon govuk-pagination__icon--prev"
+    xmlns="http://www.w3.org/2000/svg"
+    height="13"
+    width="15"
+    aria-hidden="true"
+    focusable="false"
+    viewBox="0 0 15 13"
+  >
+    <path
+      d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"
+    />
+  </svg>
+{{ end }}
+{{ define "media-arrow-next" }}
+  <svg
+    class="govuk-pagination__icon govuk-pagination__icon--next"
+    xmlns="http://www.w3.org/2000/svg"
+    height="13"
+    width="15"
+    aria-hidden="true"
+    focusable="false"
+    viewBox="0 0 15 13"
+  >
+    <path
+      d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"
+    />
+  </svg>
+{{ end }}

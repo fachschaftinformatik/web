@@ -14,7 +14,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/fachschaftinformatik/web/internal/id"
+	"github.com/fachschaftinformatik/web/internal/publicid"
 	"github.com/fachschaftinformatik/web/internal/storage"
 )
 
@@ -23,7 +23,7 @@ type ImportedEvent struct {
 	ExistingID, SourceURL, Status string
 	PublishedAt                   time.Time
 	Images                        []CoverUpload
-	GalleryAlbumID                string
+	AlbumID                       string `json:"GalleryAlbumID"`
 }
 
 var instagramPath = regexp.MustCompile(`^/p/[A-Za-z0-9_-]+/$`)
@@ -56,7 +56,8 @@ func (s *Service) Import(ctx context.Context, user int64, input ImportedEvent) (
 	}
 	err = tx.QueryRowContext(ctx, `SELECT CAST(id AS TEXT) FROM calendar_events WHERE source_url=?`, input.SourceURL).Scan(&event)
 	if err == nil {
-		return event, false, nil
+		ref, lookupErr := publicid.Lookup(ctx, tx, "events", event)
+		return ref, false, lookupErr
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
 		return "", false, err
@@ -64,6 +65,10 @@ func (s *Service) Import(ctx context.Context, user int64, input ImportedEvent) (
 	oldKey := ""
 	event = input.ExistingID
 	if event != "" {
+		event, err = resolve(ctx, tx, "events", event)
+		if err != nil {
+			return "", false, err
+		}
 		var source string
 		err = tx.QueryRowContext(ctx, `SELECT cover_key,source_url FROM calendar_events WHERE id=? AND deleted_at IS NULL`, event).Scan(&oldKey, &source)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -75,8 +80,6 @@ func (s *Service) Import(ctx context.Context, user int64, input ImportedEvent) (
 		if source != "" {
 			return "", false, fmt.Errorf("event already has a source")
 		}
-	} else {
-		event = id.New().String()
 	}
 	if s.storage == nil {
 		return "", false, ErrCoverStorage
@@ -102,7 +105,7 @@ func (s *Service) Import(ctx context.Context, user int64, input ImportedEvent) (
 	if err != nil {
 		return "", false, err
 	}
-	coverKey := "calendar/covers/" + id.New().String() + ".jpg"
+	coverKey := "calendar/covers/" + publicid.New() + ".jpg"
 	if err := upload(coverKey, cover, "image/jpeg"); err != nil {
 		return "", false, err
 	}
@@ -111,12 +114,20 @@ func (s *Service) Import(ctx context.Context, user int64, input ImportedEvent) (
 		return "", false, err
 	}
 	published := datetime.FormatUTC(input.PublishedAt)
-	album := input.GalleryAlbumID
+	album := input.AlbumID
 	newAlbum := album == ""
+	albumKey := publicid.New()
 	if newAlbum {
-		album = id.New().String()
-		_, err = tx.ExecContext(ctx, `INSERT INTO events(id,title,cover_path,created_at,updated_at) VALUES(?,?,?,?,?)`, album, input.Draft.Title, storage.EventCoverSourceKey(album), published, published)
+		internal, allocateErr := publicid.NextInteger(ctx, tx, "albums")
+		if allocateErr != nil {
+			return "", false, allocateErr
+		}
+		err = tx.QueryRowContext(ctx, `INSERT INTO events(id,title,cover_path,created_at,updated_at) VALUES(?,?,?,?,?) RETURNING id`, internal, input.Draft.Title, storage.AlbumCoverSourceKey(albumKey), published, published).Scan(&album)
 	} else {
+		album, err = resolve(ctx, tx, "albums", album)
+		if err != nil {
+			return "", false, err
+		}
 		var title string
 		err = tx.QueryRowContext(ctx, `SELECT title FROM events WHERE id=? AND deleted_at IS NULL`, album).Scan(&title)
 	}
@@ -124,7 +135,11 @@ func (s *Service) Import(ctx context.Context, user int64, input ImportedEvent) (
 		return "", false, err
 	}
 	if input.ExistingID == "" {
-		_, err = tx.ExecContext(ctx, `INSERT INTO calendar_events(id,title,body,user_id,event_date,location,cover_key,cover_alt,cover_width,cover_height,source_url,source_published_at,source_status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, event, input.Draft.Title, input.Draft.Body, user, date, input.Draft.Location, coverKey, first.Alt, w, h, input.SourceURL, published, input.Status, published, published)
+		internal, allocateErr := publicid.NextInteger(ctx, tx, "events")
+		if allocateErr != nil {
+			return "", false, allocateErr
+		}
+		err = tx.QueryRowContext(ctx, `INSERT INTO calendar_events(id,title,body,user_id,event_date,location,cover_key,cover_alt,cover_width,cover_height,source_url,source_published_at,source_status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id`, internal, input.Draft.Title, input.Draft.Body, user, date, input.Draft.Location, coverKey, first.Alt, w, h, input.SourceURL, published, input.Status, published, published).Scan(&event)
 	} else {
 		_, err = tx.ExecContext(ctx, `UPDATE calendar_events SET title=?,body=?,body_format='plain',event_date=?,location=?,cover_key=?,cover_alt=?,cover_width=?,cover_height=?,source_url=?,source_published_at=?,source_status=?,updated_at=? WHERE id=?`, input.Draft.Title, input.Draft.Body, date, input.Draft.Location, coverKey, first.Alt, w, h, input.SourceURL, published, input.Status, published, event)
 	}
@@ -140,9 +155,9 @@ func (s *Service) Import(ctx context.Context, user int64, input ImportedEvent) (
 		if err != nil {
 			return "", false, err
 		}
-		photoID := id.New().String()
+		photoKey := publicid.New()
 		mime := http.DetectContentType(image.Data)
-		key := storage.MediaSourceKey(photoID)
+		key := storage.MediaSourceKey(photoKey)
 		if err := upload(key, image.Data, mime); err != nil {
 			return "", false, err
 		}
@@ -151,30 +166,47 @@ func (s *Service) Import(ctx context.Context, user int64, input ImportedEvent) (
 			return "", false, err
 		}
 		for size, data := range previews {
-			if err := upload(storage.MediaPreviewKey(photoID, size), data, "image/jpeg"); err != nil {
+			if err := upload(storage.MediaPreviewKey(photoKey, size), data, "image/jpeg"); err != nil {
 				return "", false, err
 			}
 		}
 		if position == 0 {
-			firstPhoto = photoID
 			if newAlbum {
-				if err := upload(storage.EventCoverSourceKey(album), image.Data, mime); err != nil {
+				if err := upload(storage.AlbumCoverSourceKey(albumKey), image.Data, mime); err != nil {
 					return "", false, err
 				}
 				for size, data := range previews {
-					if err := upload(storage.EventCoverPreviewKey(album, size), data, "image/jpeg"); err != nil {
+					if err := upload(storage.AlbumCoverPreviewKey(albumKey, size), data, "image/jpeg"); err != nil {
 						return "", false, err
 					}
 				}
 			}
 		}
-		// Descending timestamps retain carousel order in the newest-first gallery.
+		// Descending timestamps retain carousel order in the newest-first media listing.
 		photoTime := datetime.FormatUTC(input.PublishedAt.Add(-time.Duration(position) * time.Second))
-		if _, err := tx.ExecContext(ctx, `INSERT INTO media(id,event_id,user_id,title,description,access_key,mime_type,nbytes,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)`, photoID, album, user, fmt.Sprintf("%s – Foto %d", input.Draft.Title, position+1), image.Alt, key, mime, len(image.Data), photoTime, photoTime); err != nil {
+		var photoID string
+		internal, allocateErr := publicid.NextInteger(ctx, tx, "media")
+		if allocateErr != nil {
+			return "", false, allocateErr
+		}
+		if err := tx.QueryRowContext(ctx, `INSERT INTO media(id,event_id,user_id,title,description,access_key,mime_type,nbytes,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?) RETURNING id`, internal, album, user, fmt.Sprintf("%s – Foto %d", input.Draft.Title, position+1), image.Alt, key, mime, len(image.Data), photoTime, photoTime).Scan(&photoID); err != nil {
 			return "", false, err
+		}
+		if _, err := publicid.Ensure(ctx, tx, "media", photoID); err != nil {
+			return "", false, err
+		}
+		if position == 0 {
+			firstPhoto = photoID
 		}
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE calendar_events SET gallery_album_id=?,gallery_cover_id=? WHERE id=?`, album, firstPhoto, event); err != nil {
+		return "", false, err
+	}
+	ref, err := publicid.Ensure(ctx, tx, "events", event)
+	if err != nil {
+		return "", false, err
+	}
+	if _, err := publicid.Ensure(ctx, tx, "albums", album); err != nil {
 		return "", false, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -184,5 +216,5 @@ func (s *Service) Import(ctx context.Context, user int64, input ImportedEvent) (
 	if validCoverKey(oldKey) && oldKey != coverKey {
 		_ = s.storage.Delete(context.WithoutCancel(ctx), oldKey)
 	}
-	return event, true, nil
+	return ref, true, nil
 }

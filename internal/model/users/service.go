@@ -15,7 +15,8 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/database"
-	"github.com/fachschaftinformatik/web/internal/id"
+	"github.com/fachschaftinformatik/web/internal/publicid"
+	"github.com/fachschaftinformatik/web/internal/urls"
 )
 
 var (
@@ -137,7 +138,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (int64, err
 }
 
 func (s *Service) Directory(ctx context.Context) (*Directory, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT CAST(u.id AS TEXT),u.name,lower(u.email),u.role,COALESCE(p.name,''),u.active=1,u.verified=1 FROM users u LEFT JOIN programs p ON p.id=u.program_id WHERE u.deleted_at IS NULL ORDER BY u.name COLLATE NOCASE,u.id`)
+	rows, err := s.db.QueryContext(ctx, `SELECT u.id,u.name,lower(u.email),u.role,COALESCE(p.name,''),u.active=1,u.verified=1 FROM users u LEFT JOIN programs p ON p.id=u.program_id WHERE u.deleted_at IS NULL ORDER BY u.name COLLATE NOCASE,u.id`)
 	if err != nil {
 		return nil, err
 	}
@@ -153,6 +154,13 @@ func (s *Service) Directory(ctx context.Context) (*Directory, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	rows.Close()
+	for i := range records {
+		records[i].PublicID, err = publicid.Ensure(ctx, s.db, "users", strconv.FormatInt(records[i].ID, 10))
+		if err != nil {
+			return nil, err
+		}
+	}
 	return NewDirectory(records), nil
 }
 
@@ -163,7 +171,11 @@ func (s *Service) Programs(ctx context.Context) ([]Program, error) {
 	}
 	result := make([]Program, 0, len(rows))
 	for _, p := range rows {
-		result = append(result, Program{ID: strconv.FormatInt(p.ID, 10), Name: p.Name})
+		value, err := publicid.Lookup(ctx, s.db, "programs", strconv.FormatInt(p.ID, 10))
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, Program{ID: value, Name: p.Name})
 	}
 	return result, nil
 }
@@ -175,9 +187,13 @@ func (s *Service) Register(ctx context.Context, name, email, password, programID
 	}
 	var program *int64
 	if programID != "" {
-		value, err := strconv.ParseInt(programID, 10, 64)
+		internalID, err := publicid.Resolve(ctx, s.db, "programs", programID)
 		if err != nil {
 			return errors.New("Wähle einen gültigen Studiengang aus.")
+		}
+		value, err := strconv.ParseInt(internalID, 10, 64)
+		if err != nil {
+			return err
 		}
 		if _, err = s.queries.GetProgram(ctx, value); err != nil {
 			return errors.New("Wähle einen gültigen Studiengang aus.")
@@ -200,21 +216,20 @@ func (s *Service) Register(ctx context.Context, name, email, password, programID
 	if count != 0 {
 		return ErrEmailExists
 	}
-	userID := int64(id.New())
-	_, err = database.New(tx).CreateUser(ctx, database.CreateUserParams{ID: userID, Email: strings.ToLower(strings.TrimSpace(email)), Name: strings.TrimSpace(name), Password: hash, Role: "user", Active: 1, ProgramID: program})
+	user, err := CreateUserTx(ctx, tx, database.CreateUserParams{Email: strings.ToLower(strings.TrimSpace(email)), Name: strings.TrimSpace(name), Password: hash, Role: "user", Active: 1, ProgramID: program})
 	if err != nil {
 		return err
 	}
-	if err := s.queueToken(ctx, tx, userID, strings.ToLower(strings.TrimSpace(email)), strings.TrimSpace(name), "verify"); err != nil {
+	if err := s.queueToken(ctx, tx, user.ID, strings.ToLower(strings.TrimSpace(email)), strings.TrimSpace(name), "verify"); err != nil {
 		return err
 	}
 	return tx.Commit()
 }
 
 func (s *Service) queueToken(ctx context.Context, tx *sql.Tx, userID int64, email, name, kind string) error {
-	path := "/reset"
+	path := urls.ResetPasswordPath
 	if kind == "verify" {
-		path = "/verify"
+		path = urls.ConfirmEmailPath
 	}
 	return s.queueLink(ctx, tx, userID, email, name, kind, path)
 }
@@ -235,7 +250,7 @@ func (s *Service) queueLink(ctx context.Context, tx *sql.Tx, userID int64, email
 	if _, err := tx.ExecContext(ctx, `DELETE FROM mail_outbox WHERE user_id=? AND kind=?`, userID, kind); err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO mail_outbox (id,user_id,kind,recipient,name,link) VALUES (?,?,?,?,?,?)`, int64(id.New()), userID, kind, email, name, s.baseURL+path+"?token="+url.QueryEscape(value))
+	_, err = tx.ExecContext(ctx, `INSERT INTO mail_outbox (user_id,kind,recipient,name,link) VALUES (?,?,?,?,?)`, userID, kind, email, name, s.baseURL+path+"?token="+url.QueryEscape(value))
 	return err
 }
 

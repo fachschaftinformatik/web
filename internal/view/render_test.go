@@ -5,13 +5,13 @@ import (
 	"testing"
 )
 
-func TestForumTextEscapesSourceHTML(t *testing.T) {
+func TestPostTextEscapesSourceHTML(t *testing.T) {
 	renderer, err := NewRenderer()
 	if err != nil {
 		t.Fatal(err)
 	}
 	var out strings.Builder
-	err = renderer.pages["thread"].ExecuteTemplate(&out, "forum-body", rawForumText(`<script>alert(1)</script> https://example.org/?a=1&b=2. javascript:alert(1)`))
+	err = renderer.pages["thread"].ExecuteTemplate(&out, "post-body", rawPostText(`<script>alert(1)</script> https://example.org/?a=1&b=2. javascript:alert(1)`))
 	if err != nil {
 		t.Fatal(err)
 	}

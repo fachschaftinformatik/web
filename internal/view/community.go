@@ -2,11 +2,13 @@ package view
 
 import (
 	"html/template"
+	"net/url"
 
 	"github.com/fachschaftinformatik/web/internal/content"
 
-	"github.com/fachschaftinformatik/web/internal/model/forum"
-	"github.com/fachschaftinformatik/web/internal/model/gallery"
+	"github.com/fachschaftinformatik/web/internal/model/media"
+	"github.com/fachschaftinformatik/web/internal/model/posts"
+	"github.com/fachschaftinformatik/web/internal/urls"
 )
 
 type MeetingsPage struct {
@@ -46,10 +48,10 @@ type EventsPage struct {
 	CanCreate      bool
 }
 
-type ForumPage struct {
+type PostsPage struct {
 	Pagination        ListPagination
 	CanWrite, CanEdit bool
-	Filter            forum.Filter
+	Filter            posts.Filter
 	Posts             []Post
 	Thread            *Thread
 	BackURL           string
@@ -60,6 +62,13 @@ type CommentForm struct {
 	ID, Text, Error string
 }
 
+func (p PostsPage) SearchURL() string {
+	if p.Filter.Query == "" {
+		return urls.PostsPath
+	}
+	return urls.PostsPath + "?" + url.Values{"search": {p.Filter.Query}}.Encode()
+}
+
 func (f CommentForm) Anchor() string {
 	if f.ID != "" {
 		return "edit-comment-" + f.ID
@@ -67,7 +76,7 @@ func (f CommentForm) Anchor() string {
 	return "comment-text"
 }
 
-func (p ForumPage) CommentURL(id string) string {
+func (p PostsPage) CommentURL(id string) string {
 	base := p.Thread.URL()
 	if p.Pagination.Page > 1 {
 		base = p.Pagination.PageURL(p.Pagination.Page)
@@ -76,22 +85,22 @@ func (p ForumPage) CommentURL(id string) string {
 }
 
 type HomePost struct {
-	Title, Summary, URL, Date, DateISO string
-	Votes, UserVote                    int
+	Title, Summary, URL, VoteURL, Date, DateISO string
+	Votes, UserVote                             int
 }
 
-func HomeItem(post forum.Post) HomePost {
+func HomeItem(post posts.Post) HomePost {
 	p := NewPost(post)
-	return HomePost{Title: p.Title, Summary: p.Summary(), URL: p.URL(), Date: p.DateLabel(), DateISO: p.DateISO(), Votes: p.Votes, UserVote: p.UserVote}
+	return HomePost{Title: p.Title, Summary: p.Summary(), URL: p.URL(), VoteURL: p.VoteURL(), Date: p.DateLabel(), DateISO: p.DateISO(), Votes: p.Votes, UserVote: p.UserVote}
 }
 
 type HomePage struct {
 	News   HomePost
-	Forum  []HomePost
+	Posts  []HomePost
 	Events []Event
 }
 
-type ImagesPage struct {
+type MediaPage struct {
 	Pagination                 ListPagination
 	Albums                     []Album
 	Album                      Album
@@ -103,13 +112,13 @@ type ImagesPage struct {
 	Previous, Next, Return     string
 }
 
-func (g ImagesPage) ImageNumber(index int) int {
-	return (g.Page-1)*gallery.PageSize + index + 1
+func (m MediaPage) ImageNumber(index int) int {
+	return (m.Page-1)*media.PageSize + index + 1
 }
 
-func (g ImagesPage) CarouselAlbums() []Album {
+func (m MediaPage) CarouselAlbums() []Album {
 	var albums []Album
-	for _, album := range g.Albums {
+	for _, album := range m.Albums {
 		if album.CoverImage().ID != "" {
 			albums = append(albums, album)
 		}

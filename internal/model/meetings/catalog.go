@@ -12,6 +12,7 @@ import (
 
 type Document struct {
 	Kind, File, Note, SHA256 string
+	PublicID                 string
 	Bytes                    int
 	Sources                  []string
 	Stored                   bool
@@ -27,14 +28,16 @@ const MaxPDFBytes = 8 << 20
 
 type Publication struct {
 	ID, Owner, Date, Kind, Filename string
+	PublicID                        string
 	Number                          int
 	Data                            []byte
 	Published                       bool
 }
 
 type Store struct {
-	db    *sql.DB
-	blobs storage.Provider
+	db              *sql.DB
+	blobs           storage.Provider
+	historicalFiles map[string]string
 }
 
 func ValidatePublication(p Publication) map[string]string {
@@ -75,7 +78,7 @@ func (s *Store) Get(id string) (Publication, bool) {
 
 func appendPublication(records []Meeting, p Publication, size int) []Meeting {
 	date, _ := time.Parse("2006-01-02", p.Date)
-	doc := Document{Kind: p.Kind, File: p.ID, Bytes: size, Stored: true}
+	doc := Document{Kind: p.Kind, File: p.ID, PublicID: p.PublicID, Bytes: size, Stored: true}
 	index := slices.IndexFunc(records, func(m Meeting) bool { return m.Date == p.Date && m.Number == p.Number })
 	if index < 0 {
 		records = append(records, Meeting{Year: date.Year(), Number: p.Number, Date: p.Date, Documents: []Document{doc}})
