@@ -180,6 +180,12 @@ the committed generated SQLC files and Nix-generated browser assets;
 `build:go` builds and scans the complete application image with Nix. Publishing
 uploads the same workflow artifact without rebuilding it.
 
+`test:go` caches downloaded Go modules and compiled packages. `build:go` separately
+caches its Nix store, including hash-verified Go vendor sources, generated assets
+and build tools. Cache keys include the platform, locked inputs and commit, with
+fallbacks to reuse dependencies between commits. Nix still rebuilds the application
+when its source identity changes; publishing reuses the scanned image artifact.
+
 ### Security checks
 
 GitHub secret scanning checks repository history and new commits; push protection
