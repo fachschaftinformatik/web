@@ -216,8 +216,9 @@ does not invalidate cached test results. Database-backed site, event and exam
 tests copy a schema migrated once per test process into isolated database files;
 migration tests exercise the migrations directly. The `test:go` job summary shows
 total coverage, and its `coverage` artifact contains the HTML report, raw profile
-and badge JSON. Successful main-branch publishing updates the `coverage` branch
-with the measured percentage for the README badge; clicking it opens the CI runs
+and badge JSON. Successful release publishing attaches `coverage.json` as the
+first release asset, with the measured percentage in its asset label. The README
+badge reads that label through the releases API; clicking it opens the CI runs
 where the full reports can be downloaded. Dry runs do not publish badge changes.
 
 ### Submission notifications

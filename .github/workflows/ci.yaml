@@ -284,6 +284,23 @@ jobs:
           if [[ "$(git rev-list -n 1 "$RELEASE_TAG")" == "$GITHUB_SHA" ]]; then
             printf 'tag=%s\n' "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           fi
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: steps.aliases.outputs.tag != ''
+        with:
+          name: coverage
+          path: ${{ runner.temp }}/coverage
+      - name: Publish coverage badge
+        if: steps.aliases.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.aliases.outputs.tag }}
+        run: |
+          jq -e '.schemaVersion == 1 and (.message | test("^[0-9]+([.][0-9]+)?%$"))' \
+            "$RUNNER_TEMP/coverage/coverage.json" > /dev/null
+          coverage=$(jq -r .message "$RUNNER_TEMP/coverage/coverage.json")
+          # Publish coverage first: the badge reads the first release asset's label.
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/coverage/coverage.json#$coverage" --clobber
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.assets[0].name')" = coverage.json
       - name: Attach release SBOM
         if: steps.aliases.outputs.tag != ''
         env:
@@ -305,31 +322,3 @@ jobs:
           nix shell --inputs-from . nixpkgs#skopeo -c skopeo --insecure-policy copy --preserve-digests \
             --authfile "$HOME/.docker/config.json" \
             "docker://$IMAGE_PREFIX@$DIGEST" "docker://$IMAGE_PREFIX:latest"
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        if: github.event_name != 'workflow_dispatch' || !inputs.dry-run
-        with:
-          name: coverage
-          path: ${{ runner.temp }}/coverage
-      - name: Publish coverage badge
-        if: github.event_name != 'workflow_dispatch' || !inputs.dry-run
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          jq -e '.schemaVersion == 1 and (.message | test("^[0-9]+([.][0-9]+)?%$"))' \
-            "$RUNNER_TEMP/coverage/coverage.json" > /dev/null
-          parent=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/heads/coverage" \
-            --jq '.[] | select(.ref == "refs/heads/coverage") | .object.sha')
-          tree=$(jq -n --rawfile content "$RUNNER_TEMP/coverage/coverage.json" \
-            '{tree: [{path: "coverage.json", mode: "100644", type: "blob", content: $content}]}' \
-            | gh api --method POST "repos/$GITHUB_REPOSITORY/git/trees" --input - --jq .sha)
-          commit=$(jq -n --arg tree "$tree" --arg parent "$parent" \
-            --arg message "ci: record coverage for $GITHUB_SHA" \
-            '{tree: $tree, message: $message, parents: (if $parent == "" then [] else [$parent] end)}' \
-            | gh api --method POST "repos/$GITHUB_REPOSITORY/git/commits" --input - --jq .sha)
-          if [[ -z "$parent" ]]; then
-            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
-              -f ref=refs/heads/coverage -f sha="$commit" > /dev/null
-          else
-            gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/heads/coverage" \
-              -f sha="$commit" > /dev/null
-          fi
