@@ -60,9 +60,17 @@ embedded; rebuild the executable after changing them.
 `nix develop` prepares the GOV.UK, HTMX, TinyMCE, language-pack and GDS illustration
 assets automatically for Go's `embed`. Run `nix run .#vendor` to prepare them
 separately when using your own Go installation. Generated files are ignored by
-Git; handwritten SCSS in `view/styles/`, JavaScript and the event placeholder remain
-source-controlled. Nix compiles the SCSS to CSS for embedding.
-`flake.lock` pins the Nix toolchain, including Dart Sass; `flake.nix` pins
+Git; handwritten SCSS in `view/styles/`, TypeScript in `view/site.ts` and
+`view/editor.ts`, and the event placeholder remain source-controlled. Nix compiles
+SCSS to CSS and strictly type-checks TypeScript before emitting ESNext JavaScript
+for embedding. GOV.UK's module declaration is in `view/govuk.d.ts`; TinyMCE types
+come from its pinned upstream package.
+Format TypeScript with `nix develop -c prettier --write 'view/*.ts'`;
+the asset build checks Prettier's standard format.
+Keep browser code in small, cohesive functions with component-local state. Prefer
+inference and narrowing over type assertions, and comments only for non-obvious
+constraints or workarounds. Both application scripts are browser ES modules.
+`flake.lock` pins the Nix toolchain, including Dart Sass and TypeScript; `flake.nix` pins
 upstream versions/revisions and verifies every download with a SHA-256 hash.
 Use `nix build .#assets` to build without modifying the working tree. Updating an
 asset requires changing its version/revision and hash, then checking the build.
