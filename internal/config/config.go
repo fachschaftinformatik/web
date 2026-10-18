@@ -14,6 +14,7 @@ type Config struct {
 	SMTPUser                            string
 	SMTPPass                            string
 	SMTPFrom                            string
+	SMTPReplyTo                         string
 	S3Endpoint                          string
 	S3Bucket                            string
 	S3AccessKey                         string
@@ -31,6 +32,7 @@ func New() *Config {
 		SMTPUser:            getEnv("SMTP_USERNAME", ""),
 		SMTPPass:            getEnv("SMTP_PASSWORD", ""),
 		SMTPFrom:            getEnv("SMTP_FROM", ""),
+		SMTPReplyTo:         getEnv("SMTP_REPLY_TO", ""),
 		S3Endpoint:          getEnv("S3_ENDPOINT", ""),
 		S3Bucket:            getEnv("S3_BUCKET", ""),
 		S3AccessKey:         getEnv("S3_ACCESS_KEY", ""),
