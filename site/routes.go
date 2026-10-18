@@ -60,7 +60,7 @@ func registerPages(c *Handler, register routeRegister) {
 			c.serverError(w, err)
 			return
 		}
-		c.render(w, "home", false, view.Page{Title: "Startseite", Active: "home", Home: home, Media: view.MediaPage{Albums: view.Albums(albums)}})
+		c.render(w, "home", false, view.Page{Title: "Startseite", Active: "home", Home: home, Media: view.MediaPage{Albums: mapRecords(albums, albumView)}})
 	})
 	register("GET "+urls.TeamPath, public, c.Team)
 	register("GET "+urls.SitemapPath, public, c.Sitemap)

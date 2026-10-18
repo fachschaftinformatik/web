@@ -219,7 +219,8 @@ func (c *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var err error
-	data.Register.Programs, err = c.identity.Programs(r.Context())
+	programs, err := c.identity.Programs(r.Context())
+	data.Register.Programs = mapRecords(programs, programView)
 	if err != nil {
 		c.serverError(w, err)
 		return
@@ -243,7 +244,7 @@ func (c *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		form.ProgramID = r.PostForm.Get("program_id")
 		form.Degree = r.PostForm.Get("degree")
 		form.Version = r.PostForm.Get("version")
-		if form.ProgramID != "" && !slices.ContainsFunc(form.Programs, func(p users.Program) bool { return p.ID == form.ProgramID }) {
+		if form.ProgramID != "" && !slices.ContainsFunc(form.Programs, func(p view.Program) bool { return p.ID == form.ProgramID }) {
 			form.ProgramError = "Bitte wähle deinen Studiengang aus."
 		}
 		if form.ProgramID == "" && (form.Degree != "" || form.Version != "") {

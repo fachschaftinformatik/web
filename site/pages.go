@@ -29,14 +29,14 @@ func (c *Handler) home(ctx context.Context, viewer ...int64) (view.HomePage, err
 	if err != nil {
 		return view.HomePage{}, err
 	}
-	page := view.HomePage{Events: view.Events(upcoming)}
+	page := view.HomePage{Events: mapRecords(upcoming, eventView)}
 	news, _, err := c.posts.FindPage(ctx, posts.Filter{Type: "news"}, 1, 1, viewer...)
 	if err != nil {
 		return view.HomePage{}, err
 	}
 	records = append(records, news...)
 	for _, post := range records {
-		item := view.HomeItem(post)
+		item := view.HomeItem(postView(post))
 		if post.Type == "news" && page.News.URL == "" {
 			page.News = item
 		}
@@ -65,7 +65,7 @@ func (c *Handler) Legal(w http.ResponseWriter, r *http.Request) {
 		if role.ID == org.ChairRole {
 			for _, person := range c.members.Members() {
 				if slices.Contains(role.MemberIDs, person.ID) {
-					legal.Chair = append(legal.Chair, person)
+					legal.Chair = append(legal.Chair, memberView(person))
 				}
 			}
 		}
@@ -83,5 +83,5 @@ func (c *Handler) Sitemap(w http.ResponseWriter, r *http.Request) {
 	if !c.validPageRange(w, r, total, 100) {
 		return
 	}
-	c.render(w, "sitemap", false, view.Page{Title: "Seitenübersicht", Active: "sitemap", Media: view.MediaPage{Albums: view.Albums(albums), Pagination: listPagination(r, total, 100)}})
+	c.render(w, "sitemap", false, view.Page{Title: "Seitenübersicht", Active: "sitemap", Media: view.MediaPage{Albums: mapRecords(albums, albumView), Pagination: listPagination(r, total, 100)}})
 }

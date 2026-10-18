@@ -32,7 +32,7 @@ func (c *Handler) ExamsSubmissions(w http.ResponseWriter, r *http.Request) {
 		c.examsWriteError(w, r, err)
 		return
 	}
-	c.render(w, "submissions", false, view.Page{Title: "Meine Einreichungen", Active: "exams", SubmissionList: view.SubmissionListPage{Submissions: view.Submissions(submissions)}})
+	c.render(w, "submissions", false, view.Page{Title: "Meine Einreichungen", Active: "exams", SubmissionList: view.SubmissionListPage{Submissions: mapRecords(submissions, submissionView)}})
 }
 
 func (c *Handler) ExamsSubmission(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +58,7 @@ func (c *Handler) ExamsSubmission(w http.ResponseWriter, r *http.Request) {
 	if submission.Status == exams.Pending {
 		title = "Einreichung eingegangen"
 	}
-	c.render(w, "submission", false, view.Page{Title: title, Active: "exams", Submission: &view.SubmissionPage{Entry: view.NewSubmission(submission), EditURL: urls.EditSubmission(submission.ID)}})
+	c.render(w, "submission", false, view.Page{Title: title, Active: "exams", Submission: &view.SubmissionPage{Entry: submissionView(submission), EditURL: urls.EditSubmission(submission.ID)}})
 }
 
 func (c *Handler) ReviewExamsSubmission(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +69,7 @@ func (c *Handler) ReviewExamsSubmission(w http.ResponseWriter, r *http.Request) 
 		c.examsWriteError(w, r, err)
 		return
 	}
-	page := view.Page{Title: "Einreichung prüfen", Active: "admin", Admin: &view.AdminPage{Section: "submissions", SectionTitle: "Einreichungen", View: "review", ReviewerOnly: !session.CanAdmin()}, Submission: &view.SubmissionPage{Entry: view.NewSubmission(submission), Reviewing: true, EditURL: urls.AdminSubmission(submission.ID) + "/edit"}}
+	page := view.Page{Title: "Einreichung prüfen", Active: "admin", Admin: &view.AdminPage{Section: "submissions", SectionTitle: "Einreichungen", View: "review", ReviewerOnly: !session.CanAdmin()}, Submission: &view.SubmissionPage{Entry: submissionView(submission), Reviewing: true, EditURL: urls.AdminSubmission(submission.ID) + "/edit"}}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
 		decision := r.PostForm.Get("decision")
@@ -126,9 +126,9 @@ func (c *Handler) UploadExams(w http.ResponseWriter, r *http.Request) {
 			c.examsWriteError(w, r, exams.ErrConflict)
 			return
 		}
-		form.SubmissionID, form.Existing = submission.ID, view.Exams(submission.Documents)
+		form.SubmissionID, form.Existing = submission.ID, mapRecords(submission.Documents, examView)
 		form.EditToken = submission.EditToken
-		form.Date, form.Comment = view.NewSubmission(submission).DateLabel(), submission.Comment
+		form.Date, form.Comment = submissionView(submission).DateLabel(), submission.Comment
 		selected, revisionOf = submission.Assignments, submission.RevisionOf
 	} else {
 		if revisionOf != "" {
@@ -147,14 +147,14 @@ func (c *Handler) UploadExams(w http.ResponseWriter, r *http.Request) {
 	}
 	form.Revision = revisionOf != ""
 	form.RevisionID = revisionOf
-	form.Scope = exams.Scope(selected)
+	form.Scope = examsFilterView(exams.Scope(selected))
 	if len(selected) == 0 {
 		preferred, err := c.exams.Settings(r.Context(), userID)
 		if err != nil {
 			c.examsWriteError(w, r, err)
 			return
 		}
-		form.Scope = preferred
+		form.Scope = examsFilterView(preferred)
 	}
 	query := r.URL.Query()
 	if form.ReviewEditing && r.Method == http.MethodPost {
@@ -166,7 +166,7 @@ func (c *Handler) UploadExams(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			values = r.PostForm
 		}
-		form.Scope = exams.Filter{Programs: slices.DeleteFunc(values["program"], func(value string) bool { return value == "all" || value == "" }), Degrees: values["degree"], Versions: values["version"]}
+		form.Scope = view.ExamsFilter{Programs: slices.DeleteFunc(values["program"], func(value string) bool { return value == "all" || value == "" }), Degrees: values["degree"], Versions: values["version"]}
 	}
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
@@ -174,10 +174,10 @@ func (c *Handler) UploadExams(w http.ResponseWriter, r *http.Request) {
 		selected = selectedAssignments(r.PostForm["assignment"])
 	}
 	if date, err := time.Parse("02.01.2006", form.Date); err == nil {
-		form.DateInput = exams.DateInput{Day: date.Format("2"), Month: date.Format("1"), Year: date.Format("2006")}
+		form.DateInput = view.DateInput{Day: date.Format("2"), Month: date.Format("1"), Year: date.Format("2006")}
 	}
 	if r.Method == http.MethodPost && (r.PostForm.Has("date-day") || r.PostForm.Has("date-month") || r.PostForm.Has("date-year")) {
-		form.DateInput = exams.DateInput{Day: strings.TrimSpace(r.PostForm.Get("date-day")), Month: strings.TrimSpace(r.PostForm.Get("date-month")), Year: strings.TrimSpace(r.PostForm.Get("date-year"))}
+		form.DateInput = view.DateInput{Day: strings.TrimSpace(r.PostForm.Get("date-day")), Month: strings.TrimSpace(r.PostForm.Get("date-month")), Year: strings.TrimSpace(r.PostForm.Get("date-year"))}
 	}
 	form.ChooseScope = len(selected) == 0 && !explicitScope
 	if explicitScope {
@@ -208,12 +208,12 @@ func (c *Handler) UploadExams(w http.ResponseWriter, r *http.Request) {
 	for i := range form.Degrees {
 		form.Degrees[i].Label = exams.DegreeLabel(form.Degrees[i].Name)
 	}
-	available := catalog.Assignments(form.Scope)
+	available := catalog.Assignments(examsFilterModel(form.Scope))
 	allowed := make(map[string]exams.Assignment, len(available))
 	for _, a := range available {
 		allowed[a.Key()] = a
 	}
-	form.Groups = view.UploadGroups(available, selected)
+	form.Groups = view.UploadGroups(mapRecords(available, assignmentView), mapRecords(selected, assignmentView))
 	if !form.ChooseScope && len(form.Groups) == 0 {
 		form.ChooseScope = true
 		form.Errors["version"] = "Für diese Auswahl gibt es keine passenden Module. Ändere die Auswahl."
@@ -246,7 +246,9 @@ func (c *Handler) UploadExams(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost && !form.ChooseScope {
 		submission := exams.SubmissionDraft{Comment: form.Comment, RevisionOf: revisionOf, SubmissionID: submissionID}
 		var dateError string
-		submission.Date, dateError = form.DateInput.Parse()
+		date := exams.DateInput(form.DateInput)
+		submission.Date, dateError = date.Parse()
+		form.DateInput = view.DateInput(date)
 		if dateError != "" {
 			form.Errors["date"] = dateError
 		}

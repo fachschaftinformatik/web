@@ -31,19 +31,29 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-      - run: test -z "$(gofmt -l ./*.go internal model site storage view)"
-      - run: go vet ./...
-      - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
-      - run: shellcheck tools/*.sh
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - run: |
+          formatting=$(nix develop -c gofmt -l ./*.go internal model site storage view)
+          test -z "$formatting"
+      - run: nix develop -c go vet ./...
+      - run: nix develop -c go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
       - name: Verify generated database queries
         run: |
-          go generate ./internal/database
+          nix develop -c go generate ./internal/database
           git diff --exit-code -- internal/database
-      - run: go test -race ./...
-      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+      - run: nix develop -c go test -race ./...
+      - run: nix develop -c go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+
+  test-assets:
+    name: test:assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - run: nix flake check --print-build-logs
 
   codeql:
     name: security:codeql (${{ matrix.language }})
@@ -65,6 +75,10 @@ jobs:
         if: matrix.language == 'go'
         with:
           go-version-file: go.mod
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+        if: matrix.language == 'go'
+      - run: nix run .#vendor
+        if: matrix.language == 'go'
       - uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
@@ -131,7 +145,7 @@ jobs:
   check:
     name: release:check
     if: always()
-    needs: [test-go, codeql, security-dependencies, security-release, build-app]
+    needs: [test-go, test-assets, codeql, security-dependencies, security-release, build-app]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

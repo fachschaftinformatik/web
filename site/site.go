@@ -111,7 +111,7 @@ func (c *Handler) renderStatus(w http.ResponseWriter, page string, fragment bool
 		data.CanonicalURL = response.canonicalURL
 	}
 	if c.organization != nil {
-		data.Organization = c.organization.Current()
+		data.Organization = organizationView(c.organization.Current())
 	}
 	if c.identity != nil {
 		domains := c.identity.Domains()

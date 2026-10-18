@@ -8,8 +8,6 @@ import (
 	"github.com/fachschaftinformatik/web/internal/content"
 
 	"github.com/fachschaftinformatik/web/internal/urls"
-	"github.com/fachschaftinformatik/web/model/media"
-	"github.com/fachschaftinformatik/web/model/posts"
 )
 
 type MeetingsPage struct {
@@ -64,7 +62,7 @@ type EventsPage struct {
 type PostsPage struct {
 	Pagination        ListPagination
 	CanWrite, CanEdit bool
-	Filter            posts.Filter
+	Filter            PostsFilter
 	Posts             []Post
 	Thread            *Thread
 	BackURL           string
@@ -102,8 +100,7 @@ type HomePost struct {
 	Votes, UserVote                             int
 }
 
-func HomeItem(post posts.Post) HomePost {
-	p := NewPost(post)
+func HomeItem(p Post) HomePost {
 	return HomePost{Title: p.Title, Summary: p.Summary(), URL: p.URL(), VoteURL: p.VoteURL(), Date: p.DateLabel(), DateISO: p.DateISO(), Votes: p.Votes, UserVote: p.UserVote}
 }
 
@@ -123,10 +120,11 @@ type MediaPage struct {
 	Number, Total, Page, Pages int
 	PageNumbers                []int
 	Previous, Next, Return     string
+	PageSize                   int
 }
 
 func (m MediaPage) ImageNumber(index int) int {
-	return (m.Page-1)*media.PageSize + index + 1
+	return (m.Page-1)*m.PageSize + index + 1
 }
 
 func (m MediaPage) CarouselAlbums() []Album {

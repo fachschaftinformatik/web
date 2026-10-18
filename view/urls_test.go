@@ -3,10 +3,6 @@ package view
 import (
 	"strings"
 	"testing"
-
-	"github.com/fachschaftinformatik/web/model/exams"
-	"github.com/fachschaftinformatik/web/model/media"
-	"github.com/fachschaftinformatik/web/model/posts"
 )
 
 func TestOrganizationalDocumentURLsUsePublicIdentity(t *testing.T) {
@@ -24,8 +20,8 @@ func TestCanonicalJourneyFormsAndNavigation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	submission := NewSubmission(exams.Submission{ID: "42", Status: exams.Pending})
-	thread := NewThread(posts.Thread{Post: posts.Post{ID: "42", Title: "Synthetic post"}, Replies: []posts.Comment{{ID: "7"}}})
+	submission := Submission{ID: "42", Status: "pending"}
+	thread := Thread{Post: Post{ID: "42", Title: "Synthetic post"}, Replies: []Comment{{ID: "7"}}}
 	for _, tc := range []struct {
 		name string
 		page Page
@@ -33,7 +29,7 @@ func TestCanonicalJourneyFormsAndNavigation(t *testing.T) {
 	}{
 		{"exams", Page{Active: "exams"}, []string{`action="/exams"`, `name="search"`, `href="/exams/submissions/create"`, `href="/exams?program=all"`, `name="program" value="all"`, `data-active="false"`}},
 		{"exams", Page{Active: "exams", Exams: ExamsPage{Degrees: []FilterOption{{Name: "bachelor", Selected: true}}}}, []string{`data-active="true"`}},
-		{"module", Page{Active: "exams", UserID: 1, Exams: ExamsPage{Module: &Module{Module: exams.Module{ID: "42"}, Exams: []Exam{{Exam: exams.Exam{ID: "23", OwnerID: 1}}}}}}, []string{`href="/exams/submissions/create?revision=23"`}},
+		{"module", Page{Active: "exams", UserID: 1, Exams: ExamsPage{Module: &Module{ID: "42", Exams: []Exam{{ID: "23", CanRevise: true}}}}}, []string{`href="/exams/submissions/create?revision=23"`}},
 		{"posts", Page{Active: "posts", Community: true}, []string{`action="/posts"`, `href="/posts/create"`, `href="/news"`, `href="/events"`, `href="/media"`}},
 		{"submission", Page{Active: "admin", Admin: &AdminPage{Section: "submissions"}, Submission: &SubmissionPage{Entry: submission, Reviewing: true, EditURL: "/admin/submissions/42/edit"}}, []string{`action="/admin/submissions/42/review"`, `value="approve"`, `value="reject"`, `Freigeben`}},
 		{"submissions", Page{Active: "exams", SubmissionList: SubmissionListPage{Submissions: []Submission{submission}}}, []string{`href="/exams/submissions/42"`}},
@@ -45,7 +41,7 @@ func TestCanonicalJourneyFormsAndNavigation(t *testing.T) {
 		{"forgot", Page{}, []string{`action="/password/forgot"`}},
 		{"upload", Page{Upload: UploadPage{Action: "/admin/submissions/42/edit", SubmissionID: "42", ReviewEditing: true, EditToken: "synthetic-concurrency-token"}}, []string{`method="post"`, `name="edit_token" value="synthetic-concurrency-token"`, `href="/admin/submissions/42/review"`}},
 		{"upload", Page{Upload: UploadPage{Action: "/exams/submissions/create", ChooseScope: true, RevisionID: "23"}}, []string{`method="get"`, `name="revision" value="23"`}},
-		{"media", Page{Active: "media", Community: true, Media: MediaPage{Albums: []Album{NewAlbum(media.Album{ID: "42", Title: "Synthetic album", Cover: media.Image{ID: "42", AlbumCover: true}})}}}, []string{`href="/media/albums/42"`, `/media/albums/42/cover/400`, `>Fotos`}},
+		{"media", Page{Active: "media", Community: true, Media: MediaPage{Albums: []Album{{ID: "42", Title: "Synthetic album", Cover: Image{ID: "42", AlbumCover: true}}}}}, []string{`href="/media/albums/42"`, `/media/albums/42/cover/400`, `>Fotos`}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var out strings.Builder

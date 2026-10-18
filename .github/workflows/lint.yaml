@@ -17,8 +17,11 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          pattern='^(feat|fix|docs|refactor|test|perf|build|ci|chore|style|revert)(\([a-z0-9][a-z0-9./_-]*\))?!?: [^[:cntrl:]]+$'
-          if [[ ! "$PR_TITLE" =~ $pattern || "$PR_TITLE" != "${PR_TITLE,,}" ]]; then
-            echo 'Use a lowercase Conventional Commit title, e.g. fix: correct event pagination'
+          export LC_ALL=C
+          pattern='^(feat|fix|docs|refactor|test|perf|build|ci|chore|style|revert)(\([a-z0-9]+\))?!?: [a-z0-9 ]{1,42}$'
+          if [[ ! "$PR_TITLE" =~ $pattern ]]; then
+            echo 'Use type: description or type(scope): description, with an optional ! before the colon.'
+            echo 'Scopes must be lowercase alphanumeric. Descriptions must be 1 to 42 characters using only lowercase letters, digits and spaces.'
+            echo 'Example: fix(auth): correct password reset logging'
             exit 1
           fi

@@ -1,3 +1,10 @@
+FROM --platform=$BUILDPLATFORM nixos/nix:2.34.9@sha256:53b5ec518b696373829ea305c3c07a8c870113e44648c88ec484ef078550fd4f AS assets
+WORKDIR /src
+COPY flake.nix flake.lock go.mod ./
+COPY view/styles ./view/styles
+RUN nix --extra-experimental-features "nix-command flakes" build .#assets --out-link /assets && \
+    cp -RL /assets /generated-assets
+
 FROM --platform=$BUILDPLATFORM golang:1.27.2-alpine AS builder
 WORKDIR /src
 COPY go.mod go.sum ./
@@ -8,6 +15,7 @@ COPY model ./model
 COPY site ./site
 COPY storage ./storage
 COPY view ./view
+COPY --from=assets /generated-assets/ ./view/assets/
 ARG TARGETOS TARGETARCH
 ARG VERSION=dev
 RUN --mount=type=cache,target=/root/.cache/go-build \
