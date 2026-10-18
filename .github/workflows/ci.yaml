@@ -137,6 +137,8 @@ jobs:
     name: build:go
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      TRIVY_IMAGE: aquasec/trivy:0.76.0@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -146,26 +148,24 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/release"
           nix build .#image --out-link "$RUNNER_TEMP/image"
-          nix shell --inputs-from . nixpkgs#skopeo -c skopeo copy --format oci --dest-compress \
+          # Preserve Docker healthcheck metadata in the OCI layout.
+          nix shell --inputs-from . nixpkgs#skopeo -c skopeo --insecure-policy copy --format v2s2 \
             "docker-archive:$RUNNER_TEMP/image" "oci:$RUNNER_TEMP/release/image:web"
           nix shell --inputs-from . nixpkgs#skopeo -c skopeo inspect \
             --format '{{.Digest}}' "oci:$RUNNER_TEMP/release/image:web" \
             > "$RUNNER_TEMP/release/image-digest"
       - name: Scan application image
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          input: ${{ runner.temp }}/release/image
-          scanners: vuln
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: '1'
+        run: |
+          docker run --rm -v "$RUNNER_TEMP/release:/release:ro" \
+            -v "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" "$TRIVY_IMAGE" \
+            image --input /release/image --scanners vuln --severity HIGH,CRITICAL \
+            --ignore-unfixed --exit-code 1
       - name: Generate image SBOM
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          input: ${{ runner.temp }}/release/image
-          format: spdx-json
-          output: ${{ runner.temp }}/release/web.sbom.spdx.json
-          scanners: vuln
+        run: |
+          docker run --rm -v "$RUNNER_TEMP/release:/release" \
+            -v "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" "$TRIVY_IMAGE" \
+            image --input /release/image --format spdx-json --scanners vuln \
+            --output /release/web.sbom.spdx.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-image
@@ -261,6 +261,7 @@ jobs:
           IMAGE_PREFIX: ghcr.io/${{ github.repository }}
           RELEASE_TAG: ${{ steps.aliases.outputs.tag }}
         run: |
-          nix shell --inputs-from . nixpkgs#skopeo -c skopeo copy --preserve-digests \
+          DIGEST=$(cat "$RUNNER_TEMP/release/image-digest")
+          nix shell --inputs-from . nixpkgs#skopeo -c skopeo --insecure-policy copy --preserve-digests \
             --authfile "$HOME/.docker/config.json" \
-            "docker://$IMAGE_PREFIX:$RELEASE_TAG" "docker://$IMAGE_PREFIX:latest"
+            "docker://$IMAGE_PREFIX@$DIGEST" "docker://$IMAGE_PREFIX:latest"

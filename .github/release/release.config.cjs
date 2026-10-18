@@ -20,7 +20,7 @@ module.exports = {
       execCwd: '../..',
       prepareCmd: `set -eu
         expected=$(cat "$RELEASE_ARTIFACT/image-digest")
-        skopeo copy --preserve-digests --authfile "$HOME/.docker/config.json" \
+        skopeo --insecure-policy copy --preserve-digests --authfile "$HOME/.docker/config.json" \
           "oci:$RELEASE_ARTIFACT/image:web" "docker://$IMAGE_PREFIX:\${nextRelease.gitTag}"
         published=$(skopeo inspect --authfile "$HOME/.docker/config.json" \
           --format '{{.Digest}}' "docker://$IMAGE_PREFIX:\${nextRelease.gitTag}")
