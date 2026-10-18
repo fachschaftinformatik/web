@@ -38,6 +38,8 @@ dist/
 /view/assets/govuk.css
 /view/assets/site.css
 /view/assets/editor.css
+/view/assets/site.js
+/view/assets/editor.js
 /view/assets/govuk.js
 /view/assets/htmx.js
 /view/assets/GOVUK-LICENSE.txt

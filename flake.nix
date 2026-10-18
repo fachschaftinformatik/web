@@ -57,7 +57,7 @@
             pname = "web-browser-assets";
             version = "1";
             dontUnpack = true;
-            nativeBuildInputs = [ pkgs.dart-sass ];
+            nativeBuildInputs = [ pkgs.dart-sass pkgs.typescript pkgs.prettier ];
 
             buildPhase = ''
               runHook preBuild
@@ -75,6 +75,14 @@
                 --load-path=govuk/dist ${./view/styles/govuk.scss} govuk.css
               sass --no-source-map --style=compressed ${./view/styles/site.scss} site.css
               sass --no-source-map --style=compressed ${./view/styles/editor.scss} editor.css
+              mkdir -p scripts/node_modules
+              cp ${./view/site.ts} scripts/site.ts
+              cp ${./view/editor.ts} scripts/editor.ts
+              cp ${./view/govuk.d.ts} scripts/govuk.d.ts
+              ln -s "$PWD/tinymce" scripts/node_modules/tinymce
+              prettier --check scripts/*.ts
+              tsc --pretty false --strict --target ESNext --module ESNext --moduleResolution bundler \
+                --lib ESNext,DOM,DOM.Iterable --rootDir scripts --outDir js scripts/site.ts scripts/editor.ts
               runHook postBuild
             '';
 
@@ -83,6 +91,7 @@
               mkdir -p "$out/fonts" "$out/icons" "$out/community"
               install -m 0644 govuk.css "$out/govuk.css"
               install -m 0644 site.css editor.css "$out/"
+              install -m 0644 js/site.js js/editor.js "$out/"
               install -m 0644 govuk/dist/govuk/govuk-frontend.min.js "$out/govuk.js"
               install -m 0644 govuk/dist/govuk/assets/fonts/*.woff2 "$out/fonts/"
               install -m 0644 ${govukLicense} "$out/GOVUK-LICENSE.txt"
@@ -159,7 +168,7 @@
           default = assert pkgs.lib.assertMsg (go.version == goVersion)
             "The locked Nix Go version must match go.mod; update go.mod and flake.lock together.";
             pkgs.mkShellNoCC {
-              packages = [ go ];
+              packages = [ go pkgs.prettier ];
               GOTOOLCHAIN = "local";
               shellHook = ''
                 ${self.apps.${system}.vendor.program} "$PWD"
