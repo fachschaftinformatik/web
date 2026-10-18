@@ -274,7 +274,7 @@
           beim Absenden entfernt.
         </p>
       </div>
-      {{ if not .Event }}
+      {{ if and (not .Event) (not .Announcement) }}
         <div class="govuk-form-group">
           <label class="govuk-label" for="tags">Schlagwörter, mit Komma getrennt</label
           ><input class="govuk-input" id="tags" name="tags" value="{{ .Draft.Tags }}" />

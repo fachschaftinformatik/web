@@ -90,7 +90,11 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 			c.pageError(w, "Das Formular konnte nicht gelesen werden. Versuche es mit einem kürzeren Beitrag erneut.", http.StatusBadRequest)
 			return
 		}
-		editor.Draft = view.EditorDraft{Title: r.PostForm.Get("title"), Body: r.PostForm.Get("body"), Type: editor.Draft.Type, Tags: r.PostForm.Get("tags"), Date: r.PostForm.Get("date"), Time: r.PostForm.Get("time"), Location: r.PostForm.Get("location")}
+		tags := r.PostForm.Get("tags")
+		if editor.Announcement {
+			tags = editor.Draft.Tags
+		}
+		editor.Draft = view.EditorDraft{Title: r.PostForm.Get("title"), Body: r.PostForm.Get("body"), Type: editor.Draft.Type, Tags: tags, Date: r.PostForm.Get("date"), Time: r.PostForm.Get("time"), Location: r.PostForm.Get("location")}
 		if r.PostForm.Has("rich_body") {
 			editor.RichBody = content.SanitizeRichText(r.PostForm.Get("rich_body"))
 			editor.Draft.Body = content.RichTextPlain(editor.RichBody)
