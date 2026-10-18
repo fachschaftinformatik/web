@@ -32,9 +32,6 @@ development and checks.
 [![Dependencies](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Ffsiwh%2Fweb%2Freleases%2Flatest&query=%24.assets%5B3%5D.label&label=Dependencies&color=blue)](https://github.com/fsiwh/web/releases/latest/download/web.sbom.spdx.json)
 [![SBOM SPDX](https://img.shields.io/badge/SBOM-SPDX-blue)](https://github.com/fsiwh/web/releases/latest/download/web.sbom.spdx.json)
 
-Dependencies: Unique packages with package URLs in the release image's SPDX
-SBOM. The badges link to the scan report and SBOM.
-
 Report a security issue: [team@fsi-wh.de](mailto:team@fsi-wh.de).
 
 SPDX-License-Identifier: MPL-2.0
