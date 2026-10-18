@@ -36,7 +36,7 @@ jobs:
         run: |
           printf 'GOCACHE=%s/go-build\nGOMODCACHE=%s/go-mod\n' "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Cache Go modules and builds
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ${{ runner.temp }}/go-build
