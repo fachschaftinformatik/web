@@ -288,8 +288,9 @@ clear, imperative wording, using the format and limits below.
 
 - Keep the description to **42 characters maximum**, excluding the type, scope,
   breaking marker, colon and following space.
-- Use lowercase only. Descriptions contain only letters `a`–`z`, digits and spaces:
-  no punctuation or special characters such as commas, semicolons or periods.
+- Use lowercase only. Descriptions may contain letters `a`–`z`, digits, spaces
+  and dependency punctuation (`.`, `/`, `@`, `_`, `+`, `-`) for package names
+  and versions. Avoid sentence punctuation such as commas and semicolons.
   The Conventional Commit prefix may contain `(`, `)`, `!` and `:`.
 - Use an optional scope only for an affected code area, such as `web`, `db`,
   `auth`, `storage`, `deps`, `ci` or `release`. Keep scopes lowercase and
@@ -308,6 +309,7 @@ feat(auth): add user registration
 fix(db): enforce unique email constraint
 fix(auth): correct password reset logging
 feat(auth)!: require token based sessions
+chore(deps): bump htmx.org from 2.0.8 to 2.0.11
 ```
 
 PR titles follow the same rules. When squash merging, use the PR title verbatim
