@@ -235,7 +235,8 @@ Active, verified administrators and editors can select **Galerie verwalten** on
 explicit **Speichern** button, using the GOV.UK small-checkbox pattern. The
 management view includes excluded images so they can be restored.
 
-Existing images remain selected after migration. Gallery counts, navigation and
+New images are excluded by default and must be selected explicitly. Existing
+selections are preserved during migrations. Gallery counts, navigation and
 fallback cover selection use only selected photographs; albums still require at
 least three. Selection changes preserve stored files and permanent image IDs.
 

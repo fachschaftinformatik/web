@@ -19,6 +19,9 @@ INSERT INTO media(id,event_id,user_id,title,access_key,mime_type,nbytes,created_
 (104,10,900,'Four','104','image/jpeg',5,'2026-01-01T00:00:00Z')`); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := db.Exec(`UPDATE media SET gallery_visible=1`); err != nil {
+		t.Fatal(err)
+	}
 	seedPublicRefs(t, db)
 	if _, err := db.Exec(`INSERT INTO users(id,email,name,password,role,active,verified) VALUES(902,'gallery-user@fsi-wh.de','Member','unused','user',1,1)`); err != nil {
 		t.Fatal(err)

@@ -110,9 +110,12 @@ UPDATE events SET cover_path='events/' || id || '/cover/source' WHERE id IN (10,
 		t.Fatal(err)
 	}
 	for id := 110; id < 180; id++ {
-		if _, err := db.Exec(`INSERT INTO media(id,event_id,user_id,title,access_key,mime_type,nbytes,created_at) VALUES (?,10,900,?,?,'image/jpeg',11,'2025-01-01T00:00:00Z')`, id, "Bild "+strconv.Itoa(id), strconv.Itoa(id)); err != nil {
+		if _, err := db.Exec(`INSERT INTO media(id,event_id,user_id,title,access_key,mime_type,nbytes,created_at,gallery_visible) VALUES (?,10,900,?,?,'image/jpeg',11,'2025-01-01T00:00:00Z',1)`, id, "Bild "+strconv.Itoa(id), strconv.Itoa(id)); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if _, err := db.Exec(`UPDATE media SET gallery_visible=1`); err != nil {
+		t.Fatal(err)
 	}
 	seedPublicRefs(t, db)
 	views, err := view.NewRenderer()

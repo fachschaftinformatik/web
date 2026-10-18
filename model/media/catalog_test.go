@@ -45,6 +45,9 @@ INSERT INTO media (id,event_id,user_id,title,description,access_key,mime_type,nb
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err := db.Exec(`UPDATE media SET gallery_visible=1`); err != nil {
+		t.Fatal(err)
+	}
 	storage, err := disk.New(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -65,7 +68,7 @@ func TestCatalogCompleteAndFiltered(t *testing.T) {
 	s, db := mediaService(t)
 	// Exceed several pages: every eligible row must reach the catalog.
 	for id := 200; id < 273; id++ {
-		_, err := db.Exec(`INSERT INTO media (id,event_id,user_id,access_key,mime_type,nbytes,created_at) VALUES (?,20,1,?,'image/png',5,'2026-01-01T00:00:00Z')`, id, strconv.Itoa(id))
+		_, err := db.Exec(`INSERT INTO media (id,event_id,user_id,access_key,mime_type,nbytes,created_at,gallery_visible) VALUES (?,20,1,?,'image/png',5,'2026-01-01T00:00:00Z',1)`, id, strconv.Itoa(id))
 		if err != nil {
 			t.Fatal(err)
 		}

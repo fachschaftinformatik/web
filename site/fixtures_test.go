@@ -166,7 +166,7 @@ UPDATE modules SET alias='SQL' WHERE id=11;`)
 	album := "140125680309370881"
 	exec(`INSERT INTO events(id,title,created_at) VALUES(?,'LAN Party 2025','2025-01-01T00:00:00Z')`, album)
 	for _, id := range []string{"140126343856652289", "140126331227602945", "140126318313340929", "140126304396640257", "140126291885031425", "140126279717355521"} {
-		exec(`INSERT INTO media(id,event_id,user_id,title,description,access_key,mime_type,nbytes,created_at) VALUES(?,?,900,'Foto','Teilnehmende',?,'image/jpeg',5,'2025-01-01T00:00:00Z')`, id, album, id)
+		exec(`INSERT INTO media(id,event_id,user_id,title,description,access_key,mime_type,nbytes,created_at,gallery_visible) VALUES(?,?,900,'Foto','Teilnehmende',?,'image/jpeg',5,'2025-01-01T00:00:00Z',1)`, id, album, id)
 	}
 	seedPublicRefs(t, db)
 }
