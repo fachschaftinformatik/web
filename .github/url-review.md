@@ -86,8 +86,8 @@ from permission checks on the actual record.
 
 The contract documents `program` as an ID and `degree=bachelor`. The current
 catalogue emits program display names and capitalized degree labels, then
-compares them as exact strings. See `internal/controller/exams.go`,
-`internal/model/exams/pagination.go` and `internal/view/exams.go`.
+compares them as exact strings. See `site/exams.go`,
+`model/exams/pagination.go` and `view/exams.go`.
 
 Observed on the isolated production-derived development copy:
 
@@ -112,7 +112,7 @@ should be deduplicated and sorted when generating links.
 
 ### 2. Complete canonical URL handling — high priority
 
-`internal/controller/routes.go` explicitly registers canonical route shapes,
+`site/routes.go` explicitly registers canonical route shapes,
 but the overall canonicalization policy is incomplete:
 
 - A real `/posts/{id}` and `/posts/0{id}` both returned 200 in the review.
@@ -120,7 +120,7 @@ but the overall canonicalization policy is incomplete:
   Model-level clamping can make many addresses display the same page.
 - `/about/` returns 404. This follows the current strict spelling policy, but
   there is no agreed friendly-normalization boundary for canonical paths.
-- `internal/view/templates/layout.html` has no canonical-link metadata.
+- `view/templates/layout.html` has no canonical-link metadata.
 
 Recommendation: define one canonical public origin and one address for each
 public representation. Require canonical decimal IDs on numeric-ID routes and
@@ -140,8 +140,8 @@ need an explicit indexing policy; canonical tags are not access control.
 
 ### 3. Share route definitions and outward-link construction — high priority
 
-Route patterns live in `internal/controller/routes.go`; record URL methods live
-in `internal/view/records.go`; controllers, email generation and templates also
+Route patterns live in `site/routes.go`; record URL methods live
+in `view/records.go`; controllers, email generation and templates also
 contain path literals. Existing builders help, but there is no shared route
 identity joining registration and link generation.
 
@@ -167,8 +167,8 @@ between router and builder is not sufficient verification.
 ### 4. Make adding a feature an additive operation — medium priority
 
 Adding a section currently involves route registration, the generic admin
-dispatcher in `internal/controller/users.go`, renderer registration in
-`internal/view/render.go`, page fields, navigation, sitemap and breadcrumbs.
+dispatcher in `site/users.go`, renderer registration in
+`view/render.go`, page fields, navigation, sitemap and breadcrumbs.
 `Page` also aggregates every domain's page state.
 
 Recommendation: use ordinary feature registration functions, grouped by domain,

@@ -1,0 +1,146 @@
+package site
+
+import (
+	"crypto/rand"
+	"crypto/subtle"
+	"encoding/hex"
+	"net/http"
+	"strings"
+	"sync"
+
+	"github.com/fachschaftinformatik/web/model/users"
+)
+
+const sessionCookie = "web-session"
+
+type session = users.Session
+
+// Policies are attached to concrete registrations, before session processing.
+// There is deliberately no pathname-based security classification.
+type routePolicy struct {
+	session, authenticated, admin, reviewer, csrf, private bool
+	bodyLimit                                              int64
+}
+
+func randomToken() string {
+	var value [32]byte
+	if _, err := rand.Read(value[:]); err != nil {
+		panic(err)
+	}
+	return hex.EncodeToString(value[:])
+}
+
+type sessionResponse struct {
+	http.ResponseWriter
+	session      *session
+	canonicalURL string
+}
+
+// Transient UI state is process-local and is never written to account storage.
+var transient = struct {
+	sync.Mutex
+	flash map[string]string
+}{flash: make(map[string]string)}
+
+func flash(w http.ResponseWriter, message string) {
+	if response, ok := w.(*sessionResponse); ok && response.session != nil {
+		transient.Lock()
+		defer transient.Unlock()
+		transient.flash[response.session.ID] = message
+	}
+}
+
+func takeFlash(w http.ResponseWriter) string {
+	if response, ok := w.(*sessionResponse); ok && response.session != nil {
+		transient.Lock()
+		defer transient.Unlock()
+		message := transient.flash[response.session.ID]
+		delete(transient.flash, response.session.ID)
+		return message
+	}
+	return ""
+}
+
+func (c *Handler) setSessionCookie(w http.ResponseWriter, r *http.Request, s *session) {
+	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: s.ID, Path: "/", HttpOnly: true, Secure: c.secureCookies || r.TLS != nil, SameSite: http.SameSiteLaxMode, MaxAge: 8 * 60 * 60})
+}
+
+func (c *Handler) withSession(policy routePolicy, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var s *session
+		if cookie, err := r.Cookie(sessionCookie); err == nil {
+			var err error
+			s, err = c.identity.Session(r.Context(), cookie.Value)
+			if err != nil {
+				c.serverError(w, err)
+				return
+			}
+		}
+		if s == nil && policy.session && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+			var err error
+			s, err = c.identity.CreateSession(r.Context(), 0)
+			if err != nil {
+				c.serverError(w, err)
+				return
+			}
+			c.setSessionCookie(w, r, s)
+		}
+		response := &sessionResponse{ResponseWriter: w, session: s}
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			response.canonicalURL = canonicalURL(r)
+		}
+		if policy.authenticated || policy.session || s != nil {
+			w.Header().Set("Cache-Control", "no-store")
+		}
+		if policy.private {
+			w.Header().Set("Cache-Control", "private, no-store")
+		}
+		w.Header().Add("Vary", "Cookie")
+		if policy.authenticated && (s == nil || !s.Authenticated) {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		if policy.admin && !s.CanAdmin() || policy.reviewer && !s.CanReview() {
+			c.pageError(response, "Du hast keine Berechtigung für die Verwaltung.", http.StatusForbidden)
+			return
+		}
+		if r.Method == http.MethodPost {
+			if policy.bodyLimit > 0 {
+				r.Body = http.MaxBytesReader(w, r.Body, policy.bodyLimit)
+			}
+			if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+				if err := r.ParseMultipartForm(policy.bodyLimit); err != nil {
+					c.pageError(response, "Das Formular ist zu groß oder konnte nicht gelesen werden.", http.StatusBadRequest)
+					return
+				}
+				defer r.MultipartForm.RemoveAll()
+			} else if err := r.ParseForm(); err != nil {
+				c.pageError(response, "Das Formular konnte nicht gelesen werden.", http.StatusBadRequest)
+				return
+			}
+			if policy.csrf && !validCSRF(s, r.PostForm.Get("csrf")) {
+				c.pageError(response, "Lade die Seite neu und versuche es noch einmal.", http.StatusForbidden)
+				return
+			}
+		}
+		next.ServeHTTP(response, r)
+	})
+}
+
+func validCSRF(s *session, value string) bool {
+	return s != nil && value != "" && subtle.ConstantTimeCompare([]byte(s.CSRF), []byte(value)) == 1
+}
+
+func (c *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	if response := w.(*sessionResponse); response.session != nil {
+		if err := c.identity.DeleteSession(r.Context(), response.session.ID); err != nil {
+			c.serverError(w, err)
+			return
+		}
+		transient.Lock()
+		delete(transient.flash, response.session.ID)
+		transient.Unlock()
+	}
+	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Path: "/", MaxAge: -1, HttpOnly: true, Secure: c.secureCookies || r.TLS != nil, SameSite: http.SameSiteLaxMode})
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}

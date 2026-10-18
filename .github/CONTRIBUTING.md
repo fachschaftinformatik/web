@@ -56,6 +56,21 @@ Format HTML templates with Prettier 3.6.2 and `prettier-plugin-go-template` 0.0.
 using the `go-template` parser, CSS whitespace sensitivity and a print width of 100.
 Use whitespace-trimming template actions inside URL and enumerated attributes.
 
+## Source layout
+
+The application keeps its MVC responsibilities in separate packages:
+
+- `model/`: feature packages for business rules, authorization and persistence.
+- `site/`: the controller layer, with HTTP routes, request handling and sessions.
+- `view/`: presentation types, display formatting, embedded templates and assets.
+- `storage/`: object-storage interfaces and disk/S3 implementations.
+- `internal/`: shared implementation helpers, configuration and database migrations.
+- `tools/`: development scripts.
+
+`main.go` and `application.go` handle startup and dependency wiring. Models must
+not depend on `site` or `view`. Views must not invoke services or access storage
+or the database; HTTP orchestration belongs in `site`.
+
 ## Dependency updates
 
 Renovate runs on Mondays at 08:00 Europe/Berlin, with automatic daylight-saving adjustment.

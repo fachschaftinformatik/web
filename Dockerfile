@@ -4,6 +4,10 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY main.go application.go ./
 COPY internal ./internal
+COPY model ./model
+COPY site ./site
+COPY storage ./storage
+COPY view ./view
 ARG TARGETOS TARGETARCH
 ARG VERSION=dev
 RUN --mount=type=cache,target=/root/.cache/go-build \

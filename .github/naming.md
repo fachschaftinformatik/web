@@ -99,14 +99,14 @@ The existing domain packages map as follows:
 
 | Current package | Target package | Related naming changes |
 | --- | --- | --- |
-| `internal/model/archive` | `internal/model/exams` | `ArchivePage` → `ExamsPage`; `archive` variables → `exams` |
-| `internal/model/forum` | `internal/model/posts` | `ForumPage` → `PostsPage`; `forum` variables → `posts` |
-| `internal/model/gallery` | `internal/model/media` | `ImagesPage` → `MediaPage`; `gallery` variables → `media` |
-| `internal/model/people` | `internal/model/members` | `Person` → `Member`; `Responsibility` → `MemberRole` where domain-equivalent |
-| `internal/model/events` | unchanged | Keep event/calendar records distinct from albums |
-| `internal/model/meetings` | unchanged | Keep meeting publications distinct from exam documents |
-| `internal/model/organization` | unchanged | Organization identity and settings remain their own domain |
-| `internal/model/users` | unchanged | User accounts and authentication remain their own domain |
+| `internal/model/archive` | `model/exams` | `ArchivePage` → `ExamsPage`; `archive` variables → `exams` |
+| `internal/model/forum` | `model/posts` | `ForumPage` → `PostsPage`; `forum` variables → `posts` |
+| `internal/model/gallery` | `model/media` | `ImagesPage` → `MediaPage`; `gallery` variables → `media` |
+| `internal/model/people` | `model/members` | `Person` → `Member`; `Responsibility` → `MemberRole` where domain-equivalent |
+| `internal/model/events` | `model/events` | Keep event/calendar records distinct from albums |
+| `internal/model/meetings` | `model/meetings` | Keep meeting publications distinct from exam documents |
+| `internal/model/organization` | `model/organization` | Organization identity and settings remain their own domain |
+| `internal/model/users` | `model/users` | User accounts and authentication remain their own domain |
 
 The role functionality can remain in the members package. URL grouping does not
 require a new package or a new service for every noun.

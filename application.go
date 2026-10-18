@@ -12,20 +12,20 @@ import (
 	"time"
 
 	"github.com/fachschaftinformatik/web/internal/config"
-	"github.com/fachschaftinformatik/web/internal/controller"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/email"
-	"github.com/fachschaftinformatik/web/internal/model/events"
-	"github.com/fachschaftinformatik/web/internal/model/exams"
-	"github.com/fachschaftinformatik/web/internal/model/media"
-	"github.com/fachschaftinformatik/web/internal/model/meetings"
-	"github.com/fachschaftinformatik/web/internal/model/members"
-	"github.com/fachschaftinformatik/web/internal/model/organization"
-	"github.com/fachschaftinformatik/web/internal/model/posts"
-	"github.com/fachschaftinformatik/web/internal/model/users"
-	"github.com/fachschaftinformatik/web/internal/storage"
-	"github.com/fachschaftinformatik/web/internal/storage/disk"
-	"github.com/fachschaftinformatik/web/internal/storage/s3"
+	"github.com/fachschaftinformatik/web/model/events"
+	"github.com/fachschaftinformatik/web/model/exams"
+	"github.com/fachschaftinformatik/web/model/media"
+	"github.com/fachschaftinformatik/web/model/meetings"
+	"github.com/fachschaftinformatik/web/model/members"
+	"github.com/fachschaftinformatik/web/model/organization"
+	"github.com/fachschaftinformatik/web/model/posts"
+	"github.com/fachschaftinformatik/web/model/users"
+	"github.com/fachschaftinformatik/web/site"
+	"github.com/fachschaftinformatik/web/storage"
+	"github.com/fachschaftinformatik/web/storage/disk"
+	"github.com/fachschaftinformatik/web/storage/s3"
 )
 
 type application struct {
@@ -91,7 +91,7 @@ func newApplication(ctx context.Context, databasePath, blobPath string) (_ *appl
 	}
 	identity := users.NewService(db, cfg.Domain, users.DomainPolicy{Registration: cfg.RegistrationDomains, Accounts: cfg.AccountDomains})
 	examDocuments := exams.NewService(db, objects)
-	app.handler, err = controller.New(controller.Services{
+	app.handler, err = site.New(site.Services{
 		Users: identity, Exams: examDocuments, Members: team, Meetings: publications, Organization: org,
 		Posts: posts.NewService(db), Media: media.NewService(db, objects), Events: events.NewService(db, objects),
 	}, origin.Scheme == "https")
