@@ -12,10 +12,10 @@ There are several ways to contribute to the project:
 
 - Report any potential bugs
 - Propose improvements and enhancements
-- Implement a (requested) feature or [fix a bug](https://github.com/fachschaftinformatik/web/labels/bug)
+- Implement a (requested) feature or [fix a bug](https://github.com/fsiwh/web/labels/bug)
 - Improve the documentation
 
-If in doubt, reach out to us. You can [open an issue](https://github.com/fachschaftinformatik/web/issues/new) anytime to share ideas or invite feedback.
+If in doubt, reach out to us. You can [open an issue](https://github.com/fsiwh/web/issues/new) anytime to share ideas or invite feedback.
 
 ## Building
 
@@ -209,7 +209,10 @@ CI gives the tests a stable `TMPDIR` so Nix's per-invocation temporary directory
 does not invalidate cached test results. Database-backed site, event and exam
 tests copy a schema migrated once per test process into isolated database files;
 migration tests exercise the migrations directly. The `test:go` job summary shows
-total coverage, and its `coverage` artifact contains the HTML report and raw profile.
+total coverage, and its `coverage` artifact contains the HTML report, raw profile
+and badge JSON. Successful main-branch publishing updates the `coverage` branch
+with the measured percentage for the README badge; clicking it opens the CI runs
+where the full reports can be downloaded. Dry runs do not publish badge changes.
 
 ### Security checks
 
@@ -332,4 +335,4 @@ Relevant documentation:
 
 [1]: https://go.dev/wiki/CodeReviewComments
 [2]: https://www.conventionalcommits.org/en/v1.0.0/#specification
-[3]: https://github.com/fachschaftinformatik/web/blob/main/MAINTAINERS
+[3]: https://github.com/fsiwh/web/blob/main/MAINTAINERS
