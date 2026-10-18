@@ -16,7 +16,7 @@
   "semanticCommitScope": "deps",
   "commitMessageAction": "bump",
   "commitMessageTopic": "{{{depName}}}",
-  "commitMessageExtra": "from {{#if currentVersion}}{{{currentVersion}}}{{else}}{{{currentValue}}}{{/if}} to {{#if newVersion}}{{{newVersion}}}{{else}}{{{newValue}}}{{/if}}",
+  "commitMessageExtra": "to {{{newValue}}}",
   "prBodyTemplate": "",
   "lockFileMaintenance": { "enabled": true, "schedule": ["at any time"] },
   "customManagers": [
@@ -53,6 +53,14 @@
     }
   ],
   "packageRules": [
+    {
+      "matchManagers": ["bun", "gomod", "dockerfile", "docker-compose", "github-actions", "nix", "custom.regex"],
+      "commitMessageTopic": "{{{replace '^.*/' '' (replace '/v[0-9]+$' '' depName)}}}"
+    },
+    {
+      "matchDepNames": ["conventional-changelog-conventionalcommits"],
+      "commitMessageTopic": "conventional-changelog"
+    },
     {
       "description": "The native action manager cannot parse renovate-version with a digest; the custom manager handles it.",
       "matchManagers": ["github-actions"],
@@ -103,8 +111,7 @@
     {
       "matchManagers": ["github-actions"],
       "pinDigests": true,
-      "semanticCommitScope": "ci",
-      "commitMessageTopic": "{{{depName}}}"
+      "semanticCommitScope": "ci"
     },
     {
       "matchManagers": ["gomod"],
@@ -112,13 +119,20 @@
       "enabled": true
     },
     {
+      "description": "Indirect major module-path migrations must come from the dependency that imports them.",
       "matchManagers": ["gomod"],
-      "postUpdateOptions": ["gomodTidy", "goGenerate"],
+      "matchDepTypes": ["indirect"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["gomod"],
+      "postUpdateOptions": ["gomodUpdateImportPaths", "gomodTidy", "goGenerate"],
       "postUpgradeTasks": {
         "commands": ["node .github/renovate/update-locks.mjs --go"],
         "installTools": { "nix": {}, "golang": {} },
         "executionMode": "branch",
-        "fileFilters": ["flake.nix", "go.mod", "go.sum", "Dockerfile", "internal/database/**"]
+        "fileFilters": ["flake.nix", "go.mod", "go.sum", "Dockerfile", "**/*.go"]
       }
     },
     {
