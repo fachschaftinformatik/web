@@ -215,6 +215,9 @@ Use [Conventional Commits 1.0.0][2] for commit messages and PR titles:
 Common types are `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`,
 `chore`, `style`, and `revert`. Choose the type that describes the actual change.
 
+Follow the [Go commit message guidance](https://go.dev/wiki/CommitMessage) for
+clear, imperative wording, using the format and limits below.
+
 - Keep the description to **42 characters maximum**, excluding the type, scope,
   breaking marker, colon and following space.
 - Use lowercase only. Descriptions contain only letters `a`–`z`, digits and spaces:
