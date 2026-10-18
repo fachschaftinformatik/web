@@ -228,17 +228,18 @@ also include `web.sbom.spdx.json` for a stable latest-release SBOM download URL.
 This fourth asset's label contains the number of unique package URLs in the SBOM
 for the README dependency badge.
 
-### Gallery selection
+### Homepage photo selection
 
-Active, verified administrators and editors can select **Galerie verwalten** on
-`/media`. Each photograph has an **In der Galerie anzeigen** checkbox and an
+Active, verified administrators and editors can select **Startseitenbilder auswählen** on
+`/media`. Each photograph has an **Auf der Startseite anzeigen** checkbox and an
 explicit **Speichern** button, using the GOV.UK small-checkbox pattern. The
-management view includes excluded images so they can be restored.
+management view lists every photograph regardless of homepage selection.
 
-New images are excluded by default and must be selected explicitly. Existing
-selections are preserved during migrations. Gallery counts, navigation and
-fallback cover selection use only selected photographs; albums still require at
-least three. Selection changes preserve stored files and permanent image IDs.
+New images are excluded from the homepage carousel by default and must be
+selected explicitly. Existing selections are preserved during migrations.
+Each selected image becomes a carousel slide linking to its album. All photos,
+including unselected ones and one-photo albums, remain available under `/media`.
+Selection changes preserve stored files and permanent image IDs.
 
 ### Submission notifications
 

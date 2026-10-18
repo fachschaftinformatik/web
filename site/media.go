@@ -112,7 +112,7 @@ func (c *Handler) ManageMedia(w http.ResponseWriter, r *http.Request) {
 	for _, item := range items {
 		g.GalleryItems = append(g.GalleryItems, view.GalleryItem{Image: imageView(item.Image), AlbumTitle: item.AlbumTitle, Visible: item.Visible})
 	}
-	c.render(w, "media", false, view.Page{Title: "Galerie verwalten", Active: "media", Community: true, Media: g})
+	c.render(w, "media", false, view.Page{Title: "Startseitenbilder auswählen", Active: "media", Community: true, Media: g})
 }
 
 func (c *Handler) MediaVisibility(w http.ResponseWriter, r *http.Request) {
@@ -121,12 +121,12 @@ func (c *Handler) MediaVisibility(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	page, err := strconv.Atoi(r.PostForm.Get("page"))
-	value := r.PostForm.Get("gallery_visible")
+	value := r.PostForm.Get("homepage_visible")
 	if err != nil || page < 1 || (value != "" && value != "1") {
-		c.pageError(w, "Prüfe die Galerieauswahl.", http.StatusBadRequest)
+		c.pageError(w, "Prüfe die Auswahl für die Startseite.", http.StatusBadRequest)
 		return
 	}
-	if err := c.media.SetGalleryVisibility(r.Context(), postsUser(w), r.PathValue("image"), value == "1"); err != nil {
+	if err := c.media.SetHomepageVisibility(r.Context(), postsUser(w), r.PathValue("image"), value == "1"); err != nil {
 		c.mediaManagementError(w, r, err)
 		return
 	}

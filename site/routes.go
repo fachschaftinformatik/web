@@ -55,7 +55,7 @@ func registerPages(c *Handler, register routeRegister) {
 			c.serverError(w, err)
 			return
 		}
-		albums, _, err := c.media.AlbumPage(r.Context(), 1, 6)
+		albums, err := c.media.Carousel(r.Context())
 		if err != nil {
 			c.serverError(w, err)
 			return

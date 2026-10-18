@@ -31,7 +31,7 @@ type GalleryItem struct {
 	Visible    bool
 }
 
-// GalleryPage includes excluded photographs so editors can restore them.
+// GalleryPage lists all photographs and their independent homepage selection.
 func (s *Service) GalleryPage(ctx context.Context, user int64, page, size int) ([]GalleryItem, int, error) {
 	if err := s.CanManage(ctx, user); err != nil {
 		return nil, 0, err
@@ -43,7 +43,7 @@ func (s *Service) GalleryPage(ctx context.Context, user int64, page, size int) (
 	}
 	size = min(100, max(1, size))
 	page = max(1, min(page, max(1, (total+size-1)/size)))
-	rows, err := s.db.QueryContext(ctx, `SELECT CAST(m.id AS TEXT),COALESCE(m.title,''),COALESCE(m.description,''),e.title,m.gallery_visible FROM media m JOIN events e ON e.id=m.event_id WHERE `+eligible+` ORDER BY e.created_at DESC,e.id DESC,m.created_at DESC,m.id DESC LIMIT ? OFFSET ?`, size, (page-1)*size)
+	rows, err := s.db.QueryContext(ctx, `SELECT CAST(m.id AS TEXT),COALESCE(m.title,''),COALESCE(m.description,''),e.title,m.homepage_visible FROM media m JOIN events e ON e.id=m.event_id WHERE `+eligible+` ORDER BY e.created_at DESC,e.id DESC,m.created_at DESC,m.id DESC LIMIT ? OFFSET ?`, size, (page-1)*size)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -70,7 +70,7 @@ func (s *Service) GalleryPage(ctx context.Context, user int64, page, size int) (
 	return items, total, nil
 }
 
-func (s *Service) SetGalleryVisibility(ctx context.Context, user int64, value string, visible bool) error {
+func (s *Service) SetHomepageVisibility(ctx context.Context, user int64, value string, visible bool) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -83,7 +83,7 @@ func (s *Service) SetGalleryVisibility(ctx context.Context, user int64, value st
 	if err != nil {
 		return err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE media SET gallery_visible=? WHERE id=? AND deleted_at IS NULL AND mime_type IN `+imageTypes+` AND event_id IN (SELECT id FROM events WHERE deleted_at IS NULL)`, visible, id)
+	result, err := tx.ExecContext(ctx, `UPDATE media SET homepage_visible=? WHERE id=? AND deleted_at IS NULL AND mime_type IN `+imageTypes+` AND event_id IN (SELECT id FROM events WHERE deleted_at IS NULL)`, visible, id)
 	if err != nil {
 		return err
 	}

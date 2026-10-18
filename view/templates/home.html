@@ -35,7 +35,7 @@
         <div>
           {{ $albums := .Media.CarouselAlbums }}
           {{ if $albums }}
-            <section class="app-event-carousel" aria-label="Veranstaltungsalben">
+            <section class="app-event-carousel" aria-label="Bilder aus der Fachschaft">
               <div class="app-event-carousel__controls" hidden>
                 <button
                   class="app-event-carousel__button app-event-carousel__rotation"
@@ -50,7 +50,7 @@
                   class="app-event-carousel__button"
                   type="button"
                   aria-controls="event-slides"
-                  aria-label="Vorheriges Album"
+                  aria-label="Vorheriges Bild"
                   data-direction="-1"
                 >
                   <svg
@@ -70,13 +70,13 @@
                     />
                   </svg>
                 </button>
-                <div class="app-event-carousel__dots" role="group" aria-label="Album auswählen">
+                <div class="app-event-carousel__dots" role="group" aria-label="Bild auswählen">
                   {{ range $index, $album := $albums }}
                     <button
                       class="app-event-carousel__dot"
                       type="button"
                       aria-controls="event-slides"
-                      aria-label="{{ .Title }} anzeigen"
+                      aria-label="{{ .CoverImage.Title }} anzeigen"
                       {{ if not $index }}aria-disabled="true"{{ end }}
                       data-slide="{{ $index }}"
                     ></button>
@@ -86,7 +86,7 @@
                   class="app-event-carousel__button"
                   type="button"
                   aria-controls="event-slides"
-                  aria-label="Nächstes Album"
+                  aria-label="Nächstes Bild"
                   data-direction="1"
                 >
                   <svg
@@ -115,7 +115,7 @@
                   {{ $cover := .CoverImage }}
                   <div
                     class="app-event-slide"
-                    data-title="{{ .Title }}"
+                    data-title="{{ $cover.Title }}"
                     {{ if $index }}hidden{{ end }}
                   >
                     <a
