@@ -41,7 +41,8 @@ func seedPublicRefs(t *testing.T, db *sql.DB) {
 		"posts": "discussion_posts", "comments": "discussion_comments",
 		"events": "events", "albums": "events", "media": "media",
 		"programs": "programs", "modules": "modules", "documents": "archive",
-		"submissions": "archive_requests",
+		"submissions":    "archive_requests",
+		"study_programs": "study_programs",
 	} {
 		rows, err := db.Query("SELECT id FROM " + table)
 		if err != nil {
@@ -154,7 +155,9 @@ func seedPublicContent(t *testing.T, db *sql.DB) {
 			exec(`INSERT INTO discussion_comments(id,post_id,user_id,text,created_at,updated_at) VALUES(?,?,900,?,?,?)`, comment.ID, thread.ID, html.UnescapeString(comment.Text), comment.Created, comment.Updated)
 		}
 	}
-	exec(`INSERT INTO programs(id,name) VALUES(1,'Informatik (B. Sc.)'),(2,'Wirtschaftsinformatik (B. Sc.)'),(3,'Medieninformatik (B. Sc.)');
+	exec(`INSERT INTO programs(id,name) VALUES(1,'Informatik'),(2,'Wirtschaftsinformatik'),(3,'Medieninformatik');
+INSERT INTO study_programs(id,name) VALUES(1,'Informatik'),(2,'Wirtschaftsinformatik'),(3,'Medieninformatik');
+INSERT INTO program_qualifications(legacy_program_id,study_program_id,degree) VALUES(1,1,'Bachelor'),(2,2,'Bachelor'),(3,3,'Bachelor');
 INSERT INTO program_versions(program_id,name) VALUES(1,'2017'),(1,'2023'),(2,'2017'),(2,'2023'),(3,'2023');
 INSERT INTO modules(id,program_id,name) VALUES(10,1,'Algorithmen und Datenstrukturen'),(11,2,'Datenbanken'),(12,1,'Mathematik I'),(13,3,'Web Engineering'),(14,1,'Betriebssysteme'),(15,2,'Software Engineering');
 UPDATE modules SET alias='SQL' WHERE id=11;`)

@@ -54,7 +54,7 @@ func TestIntegerSequencePreservesDeletedAndExplicitKeys(t *testing.T) {
 		t.Fatal(err)
 	}
 	var sequenceCount int
-	if err := db.QueryRow(`SELECT count(*) FROM public_id_sequences`).Scan(&sequenceCount); err != nil || sequenceCount != 9 {
+	if err := db.QueryRow(`SELECT count(*) FROM public_id_sequences`).Scan(&sequenceCount); err != nil || sequenceCount != 10 {
 		t.Fatal("incorrect INTEGER namespace discovery", sequenceCount, err)
 	}
 	create := func(title string) (int64, string) {

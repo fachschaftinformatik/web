@@ -1,6 +1,6 @@
 {{ define "sidebar" }}{{ end }}
 {{ define "content" }}
-  {{ if or .Register.NameError .Register.EmailError .Register.PasswordError .Register.ProgramError }}
+  {{ if or .Register.NameError .Register.EmailError .Register.PasswordError .Register.ProgramError .Register.DegreeError .Register.VersionError }}
     <div class="govuk-error-summary" data-module="govuk-error-summary">
       <div role="alert">
         <h2 class="govuk-error-summary__title">Es gibt ein Problem</h2>
@@ -14,6 +14,12 @@
             {{ end }}
             {{ if .Register.ProgramError }}
               <li><a href="#program_id">{{ .Register.ProgramError }}</a></li>
+            {{ end }}
+            {{ if .Register.DegreeError }}
+              <li><a href="#degree">{{ .Register.DegreeError }}</a></li>
+            {{ end }}
+            {{ if .Register.VersionError }}
+              <li><a href="#version">{{ .Register.VersionError }}</a></li>
             {{ end }}
             {{ if .Register.PasswordError }}
               <li><a href="#password">{{ .Register.PasswordError }}</a></li>
@@ -86,7 +92,7 @@
           </p>
         {{ end }}
         <select
-          class="govuk-select app-register-program {{ if .Register.ProgramError }}
+          class="govuk-select app-register-select {{ if .Register.ProgramError }}
             govuk-select--error
           {{ end }}"
           id="program_id"
@@ -102,6 +108,66 @@
             </option>
           {{ end }}
         </select>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-half">
+          <div
+            class="govuk-form-group {{ if .Register.DegreeError }}govuk-form-group--error{{ end }}"
+          >
+            <label class="govuk-label" for="degree">Abschluss (optional)</label>
+            {{ if .Register.DegreeError }}
+              <p class="govuk-error-message" id="degree-error">
+                <span class="govuk-visually-hidden">Fehler:</span> {{ .Register.DegreeError }}
+              </p>
+            {{ end }}
+            <select
+              class="govuk-select app-register-select {{ if .Register.DegreeError }}
+                govuk-select--error
+              {{ end }}"
+              id="degree"
+              name="degree"
+              {{ if .Register.DegreeError }}aria-describedby="degree-error"{{ end }}
+              {{ if .Register.DegreeError }}aria-invalid="true"{{ end }}
+            >
+              <option value="" {{ if not .Register.Degree }}selected{{ end }}>Keine Angabe</option>
+              <option value="bachelor" {{ if eq .Register.Degree "bachelor" }}selected{{ end }}>
+                Bachelor
+              </option>
+              <option value="master" {{ if eq .Register.Degree "master" }}selected{{ end }}>
+                Master
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="govuk-grid-column-one-half">
+          <div
+            class="govuk-form-group {{ if .Register.VersionError }}govuk-form-group--error{{ end }}"
+          >
+            <label class="govuk-label" for="version">Prüfungsordnung (optional)</label>
+            {{ if .Register.VersionError }}
+              <p class="govuk-error-message" id="version-error">
+                <span class="govuk-visually-hidden">Fehler:</span> {{ .Register.VersionError }}
+              </p>
+            {{ end }}
+            <select
+              class="govuk-select app-register-select {{ if .Register.VersionError }}
+                govuk-select--error
+              {{ end }}"
+              id="version"
+              name="version"
+              {{ if .Register.VersionError }}
+                aria-describedby="version-error" aria-invalid="true"
+              {{ end }}
+            >
+              <option value="" {{ if not .Register.Version }}selected{{ end }}>Keine Angabe</option>
+              {{ range .Register.Versions }}
+                <option value="{{ . }}" {{ if eq $.Register.Version . }}selected{{ end }}>
+                  {{ poLabel . }}
+                </option>
+              {{ end }}
+            </select>
+          </div>
+        </div>
       </div>
       <div
         class="govuk-form-group govuk-password-input {{ if .Register.PasswordError }}

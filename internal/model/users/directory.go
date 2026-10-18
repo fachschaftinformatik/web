@@ -17,6 +17,7 @@ type User struct {
 	Name, Email, Role string
 	PublicID          string
 	Program           string
+	Degree            string
 	Active            bool
 	Verified          bool
 }

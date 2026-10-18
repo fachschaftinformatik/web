@@ -224,6 +224,11 @@ func (c *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		c.serverError(w, err)
 		return
 	}
+	data.Register.Versions, err = c.identity.ProgramVersions(r.Context())
+	if err != nil {
+		c.serverError(w, err)
+		return
+	}
 
 	status := http.StatusOK
 	if r.Method == http.MethodPost {
@@ -236,15 +241,40 @@ func (c *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		form.Name = strings.TrimSpace(r.PostForm.Get("name"))
 		form.Email = strings.TrimSpace(r.PostForm.Get("email"))
 		form.ProgramID = r.PostForm.Get("program_id")
+		form.Degree = r.PostForm.Get("degree")
+		form.Version = r.PostForm.Get("version")
 		if form.ProgramID != "" && !slices.ContainsFunc(form.Programs, func(p users.Program) bool { return p.ID == form.ProgramID }) {
 			form.ProgramError = "Bitte wähle deinen Studiengang aus."
 		}
+		if form.ProgramID == "" && (form.Degree != "" || form.Version != "") {
+			form.ProgramError = "Bitte wähle deinen Studiengang aus."
+		}
+		if form.ProgramID != "" || form.Degree != "" || form.Version != "" {
+			if form.Degree != "bachelor" && form.Degree != "master" {
+				form.DegreeError = "Bitte wähle deinen Abschluss aus."
+			} else if form.ProgramError == "" {
+				if _, err := c.identity.RegistrationQualification(r.Context(), form.ProgramID, form.Degree); errors.Is(err, users.ErrQualification) {
+					form.DegreeError = "Dieser Abschluss wird für den gewählten Studiengang nicht angeboten."
+				} else if err != nil {
+					c.serverError(w, err)
+					return
+				}
+			}
+		}
+		if form.Version != "" && form.ProgramError == "" && form.DegreeError == "" {
+			if err := c.identity.RegistrationVersion(r.Context(), form.ProgramID, form.Degree, form.Version); errors.Is(err, users.ErrProgramVersion) {
+				form.VersionError = err.Error()
+			} else if err != nil {
+				c.serverError(w, err)
+				return
+			}
+		}
 		form.NameError, form.EmailError, form.PasswordError = c.identity.RegistrationErrors(form.Name, form.Email, r.PostForm.Get("password"))
-		if form.NameError != "" || form.EmailError != "" || form.PasswordError != "" || form.ProgramError != "" {
+		if form.NameError != "" || form.EmailError != "" || form.PasswordError != "" || form.ProgramError != "" || form.DegreeError != "" || form.VersionError != "" {
 			data.DocumentTitle = "Fehler: Konto erstellen"
 			status = http.StatusUnprocessableEntity
 		} else {
-			err := c.identity.Register(r.Context(), form.Name, form.Email, r.PostForm.Get("password"), form.ProgramID)
+			err := c.identity.Register(r.Context(), form.Name, form.Email, r.PostForm.Get("password"), form.ProgramID, form.Degree, form.Version)
 			if errors.Is(err, users.ErrEmailExists) {
 				form.EmailError = err.Error()
 				data.DocumentTitle = "Fehler: Konto erstellen"

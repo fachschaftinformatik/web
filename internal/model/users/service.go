@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/fachschaftinformatik/web/internal/datetime"
@@ -138,7 +139,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (int64, err
 }
 
 func (s *Service) Directory(ctx context.Context) (*Directory, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT u.id,u.name,lower(u.email),u.role,COALESCE(p.name,''),u.active=1,u.verified=1 FROM users u LEFT JOIN programs p ON p.id=u.program_id WHERE u.deleted_at IS NULL ORDER BY u.name COLLATE NOCASE,u.id`)
+	rows, err := s.db.QueryContext(ctx, `SELECT u.id,u.name,lower(u.email),u.role,COALESCE(p.name,''),COALESCE(pq.degree,''),u.active=1,u.verified=1 FROM users u LEFT JOIN programs p ON p.id=u.program_id LEFT JOIN program_qualifications pq ON pq.legacy_program_id=p.id WHERE u.deleted_at IS NULL ORDER BY u.name COLLATE NOCASE,u.id`)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +147,7 @@ func (s *Service) Directory(ctx context.Context) (*Directory, error) {
 	var records []User
 	for rows.Next() {
 		var user User
-		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.Program, &user.Active, &user.Verified); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.Program, &user.Degree, &user.Active, &user.Verified); err != nil {
 			return nil, err
 		}
 		records = append(records, user)
@@ -165,40 +166,104 @@ func (s *Service) Directory(ctx context.Context) (*Directory, error) {
 }
 
 func (s *Service) Programs(ctx context.Context) ([]Program, error) {
-	rows, err := s.queries.ListPrograms(ctx)
+	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT pub.public_id,sp.name
+		FROM study_programs sp
+		JOIN program_qualifications pq ON pq.study_program_id=sp.id
+		JOIN programs p ON p.id=pq.legacy_program_id AND p.deleted_at IS NULL
+		JOIN public_ids pub ON pub.namespace='study_programs' AND pub.record_id=CAST(sp.id AS TEXT) AND pub.retired=0
+		ORDER BY sp.name COLLATE NOCASE,sp.id`)
 	if err != nil {
 		return nil, err
 	}
-	result := make([]Program, 0, len(rows))
-	for _, p := range rows {
-		value, err := publicid.Lookup(ctx, s.db, "programs", strconv.FormatInt(p.ID, 10))
-		if err != nil {
+	defer rows.Close()
+	var result []Program
+	for rows.Next() {
+		var p Program
+		if err := rows.Scan(&p.ID, &p.Name); err != nil {
 			return nil, err
 		}
-		result = append(result, Program{ID: value, Name: p.Name})
+		result = append(result, p)
 	}
-	return result, nil
+	return result, rows.Err()
 }
 
-func (s *Service) Register(ctx context.Context, name, email, password, programID string) error {
+// RegistrationQualification resolves separate study-program and degree choices
+// to the preserved program key used by accounts and exam preferences.
+func (s *Service) RegistrationQualification(ctx context.Context, programID, degree string) (*int64, error) {
+	if programID == "" && degree == "" {
+		return nil, nil
+	}
+	if !publicid.Valid(programID) || degree != "bachelor" && degree != "master" {
+		return nil, ErrQualification
+	}
+	var id int64
+	err := s.db.QueryRowContext(ctx, `SELECT p.id FROM public_ids pub
+		JOIN program_qualifications pq ON CAST(pq.study_program_id AS TEXT)=pub.record_id
+		JOIN programs p ON p.id=pq.legacy_program_id AND p.deleted_at IS NULL
+		WHERE pub.namespace='study_programs' AND pub.public_id=? AND pub.retired=0 AND lower(pq.degree)=?
+		ORDER BY p.id LIMIT 1`, programID, degree).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrQualification
+	}
+	return &id, err
+}
+
+var ErrQualification = errors.New("Wähle einen gültigen Studiengang und Abschluss aus.")
+
+var ErrProgramVersion = errors.New("Wähle eine gültige Prüfungsordnung für deinen Studiengang und Abschluss aus.")
+
+func (s *Service) ProgramVersions(ctx context.Context) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT pv.name FROM program_versions pv
+		JOIN programs p ON p.id=pv.program_id AND p.deleted_at IS NULL
+		JOIN program_qualifications pq ON pq.legacy_program_id=p.id
+		ORDER BY pv.name DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var versions []string
+	for rows.Next() {
+		var version string
+		if err := rows.Scan(&version); err != nil {
+			return nil, err
+		}
+		versions = append(versions, version)
+	}
+	return versions, rows.Err()
+}
+
+func (s *Service) RegistrationVersion(ctx context.Context, programID, degree, version string) error {
+	if version == "" {
+		return nil
+	}
+	program, err := s.RegistrationQualification(ctx, programID, degree)
+	if err != nil {
+		return err
+	}
+	if program == nil {
+		return ErrProgramVersion
+	}
+	var exists bool
+	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM program_versions WHERE program_id=? AND name=?)`, *program, version).Scan(&exists); err != nil {
+		return err
+	}
+	if !exists {
+		return ErrProgramVersion
+	}
+	return nil
+}
+
+func (s *Service) Register(ctx context.Context, name, email, password, programID, degree, version string) error {
 	a, b, c := s.RegistrationErrors(name, email, password)
 	if a != "" || b != "" || c != "" {
 		return errors.New("Prüfe die Angaben im Formular.")
 	}
-	var program *int64
-	if programID != "" {
-		internalID, err := publicid.Resolve(ctx, s.db, "programs", programID)
-		if err != nil {
-			return errors.New("Wähle einen gültigen Studiengang aus.")
-		}
-		value, err := strconv.ParseInt(internalID, 10, 64)
-		if err != nil {
-			return err
-		}
-		if _, err = s.queries.GetProgram(ctx, value); err != nil {
-			return errors.New("Wähle einen gültigen Studiengang aus.")
-		}
-		program = &value
+	program, err := s.RegistrationQualification(ctx, programID, degree)
+	if err != nil {
+		return err
+	}
+	if err := s.RegistrationVersion(ctx, programID, degree, version); err != nil {
+		return err
 	}
 	hash, err := HashPassword(password)
 	if err != nil {
@@ -219,6 +284,20 @@ func (s *Service) Register(ctx context.Context, name, email, password, programID
 	user, err := CreateUserTx(ctx, tx, database.CreateUserParams{Email: strings.ToLower(strings.TrimSpace(email)), Name: strings.TrimSpace(name), Password: hash, Role: "user", Active: 1, ProgramID: program})
 	if err != nil {
 		return err
+	}
+	if version != "" {
+		// Exam preferences use the preserved qualification's public program ID,
+		// whereas registration selects a degree-independent study-program ID.
+		programRef, err := publicid.Lookup(ctx, tx, "programs", strconv.FormatInt(*program, 10))
+		if err != nil {
+			return err
+		}
+		programs, _ := json.Marshal([]string{programRef})
+		degrees, _ := json.Marshal([]string{degree})
+		versions, _ := json.Marshal([]string{version})
+		if _, err := tx.ExecContext(ctx, `INSERT INTO user_archive_preferences(user_id,programs,degrees,versions) VALUES(?,?,?,?)`, user.ID, string(programs), string(degrees), string(versions)); err != nil {
+			return err
+		}
 	}
 	if err := s.queueToken(ctx, tx, user.ID, strings.ToLower(strings.TrimSpace(email)), strings.TrimSpace(name), "verify"); err != nil {
 		return err

@@ -23,6 +23,9 @@ type LoginPage struct {
 type RegisterPage struct {
 	Name, Email, NameError, EmailError, PasswordError string
 	ProgramID, ProgramError                           string
+	Degree, DegreeError                               string
+	Version, VersionError                             string
+	Versions                                          []string
 	Programs                                          []users.Program
 	Submitted                                         bool
 }
