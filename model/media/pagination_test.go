@@ -22,7 +22,7 @@ func TestAlbumVisibilityCountsOnlyPublicPhotosBeforePagination(t *testing.T) {
 		}
 	}
 	for _, id := range []int{107, 108} {
-		if _, err := db.Exec(`INSERT INTO media(id,event_id,user_id,access_key,mime_type,nbytes) VALUES(?,20,1,?,'image/jpeg',5)`, id, id); err != nil {
+		if _, err := db.Exec(`INSERT INTO media(id,event_id,user_id,access_key,mime_type,nbytes,gallery_visible) VALUES(?,20,1,?,'image/jpeg',5,1)`, id, id); err != nil {
 			t.Fatal(err)
 		}
 		seedReferences(t, db)
@@ -78,7 +78,7 @@ func TestItemAlbumResolvesIdentityAndCurrentPublicVisibility(t *testing.T) {
 		}
 	}
 	for _, item := range []int{107, 108} {
-		if _, err := db.Exec(`INSERT INTO media(id,event_id,user_id,access_key,mime_type,nbytes) VALUES(?,20,1,?,'image/jpeg',5)`, item, item); err != nil {
+		if _, err := db.Exec(`INSERT INTO media(id,event_id,user_id,access_key,mime_type,nbytes,gallery_visible) VALUES(?,20,1,?,'image/jpeg',5,1)`, item, item); err != nil {
 			t.Fatal(err)
 		}
 	}

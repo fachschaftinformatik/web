@@ -10,7 +10,7 @@ func TestGallerySelection(t *testing.T) {
 	s, db := mediaService(t)
 	ctx := context.Background()
 	if _, err := db.Exec(`UPDATE users SET active=1,verified=1,role='editor' WHERE id=1;
-INSERT INTO media(id,event_id,user_id,title,access_key,mime_type,nbytes,created_at) VALUES (107,10,1,'Oldest','107','image/jpeg',5,'2024-01-01T00:00:00Z')`); err != nil {
+INSERT INTO media(id,event_id,user_id,title,access_key,mime_type,nbytes,created_at,gallery_visible) VALUES (107,10,1,'Oldest','107','image/jpeg',5,'2024-01-01T00:00:00Z',1)`); err != nil {
 		t.Fatal(err)
 	}
 	photo := reference(t, db, "media", "101")

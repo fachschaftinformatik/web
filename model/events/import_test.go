@@ -31,10 +31,29 @@ func TestImportPreservesCaptionsFullImagesAndEditorialEdits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e.Body != input.Draft.Body || e.EventDate != "" || e.SourcePublishedAt != input.PublishedAt.Format(time.RFC3339) || e.SourceURL != input.SourceURL || !e.AlbumID.Valid {
+	if e.Body != input.Draft.Body || e.EventDate != "" || e.SourcePublishedAt != input.PublishedAt.Format(time.RFC3339) || e.SourceURL != input.SourceURL || e.AlbumID.Valid {
 		t.Fatalf("imported event: %+v", e)
 	}
 	media := media.NewService(db, s.storage)
+	if albums, err := media.Catalog(ctx); err != nil || len(albums) != 0 {
+		t.Fatalf("imported photos appeared without selection: %+v %v", albums, err)
+	}
+	items, _, err := media.GalleryPage(ctx, 1, 1, 12)
+	if err != nil || len(items) != 3 {
+		t.Fatalf("imported photos unavailable to editors: %+v %v", items, err)
+	}
+	for _, item := range items {
+		if item.Visible {
+			t.Fatal("import selected a new photo")
+		}
+		if err := media.SetGalleryVisibility(ctx, 1, item.ID, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e, err = s.Lookup(ctx, event)
+	if err != nil {
+		t.Fatal(err)
+	}
 	albums, err := media.Catalog(ctx)
 	if err != nil || len(albums) != 1 || len(albums[0].Images) != 3 {
 		t.Fatalf("media: %+v %v", albums, err)
@@ -128,6 +147,9 @@ func TestImportNeverReusesDeletedHighestResourceKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err := db.Exec(`UPDATE media SET gallery_visible=1`); err != nil {
+		t.Fatal(err)
+	}
 	old, err := s.Lookup(ctx, first)
 	if err != nil {
 		t.Fatal(err)
@@ -144,6 +166,9 @@ func TestImportNeverReusesDeletedHighestResourceKeys(t *testing.T) {
 	input.SourceURL = "https://www.instagram.com/p/Next/"
 	next, _, err := s.Import(ctx, 1, input)
 	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`UPDATE media SET gallery_visible=1`); err != nil {
 		t.Fatal(err)
 	}
 	current, err := s.Lookup(ctx, next)
