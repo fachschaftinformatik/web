@@ -3,6 +3,7 @@ package view
 import (
 	"html/template"
 	"net/url"
+	"strings"
 
 	"github.com/fachschaftinformatik/web/internal/content"
 
@@ -37,6 +38,18 @@ func (e ContentEditor) Error(field string) string {
 		if err.Field == field {
 			return err.Message
 		}
+	}
+	return ""
+}
+
+func (e ContentEditor) DateDay() string   { return e.datePart(0) }
+func (e ContentEditor) DateMonth() string { return e.datePart(1) }
+func (e ContentEditor) DateYear() string  { return e.datePart(2) }
+
+func (e ContentEditor) datePart(index int) string {
+	parts := strings.Split(e.Draft.Date, ".")
+	if index < len(parts) {
+		return parts[index]
 	}
 	return ""
 }

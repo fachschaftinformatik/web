@@ -10,6 +10,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -96,7 +97,7 @@ func TestEventPublicationWorkflow(t *testing.T) {
 	upload := func(csrf string) (*bytes.Buffer, string) {
 		var body bytes.Buffer
 		form := multipart.NewWriter(&body)
-		for key, value := range map[string]string{"csrf": csrf, "title": "Sommergrillen", "body": "Gemeinsam im Innenhof grillen.", "date": "30.06.2027", "time": "17:00", "location": "Innenhof", "cover_alt": "Plakat zum Sommergrillen", "type": "discussion"} {
+		for key, value := range map[string]string{"csrf": csrf, "title": "Sommergrillen", "body": "Gemeinsam im Innenhof grillen.", "date-day": "30", "date-month": "6", "date-year": "2027", "time": "17:00", "location": "Innenhof", "cover_alt": "Plakat zum Sommergrillen", "type": "discussion"} {
 			if err := form.WriteField(key, value); err != nil {
 				t.Fatal(err)
 			}
@@ -123,6 +124,33 @@ func TestEventPublicationWorkflow(t *testing.T) {
 		t.Fatalf("upload: %d %s", w.Code, w.Body.String())
 	}
 	location := w.Header().Get("Location")
+	event, err := c.events.Lookup(ctx, strings.TrimPrefix(location, "/events/"))
+	if err != nil || event.EventDate != "2027-06-30T15:00:00Z" {
+		t.Fatalf("split date did not preserve Berlin time: %+v %v", event, err)
+	}
+	w = request("GET", location+"/edit", staff, nil, "")
+	for _, want := range []string{`name="date-day"`, `name="date-month"`, `name="date-year"`, `value="30"`, `value="06"`, `value="2027"`} {
+		if w.Code != 200 || !strings.Contains(w.Body.String(), want) {
+			t.Fatalf("edit date missing %s: %d", want, w.Code)
+		}
+	}
+	for _, tc := range []struct{ day, month, year, clock, errorID string }{
+		{"30", "", "2027", "17:00", "date-error"},
+		{"31", "2", "2027", "17:00", "date-error"},
+		{"", "", "", "17:00", "date-error"},
+		{"30", "6", "2027", "25:00", "time-error"},
+	} {
+		form := url.Values{"csrf": {staff.CSRF}, "title": {"Terminprüfung"}, "body": {"Ein ausreichender Veranstaltungstext."}, "date-day": {tc.day}, "date-month": {tc.month}, "date-year": {tc.year}, "time": {tc.clock}}
+		w = request("POST", "/events/create", staff, bytes.NewBufferString(form.Encode()), "application/x-www-form-urlencoded")
+		if w.Code != 422 || !strings.Contains(w.Body.String(), tc.errorID) || strings.Contains(w.Body.String(), "date-hintdate-error") || strings.Contains(w.Body.String(), "time-hinttime-error") {
+			t.Fatalf("invalid schedule: %d %s", w.Code, w.Body.String())
+		}
+		for _, value := range []string{tc.day, tc.month, tc.year, tc.clock} {
+			if !strings.Contains(w.Body.String(), `value="`+value+`"`) {
+				t.Fatal("schedule input lost after validation error")
+			}
+		}
+	}
 	w = request("GET", location, nil, nil, "")
 	if w.Code != 200 || !strings.Contains(w.Body.String(), "Plakat zum Sommergrillen") || !strings.Contains(w.Body.String(), "Innenhof") || strings.Contains(w.Body.String(), "Veranstaltung bearbeiten") {
 		t.Fatalf("public detail: %d %s", w.Code, w.Body.String())

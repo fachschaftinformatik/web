@@ -95,6 +95,9 @@ func (c *Handler) EditDiscussion(w http.ResponseWriter, r *http.Request) {
 			tags = editor.Draft.Tags
 		}
 		editor.Draft = view.EditorDraft{Title: r.PostForm.Get("title"), Body: r.PostForm.Get("body"), Type: editor.Draft.Type, Tags: tags, Date: r.PostForm.Get("date"), Time: r.PostForm.Get("time"), Location: r.PostForm.Get("location")}
+		if editor.Event {
+			editor.Draft.Date = eventFormDate(r)
+		}
 		if r.PostForm.Has("rich_body") {
 			editor.RichBody = content.SanitizeRichText(r.PostForm.Get("rich_body"))
 			editor.Draft.Body = content.RichTextPlain(editor.RichBody)
