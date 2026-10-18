@@ -54,6 +54,8 @@ jobs:
         run: |
           nix develop -c go generate ./internal/database
           git diff --exit-code -- internal/database
+      - name: Verify dependency hashes
+        run: nix develop -c node .github/renovate/update-locks.mjs --assets --go --check
       - name: Race tests and coverage
         run: nix develop -c env TMPDIR="$RUNNER_TEMP" go test -race -coverprofile="$RUNNER_TEMP/coverage.out" ./...
       - name: Report coverage
@@ -66,7 +68,7 @@ jobs:
             nix develop -c go tool cover -func="$RUNNER_TEMP/coverage.out" | tail -n 1
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage
           path: |
@@ -196,7 +198,7 @@ jobs:
             -v "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" "$TRIVY_IMAGE" \
             image --input /release/image --format spdx-json --scanners vuln \
             --output /release/web.sbom.spdx.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-image
           path: ${{ runner.temp }}/release/
@@ -243,7 +245,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-image
           path: ${{ runner.temp }}/release

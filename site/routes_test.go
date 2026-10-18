@@ -179,6 +179,7 @@ func TestCanonicalRoutesAndPagination(t *testing.T) {
 		location     string
 	}{
 		{"GET", "/about/", 308, "/about"},
+		{"GET", "https://untrusted.example/about/", 308, "/about"},
 		{"HEAD", "/posts/?page=1&search=Go", 308, "/posts?search=Go"},
 		{"GET", "/posts?page=01", 308, "/posts"},
 		{"GET", "/missing/", 404, ""},
