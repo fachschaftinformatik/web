@@ -140,11 +140,11 @@ jobs:
           --tag ghcr.io/fachschaftinformatik/web:v0.0.0-test
           --cache-from type=gha,scope=app-amd64
           --cache-to type=gha,mode=max,scope=app-amd64
-          --output type=oci,dest=${{ runner.temp }}/web.tar .
+          --output type=oci,tar=false,dest=${{ runner.temp }}/web-image .
       - name: Scan application image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          input: ${{ runner.temp }}/web.tar
+          input: ${{ runner.temp }}/web-image
           scanners: vuln
           severity: HIGH,CRITICAL
           ignore-unfixed: true
