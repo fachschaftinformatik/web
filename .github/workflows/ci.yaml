@@ -325,7 +325,10 @@ jobs:
           cp "$RUNNER_TEMP/release/web.sbom.spdx.json" "$SBOM_FILE"
           jq -e '.spdxVersion and .SPDXID == "SPDXRef-DOCUMENT"' "$SBOM_FILE" > /dev/null
           gh release upload "$RELEASE_TAG" "$SBOM_FILE" --clobber
-          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/release/web.sbom.spdx.json" --clobber
+          dependencies=$(jq -er '[.packages[].externalRefs[]? | select(.referenceType == "purl") | .referenceLocator] | unique | length' "$SBOM_FILE")
+          # The dependency badge reads the stable SBOM asset's label.
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/release/web.sbom.spdx.json#$dependencies" --clobber
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.assets[3].name')" = web.sbom.spdx.json
       - name: Promote latest image alias
         if: steps.aliases.outputs.tag != ''
         env:
