@@ -26,11 +26,12 @@ development and checks. Published versions are listed in [Releases](https://gith
 ## Security
 
 [![Vulnerabilities](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Ffsiwh%2Fweb%2Freleases%2Flatest&query=%24.assets%5B1%5D.label&label=Vulnerabilities&color=brightgreen)](https://github.com/fsiwh/web/releases/latest/download/vulnerabilities.json)
+[![Dependencies](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Ffsiwh%2Fweb%2Freleases%2Flatest&query=%24.assets%5B3%5D.label&label=Dependencies&color=blue)](https://github.com/fsiwh/web/releases/latest/download/web.sbom.spdx.json)
+[![SBOM SPDX](https://img.shields.io/badge/SBOM-SPDX-blue)](https://github.com/fsiwh/web/releases/latest/download/web.sbom.spdx.json)
 
-Release images are scanned with Trivy. The badge shows fixable High/Critical
-vulnerabilities found at build time; releases require zero findings at those
-severities. Download the latest [scan report](https://github.com/fsiwh/web/releases/latest/download/vulnerabilities.json)
-or [SPDX SBOM](https://github.com/fsiwh/web/releases/latest/download/web.sbom.spdx.json).
-Report security issues to [team@fsi-wh.de](mailto:team@fsi-wh.de).
+**Dependencies:** Unique packages with package URLs in the release image's SPDX
+SBOM. The badges link to the scan report and SBOM.
+
+**Report a security issue:** [team@fsi-wh.de](mailto:team@fsi-wh.de).
 
 SPDX-License-Identifier: MPL-2.0

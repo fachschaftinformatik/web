@@ -223,6 +223,8 @@ where the full reports can be downloaded. Dry runs do not publish badge changes.
 The second release asset is the Trivy `vulnerabilities.json` report; its label
 contains the fixable High/Critical finding count for the security badge. Releases
 also include `web.sbom.spdx.json` for a stable latest-release SBOM download URL.
+This fourth asset's label contains the number of unique package URLs in the SBOM
+for the README dependency badge.
 
 ### Submission notifications
 
