@@ -198,6 +198,7 @@
           vendor = {
             type = "app";
             program = "${vendor}/bin/vendor-assets";
+            meta.description = "Prepare embedded browser assets";
           };
         });
 
