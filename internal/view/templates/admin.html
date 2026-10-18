@@ -547,7 +547,6 @@
         <thead class="govuk-table__head">
           <tr class="govuk-table__row">
             <th class="govuk-table__header" scope="col">Sitzung</th>
-            <th class="govuk-table__header" scope="col">Datum</th>
             <th class="govuk-table__header" scope="col">Dokumente</th>
           </tr>
         </thead>
@@ -555,9 +554,10 @@
           {{ range .Meetings }}
             <tr class="govuk-table__row">
               <th class="govuk-table__header" scope="row">
-                {{ .Number }}. Sitzung
+                {{ .Number }}. Sitzung<br /><span class="govuk-!-font-weight-regular"
+                  >{{ .DateLabel }}</span
+                >
               </th>
-              <td class="govuk-table__cell">{{ .DateLabel }}</td>
               <td class="govuk-table__cell">
                 <ul class="govuk-list govuk-!-margin-bottom-0">
                   {{ $meeting := . }}{{ range .Documents }}
