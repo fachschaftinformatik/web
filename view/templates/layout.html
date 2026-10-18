@@ -261,8 +261,12 @@
                 </li>
               </ul>
               <div class="govuk-footer__meta-custom">
-                {{ .Organization.ShortName }} ·
-                {{ .Organization.Institution }}
+                {{ .Organization.ShortName }}<br />
+                {{ .Organization.Institution }}<br />
+                {{ .Organization.Street }}<br />
+                {{ .Organization.PostalCode }}
+                {{ .Organization.City }}
+                {{ if .Organization.Office }}<br />Raum {{ .Organization.Office }}{{ end }}
               </div>
             </div>
           </div>
