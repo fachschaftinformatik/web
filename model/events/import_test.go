@@ -18,8 +18,8 @@ import (
 func TestImportPreservesCaptionsFullImagesAndEditorialEdits(t *testing.T) {
 	s, db, root := eventService(t)
 	ctx := context.Background()
-	input := ImportedEvent{SourceURL: "https://www.instagram.com/p/Example_123/", PublishedAt: time.Date(2025, 11, 7, 12, 0, 0, 0, time.UTC), Status: "recap", Draft: Draft{Title: "Lerncafé", Body: "Original caption ☕\n\n<script>Literal text</script>"}, Images: []CoverUpload{{Data: coverPhoto(t), Alt: "Gemeinsam lernen"}, {Data: coverPhoto(t), Alt: "Kaffee im Lerncafé"}}}
-	input.Images = append(input.Images, CoverUpload{Data: coverPhoto(t), Alt: "Im Lerncafé"})
+	photoData := eventPhoto(t, 16, 24)
+	input := ImportedEvent{SourceURL: "https://www.instagram.com/p/Example_123/", PublishedAt: time.Date(2025, 11, 7, 12, 0, 0, 0, time.UTC), Status: "recap", Draft: Draft{Title: "Lerncafé", Body: "Original caption ☕\n\n<script>Literal text</script>"}, Images: []CoverUpload{{Data: coverPhoto(t), Alt: "Gemeinsam lernen"}, {Data: photoData, Alt: "Kaffee im Lerncafé"}, {Data: photoData, Alt: "Im Lerncafé"}}}
 	if _, _, err := s.Import(ctx, 3, input); !errors.Is(err, ErrForbidden) {
 		t.Fatal("ordinary member imported event")
 	}
@@ -79,6 +79,7 @@ func TestImportPreservesCaptionsFullImagesAndEditorialEdits(t *testing.T) {
 		t.Fatal(err)
 	}
 	input.SourceURL = "https://www.instagram.com/p/Another_123/"
+	input.Images[0].Data = photoData
 	if _, _, err := s.Import(ctx, 1, input); err == nil {
 		t.Fatal("failed transaction imported event")
 	}
@@ -120,7 +121,7 @@ func TestImportNeverReusesDeletedHighestResourceKeys(t *testing.T) {
 	input := ImportedEvent{
 		SourceURL: "https://www.instagram.com/p/First/", PublishedAt: time.Date(2025, 11, 7, 12, 0, 0, 0, time.UTC),
 		Draft:  Draft{Title: "Imported event", Body: "An imported event caption."},
-		Images: []CoverUpload{{Data: coverPhoto(t), Alt: "A photograph"}},
+		Images: []CoverUpload{{Data: eventPhoto(t, 16, 24), Alt: "A photograph"}},
 	}
 	input.Images = append(input.Images, input.Images[0], input.Images[0])
 	first, _, err := s.Import(ctx, 1, input)

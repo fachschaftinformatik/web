@@ -8,10 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync/atomic"
@@ -20,7 +18,7 @@ import (
 	"github.com/fachschaftinformatik/web/storage/disk"
 	"github.com/fachschaftinformatik/web/view"
 
-	"github.com/fachschaftinformatik/web/internal/database"
+	"github.com/fachschaftinformatik/web/internal/testdb"
 	"github.com/fachschaftinformatik/web/model/meetings"
 	"github.com/fachschaftinformatik/web/model/users"
 	"github.com/fachschaftinformatik/web/storage"
@@ -41,10 +39,7 @@ func (b *meetingRetryBlob) Upload(_ context.Context, _ string, r io.Reader, _ in
 func (b *meetingRetryBlob) Delete(context.Context, string) error { return nil }
 
 func TestMeetingInitialSaveFailureCanRetry(t *testing.T) {
-	dsn := filepath.Join(t.TempDir(), "meetings.sqlite")
-	if err := database.Migrate(dsn, log.New(io.Discard, "", 0)); err != nil {
-		t.Fatal(err)
-	}
+	dsn := testdb.Path(t)
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		t.Fatal(err)

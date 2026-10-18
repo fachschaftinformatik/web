@@ -2,12 +2,9 @@ package site
 
 import (
 	"context"
-	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -15,16 +12,14 @@ import (
 
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/publicid"
+	"github.com/fachschaftinformatik/web/internal/testdb"
 	"github.com/fachschaftinformatik/web/model/posts"
 	"github.com/fachschaftinformatik/web/model/users"
 	xhtml "golang.org/x/net/html"
 )
 
 func TestPersistentPostsRequests(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "posts.db")
-	if err := database.Migrate(path, log.New(io.Discard, "", 0)); err != nil {
-		t.Fatal(err)
-	}
+	path := testdb.Path(t)
 	db, err := database.NewConnection(path)
 	if err != nil {
 		t.Fatal(err)
