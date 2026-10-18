@@ -1,5 +1,5 @@
 {
-  description = "Development environment and browser assets for the Fachschaft website";
+  description = "Reproducible application, image, and development environment";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -16,6 +16,8 @@
       packages = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
+          goVersion = builtins.head (builtins.match ".*\ngo ([0-9.]+)\n.*" (builtins.readFile ./go.mod));
+          go = pkgs.${"go_" + builtins.replaceStrings [ "." ] [ "_" ] (pkgs.lib.versions.majorMinor goVersion)};
           govukVersion = "6.6.0";
           htmxVersion = "2.0.8";
           tinymceVersion = "8.10.0";
@@ -122,10 +124,55 @@
               runHook postInstall
             '';
           };
+          revision = self.rev or self.dirtyRev or "dev";
+          web = assert pkgs.lib.assertMsg (go.version == goVersion)
+            "The locked Nix Go version must match go.mod; update go.mod and flake.lock together.";
+            (pkgs.buildGoModule.override { inherit go; }) {
+            pname = "web";
+            version = revision;
+            src = pkgs.lib.cleanSource ./.;
+            vendorHash = "sha256-JswE0jSvGJczxZXzxmC1FuO3Duob0E/pPLy/H/XK7Lo=";
+            subPackages = [ "." ];
+            env.CGO_ENABLED = "0";
+            preBuild = ''
+              cp -R ${assets}/. view/assets/
+            '';
+            ldflags = [ "-s" "-w" "-X main.Version=${revision}" ];
+            doCheck = false;
+          };
         in
         {
-          inherit assets;
-          default = assets;
+          inherit assets web;
+          default = web;
+        } // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+          image = pkgs.dockerTools.buildLayeredImage {
+            name = "ghcr.io/fachschaftinformatik/web";
+            tag = "${revision}";
+            contents = [ web pkgs.cacert pkgs.tzdata ];
+            extraCommands = ''
+              mkdir -p data tmp
+              chmod 1777 tmp
+            '';
+            fakeRootCommands = ''
+              chown 1001:1001 data
+            '';
+            config = {
+              User = "1001:1001";
+              WorkingDir = "/data";
+              Entrypoint = [ "${web}/bin/web" ];
+              Cmd = [ "-addr" "0.0.0.0:8080" "-database" "/data/sqlite.db" ];
+              Env = [ "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" "TZDIR=${pkgs.tzdata}/share/zoneinfo" ];
+              ExposedPorts."8080/tcp" = { };
+              Labels."org.opencontainers.image.revision" = revision;
+              Healthcheck = {
+                Test = [ "CMD" "${web}/bin/web" "-check-health" "http://127.0.0.1:8080/healthz" ];
+                Interval = 30000000000;
+                Timeout = 5000000000;
+                StartPeriod = 5000000000;
+                Retries = 3;
+              };
+            };
+          };
         });
 
       apps = forAllSystems (system:
