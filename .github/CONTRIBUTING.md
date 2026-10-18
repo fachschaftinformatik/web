@@ -110,6 +110,8 @@ not require its own inbox. The reply address must receive mail.
 Production's HTTPS proxy must handle TLS/HSTS, request throttling (especially
 login, registration and password reset), and access logs without query strings or
 credentials. Set `DOMAIN` to the public HTTPS URL so session cookies are secure.
+Set `APP_VERSION` to the deployed release tag for the footer version label. The
+source revision is embedded in the image and shown as a short hash alongside it.
 These defaults follow the [OWASP Top 10](https://owasp.org/Top10/2025/),
 [headers](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html),
 [containers](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html)

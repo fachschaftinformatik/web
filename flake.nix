@@ -143,7 +143,7 @@
             preBuild = ''
               cp -R ${assets}/. view/assets/
             '';
-            ldflags = [ "-s" "-w" "-X main.Version=${revision}" ];
+            ldflags = [ "-s" "-w" "-X main.Version=${revision}" "-X main.Revision=${revision}" ];
             doCheck = false;
           };
         in
