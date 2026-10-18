@@ -2,6 +2,7 @@ FROM --platform=$BUILDPLATFORM nixos/nix:2.34.9@sha256:53b5ec518b696373829ea305c
 WORKDIR /src
 COPY flake.nix flake.lock go.mod ./
 COPY view/styles ./view/styles
+COPY view/*.ts ./view/
 RUN nix --extra-experimental-features "nix-command flakes" build .#assets --out-link /assets && \
     cp -RL /assets /generated-assets
 
