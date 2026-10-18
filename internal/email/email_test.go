@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/fachschaftinformatik/web/internal/config"
-	"github.com/fachschaftinformatik/web/internal/model/organization"
+	"github.com/fachschaftinformatik/web/model/organization"
 )
 
 func TestNotificationMIMEPreservesUnicodeAndActionLinks(t *testing.T) {

@@ -4,7 +4,7 @@ set -eu
 
 version=6.6.0
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
-assets="$root/internal/view/assets"
+assets="$root/view/assets"
 temp=$(mktemp -d)
 trap 'rm -rf "$temp"' EXIT HUP INT TERM
 
@@ -14,7 +14,7 @@ curl --fail --location --silent --show-error \
 tar -xzf "$temp/govuk.tgz" -C "$temp"
 sass --no-source-map --style=compressed --quiet-deps \
     --load-path="$temp/package/dist" \
-    "$root/internal/view/styles/govuk.scss" "$assets/govuk.css"
+    "$root/view/styles/govuk.scss" "$assets/govuk.css"
 cp "$temp/package/dist/govuk/govuk-frontend.min.js" "$assets/govuk.js"
 mkdir -p "$assets/fonts"
 install -m 0644 "$temp/package/dist/govuk/assets/fonts/"*.woff2 "$assets/fonts/"
