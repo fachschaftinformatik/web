@@ -29,7 +29,7 @@
           # renovate: datasource=git-refs depName=https://github.com/alphagov/govspeak-visual-editor
           iconsRevision = "c053cf1c198580723c8768f938cb6146dcd122e8";
           # renovate: datasource=git-refs depName=https://github.com/alphagov/govuk-design-system
-          communityRevision = "a1bfd60d1e0fcc2de52a1d357b934c3098ec62a6";
+          communityRevision = "2508866aacc8ea2ae688d1ef5c6f7d169d0d0edb";
 
           govuk = pkgs.fetchurl {
             url = "https://registry.npmjs.org/govuk-frontend/-/govuk-frontend-${govukVersion}.tgz";
@@ -59,7 +59,7 @@
           community = pkgs.fetchurl {
             name = "govuk-design-system-${communityRevision}.tar.gz";
             url = "https://codeload.github.com/alphagov/govuk-design-system/tar.gz/${communityRevision}";
-            hash = "sha256-OIvJjeUvtn4dAkpNzAzLwEXtQzApwz+vaGATLr9wgDU=";
+            hash = "sha256-kTslwnuoHP6J2G1iidMQM43mf/R2E+gVMshCFGokOFA=";
           };
           assets = pkgs.stdenvNoCC.mkDerivation {
             pname = "web-browser-assets";
