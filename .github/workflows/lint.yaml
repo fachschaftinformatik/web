@@ -18,10 +18,10 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           export LC_ALL=C
-          pattern='^(feat|fix|docs|refactor|test|perf|build|ci|chore|style|revert)(\([a-z0-9]+\))?!?: [a-z0-9 ./@_+-]{1,42}$'
+          pattern='^(feat|fix|docs|refactor|test|perf|build|ci|chore|style|revert)(\([a-z0-9]+\))?!?: [a-z0-9 ./@_+-]{1,50}$'
           if [[ ! "$PR_TITLE" =~ $pattern ]]; then
             echo 'Use type: description or type(scope): description, with an optional ! before the colon.'
-            echo 'Scopes must be lowercase alphanumeric. Descriptions must be 1 to 42 characters using lowercase letters, digits, spaces or dependency punctuation (. / @ _ + -).'
+            echo 'Scopes must be lowercase alphanumeric. Descriptions must be 1 to 50 characters using lowercase letters, digits, spaces or dependency punctuation (. / @ _ + -).'
             echo 'Example: fix(auth): correct password reset logging'
             exit 1
           fi
