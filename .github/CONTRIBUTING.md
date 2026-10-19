@@ -326,7 +326,7 @@ Common types are `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci
 Follow the [Go commit message guidance](https://go.dev/wiki/CommitMessage) for
 clear, imperative wording, using the format and limits below.
 
-- Keep the description to **42 characters maximum**, excluding the type, scope,
+- Keep the description to **50 characters maximum**, excluding the type, scope,
   breaking marker, colon and following space.
 - Use lowercase only. Descriptions may contain letters `a`–`z`, digits, spaces
   and dependency punctuation (`.`, `/`, `@`, `_`, `+`, `-`) for package names
