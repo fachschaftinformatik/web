@@ -29,7 +29,7 @@ func TestPublicIDMigrationPreservesKeysAndReservations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := provider.Up(ctx); err != nil {
+	if _, err := provider.UpTo(ctx, 16); err != nil {
 		t.Fatal(err)
 	}
 	_, err = db.Exec(`INSERT INTO users(id,email,name,password) VALUES(987654321012345,'existing@example.org','Original','unchanged');

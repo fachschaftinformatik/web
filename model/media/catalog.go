@@ -32,7 +32,7 @@ const imageTypes = `('image/jpeg','image/png','image/gif','image/webp','image/bm
 func (s *Service) Catalog(ctx context.Context) ([]Album, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT e.id,e.title,COALESCE(e.cover_path,''),m.id,COALESCE(m.title,''),COALESCE(m.description,'')
 FROM events e LEFT JOIN media m ON m.event_id=e.id AND m.deleted_at IS NULL AND m.mime_type IN `+imageTypes+`
-WHERE e.deleted_at IS NULL AND (SELECT COUNT(*) FROM (SELECT 1 FROM media photos WHERE photos.event_id=e.id AND photos.deleted_at IS NULL AND photos.mime_type IN `+imageTypes+` LIMIT 3))=3
+WHERE `+eligibleAlbum+`
 ORDER BY e.created_at DESC,e.id DESC,m.created_at DESC,m.id DESC`)
 	if err != nil {
 		return nil, err

@@ -29,5 +29,37 @@
         ><a class="govuk-link" href="/exams">Abbrechen</a>
       </div>
     </form>
+    {{ if .CanReceiveSubmissionMail }}
+      <h2 class="govuk-heading-m">E-Mail-Benachrichtigungen</h2>
+      <form action="{{ .Action }}" method="post">
+        <input type="hidden" name="csrf" value="{{ $.CSRF }}" />
+        <input type="hidden" name="intent" value="submission-mail" />
+        <div class="govuk-form-group">
+          <div class="govuk-checkboxes" data-module="govuk-checkboxes">
+            <div class="govuk-checkboxes__item">
+              <input
+                class="govuk-checkboxes__input"
+                id="submission-mail"
+                name="submission_mail"
+                type="checkbox"
+                value="on"
+                {{ if .SubmissionMail }}checked{{ end }}
+                aria-describedby="submission-mail-hint"
+              />
+              <label class="govuk-label govuk-checkboxes__label" for="submission-mail"
+                >Neue Einsendungen per E-Mail melden</label
+              >
+              <div class="govuk-hint govuk-checkboxes__hint" id="submission-mail-hint">
+                Du erhältst eine E-Mail an deine Konto-Adresse, wenn eine Einsendung zur Prüfung
+                eingereicht wird.
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="govuk-button" type="submit" data-module="govuk-button">
+          Benachrichtigungen speichern
+        </button>
+      </form>
+    {{ end }}
   {{ end }}
 {{ end }}

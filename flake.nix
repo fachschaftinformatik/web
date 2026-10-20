@@ -21,7 +21,7 @@
           # renovate: datasource=npm depName=govuk-frontend
           govukVersion = "6.6.0";
           # renovate: datasource=npm depName=htmx.org
-          htmxVersion = "2.0.8";
+          htmxVersion = "2.0.11";
           # renovate: datasource=npm depName=tinymce
           tinymceVersion = "8.10.0";
           # renovate: datasource=npm depName=tinymce-i18n
@@ -29,7 +29,7 @@
           # renovate: datasource=git-refs depName=https://github.com/alphagov/govspeak-visual-editor
           iconsRevision = "c053cf1c198580723c8768f938cb6146dcd122e8";
           # renovate: datasource=git-refs depName=https://github.com/alphagov/govuk-design-system
-          communityRevision = "a1bfd60d1e0fcc2de52a1d357b934c3098ec62a6";
+          communityRevision = "2508866aacc8ea2ae688d1ef5c6f7d169d0d0edb";
 
           govuk = pkgs.fetchurl {
             url = "https://registry.npmjs.org/govuk-frontend/-/govuk-frontend-${govukVersion}.tgz";
@@ -41,7 +41,7 @@
           };
           htmx = pkgs.fetchurl {
             url = "https://registry.npmjs.org/htmx.org/-/htmx.org-${htmxVersion}.tgz";
-            hash = "sha256-UTUbKsSzvAZWkqTdE0moL5C/fFJhNJN8yyXTkyyM6VQ=";
+            hash = "sha256-FlomVQc+nm5V4wenx06OvNt2r7dwH5wWz9EGoTrdQI4=";
           };
           tinymce = pkgs.fetchurl {
             url = "https://registry.npmjs.org/tinymce/-/tinymce-${tinymceVersion}.tgz";
@@ -59,7 +59,7 @@
           community = pkgs.fetchurl {
             name = "govuk-design-system-${communityRevision}.tar.gz";
             url = "https://codeload.github.com/alphagov/govuk-design-system/tar.gz/${communityRevision}";
-            hash = "sha256-OIvJjeUvtn4dAkpNzAzLwEXtQzApwz+vaGATLr9wgDU=";
+            hash = "sha256-kTslwnuoHP6J2G1iidMQM43mf/R2E+gVMshCFGokOFA=";
           };
           assets = pkgs.stdenvNoCC.mkDerivation {
             pname = "web-browser-assets";
@@ -137,13 +137,13 @@
             pname = "web";
             version = revision;
             src = pkgs.lib.cleanSource ./.;
-            vendorHash = "sha256-JswE0jSvGJczxZXzxmC1FuO3Duob0E/pPLy/H/XK7Lo=";
+            vendorHash = "sha256-D9ZcloGtzJ4OG+jGHsrjnvWqMNX74he5pwUthmu5vKo=";
             subPackages = [ "." ];
             env.CGO_ENABLED = "0";
             preBuild = ''
               cp -R ${assets}/. view/assets/
             '';
-            ldflags = [ "-s" "-w" "-X main.Version=${revision}" ];
+            ldflags = [ "-s" "-w" "-X main.Version=${revision}" "-X main.Revision=${revision}" ];
             doCheck = false;
           };
         in
@@ -152,7 +152,7 @@
           default = web;
         } // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
           image = pkgs.dockerTools.buildLayeredImage {
-            name = "ghcr.io/fachschaftinformatik/web";
+            name = "ghcr.io/fsiwh/web";
             tag = "${revision}";
             contents = [ web pkgs.cacert pkgs.tzdata ];
             extraCommands = ''
@@ -226,7 +226,7 @@
               GOTOOLCHAIN = "local";
               shellHook = ''
                 ${self.apps.${system}.vendor.program} "$PWD"
-                export ACCOUNT_DOMAINS="''${ACCOUNT_DOMAINS-studmail.w-hs.de,fsv-wh.de}"
+                export ACCOUNT_DOMAINS="''${ACCOUNT_DOMAINS-studmail.w-hs.de,fsv-wh.de,fsi-wh.de}"
                 export REGISTRATION_DOMAINS="''${REGISTRATION_DOMAINS-studmail.w-hs.de}"
               '';
             };

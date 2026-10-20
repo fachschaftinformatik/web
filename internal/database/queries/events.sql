@@ -17,14 +17,14 @@ INSERT INTO media (
 ) RETURNING *;
 
 -- name: ListMediaByEvent :many
-SELECT m.*, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name 
+SELECT m.*, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name
 FROM media m
 JOIN users u ON m.user_id = u.id
 WHERE event_id = sqlc.arg(event_id) AND m.deleted_at IS NULL
 ORDER BY m.created_at DESC;
 
 -- name: GetMedia :one
-SELECT m.*, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name 
+SELECT m.*, CAST(CASE WHEN u.private = 1 THEN 'Anonym' ELSE u.name END AS TEXT) as uploader_name
 FROM media m
 JOIN users u ON m.user_id = u.id
 WHERE m.id = sqlc.arg(id) AND m.deleted_at IS NULL LIMIT 1;

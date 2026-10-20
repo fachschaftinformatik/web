@@ -36,7 +36,7 @@ jobs:
         run: |
           printf 'GOCACHE=%s/go-build\nGOMODCACHE=%s/go-mod\n' "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Cache Go modules and builds
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ${{ runner.temp }}/go-build
@@ -63,6 +63,11 @@ jobs:
       - name: Report coverage
         run: |
           nix develop -c go tool cover -html="$RUNNER_TEMP/coverage.out" -o "$RUNNER_TEMP/coverage.html"
+          coverage=$(nix develop -c go tool cover -func="$RUNNER_TEMP/coverage.out" | awk '/^total:/ {print $3}')
+          [[ "$coverage" =~ ^[0-9]+([.][0-9]+)?%$ ]]
+          jq -n --arg message "$coverage" \
+            '{schemaVersion: 1, label: "Coverage", message: $message, color: "blue", cacheSeconds: 300}' \
+            > "$RUNNER_TEMP/coverage.json"
           {
             echo '## Coverage'
             echo 'Download the coverage artifact for the HTML report and profile.'
@@ -76,6 +81,7 @@ jobs:
           path: |
             ${{ runner.temp }}/coverage.out
             ${{ runner.temp }}/coverage.html
+            ${{ runner.temp }}/coverage.json
           if-no-files-found: error
       - run: nix develop -c go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
@@ -134,7 +140,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: high
           fail-on-scopes: runtime, development, unknown
@@ -190,10 +196,11 @@ jobs:
             > "$RUNNER_TEMP/release/image-digest"
       - name: Scan application image
         run: |
-          docker run --rm -v "$RUNNER_TEMP/release:/release:ro" \
+          docker run --rm -v "$RUNNER_TEMP/release:/release" \
             -v "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" "$TRIVY_IMAGE" \
             image --input /release/image --scanners vuln --severity HIGH,CRITICAL \
-            --ignore-unfixed --exit-code 1
+            --ignore-unfixed --exit-code 1 --format json \
+            --output /release/vulnerabilities.json
       - name: Generate image SBOM
         run: |
           docker run --rm -v "$RUNNER_TEMP/release:/release" \
@@ -278,6 +285,35 @@ jobs:
           if [[ "$(git rev-list -n 1 "$RELEASE_TAG")" == "$GITHUB_SHA" ]]; then
             printf 'tag=%s\n' "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           fi
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: steps.aliases.outputs.tag != ''
+        with:
+          name: coverage
+          path: ${{ runner.temp }}/coverage
+      - name: Publish coverage badge
+        if: steps.aliases.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.aliases.outputs.tag }}
+        run: |
+          jq -e '.schemaVersion == 1 and (.message | test("^[0-9]+([.][0-9]+)?%$"))' \
+            "$RUNNER_TEMP/coverage/coverage.json" > /dev/null
+          coverage=$(jq -r .message "$RUNNER_TEMP/coverage/coverage.json")
+          # Publish coverage first: the badge reads the first release asset's label.
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/coverage/coverage.json#$coverage" --clobber
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.assets[0].name')" = coverage.json
+      - name: Publish vulnerability report
+        if: steps.aliases.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.aliases.outputs.tag }}
+        run: |
+          report="$RUNNER_TEMP/release/vulnerabilities.json"
+          count=$(jq -er '[.Results[]?.Vulnerabilities[]?] | length' "$report")
+          test "$count" = 0
+          # Publish second: the vulnerability badge reads this asset's label.
+          gh release upload "$RELEASE_TAG" "$report#$count" --clobber
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.assets[1].name')" = vulnerabilities.json
       - name: Attach release SBOM
         if: steps.aliases.outputs.tag != ''
         env:
@@ -289,6 +325,10 @@ jobs:
           cp "$RUNNER_TEMP/release/web.sbom.spdx.json" "$SBOM_FILE"
           jq -e '.spdxVersion and .SPDXID == "SPDXRef-DOCUMENT"' "$SBOM_FILE" > /dev/null
           gh release upload "$RELEASE_TAG" "$SBOM_FILE" --clobber
+          dependencies=$(jq -er '[.packages[].externalRefs[]? | select(.referenceType == "purl") | .referenceLocator] | unique | length' "$SBOM_FILE")
+          # The dependency badge reads the stable SBOM asset's label.
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/release/web.sbom.spdx.json#$dependencies" --clobber
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.assets[3].name')" = web.sbom.spdx.json
       - name: Promote latest image alias
         if: steps.aliases.outputs.tag != ''
         env:

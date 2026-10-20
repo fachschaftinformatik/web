@@ -11,7 +11,7 @@ import (
 	"github.com/fachschaftinformatik/web/internal/publicid"
 )
 
-const eligibleAlbum = `e.deleted_at IS NULL AND (SELECT COUNT(*) FROM (SELECT 1 FROM media photos WHERE photos.event_id=e.id AND photos.deleted_at IS NULL AND photos.mime_type IN ` + imageTypes + ` LIMIT 3))=3`
+const eligibleAlbum = `e.deleted_at IS NULL AND EXISTS(SELECT 1 FROM media photos WHERE photos.event_id=e.id AND photos.deleted_at IS NULL AND photos.mime_type IN ` + imageTypes + `)`
 const albumSummary = `SELECT e.id,e.title,COALESCE(e.cover_path,''),(SELECT COUNT(*) FROM media m WHERE m.event_id=e.id AND m.deleted_at IS NULL AND m.mime_type IN ` + imageTypes + `),(SELECT CAST(m.id AS TEXT) FROM media m WHERE m.event_id=e.id AND m.deleted_at IS NULL AND m.mime_type IN ` + imageTypes + ` ORDER BY m.created_at DESC,m.id DESC LIMIT 1) FROM events e WHERE ` + eligibleAlbum
 
 func albumPhoto(id, title, description string, number int, albumTitle string) Image {
@@ -95,7 +95,7 @@ func (s *Service) Album(ctx context.Context, id string) (Album, error) {
 }
 
 // ItemAlbum resolves an item's owning public album from its stable ID. Album
-// visibility follows the same photo-count policy as the album listing.
+// visibility follows the same policy as the album listing.
 func (s *Service) ItemAlbum(ctx context.Context, value string) (string, error) {
 	id, err := resolve(ctx, s.db, "media", value)
 	if err != nil {

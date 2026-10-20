@@ -12,10 +12,10 @@ There are several ways to contribute to the project:
 
 - Report any potential bugs
 - Propose improvements and enhancements
-- Implement a (requested) feature or [fix a bug](https://github.com/fachschaftinformatik/web/labels/bug)
+- Implement a (requested) feature or [fix a bug](https://github.com/fsiwh/web/labels/bug)
 - Improve the documentation
 
-If in doubt, reach out to us. You can [open an issue](https://github.com/fachschaftinformatik/web/issues/new) anytime to share ideas or invite feedback.
+If in doubt, reach out to us. You can [open an issue](https://github.com/fsiwh/web/issues/new) anytime to share ideas or invite feedback.
 
 ## Building
 
@@ -33,7 +33,7 @@ The application does not seed members or organization content. Legacy content
 imports and data conversion are managed outside this repository.
 Start the application from the repository root with explicit account-domain policy:
 ```bash
-export ACCOUNT_DOMAINS=studmail.w-hs.de,fsv-wh.de
+export ACCOUNT_DOMAINS=studmail.w-hs.de,fsv-wh.de,fsi-wh.de
 export REGISTRATION_DOMAINS=studmail.w-hs.de
 nix develop -c go run . -database .dev-data/local/sqlite.db -blobs .dev-data/local/blobs
 ```
@@ -101,9 +101,17 @@ reused. Token pages disable caching and referrers. The mail outbox necessarily
 contains usable links until delivery; protect the database and backups accordingly.
 SMTP requires STARTTLS except for a loopback development relay.
 
+Set `SMTP_FROM` to the automated sender mailbox address (production:
+`portal@fsi-wh.de`). An optional `SMTP_REPLY_TO` routes replies to the monitored
+contact address (`team@fsi-wh.de`). Email headers use the organization short name.
+The SMTP provider must authorize the sending domain; a sending-only address does
+not require its own inbox. The reply address must receive mail.
+
 Production's HTTPS proxy must handle TLS/HSTS, request throttling (especially
 login, registration and password reset), and access logs without query strings or
 credentials. Set `DOMAIN` to the public HTTPS URL so session cookies are secure.
+Set `APP_VERSION` to the deployed release tag for the footer version label. The
+source revision is embedded in the image and shown as a short hash alongside it.
 These defaults follow the [OWASP Top 10](https://owasp.org/Top10/2025/),
 [headers](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html),
 [containers](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html)
@@ -209,7 +217,39 @@ CI gives the tests a stable `TMPDIR` so Nix's per-invocation temporary directory
 does not invalidate cached test results. Database-backed site, event and exam
 tests copy a schema migrated once per test process into isolated database files;
 migration tests exercise the migrations directly. The `test:go` job summary shows
-total coverage, and its `coverage` artifact contains the HTML report and raw profile.
+total coverage, and its `coverage` artifact contains the HTML report, raw profile
+and badge JSON. Successful release publishing attaches `coverage.json` as the
+first release asset, with the measured percentage in its asset label. The README
+badge reads that label through the releases API; clicking it opens the CI runs
+where the full reports can be downloaded. Dry runs do not publish badge changes.
+The second release asset is the Trivy `vulnerabilities.json` report; its label
+contains the fixable High/Critical finding count for the security badge. Releases
+also include `web.sbom.spdx.json` for a stable latest-release SBOM download URL.
+This fourth asset's label contains the number of unique package URLs in the SBOM
+for the README dependency badge.
+
+### Homepage photo selection
+
+Active, verified administrators and editors can select **Startseitenbilder auswählen** on
+`/media`. Each photograph has an **Auf der Startseite anzeigen** checkbox and an
+explicit **Speichern** button, using the GOV.UK small-checkbox pattern. The
+management view lists every photograph regardless of homepage selection.
+
+New images are excluded from the homepage carousel by default and must be
+selected explicitly. Existing selections are preserved during migrations.
+Each selected image becomes a carousel slide linking to its album. All photos,
+including unselected ones and one-photo albums, remain available under `/media`.
+Selection changes preserve stored files and permanent image IDs.
+
+### Submission notifications
+
+Administrators and editors can opt in to new submission emails under
+`/exams/settings`. The exams model queues notifications in the same transaction
+that changes a draft to pending. The background maintenance worker uses the
+configured SMTP sender, retries failed messages, and checks current reviewer
+permissions, subscription and account address before delivery. Disabling the
+preference removes queued messages; reviewed submissions are no longer emailed.
+The email links to the authenticated reviewer page using the permanent public ID.
 
 ### Security checks
 
@@ -286,7 +326,7 @@ Common types are `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci
 Follow the [Go commit message guidance](https://go.dev/wiki/CommitMessage) for
 clear, imperative wording, using the format and limits below.
 
-- Keep the description to **42 characters maximum**, excluding the type, scope,
+- Keep the description to **50 characters maximum**, excluding the type, scope,
   breaking marker, colon and following space.
 - Use lowercase only. Descriptions may contain letters `a`–`z`, digits, spaces
   and dependency punctuation (`.`, `/`, `@`, `_`, `+`, `-`) for package names
@@ -332,4 +372,4 @@ Relevant documentation:
 
 [1]: https://go.dev/wiki/CodeReviewComments
 [2]: https://www.conventionalcommits.org/en/v1.0.0/#specification
-[3]: https://github.com/fachschaftinformatik/web/blob/main/MAINTAINERS
+[3]: https://github.com/fsiwh/web/blob/main/MAINTAINERS

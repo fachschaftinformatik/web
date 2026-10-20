@@ -35,6 +35,25 @@ func TestImportPreservesCaptionsFullImagesAndEditorialEdits(t *testing.T) {
 		t.Fatalf("imported event: %+v", e)
 	}
 	media := media.NewService(db, s.storage)
+	if albums, err := media.Carousel(ctx); err != nil || len(albums) != 0 {
+		t.Fatalf("imported photos appeared without selection: %+v %v", albums, err)
+	}
+	items, _, err := media.GalleryPage(ctx, 1, 1, 12)
+	if err != nil || len(items) != 3 {
+		t.Fatalf("imported photos unavailable to editors: %+v %v", items, err)
+	}
+	for _, item := range items {
+		if item.Visible {
+			t.Fatal("import selected a new photo")
+		}
+		if err := media.SetHomepageVisibility(ctx, 1, item.ID, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e, err = s.Lookup(ctx, event)
+	if err != nil {
+		t.Fatal(err)
+	}
 	albums, err := media.Catalog(ctx)
 	if err != nil || len(albums) != 1 || len(albums[0].Images) != 3 {
 		t.Fatalf("media: %+v %v", albums, err)
@@ -102,8 +121,8 @@ func TestImportPreservesCaptionsFullImagesAndEditorialEdits(t *testing.T) {
 		t.Fatal(err)
 	}
 	e, err = s.Lookup(ctx, event)
-	if err != nil || e.AlbumID.Valid || e.CoverKey == "" {
-		t.Fatalf("two-image album linked or event cover lost: %+v %v", e, err)
+	if err != nil || !e.AlbumID.Valid || e.CoverKey == "" {
+		t.Fatalf("two-image album or event cover lost: %+v %v", e, err)
 	}
 	if _, err := db.Exec(`UPDATE calendar_events SET deleted_at='2026-01-01T00:00:00Z' WHERE id=?`, e.InternalID); err != nil {
 		t.Fatal(err)
@@ -128,6 +147,9 @@ func TestImportNeverReusesDeletedHighestResourceKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err := db.Exec(`UPDATE media SET homepage_visible=1`); err != nil {
+		t.Fatal(err)
+	}
 	old, err := s.Lookup(ctx, first)
 	if err != nil {
 		t.Fatal(err)
@@ -144,6 +166,9 @@ func TestImportNeverReusesDeletedHighestResourceKeys(t *testing.T) {
 	input.SourceURL = "https://www.instagram.com/p/Next/"
 	next, _, err := s.Import(ctx, 1, input)
 	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`UPDATE media SET homepage_visible=1`); err != nil {
 		t.Fatal(err)
 	}
 	current, err := s.Lookup(ctx, next)

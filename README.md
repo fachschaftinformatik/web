@@ -1,27 +1,37 @@
 # web
 
-[![Release](https://img.shields.io/github/v/release/fachschaftinformatik/web?include_prereleases&label=Release)](https://github.com/fachschaftinformatik/web/releases/latest)
-[![Go](https://img.shields.io/github/go-mod/go-version/fachschaftinformatik/web/main?label=Go)](https://github.com/fachschaftinformatik/web/blob/main/go.mod)
-[![CI](https://img.shields.io/github/actions/workflow/status/fachschaftinformatik/web/ci.yaml?label=CI)](https://github.com/fachschaftinformatik/web/actions/workflows/ci.yaml)
-[![Coverage](https://img.shields.io/badge/Coverage-report-blue)](https://github.com/fachschaftinformatik/web/actions/workflows/ci.yaml)
+[![Release](https://img.shields.io/github/v/release/fsiwh/web?label=Release)](https://github.com/fsiwh/web/releases/latest)
+[![Go](https://img.shields.io/github/go-mod/go-version/fsiwh/web/main?label=Go)](https://github.com/fsiwh/web/blob/main/go.mod)
+[![CI](https://img.shields.io/github/actions/workflow/status/fsiwh/web/ci.yaml?branch=main&label=CI)](https://github.com/fsiwh/web/actions/workflows/ci.yaml)
+[![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Ffsiwh%2Fweb%2Freleases%2Flatest&query=%24.assets%5B0%5D.label&label=Coverage&color=blue)](https://github.com/fsiwh/web/actions/workflows/ci.yaml)
 
-Server-rendered website for the computer science student representatives at Westphalian University.
+A portal for news, events and past exams.
 
 ```text
-       site
-      /    \
-     ▼      ▼
-   model   view
+           site
+         /  |  \
+        ▼   ▼   ▼
+     model view storage
 ```
 
-## Run locally
+## Getting started
+
+Requires [Nix](https://nixos.org/download/) with flakes and the `nix-command`
+experimental feature enabled.
 
 ```sh
 nix develop -c go run . -database sqlite.db
 ```
 
-[Contributing](.github/CONTRIBUTING.md) · [Releases](https://github.com/fachschaftinformatik/web/releases)
+To contribute, see the [contributing guide](.github/CONTRIBUTING.md) for setup,
+development and checks.
 
-Security issues: security@fsv-wh.de.
+## Security
+
+[![Vulnerabilities](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Ffsiwh%2Fweb%2Freleases%2Flatest&query=%24.assets%5B1%5D.label&label=Vulnerabilities&color=brightgreen)](https://github.com/fsiwh/web/releases/latest/download/vulnerabilities.json)
+[![Dependencies](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Ffsiwh%2Fweb%2Freleases%2Flatest&query=%24.assets%5B3%5D.label&label=Dependencies&color=blue)](https://github.com/fsiwh/web/releases/latest/download/web.sbom.spdx.json)
+[![SBOM SPDX](https://img.shields.io/badge/SBOM-SPDX-blue)](https://github.com/fsiwh/web/releases/latest/download/web.sbom.spdx.json)
+
+Report a security issue: [team@fsi-wh.de](mailto:team@fsi-wh.de).
 
 SPDX-License-Identifier: MPL-2.0

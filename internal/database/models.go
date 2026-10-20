@@ -201,17 +201,18 @@ type MailOutbox struct {
 }
 
 type Medium struct {
-	ID          int64   `json:"id"`
-	EventID     int64   `json:"event_id"`
-	UserID      int64   `json:"user_id"`
-	Title       *string `json:"title"`
-	Description *string `json:"description"`
-	AccessKey   string  `json:"access_key"`
-	MimeType    string  `json:"mime_type"`
-	Nbytes      int64   `json:"nbytes"`
-	CreatedAt   string  `json:"created_at"`
-	UpdatedAt   string  `json:"updated_at"`
-	DeletedAt   *string `json:"deleted_at"`
+	ID              int64   `json:"id"`
+	EventID         int64   `json:"event_id"`
+	UserID          int64   `json:"user_id"`
+	Title           *string `json:"title"`
+	Description     *string `json:"description"`
+	AccessKey       string  `json:"access_key"`
+	MimeType        string  `json:"mime_type"`
+	Nbytes          int64   `json:"nbytes"`
+	CreatedAt       string  `json:"created_at"`
+	UpdatedAt       string  `json:"updated_at"`
+	DeletedAt       *string `json:"deleted_at"`
+	HomepageVisible int64   `json:"homepage_visible"`
 }
 
 type MeetingBlobCleanup struct {
@@ -340,6 +341,15 @@ type Session struct {
 type StudyProgram struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
+}
+
+type SubmissionMailOutbox struct {
+	SubmissionID string `json:"submission_id"`
+	UserID       int64  `json:"user_id"`
+}
+
+type SubmissionMailSubscription struct {
+	UserID int64 `json:"user_id"`
 }
 
 type User struct {

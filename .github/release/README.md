@@ -22,7 +22,7 @@ are aliases for the already-built image, so assigning a version never rebuilds i
 `build:go` builds the amd64 application image with `nix build .#image`, scans it,
 and uploads it as an immutable workflow artifact. During semantic-release's
 `prepare` step, `release:publish` downloads that same artifact and pushes it to
-`ghcr.io/fachschaftinformatik/web:<version>`, preserving and verifying its manifest
+`ghcr.io/fsiwh/web:<version>`, preserving and verifying its manifest
 digest. It does not compile or package the application. Only after the
 push succeeds does semantic-release push the tag and publish an empty GitHub
 Release. The workflow then promotes the `latest` alias. Consumers should deploy
@@ -37,7 +37,7 @@ Release as `web-<version>.sbom.spdx.json` (for example,
 `web-v0.1.22.sbom.spdx.json`) for direct download. Inspect a version's SBOM with:
 
 ```sh
-oras discover ghcr.io/fachschaftinformatik/web:<version>
+oras discover ghcr.io/fsiwh/web:<version>
 ```
 
 The Nix image contains a stripped, path-trimmed static Go executable with
@@ -68,7 +68,7 @@ SIGTERM initiates graceful HTTP shutdown. The container health command checks
 For version diagnostics:
 
 ```sh
-docker run --rm ghcr.io/fachschaftinformatik/web:<version> -version
+docker run --rm ghcr.io/fsiwh/web:<version> -version
 ```
 
 ### Production cutover

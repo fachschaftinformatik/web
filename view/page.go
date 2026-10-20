@@ -1,8 +1,29 @@
 package view
 
 import (
+	"regexp"
+	"strings"
 	"time"
 )
+
+var buildCommit = regexp.MustCompile(`^[0-9a-f]{40}$`)
+
+func (p Page) BuildLabel() string {
+	if p.BuildVersion == "" {
+		return "dev"
+	}
+	if buildCommit.MatchString(p.BuildVersion) {
+		return p.BuildVersion[:7]
+	}
+	return strings.TrimPrefix(p.BuildVersion, "v")
+}
+
+func (p Page) BuildShortRevision() string {
+	if p.BuildRevision != p.BuildVersion && buildCommit.MatchString(p.BuildRevision) {
+		return p.BuildRevision[:7]
+	}
+	return ""
+}
 
 func (p Page) LegalUpdatedLabel() string {
 	value := p.Legal.Updated
@@ -97,6 +118,8 @@ type LegalPage struct {
 const NewsURL = "/news"
 
 type Page struct {
+	BuildVersion                                                    string
+	BuildRevision                                                   string
 	CanonicalURL                                                    string
 	Organization                                                    Organization
 	RegistrationDomains, AccountDomains, ChairEmail, PublicityEmail string

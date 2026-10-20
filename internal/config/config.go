@@ -9,11 +9,13 @@ import (
 type Config struct {
 	RegistrationDomains, AccountDomains []string
 	Domain                              string
+	AppVersion                          string
 	SMTPHost                            string
 	SMTPPort                            string
 	SMTPUser                            string
 	SMTPPass                            string
 	SMTPFrom                            string
+	SMTPReplyTo                         string
 	S3Endpoint                          string
 	S3Bucket                            string
 	S3AccessKey                         string
@@ -26,11 +28,13 @@ func New() *Config {
 		RegistrationDomains: domains(os.Getenv("REGISTRATION_DOMAINS")),
 		AccountDomains:      domains(os.Getenv("ACCOUNT_DOMAINS")),
 		Domain:              getEnv("DOMAIN", "http://localhost:8090"),
+		AppVersion:          getEnv("APP_VERSION", ""),
 		SMTPHost:            getEnv("SMTP_HOST", ""),
 		SMTPPort:            getEnv("SMTP_PORT", "587"),
 		SMTPUser:            getEnv("SMTP_USERNAME", ""),
 		SMTPPass:            getEnv("SMTP_PASSWORD", ""),
 		SMTPFrom:            getEnv("SMTP_FROM", ""),
+		SMTPReplyTo:         getEnv("SMTP_REPLY_TO", ""),
 		S3Endpoint:          getEnv("S3_ENDPOINT", ""),
 		S3Bucket:            getEnv("S3_BUCKET", ""),
 		S3AccessKey:         getEnv("S3_ACCESS_KEY", ""),

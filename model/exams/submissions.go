@@ -233,6 +233,11 @@ func (s *Service) Submit(ctx context.Context, userID int64, value string) error 
 	if _, err := tx.ExecContext(ctx, `UPDATE archive_requests SET status='pending',submitted_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id=?`, value); err != nil {
 		return err
 	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO submission_mail_outbox(submission_id,user_id)
+		SELECT ?,u.id FROM users u JOIN submission_mail_subscriptions p ON p.user_id=u.id
+		WHERE u.active=1 AND u.verified=1 AND u.deleted_at IS NULL AND u.role IN ('admin','editor')`, value); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
