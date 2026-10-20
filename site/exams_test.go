@@ -95,8 +95,8 @@ INSERT INTO archive (id,group_id,user_id,module_id,version,exam_date,access_key,
 	seedExamPublicIDs(t, db)
 	documentPath := "/exams/documents/" + examPublicID(t, db, "documents", "100")
 	protectedPaths := []string{"/exams", "/exams/modules/" + examPublicID(t, db, "modules", "10"), documentPath}
-	if status, body, _ := b.get("/"); status != 200 || strings.Contains(strings.SplitN(body, "</nav>", 2)[0], `href="/exams"`) {
-		t.Fatal("anonymous navigation exposes learning material tab")
+	if status, body, _ := b.get("/"); status != 200 || !strings.Contains(strings.SplitN(body, "</nav>", 2)[0], `href="/exams"`) {
+		t.Fatal("anonymous navigation is missing learning material tab")
 	}
 	for _, path := range protectedPaths {
 		if status, _, headers := b.get(path); status != 303 || headers.Get("Location") != "/login" || headers.Get("Cache-Control") != "private, no-store" {
