@@ -41,7 +41,7 @@ func (c *Handler) ExamSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	status := 200
-	page := view.Page{Title: "Einstellungen für Altklausuren", Active: "exams", Upload: view.UploadPage{Action: r.URL.Path}}
+	page := view.Page{Title: "Einstellungen für Lernmaterial", Active: "exams", Upload: view.UploadPage{Action: r.URL.Path}}
 	if r.Method == http.MethodPost {
 		filter = exams.Filter{Programs: slices.DeleteFunc(r.PostForm["program"], func(value string) bool { return value == "" }), Degrees: r.PostForm["degree"], Versions: r.PostForm["version"]}
 		if err := c.exams.SaveSettings(r.Context(), user, filter); err != nil {
@@ -107,7 +107,7 @@ func (c *Handler) Exams(w http.ResponseWriter, r *http.Request) {
 		degrees = append(degrees, view.FilterOption{Name: degree, Label: exams.DegreeLabel(degree), Selected: slices.Contains(filter.Degrees, degree)})
 	}
 	data := view.Page{
-		Title: "Altklausuren", Active: "exams",
+		Title: "Lernmaterial", Active: "exams",
 		Exams: view.ExamsPage{Filter: examsFilterView(filter), Programs: programs, Versions: versions, Degrees: degrees, Modules: mapRecords(catalog.FindModules(filter), moduleView)},
 	}
 
@@ -124,7 +124,7 @@ func (c *Handler) Exams(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if data.Exams.Pages > 1 {
-		data.DocumentTitle = fmt.Sprintf("Altklausuren (Seite %d von %d)", data.Exams.Page, data.Exams.Pages)
+		data.DocumentTitle = fmt.Sprintf("Lernmaterial (Seite %d von %d)", data.Exams.Page, data.Exams.Pages)
 	}
 	w.Header().Set("Vary", "HX-Request, HX-History-Restore-Request")
 	fragment := r.Header.Get("HX-Request") == "true" && r.Header.Get("HX-History-Restore-Request") != "true"

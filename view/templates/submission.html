@@ -14,7 +14,7 @@
       <h2 class="govuk-heading-m">Wie geht es weiter?</h2>
       <p class="govuk-body">
         Deine Einreichung wird von der Fachschaft geprüft. Nach der Freigabe sind die Dokumente
-        unter Altklausuren verfügbar.
+        unter Lernmaterial verfügbar.
       </p>
       <p class="govuk-body">
         Den aktuellen Stand findest du unter
@@ -25,7 +25,7 @@
     {{ end }}
     {{ if and (not .Reviewing) (eq .Entry.Status "approved") }}
       <p class="govuk-body">
-        Deine Einreichung wurde freigegeben. Die Dokumente sind unter Altklausuren verfügbar.
+        Deine Einreichung wurde freigegeben. Die Dokumente sind unter Lernmaterial verfügbar.
       </p>
     {{ end }}
     {{ if and (not .Reviewing) (eq .Entry.Status "rejected") }}

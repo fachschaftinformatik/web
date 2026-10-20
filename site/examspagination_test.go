@@ -1,12 +1,15 @@
 package site
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
+	"github.com/fachschaftinformatik/web/model/users"
 	"github.com/fachschaftinformatik/web/storage/disk"
 )
 
@@ -32,6 +35,15 @@ func TestExamsPaginationKeepsFiltersAndGroupsModules(t *testing.T) {
 		}
 	}
 	seedExamPublicIDs(t, db)
+	if _, err := db.Exec(`UPDATE users SET active=1,verified=1 WHERE id=1`); err != nil {
+		t.Fatal(err)
+	}
+	session, err := users.NewService(db, "http://example.org", users.DomainPolicy{}).CreateSession(context.Background(), 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base, _ := url.Parse(b.server.URL)
+	b.client.Jar.SetCookies(base, []*http.Cookie{{Name: sessionCookie, Value: session.ID, Path: "/"}})
 	programID := examPublicID(t, db, "programs", "1")
 	query := "?degree=bachelor&program=" + programID + "&version=2023&search=Modul"
 	for _, tc := range []struct {
@@ -46,7 +58,7 @@ func TestExamsPaginationKeepsFiltersAndGroupsModules(t *testing.T) {
 		if status != 200 || strings.Count(body, `scope="row"`) != tc.rows || !strings.Contains(body, tc.present) || strings.Contains(body, tc.absent) || !strings.Contains(body, "45 Module gefunden") || !strings.Contains(body, "Alle 2 Dokumente ansehen") {
 			t.Fatalf("page %d: %d %s", tc.page, status, body)
 		}
-		if !strings.Contains(body, fmt.Sprintf("Altklausuren (Seite %d von 3)", tc.page)) || !strings.Contains(body, `aria-current="page"`) {
+		if !strings.Contains(body, fmt.Sprintf("Lernmaterial (Seite %d von 3)", tc.page)) || !strings.Contains(body, `aria-current="page"`) {
 			t.Fatal("missing page title or current state")
 		}
 		if !strings.Contains(body, `degree=bachelor&amp;program=`+programID+`&amp;search=Modul`) {

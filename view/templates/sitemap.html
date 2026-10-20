@@ -28,13 +28,13 @@
         {{ end }}
       </li>
     </ul>
-    <h2 class="govuk-heading-m govuk-!-margin-top-7">Altklausuren</h2>
+    <h2 class="govuk-heading-m govuk-!-margin-top-7">Lernmaterial</h2>
     <ul class="govuk-list govuk-list--spaced">
-      <li><a class="govuk-link" href="/exams">Altklausuren finden</a></li>
+      <li><a class="govuk-link" href="/exams">Lernmaterial finden</a></li>
       <li><a class="govuk-link" href="/exams/submissions/create">Altklausur einreichen</a></li>
       {{ if .SignedIn }}
         <li><a class="govuk-link" href="/exams/submissions">Meine Einreichungen</a></li>
-        <li><a class="govuk-link" href="/exams/settings">Einstellungen für Altklausuren</a></li>
+        <li><a class="govuk-link" href="/exams/settings">Einstellungen für Lernmaterial</a></li>
       {{ end }}
     </ul>
     {{ if not .SignedIn }}
