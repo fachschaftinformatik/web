@@ -82,10 +82,9 @@ func registerPages(c *Handler, register routeRegister) {
 }
 
 func registerExams(c *Handler, register routeRegister) {
-	public := routePolicy{}
 	exam := routePolicy{authenticated: true, csrf: true, private: true, bodyLimit: exams.MaxUploadBytes + 1<<20}
-	register("GET "+urls.ExamsPath, public, c.Exams)
-	register("GET "+urls.ExamModulePattern, public, c.ExamsModule)
+	register("GET "+urls.ExamsPath, exam, c.Exams)
+	register("GET "+urls.ExamModulePattern, exam, c.ExamsModule)
 	register("GET "+urls.ExamDocumentPattern, exam, c.ExamsFile)
 	forms(register, urls.ExamSettingsPath, exam, c.ExamSettings)
 	forms(register, urls.CreateSubmissionPath, exam, c.UploadExams)

@@ -59,10 +59,10 @@ func (p Page) Breadcrumbs() []Breadcrumb {
 		}
 	}
 	if p.Exams.Module != nil {
-		items = append(items, Breadcrumb{"Altklausuren", p.Exams.SearchURL()})
+		items = append(items, Breadcrumb{"Lernmaterial", p.Exams.SearchURL()})
 	}
 	if p.Active == "exams" && (p.Upload.Action != "" || p.Submission != nil || p.SubmissionList.Submissions != nil) {
-		items = append(items, Breadcrumb{"Altklausuren", "/exams"})
+		items = append(items, Breadcrumb{"Lernmaterial", "/exams"})
 		if p.Submission != nil {
 			items = append(items, Breadcrumb{"Meine Einreichungen", "/exams/submissions"})
 		}

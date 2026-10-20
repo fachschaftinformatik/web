@@ -1,422 +1,426 @@
 {{ define "layout" }}
-  <!doctype html>
-  <html lang="de" class="govuk-template">
-    <head>
-      <meta charset="utf-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <meta name="htmx-config" content='{"historyCacheSize":0,"refreshOnHistoryMiss":true}' />
-      <title>
-        {{ if .DocumentTitle }}{{ .DocumentTitle }}{{ else }}{{ .Title }}{{ end }} ·
-        {{ .Organization.Name }}
-      </title>
-      {{ if .CanonicalURL }}<link rel="canonical" href="{{ .CanonicalURL }}" />{{ end }}
-      <link rel="stylesheet" href="/assets/govuk.css" />
-      <link rel="stylesheet" href="/assets/site.css" />
-      <script src="/assets/htmx.js" defer></script>
-      <script src="/assets/site.js" type="module"></script>
-      {{ if .Editor }}
-        <script src="/assets/tinymce/tinymce.min.js" defer></script>
-        <script src="/assets/editor.js" type="module"></script>
-      {{ end }}
-    </head>
-    <body class="govuk-template__body">
-      <script>
-        document.body.className +=
-          " js-enabled" +
-          ("noModule" in HTMLScriptElement.prototype ? " govuk-frontend-supported" : "");
-      </script>
-      <a class="govuk-skip-link" data-module="govuk-skip-link" href="#main-content"
-        >Zum Hauptinhalt</a
-      >
-      <header class="govuk-generic-header app-header">
-        <div
-          class="govuk-generic-header__container govuk-width-container app-header-container {{ if .SignedIn }}
+<!doctype html>
+<html lang="de" class="govuk-template">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="htmx-config"
+      content='{"historyCacheSize":0,"refreshOnHistoryMiss":true}'
+    />
+    <title>
+      {{ if .DocumentTitle }}{{ .DocumentTitle }}{{ else }}{{ .Title }}{{ end }}
+      · {{ .Organization.Name }}
+    </title>
+    {{ if .CanonicalURL }}
+    <link rel="canonical" href="{{ .CanonicalURL }}" />
+    {{ end }}
+    <link rel="stylesheet" href="/assets/govuk.css" />
+    <link rel="stylesheet" href="/assets/site.css" />
+    <script src="/assets/htmx.js" defer></script>
+    <script src="/assets/site.js" type="module"></script>
+    {{ if .Editor }}
+    <script src="/assets/tinymce/tinymce.min.js" defer></script>
+    <script src="/assets/editor.js" type="module"></script>
+    {{ end }}
+  </head>
+  <body class="govuk-template__body">
+    <script>
+      document.body.className +=
+        " js-enabled" +
+        ("noModule" in HTMLScriptElement.prototype
+          ? " govuk-frontend-supported"
+          : "");
+    </script>
+    <a
+      class="govuk-skip-link"
+      data-module="govuk-skip-link"
+      href="#main-content"
+      >Zum Hauptinhalt</a
+    >
+    <header class="govuk-generic-header app-header">
+      <div
+        class="govuk-generic-header__container govuk-width-container app-header-container {{ if .SignedIn }}
             app-header-container--signed-in
           {{ end }}"
-        >
-          <div class="govuk-generic-header__logo">
-            <a class="govuk-generic-header__homepage-link" href="/"
-              ><strong>{{ .Organization.Name }}</strong></a
-            >
-          </div>
-          {{ if not (or (eq .Active "login") (eq .Active "forgot")) }}
-            <div class="app-header-tools">
-              <div class="app-account-actions">
-                {{ if .SignedIn }}
-                  {{ if .CanAdmin }}
-                    <a class="govuk-button govuk-button--inverse app-login" href="/admin"
-                      >Verwaltung</a
-                    >
-                  {{ end }}
-                  <form action="/logout" method="post" class="app-logout">
-                    <input type="hidden" name="csrf" value="{{ .CSRF }}" /><button
-                      class="govuk-button govuk-button--inverse app-login"
-                      type="submit"
-                    >
-                      Abmelden
-                    </button>
-                  </form>
-                {{ else }}
-                  <a
-                    class="govuk-button govuk-button--inverse app-login"
-                    href="/login"
-                    {{ if eq .Active "login" }}aria-current="page"{{ end }}
-                    >Anmelden</a
-                  >
-                {{ end }}
-              </div>
-            </div>
-          {{ end }}
+      >
+        <div class="govuk-generic-header__logo">
+          <a class="govuk-generic-header__homepage-link" href="/"
+            ><strong>{{ .Organization.Name }}</strong></a
+          >
         </div>
-      </header>
-      <div
-        class="govuk-service-navigation {{ if eq .Active "home" }}
+        {{ if not (or (eq .Active "login") (eq .Active "forgot")) }}
+        <div class="app-header-tools">
+          <div class="app-account-actions">
+            {{ if .SignedIn }} {{ if .CanAdmin }}
+            <a
+              class="govuk-button govuk-button--inverse app-login"
+              href="/admin"
+              >Verwaltung</a
+            >
+            {{ end }}
+            <form action="/logout" method="post" class="app-logout">
+              <input type="hidden" name="csrf" value="{{ .CSRF }}" /><button
+                class="govuk-button govuk-button--inverse app-login"
+                type="submit"
+              >
+                Abmelden
+              </button>
+            </form>
+            {{ else }}
+            <a
+              class="govuk-button govuk-button--inverse app-login"
+              href="/login"
+              >Anmelden</a
+            >
+            {{ end }}
+          </div>
+        </div>
+        {{ end }}
+      </div>
+    </header>
+    <div
+      class="govuk-service-navigation {{ if eq .Active `home` }}
           govuk-service-navigation--inverse
         {{ end }}"
-        data-module="govuk-service-navigation"
-      >
-        <div class="govuk-width-container">
-          <div class="govuk-service-navigation__container">
-            <nav class="govuk-service-navigation__wrapper" aria-label="Hauptnavigation">
-              <button
-                type="button"
-                class="govuk-service-navigation__toggle govuk-js-service-navigation-toggle"
-                aria-controls="navigation"
-                hidden
-                aria-hidden="true"
+      data-module="govuk-service-navigation"
+    >
+      <div class="govuk-width-container">
+        <div class="govuk-service-navigation__container">
+          <nav
+            class="govuk-service-navigation__wrapper"
+            aria-label="Hauptnavigation"
+          >
+            <button
+              type="button"
+              class="govuk-service-navigation__toggle govuk-js-service-navigation-toggle"
+              aria-controls="navigation"
+              hidden
+              aria-hidden="true"
+            >
+              Menü
+            </button>
+            <ul class="govuk-service-navigation__list" id="navigation">
+              <li
+                class="govuk-service-navigation__item {{ if .About }}
+                    govuk-service-navigation__item--active
+                  {{ end }}"
               >
-                Menü
-              </button>
-              <ul class="govuk-service-navigation__list" id="navigation">
-                <li
-                  class="govuk-service-navigation__item {{ if .About }}
-                    govuk-service-navigation__item--active
-                  {{ end }}"
-                >
-                  <a
-                    class="govuk-service-navigation__link"
-                    href="/about"
-                    {{ if .About }}
-                      aria-current="{{- if eq .Active "about" -}}
+                <a
+                  class="govuk-service-navigation__link"
+                  href="/about"
+                  aria-current="{{- if .About -}}{{- if eq .Active `about` -}}
                         page
                       {{- else -}}
                         true
-                      {{- end -}}"
-                    {{ end }}
-                    >{{ if .About }}
-                      <strong class="govuk-service-navigation__active-fallback">Über uns</strong>
-                    {{ else }}
-                      Über uns
-                    {{ end }}</a
+                      {{- end -}}{{- else -}}false{{- end -}}"
+                  >{{ if .About }}
+                  <strong class="govuk-service-navigation__active-fallback"
+                    >Über uns</strong
                   >
-                </li>
-                <li
-                  class="govuk-service-navigation__item {{ if .Community }}
+                  {{ else }} Über uns {{ end }}</a
+                >
+              </li>
+              <li
+                class="govuk-service-navigation__item {{ if .Community }}
                     govuk-service-navigation__item--active
                   {{ end }}"
-                >
-                  <a
-                    class="govuk-service-navigation__link"
-                    href="/community"
-                    {{ if .Community }}
-                      aria-current="{{- if eq .Active "community" -}}
+              >
+                <a
+                  class="govuk-service-navigation__link"
+                  href="/community"
+                  aria-current="{{- if .Community -}}{{- if eq .Active `community` -}}
                         page
                       {{- else -}}
                         true
-                      {{- end -}}"
-                    {{ end }}
-                    >{{ if .Community }}
-                      <strong class="govuk-service-navigation__active-fallback">Community</strong>
-                    {{ else }}
-                      Community
-                    {{ end }}</a
+                      {{- end -}}{{- else -}}false{{- end -}}"
+                  >{{ if .Community }}
+                  <strong class="govuk-service-navigation__active-fallback"
+                    >Community</strong
                   >
-                </li>
-                <li
-                  class="govuk-service-navigation__item {{ if eq .Active "exams" }}
+                  {{ else }} Community {{ end }}</a
+                >
+              </li>
+              {{ if .SignedIn }}
+              <li
+                class="govuk-service-navigation__item {{ if eq .Active `exams` }}
                     govuk-service-navigation__item--active
                   {{ end }}"
-                >
-                  <a
-                    class="govuk-service-navigation__link"
-                    href="/exams"
-                    {{ if eq .Active "exams" }}aria-current="page"{{ end }}
-                    >{{ if eq .Active "exams" }}
-                      <strong class="govuk-service-navigation__active-fallback"
-                        >Altklausuren</strong
-                      >
-                    {{ else }}
-                      Altklausuren
-                    {{ end }}</a
+              >
+                <a
+                  class="govuk-service-navigation__link"
+                  href="/exams"
+                  aria-current="{{ if eq .Active `exams` }}page{{ else }}false{{ end }}"
+                  >{{ if eq .Active "exams" }}
+                  <strong class="govuk-service-navigation__active-fallback"
+                    >Lernmaterial</strong
                   >
-                </li>
-              </ul>
-            </nav>
-          </div>
+                  {{ else }} Lernmaterial {{ end }}</a
+                >
+              </li>
+              {{ end }}
+            </ul>
+          </nav>
         </div>
       </div>
-      {{ if eq .Active "home" }}
-        <main id="main-content" tabindex="-1">{{ template "content" . }}</main>
-      {{ else if eq .Active "exams" }}
-        <div class="govuk-width-container">
+    </div>
+    {{ if eq .Active "home" }}
+    <main id="main-content" tabindex="-1">{{ template "content" . }}</main>
+    {{ else if eq .Active "exams" }}
+    <div class="govuk-width-container">
+      {{ template "breadcrumbs" . }}
+      <main class="govuk-main-wrapper" id="main-content" tabindex="-1">
+        {{ if or .Upload.Action .Submission }}
+        <div class="govuk-grid-row">
+          <div class="govuk-grid-column-two-thirds">
+            {{ template "exams-content" . }}
+          </div>
+        </div>
+        {{ else }} {{ template "exams-content" . }} {{ end }}
+      </main>
+    </div>
+    {{ else if or (eq .Active "contact") (eq .Active "sitemap") (eq .Active
+    "legal") (eq .Active "error") }}
+    <div class="govuk-width-container">
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
           {{ template "breadcrumbs" . }}
           <main class="govuk-main-wrapper" id="main-content" tabindex="-1">
-            {{ if or .Upload.Action .Submission }}
-              <div class="govuk-grid-row">
-                <div class="govuk-grid-column-two-thirds">{{ template "exams-content" . }}</div>
-              </div>
-            {{ else }}
-              {{ template "exams-content" . }}
-            {{ end }}
+            <h1 class="govuk-heading-xl">{{ .Title }}</h1>
+            {{ template "content" . }}
           </main>
         </div>
-      {{ else if or (eq .Active "contact") (eq .Active "sitemap") (eq .Active "legal") (eq .Active "error") }}
-        <div class="govuk-width-container">
-          <div class="govuk-grid-row">
-            <div class="govuk-grid-column-two-thirds">
-              {{ template "breadcrumbs" . }}
-              <main class="govuk-main-wrapper" id="main-content" tabindex="-1">
-                <h1 class="govuk-heading-xl">{{ .Title }}</h1>
-                {{ template "content" . }}
-              </main>
-            </div>
-          </div>
+      </div>
+    </div>
+    {{ else if or (eq .Active "login") (eq .Active "forgot") (eq .Active
+    "register") }}
+    <div class="govuk-width-container">{{ template "breadcrumbs" . }}</div>
+    <main
+      class="govuk-width-container govuk-main-wrapper"
+      id="main-content"
+      tabindex="-1"
+    >
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          {{ template "content" . }}
         </div>
-      {{ else if or (eq .Active "login") (eq .Active "forgot") (eq .Active "register") }}
-        <div class="govuk-width-container">{{ template "breadcrumbs" . }}</div>
-        <main class="govuk-width-container govuk-main-wrapper" id="main-content" tabindex="-1">
-          <div class="govuk-grid-row">
-            <div class="govuk-grid-column-two-thirds">
-              {{ template "content" . }}
-            </div>
-          </div>
-        </main>
-      {{ else }}
-        <div class="govuk-width-container app-split-pane">
-          <aside
-            class="app-sidebar"
-            aria-label="{{- if .Admin -}}
+      </div>
+    </main>
+    {{ else }}
+    <div class="govuk-width-container app-split-pane">
+      <aside
+        class="app-sidebar"
+        aria-label="{{- if .Admin -}}
               Verwaltungsnavigation
-            {{- else if eq .Active "exams" -}}
+            {{- else if eq .Active `exams` -}}
               Klausurfilter
             {{- else if .About -}}
               Navigation Über uns
             {{- else -}}
               Community-Navigation
             {{- end -}}"
-          >
-            {{ if .About }}{{ template "about-navigation" . }}{{ end }}
-            {{ if .Community }}{{ template "community-navigation" . }}{{ end }}
-            {{ template "sidebar" . }}
-          </aside>
-          <div class="app-main-column">
-            {{ template "breadcrumbs" . }}
-            <main
-              id="main-content"
-              class="{{ if eq .Active "media" }}app-media{{ end }}"
-              tabindex="-1"
-            >
-              <div class="app-page-heading">
-                <h1
-                  class="govuk-heading-xl {{ if and .Events.Detail .Events.Detail.SourcePublishedAt }}
+      >
+        {{ if .About }}{{ template "about-navigation" . }}{{ end }} {{ if
+        .Community }}{{ template "community-navigation" . }}{{ end }} {{
+        template "sidebar" . }}
+      </aside>
+      <div class="app-main-column">
+        {{ template "breadcrumbs" . }}
+        <main
+          id="main-content"
+          class="{{ if eq .Active `media` }}app-media{{ end }}"
+          tabindex="-1"
+        >
+          <div class="app-page-heading">
+            <h1
+              class="govuk-heading-xl {{ if and .Events.Detail .Events.Detail.SourcePublishedAt }}
                     govuk-!-margin-bottom-2
                   {{ end }}"
-                >
-                  {{ .Title }}
-                </h1>
-                {{ with .Events.Detail }}
-                  {{ if .SourcePublishedAt }}
-                    <p class="govuk-body-s app-publication-date">
-                      Veröffentlicht am
-                      <time datetime="{{ .SourcePublishedAt }}">{{ .SourceDateLabel }}</time>
-                    </p>
-                  {{ end }}
-                {{ end }}
-              </div>
-              <div class="app-content">{{ template "content" . }}</div>
-            </main>
+            >
+              {{ .Title }}
+            </h1>
+            {{ with .Events.Detail }} {{ if .SourcePublishedAt }}
+            <p class="govuk-body-s app-publication-date">
+              Veröffentlicht am
+              <time datetime="{{ .SourcePublishedAt }}"
+                >{{ .SourceDateLabel }}</time
+              >
+            </p>
+            {{ end }} {{ end }}
           </div>
-        </div>
-      {{ end }}
-      <footer class="govuk-footer">
-        <div class="govuk-width-container">
-          <div class="govuk-footer__meta">
-            <div class="govuk-footer__meta-item govuk-footer__meta-item--grow">
-              <h2 class="govuk-visually-hidden">Weiterführende Links</h2>
-              <ul class="govuk-footer__inline-list">
-                <li class="govuk-footer__inline-list-item">
-                  <a class="govuk-footer__link" href="/legal">Impressum</a>
-                </li>
-                <li class="govuk-footer__inline-list-item">
-                  <a class="govuk-footer__link" href="/accessibility">Barrierefreiheit</a>
-                </li>
-                <li class="govuk-footer__inline-list-item">
-                  <a class="govuk-footer__link" href="/sitemap">Seitenübersicht</a>
-                </li>
-                <li class="govuk-footer__inline-list-item">
-                  <a class="govuk-footer__link" href="/privacy">Datenschutz</a>
-                </li>
-                <li class="govuk-footer__inline-list-item">
-                  <a class="govuk-footer__link" href="/contact">Kontakt</a>
-                </li>
-              </ul>
-              <div class="govuk-footer__meta-custom">
-                {{ .Organization.ShortName }}<br />
-                {{ .Organization.Institution }}<br />
-                {{ .Organization.Street }}<br />
-                {{ .Organization.PostalCode }}
-                {{ .Organization.City }}
-                {{ if .Organization.Office }}<br />Raum {{ .Organization.Office }}{{ end }}
-              </div>
-            </div>
-            <div class="govuk-footer__meta-item">
-              <a class="govuk-footer__link" href="https://github.com/fsiwh/web">Version {{ .BuildLabel }}{{ if .BuildShortRevision }} ({{ .BuildShortRevision }}){{ end }}</a>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </body>
-  </html>
-{{ end }}
-
-{{ define "exams-content" }}
-  {{ if and .Submission (not .Submission.Reviewing) (eq .Submission.Entry.Status "pending") }}
-    <div class="govuk-panel govuk-panel--confirmation">
-      <h1 class="govuk-panel__title">{{ .Title }}</h1>
+          <div class="app-content">{{ template "content" . }}</div>
+        </main>
+      </div>
     </div>
-  {{ else }}
-    <h1 class="govuk-heading-xl">{{ .Title }}</h1>
-  {{ end }}
-  {{ template "content" . }}
-{{ end }}
-
-{{ define "breadcrumbs" }}
-  {{ if .Breadcrumbs }}
-    <nav class="govuk-breadcrumbs" aria-label="Brotkrümelnavigation">
-      <ol class="govuk-breadcrumbs__list">
-        {{ range .Breadcrumbs }}
-          <li class="govuk-breadcrumbs__list-item">
-            <a class="govuk-breadcrumbs__link" href="{{ .URL }}">{{ .Title }}</a>
-          </li>
-        {{ end }}
-      </ol>
-    </nav>
-  {{ end }}
-{{ end }}
-
-{{ define "community-navigation" }}
-  <nav class="app-section-nav" aria-label="Seiten in Community">
-    <h2 class="app-subnav-theme">Forum</h2>
-    <ul class="govuk-list app-subnav">
-      <li>
-        <a
-          class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/posts"
-          {{ if eq .Active "posts" }}
-            aria-current="{{- if or .Posts.Thread .Editor -}}true{{- else -}}page{{- end -}}"
-          {{ end }}
-          >Forum</a
-        >
-      </li>
-      <li>
-        <a
-          class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/news"
-          {{ if eq .Active "news" }}
-            aria-current="{{- if or .Posts.Thread .Editor -}}true{{- else -}}page{{- end -}}"
-          {{ end }}
-          >Ankündigungen</a
-        >
-      </li>
-    </ul>
-    <h2 class="app-subnav-theme">Events</h2>
-    <ul class="govuk-list app-subnav">
-      <li>
-        <a
-          class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/events"
-          {{ if eq .Active "events" }}
-            aria-current="{{- if or .Events.Detail .Posts.Thread .Editor -}}
+    {{ end }}
+    <footer class="govuk-footer">
+      <div class="govuk-width-container">
+        <div class="govuk-footer__meta">
+          <div class="govuk-footer__meta-item govuk-footer__meta-item--grow">
+            <h2 class="govuk-visually-hidden">Weiterführende Links</h2>
+            <ul class="govuk-footer__inline-list">
+              <li class="govuk-footer__inline-list-item">
+                <a class="govuk-footer__link" href="/legal">Impressum</a>
+              </li>
+              <li class="govuk-footer__inline-list-item">
+                <a class="govuk-footer__link" href="/accessibility"
+                  >Barrierefreiheit</a
+                >
+              </li>
+              <li class="govuk-footer__inline-list-item">
+                <a class="govuk-footer__link" href="/sitemap"
+                  >Seitenübersicht</a
+                >
+              </li>
+              <li class="govuk-footer__inline-list-item">
+                <a class="govuk-footer__link" href="/privacy">Datenschutz</a>
+              </li>
+              <li class="govuk-footer__inline-list-item">
+                <a class="govuk-footer__link" href="/contact">Kontakt</a>
+              </li>
+            </ul>
+            <div class="govuk-footer__meta-custom">
+              {{ .Organization.ShortName }}<br />
+              {{ .Organization.Institution }}<br />
+              {{ .Organization.Street }}<br />
+              {{ .Organization.PostalCode }} {{ .Organization.City }} {{ if
+              .Organization.Office }}<br />Raum {{ .Organization.Office }}{{ end
+              }}
+            </div>
+          </div>
+          <div class="govuk-footer__meta-item">
+            <a class="govuk-footer__link" href="https://github.com/fsiwh/web"
+              >Version {{ .BuildLabel }}{{ if .BuildShortRevision }} ({{
+              .BuildShortRevision }}){{ end }}</a
+            >
+          </div>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
+{{ end }} {{ define "exams-content" }} {{ if and .Submission (not
+.Submission.Reviewing) (eq .Submission.Entry.Status "pending") }}
+<div class="govuk-panel govuk-panel--confirmation">
+  <h1 class="govuk-panel__title">{{ .Title }}</h1>
+</div>
+{{ else }}
+<h1 class="govuk-heading-xl">{{ .Title }}</h1>
+{{ end }} {{ template "content" . }} {{ end }} {{ define "breadcrumbs" }} {{ if
+.Breadcrumbs }}
+<nav class="govuk-breadcrumbs" aria-label="Brotkrümelnavigation">
+  <ol class="govuk-breadcrumbs__list">
+    {{ range .Breadcrumbs }}
+    <li class="govuk-breadcrumbs__list-item">
+      <a class="govuk-breadcrumbs__link" href="{{ .URL }}">{{ .Title }}</a>
+    </li>
+    {{ end }}
+  </ol>
+</nav>
+{{ end }} {{ end }} {{ define "community-navigation" }}
+<nav class="app-section-nav" aria-label="Seiten in Community">
+  <h2 class="app-subnav-theme">Forum</h2>
+  <ul class="govuk-list app-subnav">
+    <li>
+      <a
+        class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
+        href="/posts"
+        aria-current="{{- if eq .Active `posts` -}}{{- if or .Posts.Thread .Editor -}}true{{- else -}}page{{- end -}}{{- else -}}false{{- end -}}"
+        >Forum</a
+      >
+    </li>
+    <li>
+      <a
+        class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
+        href="/news"
+        aria-current="{{- if eq .Active `news` -}}{{- if or .Posts.Thread .Editor -}}true{{- else -}}page{{- end -}}{{- else -}}false{{- end -}}"
+        >Ankündigungen</a
+      >
+    </li>
+  </ul>
+  <h2 class="app-subnav-theme">Events</h2>
+  <ul class="govuk-list app-subnav">
+    <li>
+      <a
+        class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
+        href="/events"
+        aria-current="{{- if eq .Active `events` -}}{{- if or .Events.Detail .Posts.Thread .Editor -}}
               true
             {{- else -}}
               page
-            {{- end -}}"
-          {{ end }}
-          >Veranstaltungen</a
-        >
-      </li>
-      <li>
-        <a
-          class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/media"
-          {{ if eq .Active "media" }}
-            aria-current="{{- if .Media.Detail -}}true{{- else -}}page{{- end -}}"
-          {{ end }}
-          >Fotos</a
-        >
-      </li>
-    </ul>
-  </nav>
-{{ end }}
-
-{{ define "about-navigation" }}
-  <nav class="app-section-nav" aria-label="Seiten der Fachschaft">
-    <h2 class="govuk-visually-hidden">Seiten der Fachschaft</h2>
-    <h3 class="app-subnav-theme">Die Fachschaft</h3>
-    <ul class="govuk-list app-subnav">
-      <li>
-        <a
-          class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/about"
-          {{ if eq .Active "about" }}aria-current="page"{{ end }}
-          >Über uns</a
-        >
-      </li>
-      <li>
-        <a
-          class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/team"
-          {{ if eq .Active "team" }}aria-current="page"{{ end }}
-          >Team</a
-        >
-        {{ if eq .Active "team" }}
-          <ul class="govuk-list app-subnav app-subnav--nested">
-            {{ range .Team }}
-              <li>
-                <a
-                  class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-                  href="/team#team-{{ .ID }}"
-                  >{{ if eq .ID "project" }}Projektstellen{{ else }}{{ .Title }}{{ end }}</a
-                >
-              </li>
-            {{ end }}
-          </ul>
+            {{- end -}}{{- else -}}false{{- end -}}"
+        >Veranstaltungen</a
+      >
+    </li>
+    <li>
+      <a
+        class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
+        href="/media"
+        aria-current="{{- if eq .Active `media` -}}{{- if .Media.Detail -}}true{{- else -}}page{{- end -}}{{- else -}}false{{- end -}}"
+        >Fotos</a
+      >
+    </li>
+  </ul>
+</nav>
+{{ end }} {{ define "about-navigation" }}
+<nav class="app-section-nav" aria-label="Seiten der Fachschaft">
+  <h2 class="govuk-visually-hidden">Seiten der Fachschaft</h2>
+  <h3 class="app-subnav-theme">Die Fachschaft</h3>
+  <ul class="govuk-list app-subnav">
+    <li>
+      <a
+        class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
+        href="/about"
+        aria-current="{{ if eq .Active `about` }}page{{ else }}false{{ end }}"
+        >Über uns</a
+      >
+    </li>
+    <li>
+      <a
+        class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
+        href="/team"
+        aria-current="{{ if eq .Active `team` }}page{{ else }}false{{ end }}"
+        >Team</a
+      >
+      {{ if eq .Active "team" }}
+      <ul class="govuk-list app-subnav app-subnav--nested">
+        {{ range .Team }}
+        <li>
+          <a
+            class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
+            href="/team#team-{{ .ID }}"
+            >{{ if eq .ID "project" }}Projektstellen{{ else }}{{ .Title }}{{ end
+            }}</a
+          >
+        </li>
         {{ end }}
-      </li>
-      <li>
-        <a
-          class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/elections"
-          {{ if eq .Active "elections" }}aria-current="page"{{ end }}
-          >Wahlen</a
-        >
-      </li>
-      <li>
-        <a
-          class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/meetings"
-          {{ if eq .Active "meetings" }}aria-current="page"{{ end }}
-          >Sitzungen und Protokolle</a
-        >
-      </li>
-      <li>
-        <a
-          class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
-          href="/regulations"
-          {{ if eq .Active "regulations" }}aria-current="page"{{ end }}
-          >Satzung und Ordnungen</a
-        >
-      </li>
-    </ul>
-  </nav>
+      </ul>
+      {{ end }}
+    </li>
+    <li>
+      <a
+        class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
+        href="/elections"
+        aria-current="{{ if eq .Active `elections` }}page{{ else }}false{{ end }}"
+        >Wahlen</a
+      >
+    </li>
+    <li>
+      <a
+        class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
+        href="/meetings"
+        aria-current="{{ if eq .Active `meetings` }}page{{ else }}false{{ end }}"
+        >Sitzungen und Protokolle</a
+      >
+    </li>
+    <li>
+      <a
+        class="govuk-link govuk-link--no-visited-state govuk-link--no-underline"
+        href="/regulations"
+        aria-current="{{ if eq .Active `regulations` }}page{{ else }}false{{ end }}"
+        >Satzung und Ordnungen</a
+      >
+    </li>
+  </ul>
+</nav>
 {{ end }}

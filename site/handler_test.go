@@ -1,6 +1,8 @@
 package site
 
 import (
+	"context"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -9,6 +11,10 @@ import (
 func TestExamsResponses(t *testing.T) {
 	handler, db := testApplication(t)
 	seedPublicContent(t, db)
+	session, err := handler.identity.CreateSession(context.Background(), 900)
+	if err != nil {
+		t.Fatal(err)
+	}
 	program := publicRef(t, db, "programs", "1")
 	for _, tc := range []struct {
 		name, path              string
@@ -27,6 +33,7 @@ func TestExamsResponses(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", tc.path, nil)
+			req.AddCookie(&http.Cookie{Name: sessionCookie, Value: session.ID})
 			if tc.htmx {
 				req.Header.Set("HX-Request", "true")
 			}

@@ -2,7 +2,7 @@
 {{ define "content" }}
   <div class="app-exams-intro">
     <p class="govuk-body">
-      Bereite dich mit Altklausuren auf deine Prüfungen vor. Die Dokumente können Rekonstruktionen
+      Bereite dich mit Lernmaterial auf deine Prüfungen vor. Die Dokumente können Rekonstruktionen
       aus dem Gedächtnis sein und sind dann keine offiziellen Prüfungsunterlagen. Du kannst auch
       eigene Dokumente einreichen und anderen beim Lernen helfen.
     </p>
@@ -62,7 +62,7 @@
       </p>
       <div class="govuk-inset-text" id="search-error" role="alert" hidden>
         Suche fehlgeschlagen. Bitte erneut suchen oder
-        <a class="govuk-link" href="/exams">die Altklausuren neu laden</a>.
+        <a class="govuk-link" href="/exams">das Lernmaterial neu laden</a>.
       </div>
     </div>
     <details
@@ -162,7 +162,7 @@
         </p>
         {{ if .SignedIn }}
           <p class="govuk-body govuk-!-margin-top-3 govuk-!-margin-bottom-0">
-            <a class="govuk-link" href="/exams/settings">Einstellungen für Altklausuren ändern</a>
+            <a class="govuk-link" href="/exams/settings">Einstellungen für Lernmaterial ändern</a>
           </p>
         {{ end }}
       </div>
@@ -179,7 +179,7 @@
     data-document-title="{{ if .DocumentTitle }}
       {{ .DocumentTitle }}
     {{ else }}
-      Altklausuren
+      Lernmaterial
     {{ end }} · {{ .Organization.Name }}"
   >
     <h2 class="govuk-heading-m" id="results-heading" tabindex="-1">
@@ -197,7 +197,7 @@
     {{ if .Exams.Modules }}
       <table class="govuk-table app-exams-table">
         <caption class="govuk-visually-hidden">
-          Altklausuren nach Modul
+          Lernmaterial nach Modul
         </caption>
         <colgroup>
           <col class="app-exams-table__module" />

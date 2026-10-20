@@ -94,7 +94,11 @@ INSERT INTO archive (id,group_id,user_id,module_id,version,exam_date,access_key,
 	}
 	seedExamPublicIDs(t, db)
 	documentPath := "/exams/documents/" + examPublicID(t, db, "documents", "100")
-	for _, path := range []string{documentPath} {
+	protectedPaths := []string{"/exams", "/exams/modules/" + examPublicID(t, db, "modules", "10"), documentPath}
+	if status, body, _ := b.get("/"); status != 200 || strings.Contains(strings.SplitN(body, "</nav>", 2)[0], `href="/exams"`) {
+		t.Fatal("anonymous navigation exposes learning material tab")
+	}
+	for _, path := range protectedPaths {
 		if status, _, headers := b.get(path); status != 303 || headers.Get("Location") != "/login" || headers.Get("Cache-Control") != "private, no-store" {
 			t.Fatal("anonymous PDF download allowed or cacheable")
 		}
@@ -121,6 +125,19 @@ INSERT INTO archive (id,group_id,user_id,module_id,version,exam_date,access_key,
 	}
 	if status, body, _ := b.get("/exams"); status != 200 || !strings.Contains(body, `href="`+documentPath+`"`) || strings.Contains(body, "example.pdf") {
 		t.Fatal("archive still uses example downloads")
+	}
+	for _, path := range protectedPaths {
+		if status, body, headers := b.get(path); status != 200 || headers.Get("Cache-Control") != "private, no-store" || path == "/exams" && !strings.Contains(strings.SplitN(body, "</nav>", 2)[0], `href="/exams"`) {
+			t.Fatalf("verified access failed at %s: %d", path, status)
+		}
+	}
+	if _, err := db.Exec(`UPDATE users SET verified=0 WHERE id=1`); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range protectedPaths {
+		if status, _, headers := b.get(path); status != 303 || headers.Get("Location") != "/login" {
+			t.Fatalf("unverified access allowed at %s: %d", path, status)
+		}
 	}
 	if _, err := db.Exec(`UPDATE users SET active=0 WHERE id=1`); err != nil {
 		t.Fatal(err)
