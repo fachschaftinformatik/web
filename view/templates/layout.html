@@ -141,7 +141,6 @@
                   {{ else }} Community {{ end }}</a
                 >
               </li>
-              {{ if .SignedIn }}
               <li
                 class="govuk-service-navigation__item {{ if eq .Active `exams` }}
                     govuk-service-navigation__item--active
@@ -158,7 +157,6 @@
                   {{ else }} Lernmaterial {{ end }}</a
                 >
               </li>
-              {{ end }}
             </ul>
           </nav>
         </div>
