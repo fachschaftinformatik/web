@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/audit"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/form"
 	"github.com/fachschaftinformatik/web/internal/publicid"
@@ -340,6 +342,7 @@ func (s *Service) SaveDraft(ctx context.Context, userID int64, submission Submis
 	committed = true
 	result.ModuleID = submission.placements()[0].ModuleID
 	result.SubmissionID = publicSubmissionID
+	audit.Audit(ctx, "submission.draft_saved", "success", userID, slog.String("submission_id", publicSubmissionID), slog.Int("documents", len(entries)))
 	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 	defer cancel()
 	if err := s.CleanupBlobs(cleanup); err != nil {

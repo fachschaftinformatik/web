@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/audit"
 	"github.com/fachschaftinformatik/web/internal/config"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/email"
@@ -104,7 +105,12 @@ func newApplication(ctx context.Context, databasePath, blobPath string) (_ *appl
 	if err != nil {
 		return nil, err
 	}
-	maintenanceCtx, cancel := context.WithCancel(ctx)
+	auditStore := audit.NewStore(db)
+	router := app.handler
+	app.handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		router.ServeHTTP(w, r.WithContext(audit.WithRecorder(r.Context(), auditStore)))
+	})
+	maintenanceCtx, cancel := context.WithCancel(audit.WithRecorder(ctx, auditStore))
 	app.cancel, app.done = cancel, make(chan struct{})
 	go func() {
 		defer close(app.done)

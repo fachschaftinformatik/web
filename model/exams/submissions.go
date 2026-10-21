@@ -9,11 +9,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/audit"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/publicid"
 )
@@ -204,6 +206,7 @@ func (s *Service) Submissions(ctx context.Context, userID int64, reviewer bool) 
 }
 
 func (s *Service) Submit(ctx context.Context, userID int64, value string) error {
+	publicSubmissionID := value
 	value, err := resolveSubmission(ctx, s.db, value)
 	if err != nil {
 		return err
@@ -238,7 +241,11 @@ func (s *Service) Submit(ctx context.Context, userID int64, value string) error 
 		WHERE u.active=1 AND u.verified=1 AND u.deleted_at IS NULL AND u.role IN ('admin','editor')`, value); err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	audit.Audit(ctx, "submission.submitted", "success", userID, slog.String("submission_id", publicSubmissionID))
+	return nil
 }
 
 // Review updates the submission and public revision flags in one transaction.
@@ -253,6 +260,7 @@ func (s *Service) ReviewVersion(ctx context.Context, userID int64, value string,
 }
 
 func (s *Service) review(ctx context.Context, userID int64, value string, approve bool, expectedToken *string) error {
+	publicSubmissionID := value
 	value, err := resolveSubmission(ctx, s.db, value)
 	if err != nil {
 		return err
@@ -433,7 +441,11 @@ func (s *Service) review(ctx context.Context, userID int64, value string, approv
 	if _, err := tx.ExecContext(ctx, `UPDATE archive_requests SET status=?,reviewed_at=strftime('%Y-%m-%dT%H:%M:%SZ','now'),reviewed_by=? WHERE id=?`, target, userID, value); err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	audit.Audit(ctx, "submission.reviewed", "success", userID, slog.String("submission_id", publicSubmissionID), slog.String("previous_status", string(status)), slog.String("status", string(target)))
+	return nil
 }
 
 // submissionEditToken includes moderation and publication state as well as content,
@@ -614,6 +626,7 @@ func (s *Service) EditSubmission(ctx context.Context, userID int64, submission S
 		return result, err
 	}
 	committed = true
+	audit.Audit(ctx, "submission.edited", "success", userID, slog.String("submission_id", publicSubmissionID))
 	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 	defer cancel()
 	if err := s.CleanupBlobs(cleanup); err != nil {

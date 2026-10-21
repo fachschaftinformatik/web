@@ -6,11 +6,13 @@ import (
 	"errors"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/audit"
 	"github.com/fachschaftinformatik/web/model/events"
 	"github.com/fachschaftinformatik/web/model/exams"
 	"github.com/fachschaftinformatik/web/model/media"
@@ -102,6 +104,7 @@ func (c *Handler) ExamsFile(w http.ResponseWriter, r *http.Request) {
 	defer object.Close()
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+	audit.Audit(r.Context(), "exam_document.access", "granted", response.session.UserID, slog.String("document_id", r.PathValue("id")))
 	w.Header().Set("Content-Disposition", `inline; filename="altklausur.pdf"`)
 	if seeker, ok := object.ReadCloser.(io.ReadSeeker); ok {
 		http.ServeContent(w, r, "altklausur.pdf", time.Time{}, seeker)

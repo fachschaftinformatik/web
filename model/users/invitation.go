@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/audit"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/publicid"
 	"github.com/fachschaftinformatik/web/internal/urls"
@@ -110,7 +111,12 @@ func (s *Service) AcceptInvitation(ctx context.Context, value, password string) 
 	if _, err := tx.ExecContext(ctx, `DELETE FROM mail_outbox WHERE user_id=? AND kind='verify'`, userID); err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	audit.Audit(ctx, "account.invitation_accepted", "success", userID)
+	audit.Audit(ctx, "session.revoked", "invitation_accepted", userID)
+	return nil
 }
 
 // ResendConfirmation replaces the outstanding link without changing the account.
@@ -142,5 +148,6 @@ func (s *Service) ResendConfirmation(ctx context.Context, userID int64) (bool, e
 	if err := tx.Commit(); err != nil {
 		return false, err
 	}
+	accountEvent(ctx, "account.confirmation_resent", "mail_queued", user.ID, user.Email)
 	return true, nil
 }

@@ -4,10 +4,12 @@ import (
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/hex"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
 
+	"github.com/fachschaftinformatik/web/internal/audit"
 	"github.com/fachschaftinformatik/web/model/users"
 )
 
@@ -34,7 +36,27 @@ type sessionResponse struct {
 	http.ResponseWriter
 	session      *session
 	canonicalURL string
+	status       int
 }
+
+func (w *sessionResponse) WriteHeader(status int) {
+	if w.status != 0 {
+		return
+	}
+	if status >= 200 {
+		w.status = status
+	}
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *sessionResponse) Write(data []byte) (int, error) {
+	if w.status == 0 {
+		w.status = http.StatusOK
+	}
+	return w.ResponseWriter.Write(data)
+}
+
+func (w *sessionResponse) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
 // Transient UI state is process-local and is never written to account storage.
 var transient = struct {
@@ -67,6 +89,41 @@ func (c *Handler) setSessionCookie(w http.ResponseWriter, r *http.Request, s *se
 
 func (c *Handler) withSession(policy routePolicy, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, requestID := audit.WithRequest(r.Context(), r.Method, r.Pattern)
+		r = r.WithContext(ctx)
+		response := &sessionResponse{ResponseWriter: w}
+		w = response
+		w.Header().Set("X-Request-ID", requestID)
+		defer func() {
+			if r.Method != http.MethodPost && response.status < http.StatusBadRequest {
+				return
+			}
+			status := response.status
+			if status == 0 {
+				status = http.StatusOK
+			}
+			outcome := "success"
+			if status >= http.StatusInternalServerError {
+				outcome = "error"
+			} else if status >= http.StatusBadRequest {
+				outcome = "rejected"
+			}
+			var userID int64
+			if response.session != nil {
+				userID = response.session.UserID
+			}
+			details := []slog.Attr{slog.Int("status", status)}
+			resources := map[string]string{}
+			for _, key := range []string{"id", "post", "comment", "event", "album", "image", "module", "submission"} {
+				if value := r.PathValue(key); value != "" {
+					resources[key] = value
+				}
+			}
+			if len(resources) != 0 {
+				details = append(details, slog.Any("resources", resources))
+			}
+			audit.Audit(ctx, "http.request", outcome, userID, details...)
+		}()
 		var s *session
 		if cookie, err := r.Cookie(sessionCookie); err == nil {
 			var err error
@@ -85,7 +142,11 @@ func (c *Handler) withSession(policy routePolicy, next http.Handler) http.Handle
 			}
 			c.setSessionCookie(w, r, s)
 		}
-		response := &sessionResponse{ResponseWriter: w, session: s}
+		response.session = s
+		if s != nil && s.Authenticated {
+			ctx = audit.WithActor(ctx, s.UserID)
+			r = r.WithContext(ctx)
+		}
 		if r.Method == http.MethodGet || r.Method == http.MethodHead {
 			response.canonicalURL = canonicalURL(r)
 		}
@@ -97,10 +158,12 @@ func (c *Handler) withSession(policy routePolicy, next http.Handler) http.Handle
 		}
 		w.Header().Add("Vary", "Cookie")
 		if policy.authenticated && (s == nil || !s.Authenticated) {
+			audit.Audit(ctx, "access.denied", "login_required", 0)
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
 		if policy.admin && !s.CanAdmin() || policy.reviewer && !s.CanReview() {
+			audit.Audit(ctx, "access.denied", "insufficient_role", s.UserID)
 			c.pageError(response, "Du hast keine Berechtigung für die Verwaltung.", http.StatusForbidden)
 			return
 		}
@@ -119,6 +182,11 @@ func (c *Handler) withSession(policy routePolicy, next http.Handler) http.Handle
 				return
 			}
 			if policy.csrf && !validCSRF(s, r.PostForm.Get("csrf")) {
+				var userID int64
+				if s != nil {
+					userID = s.UserID
+				}
+				audit.Audit(ctx, "request.csrf", "rejected", userID)
 				c.pageError(response, "Lade die Seite neu und versuche es noch einmal.", http.StatusForbidden)
 				return
 			}
@@ -137,6 +205,7 @@ func (c *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 			c.serverError(w, err)
 			return
 		}
+		audit.Audit(r.Context(), "account.logout", "success", response.session.UserID)
 		transient.Lock()
 		delete(transient.flash, response.session.ID)
 		transient.Unlock()
