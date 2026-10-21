@@ -10,11 +10,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fachschaftinformatik/web/internal/datetime"
+	"log/slog"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/fachschaftinformatik/web/internal/audit"
 	"github.com/fachschaftinformatik/web/internal/database"
 	"github.com/fachschaftinformatik/web/internal/publicid"
 	"github.com/fachschaftinformatik/web/internal/urls"
@@ -81,7 +83,11 @@ func (s *Service) CreateSession(ctx context.Context, userID int64) (*Session, er
 	if _, err := s.db.ExecContext(ctx, `INSERT INTO web_sessions (id,user_id,expires_at) VALUES (?,?,?)`, digest(value), user, datetime.FormatUTC(expires)); err != nil {
 		return nil, err
 	}
-	return s.Session(ctx, value)
+	result, err := s.Session(ctx, value)
+	if err == nil && result != nil && result.Authenticated {
+		audit.Audit(ctx, "session.created", "success", result.UserID)
+	}
+	return result, err
 }
 
 func (s *Service) Session(ctx context.Context, value string) (*Session, error) {
@@ -103,6 +109,13 @@ func (s *Service) Session(ctx context.Context, value string) (*Session, error) {
 		if err := s.DeleteSession(ctx, value); err != nil {
 			return nil, err
 		}
+		event, reason := "session.revoked", "account_access_revoked"
+		if err != nil {
+			reason = "invalid_expiry"
+		} else if !time.Now().Before(expires) {
+			event, reason = "session.expired", "expired"
+		}
+		audit.Audit(ctx, event, reason, userID.Int64)
 		return nil, nil
 	}
 	return &Session{ID: value, CSRF: digest("csrf:" + value), UserID: userID.Int64, Role: role, Authenticated: userID.Valid, Expires: expires}, nil
@@ -115,26 +128,32 @@ func (s *Service) DeleteSession(ctx context.Context, value string) error {
 
 func (s *Service) Login(ctx context.Context, email, password string) (int64, error) {
 	if s.EmailError(email) != "" {
+		audit.Audit(ctx, "account.login", "invalid_email", 0)
 		return 0, ErrCredentials
 	}
 	user, err := s.queries.GetUserByEmail(ctx, strings.ToLower(strings.TrimSpace(email)))
 	if errors.Is(err, sql.ErrNoRows) {
 		// Match the password-work factor without exposing whether the user exists.
 		VerifyPassword("$argon2id$v=19$m=65536,t=3,p=2$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", password)
+		accountEvent(ctx, "account.login", "account_not_found", 0, email)
 		return 0, ErrCredentials
 	}
 	if err != nil {
 		return 0, err
 	}
 	if !VerifyPassword(user.Password, password) {
+		accountEvent(ctx, "account.login", "incorrect_password", user.ID, email)
 		return 0, ErrCredentials
 	}
 	if user.Active != 1 {
+		accountEvent(ctx, "account.login", "inactive", user.ID, email)
 		return 0, ErrInactive
 	}
 	if user.Verified != 1 {
+		accountEvent(ctx, "account.login", "unverified", user.ID, email)
 		return 0, ErrUnverified
 	}
+	accountEvent(ctx, "account.login", "success", user.ID, email)
 	return user.ID, nil
 }
 
@@ -279,6 +298,10 @@ func (s *Service) Register(ctx context.Context, name, email, password, programID
 		return err
 	}
 	if count != 0 {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		accountEvent(ctx, "account.register", "email_exists", 0, email)
 		return ErrEmailExists
 	}
 	user, err := CreateUserTx(ctx, tx, database.CreateUserParams{Email: strings.ToLower(strings.TrimSpace(email)), Name: strings.TrimSpace(name), Password: hash, Role: "user", Active: 1, ProgramID: program})
@@ -296,7 +319,11 @@ func (s *Service) Register(ctx context.Context, name, email, password, programID
 	if err := s.queueToken(ctx, tx, user.ID, strings.ToLower(strings.TrimSpace(email)), strings.TrimSpace(name), "verify"); err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	accountEvent(ctx, "account.register", "verification_queued", user.ID, email)
+	return nil
 }
 
 func (s *Service) queueToken(ctx context.Context, tx *sql.Tx, userID int64, email, name, kind string) error {
@@ -329,10 +356,12 @@ func (s *Service) queueLink(ctx context.Context, tx *sql.Tx, userID int64, email
 
 func (s *Service) RequestReset(ctx context.Context, email string) error {
 	if s.EmailError(email) != "" {
+		audit.Audit(ctx, "account.password_reset_requested", "invalid_email", 0)
 		return ErrCredentials
 	}
 	user, err := s.queries.GetUserByEmail(ctx, strings.TrimSpace(email))
 	if errors.Is(err, sql.ErrNoRows) {
+		accountEvent(ctx, "account.password_reset_requested", "account_not_found", 0, email)
 		return nil
 	}
 	if err != nil {
@@ -346,11 +375,16 @@ func (s *Service) RequestReset(ctx context.Context, email string) error {
 	if err := s.queueToken(ctx, tx, user.ID, strings.ToLower(user.Email), user.Name, "reset"); err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	accountEvent(ctx, "account.password_reset_requested", "mail_queued", user.ID, email)
+	return nil
 }
 
 func (s *Service) ConsumeToken(ctx context.Context, value, kind, password string) error {
 	if len(value) != 64 || kind != "verify" && kind != "reset" {
+		audit.Audit(ctx, "account.token", "invalid_link", 0)
 		return ErrToken
 	}
 	if kind == "verify" {
@@ -369,6 +403,7 @@ func (s *Service) ConsumeToken(ctx context.Context, value, kind, password string
 			return err
 		}
 		if !valid {
+			audit.Audit(ctx, "account.password_reset", "invalid_or_expired_link", 0)
 			return ErrToken
 		}
 		message := PasswordError(password)
@@ -389,6 +424,10 @@ func (s *Service) ConsumeToken(ctx context.Context, value, kind, password string
 	var userID int64
 	err = tx.QueryRowContext(ctx, `DELETE FROM user_tokens WHERE id=? AND kind=? AND expires_at>? AND user_id IN (SELECT id FROM users WHERE deleted_at IS NULL) RETURNING user_id`, digest(value), kind, datetime.FormatUTC(time.Now())).Scan(&userID)
 	if errors.Is(err, sql.ErrNoRows) {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		audit.Audit(ctx, "account.token", "invalid_or_expired_link", 0)
 		return ErrToken
 	}
 	if err != nil {
@@ -411,7 +450,16 @@ func (s *Service) ConsumeToken(ctx context.Context, value, kind, password string
 	if _, err := tx.ExecContext(ctx, `DELETE FROM mail_outbox WHERE user_id=? AND kind=?`, userID, kind); err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	if kind == "verify" {
+		audit.Audit(ctx, "account.email_confirmed", "success", userID)
+	} else {
+		audit.Audit(ctx, "account.password_reset", "success", userID)
+		audit.Audit(ctx, "session.revoked", "password_reset", userID)
+	}
+	return nil
 }
 
 type Mailer interface {
@@ -424,18 +472,18 @@ func (s *Service) DeliverMail(ctx context.Context, mailer Mailer) error {
 	if err := s.PurgeExpired(ctx); err != nil {
 		return err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT id,kind,recipient,name,link FROM mail_outbox ORDER BY id LIMIT 20`)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,user_id,kind,recipient,name,link FROM mail_outbox ORDER BY id LIMIT 20`)
 	if err != nil {
 		return err
 	}
 	type message struct {
-		id                   int64
+		id, userID           int64
 		kind, to, name, link string
 	}
 	var pending []message
 	for rows.Next() {
 		var m message
-		if err := rows.Scan(&m.id, &m.kind, &m.to, &m.name, &m.link); err != nil {
+		if err := rows.Scan(&m.id, &m.userID, &m.kind, &m.to, &m.name, &m.link); err != nil {
 			rows.Close()
 			return err
 		}
@@ -457,12 +505,14 @@ func (s *Service) DeliverMail(ctx context.Context, mailer Mailer) error {
 			err = mailer.SendPasswordResetEmail(m.to, m.name, m.link)
 		}
 		if err != nil {
+			audit.Audit(ctx, "account.mail", "smtp_failed", m.userID, slog.Int64("mail_id", m.id), slog.String("kind", m.kind))
 			failures = append(failures, fmt.Errorf("deliver queued mail: %w", err))
 			continue
 		}
 		if _, err = s.db.ExecContext(ctx, `DELETE FROM mail_outbox WHERE id=?`, m.id); err != nil {
 			return err
 		}
+		audit.Audit(ctx, "account.mail", "smtp_accepted", m.userID, slog.Int64("mail_id", m.id), slog.String("kind", m.kind))
 	}
 	return errors.Join(failures...)
 }
@@ -474,14 +524,41 @@ func (s *Service) PurgeExpired(ctx context.Context) error {
 	}
 	defer tx.Rollback()
 	now := datetime.FormatUTC(time.Now())
-	if _, err := tx.ExecContext(ctx, `DELETE FROM web_sessions WHERE expires_at<=?`, now); err != nil {
+	rows, err := tx.QueryContext(ctx, `DELETE FROM web_sessions WHERE expires_at<=? RETURNING user_id`, now)
+	if err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM user_tokens WHERE expires_at<=?`, now); err != nil {
+	expired := map[int64]int64{}
+	for rows.Next() {
+		var userID sql.NullInt64
+		if err := rows.Scan(&userID); err != nil {
+			rows.Close()
+			return err
+		}
+		expired[userID.Int64]++
+	}
+	if err := errors.Join(rows.Err(), rows.Close()); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM mail_outbox WHERE NOT EXISTS (SELECT 1 FROM user_tokens t JOIN users u ON u.id=t.user_id WHERE t.user_id=mail_outbox.user_id AND t.kind=mail_outbox.kind AND u.deleted_at IS NULL)`); err != nil {
+	tokens, err := tx.ExecContext(ctx, `DELETE FROM user_tokens WHERE expires_at<=?`, now)
+	if err != nil {
 		return err
 	}
-	return tx.Commit()
+	mail, err := tx.ExecContext(ctx, `DELETE FROM mail_outbox WHERE NOT EXISTS (SELECT 1 FROM user_tokens t JOIN users u ON u.id=t.user_id WHERE t.user_id=mail_outbox.user_id AND t.kind=mail_outbox.kind AND u.deleted_at IS NULL)`)
+	if err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	for userID, count := range expired {
+		audit.Audit(ctx, "session.expired", "purged", userID, slog.Int64("count", count))
+	}
+	if count, err := tokens.RowsAffected(); err == nil && count > 0 {
+		audit.Audit(ctx, "account.tokens_expired", "purged", 0, slog.Int64("count", count))
+	}
+	if count, err := mail.RowsAffected(); err == nil && count > 0 {
+		audit.Audit(ctx, "account.mail", "expired_or_revoked", 0, slog.Int64("count", count))
+	}
+	return nil
 }

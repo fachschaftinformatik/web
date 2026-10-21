@@ -1,6 +1,6 @@
 module github.com/fachschaftinformatik/web
 
-go 1.27.2
+go 1.27.3
 
 tool github.com/sqlc-dev/sqlc/cmd/sqlc
 

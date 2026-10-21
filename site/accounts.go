@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/fachschaftinformatik/web/internal/audit"
 	"github.com/fachschaftinformatik/web/internal/urls"
 	"github.com/fachschaftinformatik/web/model/users"
 	"github.com/fachschaftinformatik/web/view"
@@ -56,6 +57,7 @@ func (c *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		data.Forgot.Email = strings.TrimSpace(r.PostForm.Get("email"))
 		data.Forgot.EmailError = c.identity.EmailError(data.Forgot.Email)
 		if data.Forgot.EmailError != "" {
+			audit.Audit(r.Context(), "account.password_reset_requested", "invalid_email", 0)
 			data.DocumentTitle = "Fehler: Passwort vergessen"
 			status = http.StatusUnprocessableEntity
 		} else {
@@ -170,6 +172,7 @@ func (c *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			data.Login.PasswordError = "Gib dein Passwort ein."
 		}
 		if data.Login.EmailError != "" || data.Login.PasswordError != "" {
+			audit.Audit(r.Context(), "account.login", "invalid_form", 0)
 			data.DocumentTitle = "Fehler: Anmelden"
 			status = http.StatusUnprocessableEntity
 		} else {
@@ -194,6 +197,7 @@ func (c *Handler) Login(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				c.setSessionCookie(w, r, s)
+				response.session = s
 				target := urls.HomePath
 				if s.CanAdmin() {
 					target = urls.AdminPath
@@ -272,6 +276,7 @@ func (c *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 		form.NameError, form.EmailError, form.PasswordError = c.identity.RegistrationErrors(form.Name, form.Email, r.PostForm.Get("password"))
 		if form.NameError != "" || form.EmailError != "" || form.PasswordError != "" || form.ProgramError != "" || form.DegreeError != "" || form.VersionError != "" {
+			audit.Audit(r.Context(), "account.register", "invalid_form", 0)
 			data.DocumentTitle = "Fehler: Konto erstellen"
 			status = http.StatusUnprocessableEntity
 		} else {

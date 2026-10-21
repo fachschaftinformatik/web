@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
+	"github.com/fachschaftinformatik/web/internal/audit"
 	"github.com/fachschaftinformatik/web/internal/publicid"
 )
 
@@ -45,7 +47,11 @@ func (s *Service) SaveSubmissionMailPreference(ctx context.Context, userID int64
 	if err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	audit.Audit(ctx, "submission.mail_preference", "success", userID, slog.Bool("enabled", enabled))
+	return nil
 }
 
 type SubmissionMailer interface {
@@ -97,12 +103,14 @@ func (s *Service) DeliverSubmissionMail(ctx context.Context, mailer SubmissionMa
 			return err
 		}
 		if err := mailer.SendSubmissionEmail(m.to, m.name, id); err != nil {
+			audit.Audit(ctx, "submission.mail", "smtp_failed", m.userID, slog.String("submission_id", id))
 			failures = append(failures, fmt.Errorf("deliver submission mail: %w", err))
 			continue
 		}
 		if _, err := s.db.ExecContext(ctx, `DELETE FROM submission_mail_outbox WHERE submission_id=? AND user_id=?`, m.submissionID, m.userID); err != nil {
 			return err
 		}
+		audit.Audit(ctx, "submission.mail", "smtp_accepted", m.userID, slog.String("submission_id", id))
 	}
 	return errors.Join(failures...)
 }

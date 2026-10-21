@@ -101,6 +101,10 @@ reused. Token pages disable caching and referrers. The mail outbox necessarily
 contains usable links until delivery; protect the database and backups accordingly.
 SMTP requires STARTTLS except for a loopback development relay.
 
+Account, session, submission and form-action events use the shared
+[`audit.Audit(...)` function](audit.md), with request correlation and no credentials
+or recovery links in audit output.
+
 Set `SMTP_FROM` to the automated sender mailbox address (production:
 `portal@fsi-wh.de`). An optional `SMTP_REPLY_TO` routes replies to the monitored
 contact address (`team@fsi-wh.de`). Email headers use the organization short name.

@@ -83,6 +83,19 @@ type ArchiveRequest struct {
 	ReviewedBy  *int64  `json:"reviewed_by"`
 }
 
+type AuditEvent struct {
+	ID          int64  `json:"id"`
+	OccurredAt  string `json:"occurred_at"`
+	Event       string `json:"event"`
+	Outcome     string `json:"outcome"`
+	ActorUserID *int64 `json:"actor_user_id"`
+	UserID      *int64 `json:"user_id"`
+	RequestID   string `json:"request_id"`
+	Method      string `json:"method"`
+	Route       string `json:"route"`
+	Details     string `json:"details"`
+}
+
 type CalendarEvent struct {
 	ID                int64   `json:"id"`
 	Title             string  `json:"title"`
