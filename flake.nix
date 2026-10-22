@@ -137,7 +137,7 @@
             pname = "web";
             version = revision;
             src = pkgs.lib.cleanSource ./.;
-            vendorHash = "sha256-D9ZcloGtzJ4OG+jGHsrjnvWqMNX74he5pwUthmu5vKo=";
+            vendorHash = "sha256-1EKpIfGkBivQ0hqx7xd8q/sV7JeMwK6COiSIUso0lkM=";
             subPackages = [ "." ];
             env.CGO_ENABLED = "0";
             preBuild = ''
