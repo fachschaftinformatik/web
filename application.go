@@ -130,6 +130,9 @@ func newApplication(ctx context.Context, databasePath, blobPath string) (_ *appl
 				if err := examDocuments.DeliverSubmissionMail(maintenanceCtx, sender); err != nil && maintenanceCtx.Err() == nil {
 					log.Printf("Submission mail maintenance: %v", err)
 				}
+				if err := examDocuments.DeliverSubmissionDecisionMail(maintenanceCtx, sender); err != nil && maintenanceCtx.Err() == nil {
+					log.Printf("Submission decision mail maintenance: %v", err)
+				}
 			} else {
 				err = identity.PurgeExpired(maintenanceCtx)
 			}

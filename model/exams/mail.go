@@ -58,6 +58,67 @@ type SubmissionMailer interface {
 	SendSubmissionEmail(to, name, submissionID string) error
 }
 
+type SubmissionDecisionMailer interface {
+	SendSubmissionDecisionEmail(to, name, submissionID string, approved bool) error
+}
+
+// DeliverSubmissionDecisionMail notifies the owner using their current address.
+// Only the latest undelivered decision is retained; failed deliveries are retried.
+func (s *Service) DeliverSubmissionDecisionMail(ctx context.Context, mailer SubmissionDecisionMailer) error {
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM submission_decision_mail_outbox AS o WHERE NOT EXISTS (
+		SELECT 1 FROM archive_requests r JOIN users u ON u.id=r.user_id
+		WHERE r.id=o.submission_id AND r.status=o.status
+		AND u.active=1 AND u.verified=1 AND u.deleted_at IS NULL)`); err != nil {
+		return err
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT o.id,o.submission_id,o.status,u.id,u.email,u.name
+		FROM submission_decision_mail_outbox o JOIN archive_requests r ON r.id=o.submission_id
+		JOIN users u ON u.id=r.user_id
+		WHERE r.status=o.status AND u.active=1 AND u.verified=1 AND u.deleted_at IS NULL
+		ORDER BY o.id LIMIT 20`)
+	if err != nil {
+		return err
+	}
+	type message struct {
+		id, userID             int64
+		submissionID, to, name string
+		status                 Status
+	}
+	var pending []message
+	for rows.Next() {
+		var m message
+		if err := rows.Scan(&m.id, &m.submissionID, &m.status, &m.userID, &m.to, &m.name); err != nil {
+			rows.Close()
+			return err
+		}
+		pending = append(pending, m)
+	}
+	if err := errors.Join(rows.Err(), rows.Close()); err != nil {
+		return err
+	}
+	var failures []error
+	for _, m := range pending {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		id, err := publicid.Lookup(ctx, s.db, "submissions", m.submissionID)
+		if err != nil {
+			return err
+		}
+		if err := mailer.SendSubmissionDecisionEmail(m.to, m.name, id, m.status == Approved); err != nil {
+			audit.Audit(ctx, "submission.decision_mail", "smtp_failed", m.userID, slog.String("submission_id", id))
+			failures = append(failures, fmt.Errorf("deliver submission decision mail: %w", err))
+			continue
+		}
+		// A newer decision queued during SMTP delivery has a different ID.
+		if _, err := s.db.ExecContext(ctx, `DELETE FROM submission_decision_mail_outbox WHERE id=?`, m.id); err != nil {
+			return err
+		}
+		audit.Audit(ctx, "submission.decision_mail", "smtp_accepted", m.userID, slog.String("submission_id", id))
+	}
+	return errors.Join(failures...)
+}
+
 // DeliverSubmissionMail uses the current address and reviewer permissions at
 // delivery time. Failed messages remain queued; drafts never enter this outbox.
 func (s *Service) DeliverSubmissionMail(ctx context.Context, mailer SubmissionMailer) error {

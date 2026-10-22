@@ -87,6 +87,21 @@ func (s *Sender) SendSubmissionEmail(toEmail, name, submissionID string) error {
 	})
 }
 
+func (s *Sender) SendSubmissionDecisionEmail(toEmail, name, submissionID string, approved bool) error {
+	n := notification{
+		Name: name, Link: s.cfg.Domain + urls.Submission(submissionID),
+		Title:  "Deine Einsendung wurde abgelehnt",
+		Intro:  "Deine Einsendung für die Altklausuren wurde geprüft und abgelehnt. Du kannst den aktuellen Status nach der Anmeldung ansehen.",
+		Action: "Einsendung ansehen",
+		Note:   "Bei Fragen zu dieser Entscheidung wende dich an die Fachschaft.",
+	}
+	if approved {
+		n.Title = "Deine Einsendung wurde freigegeben"
+		n.Intro = "Deine Einsendung für die Altklausuren wurde geprüft und freigegeben. Vielen Dank für deinen Beitrag! Du kannst den aktuellen Status nach der Anmeldung ansehen."
+	}
+	return s.notify(toEmail, n)
+}
+
 func (s *Sender) notify(to string, n notification) error {
 	n.Domain = s.cfg.Domain
 	message, err := s.message(to, n)

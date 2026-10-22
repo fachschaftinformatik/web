@@ -441,6 +441,10 @@ func (s *Service) review(ctx context.Context, userID int64, value string, approv
 	if _, err := tx.ExecContext(ctx, `UPDATE archive_requests SET status=?,reviewed_at=strftime('%Y-%m-%dT%H:%M:%SZ','now'),reviewed_by=? WHERE id=?`, target, userID, value); err != nil {
 		return err
 	}
+	// Replace an undelivered decision if moderation changes again before delivery.
+	if _, err := tx.ExecContext(ctx, `INSERT OR REPLACE INTO submission_decision_mail_outbox(submission_id,status) VALUES(?,?)`, value, target); err != nil {
+		return err
+	}
 	if err := tx.Commit(); err != nil {
 		return err
 	}

@@ -18,6 +18,27 @@ import (
 )
 
 func TestSubmissionEmailContainsAuthenticatedReviewLink(t *testing.T) {
+	testSubmissionEmail(t, func(sender *Sender) error {
+		return sender.SendSubmissionEmail("reviewer@example.org", "Reviewer", "AbCdEfGhIjK")
+	}, "/admin/submissions/AbCdEfGhIjK", "deaktivieren")
+}
+
+func TestSubmissionDecisionEmails(t *testing.T) {
+	for _, approved := range []bool{true, false} {
+		label := "abgelehnt"
+		if approved {
+			label = "freigegeben"
+		}
+		t.Run(label, func(t *testing.T) {
+			testSubmissionEmail(t, func(sender *Sender) error {
+				return sender.SendSubmissionDecisionEmail("submitter@example.org", "Submitter", "AbCdEfGhIjK", approved)
+			}, "/exams/submissions/AbCdEfGhIjK", label)
+		})
+	}
+}
+
+func testSubmissionEmail(t *testing.T, send func(*Sender) error, path, content string) {
+	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -55,7 +76,7 @@ func TestSubmissionEmailContainsAuthenticatedReviewLink(t *testing.T) {
 	}()
 	host, port, _ := net.SplitHostPort(listener.Addr().String())
 	sender := NewSender(&config.Config{Domain: "https://fsi-wh.de", SMTPHost: host, SMTPPort: port, SMTPFrom: "web@example.org"}, nil)
-	if err := sender.SendSubmissionEmail("reviewer@example.org", "Reviewer", "AbCdEfGhIjK"); err != nil {
+	if err := send(sender); err != nil {
 		t.Fatal(err)
 	}
 	message, err := mail.ReadMessage(bytes.NewReader(<-received))
@@ -76,8 +97,8 @@ func TestSubmissionEmailContainsAuthenticatedReviewLink(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !strings.Contains(string(body), "https://fsi-wh.de/admin/submissions/AbCdEfGhIjK") || !strings.Contains(string(body), "Einsendung") || !strings.Contains(string(body), "deaktivieren") || strings.Contains(string(body), "token=") {
-			t.Fatal("submission notification lost its review link or preference instructions", string(body))
+		if !strings.Contains(string(body), "https://fsi-wh.de"+path) || !strings.Contains(string(body), "Einsendung") || !strings.Contains(string(body), content) || strings.Contains(string(body), "token=") {
+			t.Fatal("submission notification lost its link or expected content", string(body))
 		}
 	}
 }
