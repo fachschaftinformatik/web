@@ -440,7 +440,7 @@
   font-weight: 700;
 }
 
-.app-section-nav > .app-subnav > li:has(a[aria-current]) {
+.app-section-nav > .app-subnav > li:has(> a:is([aria-current="page"], [aria-current="true"])) {
   margin-left: -14px;
   padding-left: 10px;
   border-left: 4px solid var(--govuk-brand-colour);
