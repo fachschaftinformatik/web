@@ -27,7 +27,7 @@
           # renovate: datasource=npm depName=tinymce-i18n
           languageVersion = "26.9.28";
           # renovate: datasource=git-refs depName=https://github.com/alphagov/govspeak-visual-editor
-          iconsRevision = "c053cf1c198580723c8768f938cb6146dcd122e8";
+          iconsRevision = "cf09bfaed71624e789de655283f2a942bc3ca87b";
           # renovate: datasource=git-refs depName=https://github.com/alphagov/govuk-design-system
           communityRevision = "00490021ef9535cafdd9317297397a8b7e2ca242";
 
@@ -54,7 +54,7 @@
           icons = pkgs.fetchurl {
             name = "govspeak-visual-editor-${iconsRevision}.tar.gz";
             url = "https://codeload.github.com/alphagov/govspeak-visual-editor/tar.gz/${iconsRevision}";
-            hash = "sha256-vzZthKLNKaXfeaiXDxts0YK8WyBO+ucNJnDADUlacdQ=";
+            hash = "sha256-btqnuSYTvOpGH2pB5XVGrDWy6/SmFHQzFjie/mIWs1w=";
           };
           community = pkgs.fetchurl {
             name = "govuk-design-system-${communityRevision}.tar.gz";
