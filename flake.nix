@@ -25,11 +25,11 @@
           # renovate: datasource=npm depName=tinymce
           tinymceVersion = "8.10.0";
           # renovate: datasource=npm depName=tinymce-i18n
-          languageVersion = "26.9.28";
+          languageVersion = "26.10.19";
           # renovate: datasource=git-refs depName=https://github.com/alphagov/govspeak-visual-editor
-          iconsRevision = "c053cf1c198580723c8768f938cb6146dcd122e8";
+          iconsRevision = "cf09bfaed71624e789de655283f2a942bc3ca87b";
           # renovate: datasource=git-refs depName=https://github.com/alphagov/govuk-design-system
-          communityRevision = "2508866aacc8ea2ae688d1ef5c6f7d169d0d0edb";
+          communityRevision = "00490021ef9535cafdd9317297397a8b7e2ca242";
 
           govuk = pkgs.fetchurl {
             url = "https://registry.npmjs.org/govuk-frontend/-/govuk-frontend-${govukVersion}.tgz";
@@ -49,17 +49,17 @@
           };
           language = pkgs.fetchurl {
             url = "https://registry.npmjs.org/tinymce-i18n/-/tinymce-i18n-${languageVersion}.tgz";
-            hash = "sha256-rZc4XVb75ZIoQDyWm5C/4R1/LHtlLhrO8T3+pGsUlgc=";
+            hash = "sha256-+ffkCojl+AHPf5qyxA/jxHeM3ExVKBUbe+1smhHeCXY=";
           };
           icons = pkgs.fetchurl {
             name = "govspeak-visual-editor-${iconsRevision}.tar.gz";
             url = "https://codeload.github.com/alphagov/govspeak-visual-editor/tar.gz/${iconsRevision}";
-            hash = "sha256-vzZthKLNKaXfeaiXDxts0YK8WyBO+ucNJnDADUlacdQ=";
+            hash = "sha256-btqnuSYTvOpGH2pB5XVGrDWy6/SmFHQzFjie/mIWs1w=";
           };
           community = pkgs.fetchurl {
             name = "govuk-design-system-${communityRevision}.tar.gz";
             url = "https://codeload.github.com/alphagov/govuk-design-system/tar.gz/${communityRevision}";
-            hash = "sha256-kTslwnuoHP6J2G1iidMQM43mf/R2E+gVMshCFGokOFA=";
+            hash = "sha256-KgLULQFIhl35QdlgDhUmYNUNE/4tXgSphPGZpRzXz94=";
           };
           assets = pkgs.stdenvNoCC.mkDerivation {
             pname = "web-browser-assets";
@@ -137,7 +137,7 @@
             pname = "web";
             version = revision;
             src = pkgs.lib.cleanSource ./.;
-            vendorHash = "sha256-D9ZcloGtzJ4OG+jGHsrjnvWqMNX74he5pwUthmu5vKo=";
+            vendorHash = "sha256-PwnDhaeUafCeGpBTShN1VnLR76kGML3k3YWz22A0lxk=";
             subPackages = [ "." ];
             env.CGO_ENABLED = "0";
             preBuild = ''
