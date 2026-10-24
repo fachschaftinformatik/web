@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM nixos/nix:2.35.3@sha256:ff480dbb23511aa1c10710aa068ceea5b93fed9bfce5f5379f3a6b07282cbc7b AS assets
+FROM --platform=$BUILDPLATFORM nixos/nix:2.35.4@sha256:f159a58f390677f41e8e900a74b6e2f9c7f27b364122ae6acf7a652ce6c551c0 AS assets
 WORKDIR /src
 COPY flake.nix flake.lock go.mod ./
 COPY view/styles ./view/styles
@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath \
     -ldflags="-s -w -X main.Version=${VERSION}" -o /out/web .
 
-FROM alpine:3.24.3@sha256:b3413572228e34bd1c9245f5565e6cd127005655e8a7899aef33d8e83255c9e6 AS app
+FROM alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS app
 RUN apk add --no-cache ca-certificates tzdata && \
     addgroup -S -g 1001 web && adduser -S -u 1001 -G web web && \
     mkdir -p /data && chown web:web /data
