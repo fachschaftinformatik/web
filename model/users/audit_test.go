@@ -3,6 +3,7 @@ package users
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"log/slog"
 	"strings"
 	"testing"
@@ -10,6 +11,43 @@ import (
 
 	"github.com/fachschaftinformatik/web/internal/audit"
 )
+
+func TestAccountAuditSanitizesUntrustedEmailDomain(t *testing.T) {
+	for _, separator := range []string{"", "\r", "\n", "\r\n"} {
+		t.Run(separator, func(t *testing.T) {
+			_, db := testService(t)
+			var logs bytes.Buffer
+			ctx := audit.WithLogger(context.Background(), slog.New(slog.NewJSONHandler(&logs, nil)))
+			ctx = audit.WithRecorder(ctx, audit.NewStore(db))
+			email := "private-local-part@EXAMPLE.ORG" + separator + "forged-entry"
+			accountEvent(ctx, "account.login", "account_not_found", 0, email)
+			var entry struct {
+				Event  string `json:"event"`
+				Domain string `json:"email_domain"`
+			}
+			if err := json.Unmarshal(logs.Bytes(), &entry); err != nil {
+				t.Fatal("expected one valid audit entry", err)
+			}
+			if entry.Event != "account.login" || entry.Domain != "example.orgforged-entry" {
+				t.Fatalf("unsafe or missing audit details: %+v", entry)
+			}
+			var details string
+			if err := db.QueryRow(`SELECT details FROM audit_events WHERE event='account.login'`).Scan(&details); err != nil {
+				t.Fatal(err)
+			}
+			var stored map[string]string
+			if err := json.Unmarshal([]byte(details), &stored); err != nil {
+				t.Fatal(err)
+			}
+			if stored["email_domain"] != entry.Domain {
+				t.Fatalf("persisted audit domain differs: %q", stored["email_domain"])
+			}
+			if strings.Contains(logs.String()+details, "private-local-part") {
+				t.Fatal("audit exposed the email local part")
+			}
+		})
+	}
+}
 
 func TestSessionExpiryAuditDoesNotExposeSessionCookie(t *testing.T) {
 	s, db := testService(t)
